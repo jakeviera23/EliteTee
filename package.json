@@ -7,7 +7,7 @@
     "sync-images": "node scripts/sync-images.mjs",
     "fetch-images": "node scripts/fetch-images.mjs",
     "dev": "vite",
-    "build": "tsc --noEmit && vite build --configLoader native",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

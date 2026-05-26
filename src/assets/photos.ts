@@ -1,22 +1,16 @@
 /**
- * Original golf photography from ~/Downloads (bundled at build via @local).
- * Run `npm run sync-images` to copy into public/images/ for static hosting.
+ * Hero images in public/images/ (run `npm run sync-images` or `npm run fetch-images`).
  */
-import heroCoastal from "@local/andrew-rice-waE_CT2q8Os-unsplash.jpg?url";
-import heroAerial from "@local/andrew-anderson-CtyC2JjLhVg-unsplash.jpg?url";
-import heroSwing from "@local/peter-drew-YBRMHuQIk2Q-unsplash.jpg?url";
-import heroSunset from "@local/benny-hassum-c6UloF3fF4U-unsplash.jpg?url";
-import heroClubhouse from "@local/avansear-3NpJk7j20HY-unsplash.jpg?url";
+const base = import.meta.env.BASE_URL;
+
+function asset(path: string) {
+  return `${base}${path.replace(/^\//, "")}`;
+}
 
 export const photos = {
-  /** Hero — coastal fairway */
-  heroCoastal,
-  /** On the walk — aerial bunkers */
-  heroAerial,
-  /** Between rounds — swing / sky */
-  heroSwing,
-  /** Example host regions — sunset green */
-  heroSunset,
-  /** Club grounds — clubhouse */
-  heroClubhouse,
+  heroCoastal: asset("images/hero-coastal.jpg"),
+  heroAerial: asset("images/hero-aerial.jpg"),
+  heroSwing: asset("images/hero-swing.jpg"),
+  heroSunset: asset("images/hero-sunset.jpg"),
+  heroClubhouse: asset("images/hero-clubhouse.jpg"),
 } as const;
