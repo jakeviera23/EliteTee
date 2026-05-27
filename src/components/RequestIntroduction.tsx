@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const TALLY_EMBED_SRC =
-  "https://tally.so/embed/dWkObr?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1";
+  "https://tally.so/embed/dWkObr?hideTitle=1&transparentBackground=1&dynamicHeight=1";
 const TALLY_WIDGET_SCRIPT = "https://tally.so/widgets/embed.js";
 
 function loadTallyEmbeds() {
@@ -34,8 +34,8 @@ export function RequestIntroduction() {
 
   return (
     <section id="request" className="section section--request" aria-labelledby="request-heading">
-      <div className="layout">
-        <header className="section-intro">
+      <div className="layout request-layout">
+        <header className="section-intro request-intro">
           <h2 id="request-heading">Request an introduction</h2>
           <p className="section-lead">
             Write to the membership desk with your name, home club, and the region or
