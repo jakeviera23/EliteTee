@@ -5,21 +5,24 @@ export function Hero() {
     <section className="hero-cinematic" aria-labelledby="hero-heading">
       <img
         className="hero-cinematic-bg"
-        src={photos.heroSwingOceanLuxury}
-        alt="Golfer in follow-through on a coastal course at golden hour"
+        src={photos.heroCoastal}
+        alt="Golfer on a coastal fairway overlooking the ocean"
         loading="eager"
         decoding="async"
         fetchPriority="high"
       />
       <div className="hero-cinematic-overlay" aria-hidden />
       <div className="hero-cinematic-inner layout">
-        <h1 id="hero-heading" className="hero-cinematic-title">
-          Private golf travel, handled quietly.
-        </h1>
-        <p className="hero-cinematic-desc">
-          Discreet introductions for verified club members who host, travel, and value
-          private ground.
-        </p>
+        <div className="hero-cinematic-copy">
+          <p className="hero-cinematic-eyebrow">Private member network</p>
+          <h1 id="hero-heading" className="hero-cinematic-title">
+            Private golf travel, handled quietly.
+          </h1>
+          <p className="hero-cinematic-desc">
+            Discreet introductions for verified members who host abroad, travel with
+            standing, and honor the customs of private ground.
+          </p>
+        </div>
       </div>
     </section>
   );

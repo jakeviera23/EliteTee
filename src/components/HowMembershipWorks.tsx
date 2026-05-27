@@ -4,7 +4,7 @@ export function HowMembershipWorks() {
   return (
     <section
       id="how-membership-works"
-      className="section section--tight membership-works"
+      className="section section--compact membership-works"
       aria-labelledby="membership-works-heading"
     >
       <div className="layout">

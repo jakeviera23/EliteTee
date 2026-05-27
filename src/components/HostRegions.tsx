@@ -2,7 +2,7 @@ export function HostRegions() {
   return (
     <section
       id="regions"
-      className="section section--tight regions-statement"
+      className="section section--compact regions-statement"
       aria-label="Membership access"
     >
       <div className="layout">

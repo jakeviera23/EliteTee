@@ -4,17 +4,18 @@ export function MemberStandards() {
   return (
     <section
       id="standards"
-      className="section section--tight standards"
+      className="section section--compact standards"
       aria-labelledby="standards-heading"
     >
       <div className="layout">
-        <header className="section-intro section-intro--tight">
-          <h2 id="standards-heading">Standards</h2>
-          <p className="section-lead standards-lead">
-            Membership relies on discretion, etiquette, and good standing.
+        <header className="section-intro section-intro--compact">
+          <h2 id="standards-heading">Member standards</h2>
+          <p className="section-lead">
+            The desk declines introductions when conduct or standing does not meet these
+            expectations.
           </p>
         </header>
-        <ul className="standards-list standards-list--tight">
+        <ul className="standards-list">
           {memberStandards.map((item) => (
             <li key={item}>{item}</li>
           ))}

@@ -93,17 +93,17 @@ export const membershipPriorities: MembershipPriority[] = [
 
 export const memberStandards: string[] = [
   "Active, verifiable membership at a private club recognized by the membership desk.",
-  "Hosting and travel offered in good faith with respect for club customs.",
+  "Hosting and travel offered in good faith—no green fees resold, no public tee-time brokerage.",
   "Discretion on course, in the clubhouse, and in correspondence.",
+  "Introductions are personal; member details are not published or searchable.",
   "Conduct consistent with your home club’s standards for guests and fellow members.",
 ];
-
-
 
 export const navLinks = [
   { href: "#what", label: "What it is" },
   { href: "#how-membership-works", label: "Access" },
   { href: "#regions", label: "Regions" },
+  { href: "#priorities", label: "Priorities" },
   { href: "#standards", label: "Standards" },
   { href: "#request", label: "Request" },
 ];

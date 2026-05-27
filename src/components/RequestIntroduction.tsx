@@ -5,7 +5,7 @@ export function RequestIntroduction() {
   const formId = useMemo(() => "elitetee-request-form", []);
 
   return (
-    <section id="request" className="section section--request section--tight" aria-labelledby="request-heading">
+    <section id="request" className="section section--request section--compact" aria-labelledby="request-heading">
       <div className="layout request-layout">
         <header className="section-intro request-intro">
           <p className="request-desk-line">
