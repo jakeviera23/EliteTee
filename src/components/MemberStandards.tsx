@@ -4,22 +4,34 @@ export function MemberStandards() {
   return (
     <section
       id="standards"
-      className="section section--compact standards"
+      className="section section--compact standards standards--dark"
       aria-labelledby="standards-heading"
     >
-      <div className="layout">
-        <header className="section-intro section-intro--compact">
-          <h2 id="standards-heading">Member standards</h2>
-          <p className="section-lead">
-            The desk declines introductions when conduct or standing does not meet these
-            expectations.
+      <div className="layout standards-layout">
+        <header className="standards-statement">
+          <p className="standards-statement-title">
+            Some places are not booked. They are introduced.
+          </p>
+          <p className="standards-statement-lead">
+            Elite Tee exists for members who value discretion, reciprocity, and exceptional
+            golf culture.
           </p>
         </header>
-        <ul className="standards-list">
-          {memberStandards.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+
+        <div className="standards-body">
+          <header className="standards-intro">
+            <h2 id="standards-heading">Member standards</h2>
+            <p className="standards-body-lead">
+              The desk declines introductions when conduct or standing does not meet these
+              expectations.
+            </p>
+          </header>
+          <ul className="standards-list standards-list--dark">
+            {memberStandards.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
