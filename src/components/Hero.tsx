@@ -2,28 +2,24 @@ import { photos } from "../assets/photos";
 
 export function Hero() {
   return (
-    <section className="hero-band hero-band--main hero-band--left" aria-labelledby="hero-heading">
+    <section className="hero-cinematic" aria-labelledby="hero-heading">
       <img
-        className="hero-band-bg"
-        src={photos.heroCoastal}
-        alt="Golfer on a coastal fairway at dusk"
+        className="hero-cinematic-bg"
+        src={photos.heroSwingOceanLuxury}
+        alt="Golfer in follow-through on a coastal course at golden hour"
         loading="eager"
         decoding="async"
         fetchPriority="high"
       />
-      <div className="hero-band-overlay hero-band-overlay--base" aria-hidden />
-      <div className="hero-band-overlay hero-band-overlay--text" aria-hidden />
-      <div className="hero-band-inner layout">
-        <div className="hero-copy">
-          <p className="hero-eyebrow">Private member network</p>
-          <h1 id="hero-heading" className="hero-band-title">
-            Private golf travel, handled quietly.
-          </h1>
-          <p className="hero-band-desc">
-            Discreet introductions for verified members who host abroad, travel with
-            standing, and honor the customs of private ground.
-          </p>
-        </div>
+      <div className="hero-cinematic-overlay" aria-hidden />
+      <div className="hero-cinematic-inner layout">
+        <h1 id="hero-heading" className="hero-cinematic-title">
+          Private golf travel, handled quietly.
+        </h1>
+        <p className="hero-cinematic-desc">
+          Discreet introductions for verified club members who host, travel, and value
+          private ground.
+        </p>
       </div>
     </section>
   );

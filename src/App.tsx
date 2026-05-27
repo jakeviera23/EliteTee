@@ -1,12 +1,8 @@
 import { Navbar } from "./components/Navbar";
-import { Hero } from "./components/Hero";
+import { EditorialSpread } from "./components/EditorialSpread";
 import { WhatItIs } from "./components/WhatItIs";
-import { EditorialImagery } from "./components/EditorialImagery";
-import { HowEliteTeeWorks } from "./components/HowEliteTeeWorks";
-import { HostRegions } from "./components/HostRegions";
-import { MembershipPriorities } from "./components/MembershipPriorities";
+import { HowMembershipWorks } from "./components/HowMembershipWorks";
 import { MemberStandards } from "./components/MemberStandards";
-import { ClosingCta } from "./components/ClosingCta";
 import { RequestIntroduction } from "./components/RequestIntroduction";
 import { Footer } from "./components/Footer";
 
@@ -15,14 +11,10 @@ export default function App() {
     <>
       <Navbar />
       <main>
-        <Hero />
-        <EditorialImagery />
-        <HostRegions />
+        <EditorialSpread />
         <WhatItIs />
-        <HowEliteTeeWorks />
-        <MembershipPriorities />
+        <HowMembershipWorks />
         <MemberStandards />
-        <ClosingCta />
         <RequestIntroduction />
       </main>
       <Footer />

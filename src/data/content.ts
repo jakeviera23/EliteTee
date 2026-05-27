@@ -1,14 +1,9 @@
 import { photos } from "../assets/photos";
 
-export type HostRegion = {
-  name: string;
-  area: string;
-  note: string;
-};
-
-export type WorksStep = {
+export type MembershipWorksStep = {
   step: string;
-  text: string;
+  title: string;
+  description: string;
 };
 
 export type MembershipPriority = {
@@ -21,67 +16,52 @@ export type FeatureHero = {
   description: string;
   image: string;
   alt: string;
+  /** Fine-tunes crop for warm, club-oriented editorial framing. */
+  objectPosition?: string;
 };
 
-export const eliteTeeWorksSteps: WorksStep[] = [
+export const membershipWorksSteps: MembershipWorksStep[] = [
   {
     step: "01",
-    text: "Members request introductions to trusted clubs and players.",
+    title: "Membership Application",
+    description:
+      "Share your details and golf background through private correspondence.",
   },
   {
     step: "02",
-    text: "Elite Tee coordinates discreet connections and travel experiences.",
+    title: "Club & Background Verification",
+    description:
+      "The desk confirms standing and conduct through quiet verification.",
   },
   {
     step: "03",
-    text: "Members enjoy curated golf relationships worldwide.",
+    title: "Introductions & Access Coordination",
+    description:
+      "Introductions are coordinated member to member with club customs in mind.",
   },
 ];
 
 export const featureHeroes: FeatureHero[] = [
   {
-    title: "On the walk",
-    description:
-      "Fairways at first light—the rhythm members know from their home clubs.",
-    image: photos.heroAerial,
-    alt: "Aerial view of sand bunkers on a private fairway at golden hour",
+    title: "Quiet introductions",
+    description: "Private member-to-member connections, handled with discretion.",
+    image: photos.clubhouseSunsetLuxury,
+    alt: "Private clubhouse terrace overlooking coastal course at sunset",
+    objectPosition: "center 50%",
   },
   {
-    title: "Club grounds",
-    description:
-      "Stone clubhouses, verandas, and the quiet customs of private institutions.",
-    image: photos.heroClubhouse,
-    alt: "Clubhouse and grounds overlooking the course",
+    title: "Club culture",
+    description: "Standing, etiquette, and respect for private ground.",
+    image: photos.clubhouseEveningLuxury,
+    alt: "Private clubhouse exterior at dusk with warm interior lighting",
+    objectPosition: "center 45%",
   },
   {
-    title: "Between rounds",
-    description:
-      "Woodland corridors, long shadows, and time reserved for the next introduction.",
-    image: photos.heroSwing,
-    alt: "Golfer in follow-through beneath a dramatic sky",
-  },
-];
-
-export const hostRegions: HostRegion[] = [
-  {
-    name: "Northeast Club",
-    area: "United States · Northeast",
-    note: "Seasonal hosting among members with standing at established private clubs.",
-  },
-  {
-    name: "South Florida Club",
-    area: "United States · Florida",
-    note: "Winter circuits and reciprocal-style visits arranged member to member.",
-  },
-  {
-    name: "London Heathland Club",
-    area: "United Kingdom",
-    note: "Heathland and parkland introductions for members traveling on business or holiday.",
-  },
-  {
-    name: "Scandinavian Coastal Club",
-    area: "Nordic region",
-    note: "Coastal and links-adjacent clubs represented by verified hosts—not open listings.",
+    title: "Travel with standing",
+    description: "For members who move between clubs with reputation already intact.",
+    image: photos.teeCloseupLuxury,
+    alt: "Hand setting a ball on tee at first light",
+    objectPosition: "center 56%",
   },
 ];
 
@@ -113,22 +93,17 @@ export const membershipPriorities: MembershipPriority[] = [
 
 export const memberStandards: string[] = [
   "Active, verifiable membership at a private club recognized by the membership desk.",
-  "Hosting and travel offered in good faith—no green fees resold, no public tee-time brokerage.",
+  "Hosting and travel offered in good faith with respect for club customs.",
   "Discretion on course, in the clubhouse, and in correspondence.",
-  "Introductions are personal; member details are not published or searchable.",
   "Conduct consistent with your home club’s standards for guests and fellow members.",
 ];
 
+
+
 export const navLinks = [
   { href: "#what", label: "What it is" },
-  { href: "#how-it-works", label: "How it works" },
+  { href: "#how-membership-works", label: "Access" },
   { href: "#regions", label: "Regions" },
-  { href: "#priorities", label: "Priorities" },
   { href: "#standards", label: "Standards" },
   { href: "#request", label: "Request" },
 ];
-
-export const regionsHero = {
-  image: photos.heroSunset,
-  alt: "Putting green at sunset on private ground",
-};

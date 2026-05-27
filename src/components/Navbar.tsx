@@ -6,7 +6,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 32);
+    const onScroll = () => setScrolled(window.scrollY > 48);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -22,7 +22,7 @@ export function Navbar() {
   return (
     <>
       <header
-        className={`nav${!scrolled ? " nav--overlay" : ""}${scrolled ? " is-scrolled" : ""}`}
+        className={`nav${scrolled ? " is-scrolled" : ""}${!scrolled ? " nav--hero" : ""}`}
       >
         <div className="layout nav-inner">
           <a href="#" className="logo">

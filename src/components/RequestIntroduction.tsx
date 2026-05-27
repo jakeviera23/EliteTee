@@ -1,60 +1,73 @@
-import { useEffect } from "react";
-
-const TALLY_EMBED_SRC =
-  "https://tally.so/embed/dWkObr?hideTitle=1&transparentBackground=1&dynamicHeight=1";
-const TALLY_WIDGET_SCRIPT = "https://tally.so/widgets/embed.js";
-
-function loadTallyEmbeds() {
-  if (typeof window.Tally !== "undefined") {
-    window.Tally.loadEmbeds();
-    return;
-  }
-
-  document
-    .querySelectorAll<HTMLIFrameElement>('iframe[data-tally-src]:not([src])')
-    .forEach((iframe) => {
-      iframe.src = iframe.dataset.tallySrc ?? "";
-    });
-}
+import { useMemo, useState } from "react";
 
 export function RequestIntroduction() {
-  useEffect(() => {
-    loadTallyEmbeds();
-
-    if (document.querySelector(`script[src="${TALLY_WIDGET_SCRIPT}"]`) !== null) {
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = TALLY_WIDGET_SCRIPT;
-    script.onload = loadTallyEmbeds;
-    script.onerror = loadTallyEmbeds;
-    document.body.appendChild(script);
-  }, []);
+  const [submitted, setSubmitted] = useState(false);
+  const formId = useMemo(() => "elitetee-request-form", []);
 
   return (
-    <section id="request" className="section section--request" aria-labelledby="request-heading">
+    <section id="request" className="section section--request section--tight" aria-labelledby="request-heading">
       <div className="layout request-layout">
         <header className="section-intro request-intro">
+          <p className="request-desk-line">
+            Applications are reviewed privately by the membership desk.
+          </p>
           <h2 id="request-heading">Request an introduction</h2>
-          <p className="section-lead">
-            Write to the membership desk with your name, home club, and the region or
-            member you hope to meet. Replies are typically within two business days.
+          <p className="section-lead request-lead">
+            Name, home club, region of interest, and a brief note. Correspondence remains
+            private.
           </p>
         </header>
 
         <div className="request-panel">
-          <iframe
-            className="request-tally-embed"
-            data-tally-src={TALLY_EMBED_SRC}
-            loading="lazy"
-            width="100%"
-            height="1730"
-            frameBorder={0}
-            marginHeight={0}
-            marginWidth={0}
-            title="EliteTee Membership Request"
-          />
+          {submitted ? (
+            <div className="request-success" role="status" aria-live="polite">
+              <p className="request-success-title">Received.</p>
+              <p className="request-success-body">
+                Your request has been received by the membership desk. Applications are reviewed
+                individually and correspondence is handled privately.
+              </p>
+            </div>
+          ) : (
+            <form
+              id={formId}
+              className="request-form request-form--application"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSubmitted(true);
+              }}
+            >
+              <label>
+                <span>Full Name</span>
+                <input type="text" name="fullName" autoComplete="name" required />
+              </label>
+
+              <label>
+                <span>Email Address</span>
+                <input type="email" name="email" autoComplete="email" required />
+              </label>
+
+              <label>
+                <span>Home Club</span>
+                <input type="text" name="homeClub" autoComplete="organization" required />
+              </label>
+
+              <label>
+                <span>Primary Region</span>
+                <input type="text" name="primaryRegion" autoComplete="address-level1" required />
+              </label>
+
+              <label className="request-form-wide">
+                <span>What interests you about EliteTee?</span>
+                <textarea name="interest" rows={4} required />
+              </label>
+
+              <div className="request-form-actions">
+                <button type="submit" className="btn">
+                  Submit application
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </section>

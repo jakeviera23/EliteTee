@@ -13,4 +13,8 @@ export const photos = {
   heroSwing: asset("images/hero-swing.jpg"),
   heroSunset: asset("images/hero-sunset.jpg"),
   heroClubhouse: asset("images/hero-clubhouse.jpg"),
+  clubhouseSunsetLuxury: asset("images/elitetee-clubhouse-sunset.png"),
+  teeCloseupLuxury: asset("images/elitetee-tee-closeup.png"),
+  clubhouseEveningLuxury: asset("images/elitetee-clubhouse-evening.png"),
+  heroSwingOceanLuxury: asset("images/elitetee-hero-swing-ocean.png"),
 } as const;

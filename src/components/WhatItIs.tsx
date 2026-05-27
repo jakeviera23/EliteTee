@@ -1,23 +1,19 @@
 export function WhatItIs() {
   return (
-    <section id="what" className="section section--lined" aria-labelledby="what-heading">
+    <section
+      id="what"
+      className="section section--lined section--tight"
+      aria-labelledby="what-heading"
+    >
       <div className="layout">
-        <header className="section-intro">
+        <header className="section-intro section-intro--tight">
           <h2 id="what-heading">What it is</h2>
         </header>
-        <div className="prose">
+        <div className="prose prose--compact">
           <p>
-            EliteTee is a membership desk—not a social platform. We work with verified
-            private club members who already host guests and travel with discretion.
-          </p>
-          <p>
-            The desk confirms standing, aligns expectations, and makes introductions when
-            there is a fit. We do not list courses, sell tee times, or represent clubs as
-            partners in marketing materials.
-          </p>
-          <p>
-            For general managers and members alike: the service is correspondence-first,
-            paced to the calendar of serious golf—not product launches.
+            EliteTee is a correspondence-first membership desk for verified private club
+            members: we confirm standing quietly, then introduce thoughtfully when the fit is
+            mutual.
           </p>
         </div>
       </div>
