@@ -1,4 +1,37 @@
+import { useEffect } from "react";
+
+const TALLY_EMBED_SRC =
+  "https://tally.so/embed/dWkObr?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1";
+const TALLY_WIDGET_SCRIPT = "https://tally.so/widgets/embed.js";
+
+function loadTallyEmbeds() {
+  if (typeof window.Tally !== "undefined") {
+    window.Tally.loadEmbeds();
+    return;
+  }
+
+  document
+    .querySelectorAll<HTMLIFrameElement>('iframe[data-tally-src]:not([src])')
+    .forEach((iframe) => {
+      iframe.src = iframe.dataset.tallySrc ?? "";
+    });
+}
+
 export function RequestIntroduction() {
+  useEffect(() => {
+    loadTallyEmbeds();
+
+    if (document.querySelector(`script[src="${TALLY_WIDGET_SCRIPT}"]`) !== null) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = TALLY_WIDGET_SCRIPT;
+    script.onload = loadTallyEmbeds;
+    script.onerror = loadTallyEmbeds;
+    document.body.appendChild(script);
+  }, []);
+
   return (
     <section id="request" className="section section--request" aria-labelledby="request-heading">
       <div className="layout">
@@ -11,43 +44,17 @@ export function RequestIntroduction() {
         </header>
 
         <div className="request-panel">
-          <form
-            className="request-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              window.location.href =
-                "mailto:desk@elitetee.example?subject=Introduction%20request";
-            }}
-          >
-            <label>
-              <span>Name</span>
-              <input type="text" name="name" autoComplete="name" />
-            </label>
-            <label>
-              <span>Home club</span>
-              <input type="text" name="club" autoComplete="organization" />
-            </label>
-            <label>
-              <span>Email</span>
-              <input type="email" name="email" autoComplete="email" />
-            </label>
-            <label className="request-form-wide">
-              <span>Travel or hosting note</span>
-              <textarea
-                name="note"
-                rows={4}
-                placeholder="Dates, region, and any member referral—kept confidential."
-              />
-            </label>
-            <div className="request-form-actions">
-              <button type="submit" className="btn">
-                Send to membership desk
-              </button>
-              <a href="mailto:desk@elitetee.example" className="request-email">
-                desk@elitetee.example
-              </a>
-            </div>
-          </form>
+          <iframe
+            className="request-tally-embed"
+            data-tally-src={TALLY_EMBED_SRC}
+            loading="lazy"
+            width="100%"
+            height="1730"
+            frameBorder={0}
+            marginHeight={0}
+            marginWidth={0}
+            title="EliteTee Membership Request"
+          />
         </div>
       </div>
     </section>

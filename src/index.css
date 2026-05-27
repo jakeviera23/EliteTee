@@ -972,6 +972,13 @@ button {
   background: var(--bg);
 }
 
+.request-tally-embed {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+}
+
 .request-form {
   display: grid;
   gap: 1.5rem;
