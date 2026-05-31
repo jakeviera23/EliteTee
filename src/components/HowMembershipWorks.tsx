@@ -11,7 +11,7 @@ export function HowMembershipWorks() {
         <header className="membership-works-header">
           <p className="membership-works-eyebrow">The process</p>
           <h2 id="membership-works-heading">How it works</h2>
-          <p className="membership-works-lead">Three quiet steps. One membership desk.</p>
+          <p className="membership-works-lead">Three quiet steps. One private society.</p>
         </header>
 
         <ol className="membership-works-steps">

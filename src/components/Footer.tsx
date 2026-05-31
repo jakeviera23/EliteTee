@@ -5,7 +5,7 @@ export function Footer() {
         <div className="footer-brand">
           <p className="footer-copy">© EliteTee</p>
           <p className="footer-tagline">
-            Private introductions between verified members.
+            A private society of verified club members.
           </p>
         </div>
       </div>

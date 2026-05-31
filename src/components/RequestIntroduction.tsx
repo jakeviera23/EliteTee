@@ -13,8 +13,7 @@ export function RequestIntroduction() {
           </p>
           <h2 id="request-heading">Request an introduction</h2>
           <p className="section-lead request-lead">
-            Name, home club, region of interest, and a brief note. Correspondence remains
-            private.
+            Name, home club, and a brief note. Correspondence remains private.
           </p>
         </header>
 
@@ -52,7 +51,7 @@ export function RequestIntroduction() {
               </label>
 
               <label>
-                <span>Primary Region</span>
+                <span>Location</span>
                 <input type="text" name="primaryRegion" autoComplete="address-level1" required />
               </label>
 

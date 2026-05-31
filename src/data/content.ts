@@ -25,26 +25,26 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
     step: "01",
     title: "Membership Application",
     description:
-      "Share your details and golf background through private correspondence.",
+      "Share your background and club standing through private correspondence.",
   },
   {
     step: "02",
-    title: "Club & Background Verification",
+    title: "Standing & Verification",
     description:
-      "The desk confirms standing and conduct through quiet verification.",
+      "The desk confirms character and conduct through quiet verification.",
   },
   {
     step: "03",
-    title: "Introductions & Access Coordination",
+    title: "Member Introductions",
     description:
-      "Introductions are coordinated member to member with club customs in mind.",
+      "Introductions are made member to member, with care for fit and trust.",
   },
 ];
 
 export const featureHeroes: FeatureHero[] = [
   {
     title: "Quiet introductions",
-    description: "Private member-to-member connections, handled with discretion.",
+    description: "Member-to-member connections, handled with discretion.",
     image: photos.clubhouseSunsetLuxury,
     alt: "Private clubhouse terrace overlooking coastal course at sunset",
     objectPosition: "center 50%",
@@ -57,8 +57,8 @@ export const featureHeroes: FeatureHero[] = [
     objectPosition: "center 45%",
   },
   {
-    title: "Travel with standing",
-    description: "For members who move between clubs with reputation already intact.",
+    title: "Trust among peers",
+    description: "Relationships grounded in reputation, reciprocity, and shared opportunity.",
     image: photos.teeCloseupLuxury,
     alt: "Hand setting a ball on tee at first light",
     objectPosition: "center 56%",
@@ -66,7 +66,7 @@ export const featureHeroes: FeatureHero[] = [
 ];
 
 export const membershipPrioritiesLead =
-  "Elite Tee exists for verified members who understand private club culture. We prioritize trust, discretion, etiquette, and curated relationships—not public access, open directories, or mass membership.";
+  "EliteTee is a private society for verified members who understand club life. We prioritize trust, relationships, discretion, and opportunity—not public access, open directories, or mass membership.";
 
 export const membershipPriorities: MembershipPriority[] = [
   {
@@ -77,7 +77,7 @@ export const membershipPriorities: MembershipPriority[] = [
   {
     title: "Discretion",
     description:
-      "Travel and correspondence stay private. There is no searchable roster or promotional member showcase.",
+      "Membership and correspondence stay private. There is no searchable roster or promotional showcase.",
   },
   {
     title: "Etiquette",
@@ -93,7 +93,7 @@ export const membershipPriorities: MembershipPriority[] = [
 
 export const memberStandards: string[] = [
   "Active, verifiable membership at a private club recognized by the membership desk.",
-  "Hosting and travel offered in good faith—no green fees resold, no public tee-time brokerage.",
+  "Access offered in good faith—no reselling, no public brokerage of introductions.",
   "Discretion on course, in the clubhouse, and in correspondence.",
   "Introductions are personal; member details are not published or searchable.",
   "Conduct consistent with your home club’s standards for guests and fellow members.",

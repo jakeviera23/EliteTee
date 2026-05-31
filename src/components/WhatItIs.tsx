@@ -7,21 +7,22 @@ export function WhatItIs() {
     >
       <div className="layout">
         <header className="section-intro section-intro--compact">
-          <h2 id="what-heading">What it is</h2>
+          <h2 id="what-heading">Membership Philosophy</h2>
         </header>
         <div className="prose">
           <p>
-            EliteTee is a membership desk—not a social platform. We work with verified
-            private club members who already host guests and travel with discretion.
+            EliteTee is a private society of accomplished club members connected through a
+            shared culture of golf. Relationships are built through trust, discretion,
+            reciprocity, and mutual opportunity.
           </p>
           <p>
             The desk confirms standing, aligns expectations, and makes introductions when
-            there is a fit. We do not list courses, sell tee times, or represent clubs as
-            partners in marketing materials.
+            trust is mutual. We do not list members, sell access, or represent clubs
+            publicly.
           </p>
           <p>
-            For general managers and members alike: the service is correspondence-first,
-            paced to the calendar of serious golf—not product launches.
+            For members and clubs alike: correspondence is paced to relationships, not
+            volume—not product launches.
           </p>
         </div>
       </div>

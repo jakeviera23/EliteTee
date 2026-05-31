@@ -13,8 +13,8 @@ export function MemberStandards() {
             Some places are not booked. They are introduced.
           </p>
           <p className="standards-statement-lead">
-            Elite Tee exists for members who value discretion, reciprocity, and exceptional
-            golf culture.
+            EliteTee exists for members who value trust, reciprocity, and the community
+            private golf creates.
           </p>
         </header>
 

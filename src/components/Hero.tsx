@@ -14,13 +14,13 @@ export function Hero() {
       <div className="hero-cinematic-overlay" aria-hidden />
       <div className="hero-cinematic-inner layout">
         <div className="hero-cinematic-copy">
-          <p className="hero-cinematic-eyebrow">Private member network</p>
+          <p className="hero-cinematic-eyebrow">Private member society</p>
           <h1 id="hero-heading" className="hero-cinematic-title">
-            Private golf travel, handled quietly.
+            Accomplished members, connected through golf.
           </h1>
           <p className="hero-cinematic-desc">
-            Discreet introductions for verified members who host abroad, travel with
-            standing, and honor the customs of private ground.
+            A discreet society of verified club members—introductions built on trust,
+            standing, and respect for private ground.
           </p>
         </div>
       </div>
