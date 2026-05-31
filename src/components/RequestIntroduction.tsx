@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
+
 export function RequestIntroduction() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const formId = useMemo(() => "elitetee-request-form", []);
 
   return (
@@ -20,19 +23,31 @@ export function RequestIntroduction() {
         <div className="request-panel">
           {submitted ? (
             <div className="request-success" role="status" aria-live="polite">
-              <p className="request-success-title">Received.</p>
               <p className="request-success-body">
-                Your request has been received by the membership desk. Applications are reviewed
-                individually and correspondence is handled privately.
+                Your request has been received. The membership desk will review it privately.
               </p>
             </div>
           ) : (
             <form
               id={formId}
               className="request-form request-form--application"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                setSubmitted(true);
+                setSubmitting(true);
+
+                try {
+                  const response = await fetch(FORMSPREE_ENDPOINT, {
+                    method: "POST",
+                    body: new FormData(e.currentTarget),
+                    headers: { Accept: "application/json" },
+                  });
+
+                  if (response.ok) {
+                    setSubmitted(true);
+                  }
+                } finally {
+                  setSubmitting(false);
+                }
               }}
             >
               <label>
@@ -57,7 +72,7 @@ export function RequestIntroduction() {
 
               <label>
                 <span>Location</span>
-                <input type="text" name="primaryRegion" autoComplete="address-level1" required />
+                <input type="text" name="location" autoComplete="address-level1" required />
               </label>
 
               <label className="request-form-wide">
@@ -66,7 +81,7 @@ export function RequestIntroduction() {
               </label>
 
               <div className="request-form-actions">
-                <button type="submit" className="btn">
+                <button type="submit" className="btn" disabled={submitting}>
                   Submit application
                 </button>
               </div>
