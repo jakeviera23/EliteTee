@@ -100,10 +100,8 @@ export const memberStandards: string[] = [
 ];
 
 export const navLinks = [
-  { href: "#what", label: "What it is" },
-  { href: "#how-membership-works", label: "Access" },
-  { href: "#regions", label: "Regions" },
-  { href: "#priorities", label: "Priorities" },
+  { href: "#what", label: "Society" },
+  { href: "#how-membership-works", label: "Membership" },
   { href: "#standards", label: "Standards" },
   { href: "#request", label: "Request" },
 ];
