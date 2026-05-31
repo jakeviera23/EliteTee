@@ -51,6 +51,11 @@ export function RequestIntroduction() {
               </label>
 
               <label>
+                <span>Company / Profession</span>
+                <input type="text" name="companyProfession" autoComplete="organization-title" required />
+              </label>
+
+              <label>
                 <span>Location</span>
                 <input type="text" name="primaryRegion" autoComplete="address-level1" required />
               </label>
