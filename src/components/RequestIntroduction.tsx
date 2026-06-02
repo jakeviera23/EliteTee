@@ -14,9 +14,10 @@ export function RequestIntroduction() {
           <p className="request-desk-line">
             Applications are reviewed privately by the membership desk.
           </p>
-          <h2 id="request-heading">Request an introduction</h2>
+          <h2 id="request-heading">Apply for membership</h2>
           <p className="section-lead request-lead">
-            Name, home club, and a brief note. Correspondence remains private.
+            Founding membership is reviewed privately. Pricing and membership details are
+            shared individually as the network develops.
           </p>
         </header>
 

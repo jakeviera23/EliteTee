@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { navLinks } from "../data/content";
 
@@ -25,9 +26,9 @@ export function Navbar() {
         className={`nav${scrolled ? " is-scrolled" : ""}${!scrolled ? " nav--hero" : ""}`}
       >
         <div className="layout nav-inner">
-          <a href="#" className="logo">
+          <Link to="/" className="logo">
             EliteTee
-          </a>
+          </Link>
 
           <nav className="nav-links" aria-label="Primary">
             {navLinks.map((l) => (

@@ -9,12 +9,14 @@ export function HowMembershipWorks() {
     >
       <div className="layout">
         <header className="membership-works-header">
-          <p className="membership-works-eyebrow">The process</p>
-          <h2 id="membership-works-heading">How it works</h2>
-          <p className="membership-works-lead">Three quiet steps. One private society.</p>
+          <p className="membership-works-eyebrow">Eligibility & process</p>
+          <h2 id="membership-works-heading">How membership works</h2>
+          <p className="membership-works-lead">
+            A private path from application to curated introductions.
+          </p>
         </header>
 
-        <ol className="membership-works-steps">
+        <ol className="membership-works-steps membership-works-steps--five">
           {membershipWorksSteps.map((item) => (
             <li key={item.step} className="membership-works-step">
               <span className="membership-works-step-num" aria-hidden="true">
@@ -25,7 +27,6 @@ export function HowMembershipWorks() {
             </li>
           ))}
         </ol>
-
       </div>
     </section>
   );

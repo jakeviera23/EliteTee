@@ -19,8 +19,8 @@ export function Hero() {
             Accomplished members, connected through golf.
           </h1>
           <p className="hero-cinematic-desc">
-            A discreet society of verified club members—introductions built on trust,
-            standing, and respect for private ground.
+            A private society of verified club members where golf creates trusted
+            relationships, introductions, travel opportunities, and long-term connections.
           </p>
         </div>
       </div>
