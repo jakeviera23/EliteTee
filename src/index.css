@@ -1605,11 +1605,19 @@ button {
   gap: clamp(1.35rem, 2.8vw, 2rem);
 }
 
+.request-layout--membership {
+  align-items: center;
+}
+
 .request-intro {
   margin-inline: auto;
   margin-bottom: 0;
   max-width: 32rem;
   text-align: center;
+}
+
+.request-intro--membership {
+  max-width: 36rem;
 }
 
 .request-desk-line {
@@ -1623,8 +1631,15 @@ button {
   line-height: 1.6;
 }
 
+.request-intro--membership h2,
 .request-intro h2 {
+  margin: 0;
+  font-family: var(--serif);
   font-size: clamp(1.5rem, 2.6vw, 1.85rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .request-lead {
@@ -1633,13 +1648,14 @@ button {
   line-height: 1.6;
   max-width: 28rem;
   margin-inline: auto;
+  color: var(--ink-muted);
 }
 
 .request-panel {
   width: 100%;
   max-width: 36rem;
   margin-inline: auto;
-  padding: clamp(1.25rem, 2.8vw, 2rem) clamp(1.15rem, 2.8vw, 1.75rem);
+  padding: clamp(1.25rem, 2.8vw, 2rem) clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--line);
   background: var(--bg);
 }
@@ -1648,15 +1664,6 @@ button {
   .request-panel {
     padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.5rem, 3.5vw, 2.25rem);
   }
-}
-
-.request-tally-embed {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-height: 24rem;
-  border: none;
-  background: transparent;
 }
 
 .request-form--application {
@@ -1685,8 +1692,11 @@ button {
 
 .request-success-body {
   margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.75;
+  font-family: var(--serif);
+  font-size: clamp(1.0625rem, 1.6vw, 1.1875rem);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: -0.01em;
   color: var(--ink-muted);
 }
 
