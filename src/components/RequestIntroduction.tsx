@@ -1,12 +1,64 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 
-// Replace YOUR_FORM_ID with your real Formspree form ID from https://formspree.io
-// Example: https://formspree.io/f/xvzyndnb → use "xvzyndnb" in place of YOUR_FORM_ID
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
+// Paste your Formspree endpoint here (Formspree dashboard → your form → Integration → Endpoint):
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
+
+const PLACEHOLDER_ENDPOINT = /YOUR_FORM_ID|YOUR_REAL_FORM_ID/i.test(
+  FORMSPREE_ENDPOINT,
+);
+
+const SUCCESS_MESSAGE =
+  "Thank you. Your request has been received and will be reviewed privately.";
 
 export function RequestIntroduction() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (PLACEHOLDER_ENDPOINT) {
+      setError(
+        "Form endpoint is not configured. Update FORMSPREE_ENDPOINT in src/components/RequestIntroduction.tsx.",
+      );
+      return;
+    }
+
+    const form = event.currentTarget;
+    setSubmitting(true);
+
+    try {
+      const response = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { Accept: "application/json" },
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+        return;
+      }
+
+      let message = "Something went wrong. Please try again.";
+      try {
+        const data = (await response.json()) as { error?: string };
+        if (data.error) {
+          message = data.error;
+        }
+      } catch {
+        // Non-JSON error body; keep default message.
+      }
+      setError(message);
+    } catch {
+      setError(
+        "Unable to send your application. Please check your connection and try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <section
@@ -29,31 +81,12 @@ export function RequestIntroduction() {
         <div className="request-panel">
           {submitted ? (
             <div className="request-success" role="status" aria-live="polite">
-              <p className="request-success-body">
-                Thank you. Your request has been received and will be reviewed privately.
-              </p>
+              <p className="request-success-body">{SUCCESS_MESSAGE}</p>
             </div>
           ) : (
             <form
               className="request-form request-form--application"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setSubmitting(true);
-
-                try {
-                  const response = await fetch(FORMSPREE_ENDPOINT, {
-                    method: "POST",
-                    body: new FormData(e.currentTarget),
-                    headers: { Accept: "application/json" },
-                  });
-
-                  if (response.ok) {
-                    setSubmitted(true);
-                  }
-                } finally {
-                  setSubmitting(false);
-                }
-              }}
+              onSubmit={handleSubmit}
             >
               <label>
                 <span>Full Name</span>
@@ -94,6 +127,11 @@ export function RequestIntroduction() {
                 <button type="submit" className="btn" disabled={submitting}>
                   Submit application
                 </button>
+                {error ? (
+                  <p className="request-form-error" role="alert">
+                    {error}
+                  </p>
+                ) : null}
               </div>
             </form>
           )}

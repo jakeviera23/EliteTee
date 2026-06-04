@@ -1767,6 +1767,16 @@ button {
   margin-top: 0.35rem;
 }
 
+.request-form-error {
+  flex-basis: 100%;
+  margin: 0;
+  max-width: 22rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
