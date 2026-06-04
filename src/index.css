@@ -1650,6 +1650,15 @@ button {
   }
 }
 
+.request-tally-embed {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 24rem;
+  border: none;
+  background: transparent;
+}
+
 .request-form--application {
   grid-template-columns: 1fr;
 }

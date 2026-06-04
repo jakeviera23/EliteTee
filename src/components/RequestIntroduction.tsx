@@ -1,14 +1,44 @@
-import { useMemo, useState } from "react";
+import { useEffect } from "react";
 
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
+/** Tally form: https://tally.so/r/dWkObr */
+const TALLY_EMBED_SRC =
+  "https://tally.so/embed/dWkObr?hideTitle=1&transparentBackground=1&dynamicHeight=1";
+const TALLY_WIDGET_SCRIPT = "https://tally.so/widgets/embed.js";
+
+function loadTallyEmbeds() {
+  if (typeof window.Tally !== "undefined") {
+    window.Tally.loadEmbeds();
+    return;
+  }
+
+  document
+    .querySelectorAll<HTMLIFrameElement>('iframe[data-tally-src]:not([src])')
+    .forEach((iframe) => {
+      iframe.src = iframe.dataset.tallySrc ?? "";
+    });
+}
 
 export function RequestIntroduction() {
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const formId = useMemo(() => "elitetee-request-form", []);
+  useEffect(() => {
+    loadTallyEmbeds();
+
+    if (document.querySelector(`script[src="${TALLY_WIDGET_SCRIPT}"]`) !== null) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = TALLY_WIDGET_SCRIPT;
+    script.onload = loadTallyEmbeds;
+    script.onerror = loadTallyEmbeds;
+    document.body.appendChild(script);
+  }, []);
 
   return (
-    <section id="request" className="section section--request section--compact" aria-labelledby="request-heading">
+    <section
+      id="request"
+      className="section section--request section--compact"
+      aria-labelledby="request-heading"
+    >
       <div className="layout request-layout">
         <header className="section-intro request-intro">
           <p className="request-desk-line">
@@ -22,72 +52,17 @@ export function RequestIntroduction() {
         </header>
 
         <div className="request-panel">
-          {submitted ? (
-            <div className="request-success" role="status" aria-live="polite">
-              <p className="request-success-body">
-                Your request has been received. The membership desk will review it privately.
-              </p>
-            </div>
-          ) : (
-            <form
-              id={formId}
-              className="request-form request-form--application"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setSubmitting(true);
-
-                try {
-                  const response = await fetch(FORMSPREE_ENDPOINT, {
-                    method: "POST",
-                    body: new FormData(e.currentTarget),
-                    headers: { Accept: "application/json" },
-                  });
-
-                  if (response.ok) {
-                    setSubmitted(true);
-                  }
-                } finally {
-                  setSubmitting(false);
-                }
-              }}
-            >
-              <label>
-                <span>Full Name</span>
-                <input type="text" name="fullName" autoComplete="name" required />
-              </label>
-
-              <label>
-                <span>Email Address</span>
-                <input type="email" name="email" autoComplete="email" required />
-              </label>
-
-              <label>
-                <span>Home Club</span>
-                <input type="text" name="homeClub" autoComplete="organization" required />
-              </label>
-
-              <label>
-                <span>Company / Profession</span>
-                <input type="text" name="companyProfession" autoComplete="organization-title" required />
-              </label>
-
-              <label>
-                <span>Location</span>
-                <input type="text" name="location" autoComplete="address-level1" required />
-              </label>
-
-              <label className="request-form-wide">
-                <span>What interests you about EliteTee?</span>
-                <textarea name="interest" rows={4} required />
-              </label>
-
-              <div className="request-form-actions">
-                <button type="submit" className="btn" disabled={submitting}>
-                  Submit application
-                </button>
-              </div>
-            </form>
-          )}
+          <iframe
+            className="request-tally-embed"
+            data-tally-src={TALLY_EMBED_SRC}
+            loading="lazy"
+            width="100%"
+            height="1730"
+            frameBorder={0}
+            marginHeight={0}
+            marginWidth={0}
+            title="EliteTee membership application"
+          />
         </div>
       </div>
     </section>
