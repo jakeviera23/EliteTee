@@ -1,15 +1,15 @@
-import { membershipPriorities, membershipPrioritiesLead } from "../data/content";
+import { membershipPriorities, membershipPrioritiesLead, membershipPrioritiesNote } from "../data/content";
 
 export function MembershipPriorities() {
   return (
     <section
-      id="priorities"
+      id="what"
       className="section section--compact priorities"
       aria-labelledby="priorities-heading"
     >
       <div className="layout priorities-layout">
         <header className="priorities-intro">
-          <p className="priorities-eyebrow">Membership philosophy</p>
+          <p className="priorities-eyebrow">Our society</p>
           <h2 id="priorities-heading">What we prioritize</h2>
           <p className="priorities-lead">{membershipPrioritiesLead}</p>
         </header>
@@ -23,9 +23,7 @@ export function MembershipPriorities() {
           ))}
         </ul>
 
-        <p className="priorities-note">
-          There is no public waitlist, open directory, or scale-first membership model.
-        </p>
+        <p className="priorities-note">{membershipPrioritiesNote}</p>
       </div>
     </section>
   );

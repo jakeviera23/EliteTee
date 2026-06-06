@@ -17,6 +17,8 @@
   --scrim: 8, 11, 9;
   --scrim-deep: 4, 7, 5;
   --hero-ivory: 246, 245, 241;
+  --logo-hero: #ffffff;
+  --logo-scrolled: #1a2f4a;
 }
 
 *,
@@ -147,12 +149,52 @@ button {
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
   font-family: var(--serif);
   font-size: 1.0625rem;
   font-weight: 400;
   letter-spacing: 0.04em;
   color: var(--ink);
   transition: color 0.35s var(--ease);
+}
+
+.logo-mark {
+  display: block;
+  height: 36px;
+  width: calc(36px * 1024 / 682);
+  flex-shrink: 0;
+  background-color: var(--logo-hero);
+  -webkit-mask-image: url(/elitetee-logo-mark.png);
+  mask-image: url(/elitetee-logo-mark.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transition: background-color 0.35s var(--ease);
+}
+
+.nav--hero:not(.is-scrolled) .logo-mark,
+.nav--overlay:not(.is-scrolled) .logo-mark {
+  background-color: var(--logo-hero);
+}
+
+.nav.is-scrolled .logo-mark {
+  background-color: var(--logo-scrolled);
+}
+
+@media (min-width: 900px) {
+  .logo-mark {
+    height: 42px;
+    width: calc(42px * 1024 / 682);
+  }
+}
+
+.logo-wordmark {
+  line-height: 1;
 }
 
 .nav-links {
@@ -1596,13 +1638,14 @@ button {
 /* Request */
 .section--request {
   background: var(--bg-paper);
+  padding-top: clamp(3rem, 6vw, 4.5rem);
 }
 
 .request-layout {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(1.35rem, 2.8vw, 2rem);
+  gap: clamp(2rem, 3.5vw, 2.75rem);
 }
 
 .request-layout--membership {
@@ -1618,6 +1661,24 @@ button {
 
 .request-intro--membership {
   max-width: 36rem;
+}
+
+.request-logo-mark {
+  display: block;
+  height: 80px;
+  width: calc(80px * 1024 / 682);
+  margin: 0 auto 1.5rem;
+  flex-shrink: 0;
+  background-color: var(--logo-scrolled);
+  opacity: 0.88;
+  -webkit-mask-image: url(/elitetee-logo-mark.png);
+  mask-image: url(/elitetee-logo-mark.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .request-desk-line {
@@ -1655,9 +1716,11 @@ button {
   width: 100%;
   max-width: 36rem;
   margin-inline: auto;
-  padding: clamp(1.25rem, 2.8vw, 2rem) clamp(1.25rem, 3vw, 2rem);
+  margin-top: 0.25rem;
+  padding: clamp(1.5rem, 3vw, 2.35rem) clamp(1.35rem, 3.2vw, 2.15rem);
   border: 1px solid var(--line);
   background: var(--bg);
+  box-shadow: 0 24px 48px rgba(26, 26, 24, 0.035);
 }
 
 @media (min-width: 768px) {

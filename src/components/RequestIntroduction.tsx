@@ -68,6 +68,7 @@ export function RequestIntroduction() {
     >
       <div className="layout request-layout request-layout--membership">
         <header className="section-intro request-intro request-intro--membership">
+          <span className="request-logo-mark" aria-hidden="true" />
           <p className="request-desk-line">
             Applications are reviewed privately by the membership desk.
           </p>

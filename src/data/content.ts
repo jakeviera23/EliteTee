@@ -81,24 +81,6 @@ export const memberBenefits: MemberBenefit[] = [
   },
 ];
 
-export const realEliteTeeExamples: MemberBenefit[] = [
-  {
-    title: "Palm Beach → London",
-    description:
-      "A member traveling to London requests local introductions. EliteTee introduces him to approved members with shared business interests, club culture, and local knowledge.",
-  },
-  {
-    title: "Private Equity → Technology Founder",
-    description:
-      "A member seeking insight or opportunity in a specific industry may be privately introduced to another member with relevant experience.",
-  },
-  {
-    title: "New York → Stockholm",
-    description:
-      "A member relocating or spending time in a new city may receive introductions to trusted members already established there.",
-  },
-];
-
 export const introductionExamples: MemberBenefit[] = [
   {
     title: "Traveling Abroad",
@@ -152,17 +134,13 @@ export const featureHeroes: FeatureHero[] = [
     alt: "Private clubhouse exterior at dusk with warm interior lighting",
     objectPosition: "center 45%",
   },
-  {
-    title: "Trust among peers",
-    description: "Relationships grounded in reputation, reciprocity, and shared opportunity.",
-    image: photos.teeCloseupLuxury,
-    alt: "Hand setting a ball on tee at first light",
-    objectPosition: "center 56%",
-  },
 ];
 
 export const membershipPrioritiesLead =
-  "EliteTee is a private society for verified members who understand club life. We prioritize trust, relationships, discretion, and opportunity—not public access, open directories, or mass membership.";
+  "EliteTee is a private society of accomplished club members where golf serves as the common ground for trusted relationships, introductions, travel, and opportunity. We prioritize trust, relationships, discretion, and opportunity—not public access, open directories, or mass membership.";
+
+export const membershipPrioritiesNote =
+  "Eligibility is decided privately: the desk reviews club membership, background, and conduct before any introduction. Reciprocity is never guaranteed—EliteTee coordinates relationships, not access to courses or tee times. There is no public waitlist, open directory, or scale-first membership model.";
 
 export const membershipPriorities: MembershipPriority[] = [
   {

@@ -26,8 +26,9 @@ export function Navbar() {
         className={`nav${scrolled ? " is-scrolled" : ""}${!scrolled ? " nav--hero" : ""}`}
       >
         <div className="layout nav-inner">
-          <Link to="/" className="logo">
-            EliteTee
+          <Link to="/" className="logo" aria-label="EliteTee home">
+            <span className="logo-mark" aria-hidden="true" />
+            <span className="logo-wordmark">EliteTee</span>
           </Link>
 
           <nav className="nav-links" aria-label="Primary">
