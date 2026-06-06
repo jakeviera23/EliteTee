@@ -46,15 +46,15 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
   },
   {
     step: "04",
-    title: "Approval and member profile",
+    title: "Founding member invitation",
     description:
-      "Approved members receive a private profile within the society.",
+      "Approved applicants may be invited into the founding member group as the society develops.",
   },
   {
     step: "05",
-    title: "Curated introductions begin",
+    title: "Society introductions begin",
     description:
-      "Introductions are made member to member—by city, club, industry, and shared interests.",
+      "Introductions are considered privately by city, club, industry, travel plans, and shared interests.",
   },
 ];
 
@@ -62,7 +62,7 @@ export const memberBenefits: MemberBenefit[] = [
   {
     title: "Curated introductions",
     description:
-      "Introductions to accomplished private club members—paced, personal, and never public.",
+      "Connections to accomplished club members—paced, personal, and never public.",
   },
   {
     title: "Connect with purpose",
@@ -72,7 +72,7 @@ export const memberBenefits: MemberBenefit[] = [
   {
     title: "Travel introductions",
     description:
-      "Visiting a new city? Members may be introduced to trusted local members who can provide insight, hospitality, and meaningful connections.",
+      "Visiting a new city? Members may meet local members for insight, hospitality, and connection.",
   },
   {
     title: "Opportunity beyond the round",
@@ -85,22 +85,22 @@ export const introductionExamples: MemberBenefit[] = [
   {
     title: "Traveling Abroad",
     description:
-      "A member visiting London may be introduced to approved local members for golf, dining, conversation, and local insight.",
+      "A member visiting London may meet local members for golf, dining, conversation, and local insight.",
   },
   {
     title: "Business Connections",
     description:
-      "Members seeking introductions within a specific industry may be connected with relevant members of the society.",
+      "Members seeking industry connections may be matched with relevant society members.",
   },
   {
     title: "New Cities",
     description:
-      "A member relocating to Palm Beach, New York, Stockholm, or another city may receive introductions to members already established there.",
+      "Members relocating to Palm Beach, New York, Stockholm, or elsewhere may meet established local members.",
   },
   {
     title: "Shared Interests",
     description:
-      "Introductions may be made between members who share interests in business, investment, philanthropy, entrepreneurship, sport, or other pursuits.",
+      "Members who share interests in business, investment, philanthropy, entrepreneurship, sport, or other pursuits may be connected.",
   },
 ];
 
@@ -122,7 +122,7 @@ export const eliteTeeIsNotItems: string[] = [
 export const featureHeroes: FeatureHero[] = [
   {
     title: "Quiet introductions",
-    description: "Member-to-member connections, handled with discretion.",
+    description: "Member-to-member connections, handled privately.",
     image: photos.clubhouseSunsetLuxury,
     alt: "Private clubhouse terrace overlooking coastal course at sunset",
     objectPosition: "center 50%",
@@ -137,40 +137,32 @@ export const featureHeroes: FeatureHero[] = [
 ];
 
 export const membershipPrioritiesLead =
-  "EliteTee is a private society of accomplished club members where golf serves as the common ground for trusted relationships, introductions, travel, and opportunity. We prioritize trust, relationships, discretion, and opportunity—not public access, open directories, or mass membership.";
-
-export const membershipPrioritiesNote =
-  "Eligibility is decided privately: the desk reviews club membership, background, and conduct before any introduction. Reciprocity is never guaranteed—EliteTee coordinates relationships, not access to courses or tee times. There is no public waitlist, open directory, or scale-first membership model.";
+  "EliteTee is a private society—not a public network. These values guide the desk.";
 
 export const membershipPriorities: MembershipPriority[] = [
   {
     title: "Trust",
-    description:
-      "Standing is confirmed before any introduction. Relationships begin with verification, not visibility.",
+    description: "Standing is verified before any correspondence begins.",
   },
   {
     title: "Discretion",
-    description:
-      "Membership and correspondence stay private. There is no searchable roster or promotional showcase.",
+    description: "Membership and correspondence remain private.",
   },
   {
     title: "Etiquette",
-    description:
-      "Conduct on course and in the clubhouse reflects the customs members already uphold at home.",
+    description: "Conduct reflects the standards members uphold at home.",
   },
   {
     title: "Curated relationships",
-    description:
-      "Introductions are paced and personal—member to member—never scaled for volume or public enrollment.",
+    description: "Relationships are paced and personal—never scaled for volume.",
   },
 ];
 
 export const memberStandards: string[] = [
   "Active, verifiable membership at a private club recognized by the membership desk.",
-  "Access offered in good faith—no reselling, no public brokerage of introductions.",
-  "Discretion on course, in the clubhouse, and in correspondence.",
-  "Introductions are personal; member details are not published or searchable.",
-  "Conduct consistent with your home club’s standards for guests and fellow members.",
+  "Access offered in good faith—no reselling, no public brokerage.",
+  "Conduct on course, in the clubhouse, and in correspondence—consistent with your home club's standards.",
+  "Member details are not published or searchable.",
 ];
 
 export const navLinks = [

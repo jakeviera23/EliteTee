@@ -1,9 +1,8 @@
 import { Navbar } from "../components/Navbar";
 import { EditorialSpread } from "../components/EditorialSpread";
-import { WhatEliteTeeIsNot } from "../components/WhatEliteTeeIsNot";
 import { HowMembershipWorks } from "../components/HowMembershipWorks";
-import { MembershipPriorities } from "../components/MembershipPriorities";
 import { MemberStandards } from "../components/MemberStandards";
+import { WhatEliteTeeIsNot } from "../components/WhatEliteTeeIsNot";
 import { RequestIntroduction } from "../components/RequestIntroduction";
 import { Footer } from "../components/Footer";
 
@@ -13,10 +12,9 @@ export function Home() {
       <Navbar />
       <main>
         <EditorialSpread />
-        <WhatEliteTeeIsNot />
         <HowMembershipWorks />
-        <MembershipPriorities />
         <MemberStandards />
+        <WhatEliteTeeIsNot />
         <RequestIntroduction />
       </main>
       <Footer />

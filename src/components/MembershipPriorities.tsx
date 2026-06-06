@@ -1,4 +1,4 @@
-import { membershipPriorities, membershipPrioritiesLead, membershipPrioritiesNote } from "../data/content";
+import { membershipPriorities, membershipPrioritiesLead } from "../data/content";
 
 export function MembershipPriorities() {
   return (
@@ -22,8 +22,6 @@ export function MembershipPriorities() {
             </li>
           ))}
         </ul>
-
-        <p className="priorities-note">{membershipPrioritiesNote}</p>
       </div>
     </section>
   );

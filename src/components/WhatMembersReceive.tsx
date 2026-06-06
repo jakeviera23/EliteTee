@@ -11,8 +11,8 @@ export function WhatMembersReceive() {
         <header className="section-intro section-intro--compact">
           <h2 id="members-receive-heading">What members receive</h2>
           <p className="section-lead members-receive-lead">
-            Membership is built around relationships first. Golf and hospitality may follow
-            through trusted introductions—never guaranteed access or tee times.
+            Relationships first. Golf and hospitality may follow through introductions—never
+            guaranteed access or tee times.
           </p>
         </header>
 

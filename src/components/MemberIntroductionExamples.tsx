@@ -11,8 +11,7 @@ export function MemberIntroductionExamples() {
         <header className="section-intro section-intro--compact">
           <h2 id="introduction-examples-heading">Examples of Member Introductions</h2>
           <p className="section-lead introduction-examples-lead">
-            EliteTee facilitates introductions based on geography, industry, travel, and
-            shared interests.
+            Considered by geography, industry, travel, and shared interests.
           </p>
         </header>
 

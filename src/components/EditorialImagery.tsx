@@ -2,7 +2,7 @@ import { featureHeroes } from "../data/content";
 
 export function EditorialImagery() {
   return (
-    <section className="editorial-row" aria-label="EliteTee editorial imagery">
+    <section className="editorial-row editorial-row--pair" aria-label="EliteTee editorial imagery">
       <div className="editorial-row-cards">
         {featureHeroes.map((item) => (
           <article key={item.title} className="editorial-card editorial-card--overlay">

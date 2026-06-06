@@ -12,7 +12,7 @@ export function HowMembershipWorks() {
           <p className="membership-works-eyebrow">Eligibility & process</p>
           <h2 id="membership-works-heading">How membership works</h2>
           <p className="membership-works-lead">
-            A private path from application to curated introductions.
+            A private path from application to society introductions.
           </p>
         </header>
 

@@ -13,8 +13,8 @@ export function MemberStandards() {
             Some places are not booked. They are introduced.
           </p>
           <p className="standards-statement-lead">
-            EliteTee exists for members who value trust, reciprocity, and the community
-            private golf creates.
+            EliteTee exists for members who value reciprocity and the community private
+            golf creates.
           </p>
         </header>
 
@@ -22,7 +22,7 @@ export function MemberStandards() {
           <header className="standards-intro">
             <h2 id="standards-heading">Member standards</h2>
             <p className="standards-body-lead">
-              The desk declines introductions when conduct or standing does not meet these
+              The desk declines membership when conduct or standing does not meet these
               expectations.
             </p>
           </header>

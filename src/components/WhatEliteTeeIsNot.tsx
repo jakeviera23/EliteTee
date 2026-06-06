@@ -27,8 +27,8 @@ export function WhatEliteTeeIsNot() {
           </ul>
 
           <p className="what-is-not-closing">
-            Playing other private clubs may arise through member relationships. EliteTee does
-            not broker tee times, guarantee reciprocity, or list courses for public booking.
+            EliteTee does not broker tee times, guarantee reciprocity, or list courses for
+            public booking.
           </p>
         </div>
       </div>
