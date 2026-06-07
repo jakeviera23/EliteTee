@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { photos } from "../assets/photos";
-import { founderClubExperience } from "../data/content";
 
 export function About() {
   return (
@@ -84,17 +83,6 @@ export function About() {
                       is often not the round itself, but the trusted relationships, introductions,
                       friendships, and opportunities formed around it.
                     </p>
-                  </div>
-
-                  <div className="about-clubs" aria-labelledby="founder-clubs-heading">
-                    <h3 id="founder-clubs-heading" className="about-clubs-title">
-                      Selected Club Experience
-                    </h3>
-                    <ul className="about-clubs-list">
-                      {founderClubExperience.map((club) => (
-                        <li key={club}>{club}</li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               </div>

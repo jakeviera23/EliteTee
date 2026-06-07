@@ -2461,42 +2461,6 @@ button {
   gap: clamp(1.5rem, 2.8vw, 2rem);
 }
 
-.about-clubs-title {
-  margin: 0 0 1rem;
-  font-family: var(--serif);
-  font-size: clamp(1.0625rem, 1.6vw, 1.1875rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-
-.about-clubs-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 0.55rem;
-  max-width: 28rem;
-}
-
-.about-clubs-list li {
-  position: relative;
-  padding-left: 1rem;
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  color: var(--ink-muted);
-}
-
-.about-clubs-list li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.72em;
-  width: 0.25rem;
-  height: 1px;
-  background: var(--ink-faint);
-}
-
 .about-return {
   align-self: flex-start;
   margin-top: 0.25rem;
