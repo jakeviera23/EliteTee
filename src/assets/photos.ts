@@ -17,4 +17,5 @@ export const photos = {
   teeCloseupLuxury: asset("images/elitetee-tee-closeup.png"),
   clubhouseEveningLuxury: asset("images/elitetee-clubhouse-evening.png"),
   heroSwingOceanLuxury: asset("images/elitetee-hero-swing-ocean.png"),
+  founderPortrait: asset("images/elitetee-founder.jpg"),
 } as const;

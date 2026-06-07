@@ -169,5 +169,16 @@ export const navLinks = [
   { href: "#what", label: "Society" },
   { href: "#how-membership-works", label: "Membership" },
   { href: "#standards", label: "Standards" },
+  { href: "/about", label: "About Us" },
   { href: "#request", label: "Request" },
+];
+
+export const founderClubExperience: string[] = [
+  "McArthur Golf Club",
+  "Shinnecock Hills Golf Club",
+  "National Golf Links of America",
+  "Sebonack Golf Club",
+  "La Gorce Country Club",
+  "Calusa Pines Golf Club",
+  "Westhampton Beach Country Club",
 ];

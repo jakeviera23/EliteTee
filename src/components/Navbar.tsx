@@ -1,10 +1,39 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { navLinks } from "../data/content";
+
+function NavItem({
+  href,
+  label,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  onNavigate?: () => void;
+}) {
+  const isRoute = href.startsWith("/") && !href.startsWith("/#");
+
+  if (isRoute) {
+    return (
+      <Link to={href} onClick={onNavigate}>
+        {label}
+      </Link>
+    );
+  }
+
+  return (
+    <a href={href} onClick={onNavigate}>
+      {label}
+    </a>
+  );
+}
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const showHeroNav = isHome && !scrolled;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 48);
@@ -23,7 +52,7 @@ export function Navbar() {
   return (
     <>
       <header
-        className={`nav${scrolled ? " is-scrolled" : ""}${!scrolled ? " nav--hero" : ""}`}
+        className={`nav${scrolled || !isHome ? " is-scrolled" : ""}${showHeroNav ? " nav--hero" : ""}`}
       >
         <div className="layout nav-inner">
           <Link to="/" className="logo" aria-label="EliteTee home">
@@ -33,9 +62,7 @@ export function Navbar() {
 
           <nav className="nav-links" aria-label="Primary">
             {navLinks.map((l) => (
-              <a key={l.href} href={l.href}>
-                {l.label}
-              </a>
+              <NavItem key={l.href} href={l.href} label={l.label} />
             ))}
           </nav>
 
@@ -60,9 +87,12 @@ export function Navbar() {
             onClick={() => setOpen(false)}
           />
           {navLinks.map((l) => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)}>
-              {l.label}
-            </a>
+            <NavItem
+              key={l.href}
+              href={l.href}
+              label={l.label}
+              onNavigate={() => setOpen(false)}
+            />
           ))}
         </nav>
       )}

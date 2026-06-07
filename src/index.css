@@ -200,7 +200,7 @@ button {
 .nav-links {
   display: none;
   align-items: center;
-  gap: clamp(1.75rem, 3vw, 2.75rem);
+  gap: clamp(1.35rem, 2.4vw, 2.25rem);
 }
 
 @media (min-width: 900px) {
@@ -2375,4 +2375,129 @@ button {
   font-weight: 400;
   line-height: 1.2;
   letter-spacing: -0.02em;
+}
+
+/* Founder / About page */
+.about-page {
+  padding-top: var(--nav-h);
+  background: var(--bg);
+}
+
+.about-section {
+  border-top: 1px solid var(--line);
+}
+
+.about-layout {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+
+.about-header h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.75rem, 3vw, 2.125rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.about-block {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.35rem);
+  padding-top: clamp(1.5rem, 3vw, 2rem);
+  border-top: 1px solid var(--line);
+}
+
+.about-block-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.about-prose {
+  max-width: 38rem;
+}
+
+.about-prose p {
+  font-size: 1.0625rem;
+}
+
+.about-founder-layout {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .about-founder-layout {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
+}
+
+.about-founder-photo {
+  margin: 0;
+}
+
+.about-founder-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center 18%;
+  border: 1px solid var(--line);
+  background: var(--bg-paper);
+}
+
+.about-founder-content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 2.8vw, 2rem);
+}
+
+.about-clubs-title {
+  margin: 0 0 1rem;
+  font-family: var(--serif);
+  font-size: clamp(1.0625rem, 1.6vw, 1.1875rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.about-clubs-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.55rem;
+  max-width: 28rem;
+}
+
+.about-clubs-list li {
+  position: relative;
+  padding-left: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.about-clubs-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 0.25rem;
+  height: 1px;
+  background: var(--ink-faint);
+}
+
+.about-return {
+  align-self: flex-start;
+  margin-top: 0.25rem;
 }
