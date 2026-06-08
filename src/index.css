@@ -1971,6 +1971,24 @@ button {
   color: var(--ink-faint);
 }
 
+.footer-contact {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 300;
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+.footer-contact a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color 0.35s var(--ease);
+}
+
+.footer-contact a:hover {
+  color: var(--ink);
+}
+
 /* Reveal (optional, kept minimal) */
 .reveal {
   opacity: 1;
