@@ -39,14 +39,8 @@ export function About() {
               <div className="about-prose prose">
                 <p>
                   Private clubs have always been built on relationships. EliteTee brings that
-                  same spirit into a broader, carefully reviewed network where verified members
-                  may connect through geography, travel, business interests, club affiliation,
-                  and shared pursuits.
-                </p>
-                <p>
-                  EliteTee does not sell access, broker tee times, or operate as a public
-                  directory. It exists to facilitate thoughtful introductions among members who
-                  value trust, reciprocity, and long-term connection.
+                  spirit into a carefully reviewed network where verified members connect through
+                  geography, travel, business interests, club affiliation, and shared pursuits.
                 </p>
               </div>
             </section>
