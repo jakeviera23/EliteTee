@@ -1,4 +1,4 @@
-import { membershipWorksSteps } from "../data/content";
+import { membershipWorksLead, membershipWorksSteps } from "../data/content";
 
 export function HowMembershipWorks() {
   return (
@@ -9,11 +9,8 @@ export function HowMembershipWorks() {
     >
       <div className="layout">
         <header className="membership-works-header">
-          <p className="membership-works-eyebrow">Eligibility & process</p>
-          <h2 id="membership-works-heading">How membership works</h2>
-          <p className="membership-works-lead">
-            A private path from application to society introductions.
-          </p>
+          <h2 id="membership-works-heading">Membership</h2>
+          <p className="membership-works-lead">{membershipWorksLead}</p>
         </header>
 
         <ol className="membership-works-steps membership-works-steps--five">
