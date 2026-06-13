@@ -20,14 +20,14 @@ export function About() {
               </h2>
               <div className="about-prose prose">
                 <p>
-                  EliteTee was created from years spent inside the private golf world, where
+                  EliteTee was created from years spent inside the golf world, where
                   relationships, introductions, and trust often matter as much as the round
                   itself.
                 </p>
                 <p>
-                  The society exists to help accomplished club members build meaningful
-                  connections beyond their home club while preserving the discretion, etiquette,
-                  and hospitality that define private club life.
+                  The network exists to help ambitious golfers build meaningful connections
+                  across golf, business, and travel while preserving the discretion, etiquette,
+                  and hospitality that define a trusted private network.
                 </p>
               </div>
             </section>
@@ -38,9 +38,9 @@ export function About() {
               </h2>
               <div className="about-prose prose">
                 <p>
-                  Private clubs have always been built on relationships. EliteTee brings that
-                  spirit into a carefully reviewed network where verified members connect through
-                  geography, travel, business interests, club affiliation, and shared pursuits.
+                  Great golf communities have always been built on relationships. EliteTee brings
+                  that spirit into a carefully reviewed network where vetted members connect
+                  through geography, travel, business interests, shared pursuits, and the game.
                 </p>
               </div>
             </section>
@@ -64,7 +64,7 @@ export function About() {
                   <div className="about-prose prose">
                     <p>
                       Jake Viera founded EliteTee after more than a decade spent inside some of
-                      America&apos;s most respected private golf clubs.
+                      America&apos;s most respected golf clubs.
                     </p>
                     <p>
                       His experience includes McArthur Golf Club, Shinnecock Hills Golf Club,

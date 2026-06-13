@@ -14,13 +14,13 @@ export function Hero() {
       <div className="hero-cinematic-overlay" aria-hidden />
       <div className="hero-cinematic-inner layout">
         <div className="hero-cinematic-copy">
-          <p className="hero-cinematic-eyebrow">Private member network</p>
+          <p className="hero-cinematic-eyebrow">Private golf network</p>
           <h1 id="hero-heading" className="hero-cinematic-title">
-            Expand Your Golf and Business Network Beyond Your Home Club.
+            Expand Your Golf, Business, and Travel Relationships.
           </h1>
           <p className="hero-cinematic-desc">
-            A private member network built for accomplished golfers who value
-            relationships beyond their home club.
+            A private network for ambitious golfers who value meaningful
+            connections on and off the course.
           </p>
         </div>
       </div>
