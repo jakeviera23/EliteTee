@@ -11,12 +11,12 @@ export function WhatItIs() {
         </header>
         <div className="prose">
           <p>
-            EliteTee is a private society of accomplished club members where golf serves as
+            EliteTee is a private golf network for ambitious golfers where the game serves as
             the common ground for trusted relationships, introductions, travel, and
             opportunity.
           </p>
           <p>
-            Eligibility is decided privately: the desk reviews club membership, background,
+            Eligibility is decided privately: the desk reviews background, golf experience,
             and conduct before any introduction. This is not an open enrollment platform.
           </p>
           <p>

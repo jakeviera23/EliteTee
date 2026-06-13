@@ -11,8 +11,8 @@ export function WhatMembersReceive() {
         <header className="section-intro section-intro--compact">
           <h2 id="members-receive-heading">What members receive</h2>
           <p className="section-lead members-receive-lead">
-            A private network for club golfers looking to expand their golf and business
-            relationships.
+            A private network for serious golfers looking to expand their golf, business,
+            and travel relationships.
           </p>
         </header>
 

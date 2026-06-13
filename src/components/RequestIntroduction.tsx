@@ -79,6 +79,11 @@ export function RequestIntroduction() {
           </p>
         </header>
 
+        <p className="request-founding-note">
+          We are currently accepting a limited number of Founding Members as we build the
+          initial EliteTee network.
+        </p>
+
         <div className="request-panel">
           {submitted ? (
             <div className="request-success" role="status" aria-live="polite">
@@ -100,7 +105,7 @@ export function RequestIntroduction() {
               </label>
 
               <label>
-                <span>Home Club</span>
+                <span>Where You Play Golf</span>
                 <input type="text" name="homeClub" autoComplete="organization" required />
               </label>
 

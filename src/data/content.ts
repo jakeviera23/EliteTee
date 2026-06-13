@@ -32,7 +32,7 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
   {
     step: "02",
     title: "Review",
-    description: "Club membership, standing, and background are verified.",
+    description: "Background, golf experience, and character are verified privately.",
   },
   {
     step: "03",
@@ -47,14 +47,14 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
   {
     step: "05",
     title: "Introductions begin",
-    description: "Connections are considered by city, club, industry, travel, and shared interests.",
+    description: "Connections are considered by city, golf, industry, travel, and shared interests.",
   },
 ];
 
 export const memberBenefits: MemberBenefit[] = [
   {
     title: "Trusted introductions",
-    description: "Meet accomplished club members through personal, private correspondence.",
+    description: "Meet accomplished golfers through personal, private correspondence.",
   },
   {
     title: "Golf and travel",
@@ -66,7 +66,7 @@ export const memberBenefits: MemberBenefit[] = [
   },
   {
     title: "Shared experiences",
-    description: "Golf, hospitality, and long-term friendships beyond your home club.",
+    description: "Golf, hospitality, and long-term friendships across business and travel.",
   },
 ];
 
@@ -101,29 +101,29 @@ export const featureHeroes: FeatureHero[] = [
     title: "Quiet introductions",
     description: "Member-to-member connections, handled privately.",
     image: photos.clubhouseSunsetLuxury,
-    alt: "Private clubhouse terrace overlooking coastal course at sunset",
+    alt: "Clubhouse terrace overlooking coastal course at sunset",
     objectPosition: "center 50%",
   },
   {
-    title: "Club culture",
-    description: "Standing, etiquette, and respect for private ground.",
+    title: "Golf culture",
+    description: "Standing, etiquette, and respect for the game and those who play it.",
     image: photos.clubhouseEveningLuxury,
-    alt: "Private clubhouse exterior at dusk with warm interior lighting",
+    alt: "Clubhouse exterior at dusk with warm interior lighting",
     objectPosition: "center 45%",
   },
 ];
 
 export const membershipSocietyLead =
-  "EliteTee exists to help club golfers expand their circle through meaningful introductions, shared golf experiences, and business relationships.";
+  "EliteTee exists to help ambitious golfers expand their circle through meaningful introductions, shared golf experiences, and golf, business, and travel relationships.";
 
 export const memberStandardsLead =
   "EliteTee is built on trust, discretion, etiquette, and quality relationships.";
 
 export const memberStandards: string[] = [
-  "Active membership at a private club recognized by the membership desk.",
-  "Conduct on course and in the clubhouse consistent with your home club.",
+  "Commitment to the game, etiquette, and the standards expected within a trusted golf network.",
+  "Conduct on course and in company consistent with the respect EliteTee members expect.",
   "Membership and correspondence handled with discretion.",
-  "Relationships offered in good faith among verified members.",
+  "Relationships offered in good faith among vetted members.",
 ];
 
 export const navLinks = [
