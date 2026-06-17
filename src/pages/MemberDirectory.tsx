@@ -117,7 +117,7 @@ export function MemberDirectory() {
         <div className="layout footer-inner">
           <div className="footer-brand">
             <p className="footer-copy">© EliteTee</p>
-            <p className="footer-tagline">A private golf network of vetted members.</p>
+            <p className="footer-tagline">Building trusted relationships through golf, business, and travel.</p>
           </div>
         </div>
       </footer>

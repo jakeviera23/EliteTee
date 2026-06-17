@@ -9,10 +9,10 @@ export function WhatMembersReceive() {
     >
       <div className="layout">
         <header className="section-intro section-intro--compact">
-          <h2 id="members-receive-heading">What members receive</h2>
+          <h2 id="members-receive-heading">What Members Receive</h2>
           <p className="section-lead members-receive-lead">
-            A private network for serious golfers looking to expand their golf, business,
-            and travel relationships.
+            A private network helping golfers expand their circle through trusted
+            introductions, travel connections, and shared opportunities.
           </p>
         </header>
 

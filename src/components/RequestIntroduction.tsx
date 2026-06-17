@@ -69,20 +69,12 @@ export function RequestIntroduction() {
       <div className="layout request-layout request-layout--membership">
         <header className="section-intro request-intro request-intro--membership">
           <span className="request-logo-mark" aria-hidden="true" />
-          <p className="request-desk-line">
-            Applications are reviewed privately by the membership desk.
-          </p>
-          <h2 id="request-heading">Apply for membership</h2>
+          <h2 id="request-heading">Request Membership Consideration</h2>
           <p className="section-lead request-lead">
-            Founding membership is reviewed privately. Pricing and membership details are
-            shared individually as the network develops.
+            EliteTee is currently accepting a limited number of Founding Members as the
+            initial network develops. Applications are reviewed privately.
           </p>
         </header>
-
-        <p className="request-founding-note">
-          We are currently accepting a limited number of Founding Members as we build the
-          initial EliteTee network.
-        </p>
 
         <div className="request-panel">
           {submitted ? (
@@ -105,8 +97,13 @@ export function RequestIntroduction() {
               </label>
 
               <label>
-                <span>Where You Play Golf</span>
+                <span>Home Club / Where You Play Golf</span>
                 <input type="text" name="homeClub" autoComplete="organization" required />
+              </label>
+
+              <label>
+                <span>Other Clubs or Golf Affiliations</span>
+                <input type="text" name="otherClubsAffiliations" />
               </label>
 
               <label>
@@ -124,14 +121,19 @@ export function RequestIntroduction() {
                 <input type="text" name="location" autoComplete="address-level1" required />
               </label>
 
+              <label>
+                <span>How often do you travel for golf or business?</span>
+                <input type="text" name="travelFrequency" required />
+              </label>
+
               <label className="request-form-wide">
-                <span>What interests you about EliteTee?</span>
+                <span>What interests you most about EliteTee?</span>
                 <textarea name="interest" rows={4} required />
               </label>
 
               <div className="request-form-actions">
                 <button type="submit" className="btn" disabled={submitting}>
-                  Submit application
+                  Request consideration
                 </button>
                 {error ? (
                   <p className="request-form-error" role="alert">

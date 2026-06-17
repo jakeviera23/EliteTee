@@ -16,11 +16,16 @@ export function Hero() {
         <div className="hero-cinematic-copy">
           <p className="hero-cinematic-eyebrow">Private golf network</p>
           <h1 id="hero-heading" className="hero-cinematic-title">
-            Expand Your Golf, Business, and Travel Relationships.
+            Build Relationships Through Golf Beyond Your Home Club.
           </h1>
           <p className="hero-cinematic-desc">
-            A private network for ambitious golfers who value meaningful
-            connections on and off the course.
+            EliteTee connects private club golfers seeking meaningful relationships,
+            new opportunities, and trusted introductions across golf, business, and
+            travel.
+          </p>
+          <p className="hero-cinematic-note">
+            EliteTee is currently building its founding member network with a limited
+            number of early applicants.
           </p>
         </div>
       </div>

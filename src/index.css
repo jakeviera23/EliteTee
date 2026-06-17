@@ -1058,6 +1058,12 @@ button {
   text-wrap: balance;
 }
 
+@media (min-width: 900px) {
+  .hero-cinematic-title {
+    font-size: clamp(3rem, 6.2vw, 4.4rem);
+  }
+}
+
 .hero-cinematic-desc {
   margin: 0;
   max-width: 44ch;
@@ -1066,6 +1072,18 @@ button {
   line-height: 1.68;
   letter-spacing: 0.02em;
   color: rgba(var(--hero-ivory), 0.68);
+}
+
+.hero-cinematic-note {
+  margin: clamp(1.25rem, 2.5vw, 1.75rem) 0 0;
+  max-width: 38ch;
+  font-family: var(--serif);
+  font-size: clamp(0.9375rem, 1.45vw, 1.0625rem);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  color: rgba(var(--hero-ivory), 0.48);
 }
 
 .editorial-row {
