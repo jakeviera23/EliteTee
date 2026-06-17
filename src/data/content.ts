@@ -26,66 +26,79 @@ export const membershipWorksLead =
 export const membershipWorksSteps: MembershipWorksStep[] = [
   {
     step: "01",
-    title: "Apply privately",
-    description: "Submit your application to the membership desk.",
+    title: "Submit Application",
+    description:
+      "Complete a private membership request with your golf background, location, profession, and interests.",
   },
   {
     step: "02",
-    title: "Review",
-    description: "Background, golf experience, and character are verified privately.",
+    title: "Private Review",
+    description:
+      "Applications are reviewed for fit, golf involvement, professional background, and alignment with EliteTee standards.",
   },
   {
     step: "03",
-    title: "Introductory call",
-    description: "A brief conversation to align expectations and fit.",
+    title: "Membership Approval",
+    description:
+      "Approved applicants are invited into the founding member group as the initial network develops.",
   },
   {
     step: "04",
-    title: "Founding member invitation",
-    description: "Approved applicants may join the founding member group as the society develops.",
+    title: "Connection Mapping",
+    description:
+      "Member background, location, travel habits, and professional interests help identify strong future connections.",
   },
   {
     step: "05",
-    title: "Introductions begin",
-    description: "Connections are considered by city, golf, industry, travel, and shared interests.",
+    title: "Introductions Begin",
+    description:
+      "Connections are considered by geography, travel plans, business interests, golf background, and shared pursuits.",
   },
 ];
 
 export const memberBenefits: MemberBenefit[] = [
   {
-    title: "Trusted introductions",
-    description: "Meet accomplished golfers through personal, private correspondence.",
+    title: "Private Member Introductions",
+    description:
+      "Personally curated introductions to golfers aligned with your interests, business background, location, and travel plans.",
   },
   {
-    title: "Golf and travel",
-    description: "Connect with members in cities you visit or places you spend time.",
+    title: "Expanded Golf Network",
+    description:
+      "Build relationships beyond your home club and connect with ambitious golfers in new cities and golf communities.",
   },
   {
-    title: "Business relationships",
-    description: "Build professional connections with golfers who share your standards.",
+    title: "Business Relationships",
+    description:
+      "Meet professionals, founders, executives, and ambitious golfers through trusted member connections.",
   },
   {
-    title: "Shared experiences",
-    description: "Golf, hospitality, and long-term friendships across business and travel.",
+    title: "Travel Connections",
+    description:
+      "Connect with members in cities you visit for golf, business, relocation, or extended stays.",
   },
 ];
 
 export const introductionExamples: MemberBenefit[] = [
   {
-    title: "Traveling abroad",
-    description: "Meet local members for golf, dining, and conversation in a new city.",
+    title: "Business Travel",
+    description:
+      "Traveling to a new city for work? EliteTee helps members connect with golfers in the area who share similar professional interests.",
   },
   {
-    title: "Business",
-    description: "Connect with members in your industry or area of interest.",
+    title: "Golf Travel",
+    description:
+      "Planning a golf trip? Build relationships with members in destinations where you want to play, visit, or spend more time.",
   },
   {
-    title: "New cities",
-    description: "Build your circle when relocating or spending extended time away from home.",
+    title: "New Cities",
+    description:
+      "Relocating or spending extended time away from home? Connect with local golfers who share your standards and interests.",
   },
   {
-    title: "Shared pursuits",
-    description: "Meet members with aligned interests in sport, investment, philanthropy, or enterprise.",
+    title: "Shared Opportunities",
+    description:
+      "Meet members through aligned interests in golf, business, investment, philanthropy, hospitality, or enterprise.",
   },
 ];
 
@@ -98,8 +111,9 @@ export const requestIntroductionBullets: string[] = [
 
 export const featureHeroes: FeatureHero[] = [
   {
-    title: "Quiet introductions",
-    description: "Member-to-member connections, handled privately.",
+    title: "Trusted Connections",
+    description:
+      "Meaningful introductions between members handled with privacy and discretion.",
     image: photos.clubhouseSunsetLuxury,
     alt: "Clubhouse terrace overlooking coastal course at sunset",
     objectPosition: "center 50%",
@@ -114,16 +128,16 @@ export const featureHeroes: FeatureHero[] = [
 ];
 
 export const membershipSocietyLead =
-  "EliteTee exists to help ambitious golfers expand their circle through meaningful introductions, shared golf experiences, and golf, business, and travel relationships.";
+  "EliteTee exists to help private club golfers build meaningful relationships beyond the boundaries of their home club. The network is built around trust, discretion, golf culture, and shared opportunity.";
 
 export const memberStandardsLead =
   "EliteTee is built on trust, discretion, etiquette, and quality relationships.";
 
 export const memberStandards: string[] = [
-  "Commitment to the game, etiquette, and the standards expected within a trusted golf network.",
-  "Conduct on course and in company consistent with the respect EliteTee members expect.",
-  "Membership and correspondence handled with discretion.",
-  "Relationships offered in good faith among vetted members.",
+  "Respect for the game, club culture, etiquette, and trusted introductions.",
+  "Conduct on and off the course consistent with the standards expected in a private network.",
+  "Membership information and correspondence handled with discretion.",
+  "Relationships offered in good faith among reviewed members.",
 ];
 
 export const navLinks = [
@@ -131,5 +145,5 @@ export const navLinks = [
   { href: "#how-membership-works", label: "Membership" },
   { href: "#standards", label: "Standards" },
   { href: "/about", label: "About Us" },
-  { href: "#request", label: "Request" },
+  { href: "#request", label: "Apply" },
 ];
