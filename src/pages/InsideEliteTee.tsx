@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { FormEvent, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { navLinks } from "../data/content";
 import {
   foundingCta,
@@ -14,6 +14,7 @@ import {
   trustPoints,
   whyEliteTee,
 } from "../data/insidePreview";
+import { supabase } from "../lib/supabase";
 import "../inside-elitetee.css";
 
 function LockIcon() {
@@ -62,7 +63,48 @@ function InsideTopNav() {
 }
 
 export function InsideEliteTee() {
+  const navigate = useNavigate();
   const [activeNav, setActiveNav] = useState("society");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    console.log("submit clicked");
+
+    setLoginError(null);
+    setIsSigningIn(true);
+
+    try {
+      const response = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      console.log("Supabase response", response);
+
+      if (response.error) {
+        console.log("login error", response.error);
+        setLoginError(response.error.message);
+        return;
+      }
+
+      if (!response.data.session) {
+        setLoginError("Sign in could not be completed. Please try again.");
+        return;
+      }
+
+      console.log("Login successful");
+      navigate("/member-portal", { replace: true });
+    } catch (error) {
+      console.log("login error", error);
+      setLoginError(error instanceof Error ? error.message : "Sign in failed. Please try again.");
+    } finally {
+      setIsSigningIn(false);
+    }
+  }
 
   useEffect(() => {
     const ids = portalNavItems.map((item) => item.id);
@@ -93,24 +135,58 @@ export function InsideEliteTee() {
           <article id="member-access" className="inside-access-card">
             <h2 className="inside-access-title">Member Access</h2>
             <p className="inside-access-lead">{memberAccessLead}</p>
-            <form className="inside-access-form" onSubmit={(e) => e.preventDefault()} aria-label="Member sign in">
+            <form
+              className="inside-access-form"
+              onSubmit={handleSignIn}
+              aria-label="Member sign in"
+              aria-busy={isSigningIn}
+            >
               <label>
                 <span className="visually-hidden">Email address</span>
-                <input type="email" placeholder="Email address" autoComplete="email" />
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
               </label>
               <label className="inside-password-field">
                 <span className="visually-hidden">Password</span>
-                <input type="password" placeholder="Password" autoComplete="current-password" />
-                <button type="button" className="inside-password-toggle" aria-label="Show password">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="inside-password-toggle"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((current) => !current)}
+                >
                   <svg viewBox="0 0 20 20" aria-hidden="true">
                     <path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
                     <circle cx="10" cy="10" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.2" />
                   </svg>
                 </button>
               </label>
-              <button type="button" className="inside-btn inside-btn--gold">
-                Sign In
+              <button
+                type="submit"
+                className="inside-btn inside-btn--gold"
+                disabled={isSigningIn}
+                aria-live="polite"
+              >
+                {isSigningIn ? "Signing in..." : "Sign In"}
               </button>
+              {loginError ? (
+                <p className="inside-access-error" role="alert">
+                  {loginError}
+                </p>
+              ) : null}
             </form>
             <p className="inside-access-footer">
               <Link to="/#apply" className="inside-access-link">
