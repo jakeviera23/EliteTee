@@ -196,6 +196,13 @@
   border-color: var(--inside-gold);
 }
 
+.inside-access-error {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: #c97a7a;
+}
+
 .inside-password-field {
   position: relative;
   display: block;

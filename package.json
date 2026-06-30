@@ -9,12 +9,14 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:supabase": "node scripts/test-supabase-connection.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.16.0"
@@ -23,6 +25,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "dotenv": "^17.4.2",
     "typescript": "~5.7.2",
     "vite": "^6.0.5"
   }
