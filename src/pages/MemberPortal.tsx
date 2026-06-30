@@ -10,7 +10,9 @@ export function MemberPortal() {
 
   async function handleSignOut() {
     setIsSigningOut(true);
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     navigate("/login", { replace: true });
   }
 

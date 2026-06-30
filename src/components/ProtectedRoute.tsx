@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -8,6 +8,12 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+
+    if (!isSupabaseConfigured || !supabase) {
+      setHasSession(false);
+      setSessionChecked(true);
+      return;
+    }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!active) return;

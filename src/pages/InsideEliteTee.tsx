@@ -14,7 +14,7 @@ import {
   trustPoints,
   whyEliteTee,
 } from "../data/insidePreview";
-import { supabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import "../inside-elitetee.css";
 
 function LockIcon() {
@@ -76,6 +76,12 @@ export function InsideEliteTee() {
     console.log("submit clicked");
 
     setLoginError(null);
+
+    if (!isSupabaseConfigured || !supabase) {
+      setLoginError("Member login is temporarily unavailable.");
+      return;
+    }
+
     setIsSigningIn(true);
 
     try {
