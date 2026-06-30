@@ -2,6 +2,12 @@
   "framework": "vite",
   "buildCommand": "npm run fetch-images && npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
