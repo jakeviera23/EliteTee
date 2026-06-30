@@ -2,27 +2,69 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { navLinks } from "../data/content";
 
+function scrollToSection(hash: string) {
+  const id = hash.replace("#", "");
+  const target = document.getElementById(id);
+  if (target) {
+    target.scrollIntoView({ block: "start" });
+    window.history.pushState(null, "", hash);
+  }
+}
+
 function NavItem({
   href,
   label,
+  className,
   onNavigate,
 }: {
   href: string;
   label: string;
+  className?: string;
   onNavigate?: () => void;
 }) {
-  const isRoute = href.startsWith("/") && !href.startsWith("/#");
+  const location = useLocation();
+  const isHashLink = href.startsWith("#");
+
+  if (isHashLink) {
+    if (location.pathname === "/") {
+      return (
+        <a
+          href={href}
+          className={className}
+          onClick={(event) => {
+            event.preventDefault();
+            scrollToSection(href);
+            onNavigate?.();
+          }}
+        >
+          {label}
+        </a>
+      );
+    }
+
+    return (
+      <Link
+        to={{ pathname: "/", hash: href }}
+        className={className}
+        onClick={onNavigate}
+      >
+        {label}
+      </Link>
+    );
+  }
+
+  const isRoute = href.startsWith("/");
 
   if (isRoute) {
     return (
-      <Link to={href} onClick={onNavigate}>
+      <Link to={href} className={className} onClick={onNavigate}>
         {label}
       </Link>
     );
   }
 
   return (
-    <a href={href} onClick={onNavigate}>
+    <a href={href} className={className} onClick={onNavigate}>
       {label}
     </a>
   );
@@ -62,7 +104,12 @@ export function Navbar() {
 
           <nav className="nav-links" aria-label="Primary">
             {navLinks.map((l) => (
-              <NavItem key={l.href} href={l.href} label={l.label} />
+              <NavItem
+                key={l.href}
+                href={l.href}
+                label={l.label}
+                className={l.className}
+              />
             ))}
           </nav>
 
@@ -91,6 +138,7 @@ export function Navbar() {
               key={l.href}
               href={l.href}
               label={l.label}
+              className={l.className}
               onNavigate={() => setOpen(false)}
             />
           ))}

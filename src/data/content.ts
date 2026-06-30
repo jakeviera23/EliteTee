@@ -21,7 +21,7 @@ export type FeatureHero = {
 };
 
 export const membershipWorksLead =
-  "Members join to meet like-minded golfers, connect while traveling, and build relationships with people who share their respect for the game.";
+  "Membership begins with a private application, review, and approval process designed to protect quality and trust.";
 
 export const membershipWorksSteps: MembershipWorksStep[] = [
   {
@@ -82,23 +82,22 @@ export const memberBenefits: MemberBenefit[] = [
 export const introductionExamples: MemberBenefit[] = [
   {
     title: "Business Travel",
-    description:
-      "Traveling to a new city for work? EliteTee helps members connect with golfers in the area who share similar professional interests.",
+    description: "Connect with golfers in the cities where business brings you.",
   },
   {
     title: "Golf Travel",
     description:
-      "Planning a golf trip? Build relationships with members in destinations where you want to play, visit, or spend more time.",
+      "Meet members in destinations where you want to play, visit, or spend more time.",
   },
   {
     title: "New Cities",
     description:
-      "Relocating or spending extended time away from home? Connect with local golfers who share your standards and interests.",
+      "Build trusted relationships when relocating or spending time away from home.",
   },
   {
     title: "Shared Opportunities",
     description:
-      "Meet members through aligned interests in golf, business, investment, philanthropy, hospitality, or enterprise.",
+      "Connect through aligned interests in golf, business, investing, hospitality, and enterprise.",
   },
 ];
 
@@ -128,7 +127,7 @@ export const featureHeroes: FeatureHero[] = [
 ];
 
 export const membershipSocietyLead =
-  "EliteTee exists to help private club golfers build meaningful relationships beyond the boundaries of their home club. The network is built around trust, discretion, golf culture, and shared opportunity.";
+  "EliteTee exists for private club golfers who value discretion, trust, and meaningful connection beyond their home club.";
 
 export const memberStandardsLead =
   "EliteTee is built on trust, discretion, etiquette, and quality relationships.";
@@ -141,9 +140,11 @@ export const memberStandards: string[] = [
 ];
 
 export const navLinks = [
-  { href: "#what", label: "Society" },
-  { href: "#how-membership-works", label: "Membership" },
+  { href: "#society", label: "Society" },
+  { href: "#membership", label: "Membership" },
   { href: "#standards", label: "Standards" },
   { href: "/about", label: "About Us" },
-  { href: "#request", label: "Apply" },
+  { href: "/inside", label: "Inside EliteTee" },
+  { href: "#apply", label: "Apply" },
+  { href: "/login", label: "Login", className: "nav-link--login" },
 ];

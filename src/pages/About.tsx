@@ -82,7 +82,7 @@ export function About() {
               </div>
             </section>
 
-            <Link to="/#request" className="btn about-return">
+            <Link to="/#apply" className="btn about-return">
               Return to Membership
             </Link>
           </div>

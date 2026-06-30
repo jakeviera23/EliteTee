@@ -62,7 +62,7 @@ export function RequestIntroduction() {
 
   return (
     <section
-      id="request"
+      id="apply"
       className="section section--request section--compact"
       aria-labelledby="request-heading"
     >
@@ -71,8 +71,8 @@ export function RequestIntroduction() {
           <span className="request-logo-mark" aria-hidden="true" />
           <h2 id="request-heading">Request Membership Consideration</h2>
           <p className="section-lead request-lead">
-            EliteTee is currently accepting a limited number of Founding Members as the
-            initial network develops. Applications are reviewed privately.
+            EliteTee is reviewing a limited number of founding member applications. Each
+            request is handled privately.
           </p>
         </header>
 

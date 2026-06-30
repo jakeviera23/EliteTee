@@ -3,7 +3,7 @@ import { membershipSocietyLead } from "../data/content";
 export function MembershipPriorities() {
   return (
     <section
-      id="what"
+      id="society"
       className="section section--compact priorities priorities--society"
       aria-labelledby="priorities-heading"
     >

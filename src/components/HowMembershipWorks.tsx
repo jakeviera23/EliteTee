@@ -3,7 +3,7 @@ import { membershipWorksLead, membershipWorksSteps } from "../data/content";
 export function HowMembershipWorks() {
   return (
     <section
-      id="how-membership-works"
+      id="membership"
       className="section section--compact membership-works"
       aria-labelledby="membership-works-heading"
     >
