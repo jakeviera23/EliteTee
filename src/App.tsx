@@ -5,8 +5,10 @@ import { About } from "./pages/About";
 import { InsideEliteTee } from "./pages/InsideEliteTee";
 import { MemberDirectory } from "./pages/MemberDirectory";
 import { MemberPortal } from "./pages/MemberPortal";
+import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 
 export default function App() {
   return (
@@ -24,6 +26,14 @@ export default function App() {
           <ProtectedRoute>
             <MemberPortal />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-members"
+        element={
+          <AdminRoute>
+            <AdminMembers />
+          </AdminRoute>
         }
       />
       <Route path="/directory" element={<MemberDirectory />} />
