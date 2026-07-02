@@ -1,3 +1,4 @@
+import { MemberIdentity } from "./MemberClubAvatar";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 
 type MemberCardProps = {
@@ -10,7 +11,7 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
   return (
     <article className="portal-member-card">
       <header className="portal-member-head">
-        <h3>{member.full_name}</h3>
+        <MemberIdentity member={member} size="sm" />
       </header>
       <dl className="portal-member-details">
         <div>
@@ -21,6 +22,12 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
           <dt>Location</dt>
           <dd>{member.based_in}</dd>
         </div>
+        {member.traveling_to ? (
+          <div>
+            <dt>Traveling To</dt>
+            <dd>{member.traveling_to}</dd>
+          </div>
+        ) : null}
         <div>
           <dt>Industry</dt>
           <dd>{member.industry}</dd>
@@ -32,14 +39,14 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
           className="portal-btn portal-btn--outline"
           onClick={() => onViewProfile(member)}
         >
-          View Profile
+          View Dossier
         </button>
         <button
           type="button"
           className="portal-btn portal-btn--gold"
           onClick={() => onRequest(member)}
         >
-          Request Introduction
+          Request Private Introduction
         </button>
       </div>
     </article>
