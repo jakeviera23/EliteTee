@@ -1,11 +1,12 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createMemberProfile, parseListInput } from "../lib/memberProfiles";
+import { createMemberProfile, linkMemberProfileToAuthUser, parseListInput, AUTH_USER_ID_LINKING_NOTE } from "../lib/memberProfiles";
 import { supabase } from "../lib/supabase";
 import "../inside-elitetee.css";
 import "../member-portal.css";
 
 type FormState = {
+  auth_user_id: string;
   full_name: string;
   email: string;
   primary_club: string;
@@ -21,6 +22,7 @@ type FormState = {
 };
 
 const initialFormState: FormState = {
+  auth_user_id: "",
   full_name: "",
   email: "",
   primary_club: "",
@@ -42,6 +44,11 @@ export function AdminMembers() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [linkEmail, setLinkEmail] = useState("");
+  const [linkAuthUserId, setLinkAuthUserId] = useState("");
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkMessage, setLinkMessage] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -64,6 +71,7 @@ export function AdminMembers() {
     setErrorMessage(null);
 
     const { data, error } = await createMemberProfile({
+      user_id: form.auth_user_id.trim(),
       full_name: form.full_name.trim(),
       email: form.email.trim().toLowerCase(),
       primary_club: form.primary_club.trim(),
@@ -74,6 +82,7 @@ export function AdminMembers() {
       golf_interests: parseListInput(form.golf_interests),
       business_interests: parseListInput(form.business_interests),
       current_request: form.current_request.trim(),
+      traveling_to: "",
       membership_status: form.membership_status.trim(),
       is_verified: form.is_verified,
     });
@@ -91,6 +100,31 @@ export function AdminMembers() {
 
     setSuccessMessage(`Member profile created successfully.${data?.id ? ` ID: ${data.id}` : ""}`);
     setForm(initialFormState);
+  }
+
+  async function handleLinkSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsLinking(true);
+    setLinkMessage(null);
+    setLinkError(null);
+
+    const { data, error } = await linkMemberProfileToAuthUser({
+      email: linkEmail,
+      authUserId: linkAuthUserId,
+    });
+
+    setIsLinking(false);
+
+    if (error) {
+      setLinkError(error.message);
+      return;
+    }
+
+    setLinkMessage(
+      `Linked ${data?.full_name ?? "member profile"} to Auth UID ${linkAuthUserId.trim()}.`,
+    );
+    setLinkEmail("");
+    setLinkAuthUserId("");
   }
 
   return (
@@ -116,6 +150,7 @@ export function AdminMembers() {
             Manually add approved applicants to the EliteTee member directory. Applications continue
             to arrive through Formspree.
           </p>
+          <p className="portal-admin-note">{AUTH_USER_ID_LINKING_NOTE}</p>
         </header>
 
         {successMessage ? (
@@ -132,6 +167,17 @@ export function AdminMembers() {
 
         <form className="portal-admin-form" onSubmit={handleSubmit}>
           <div className="portal-admin-form-grid">
+            <label className="portal-profile-field portal-profile-field--full">
+              <span>Supabase Auth User UID</span>
+              <input
+                type="text"
+                value={form.auth_user_id}
+                onChange={(event) => updateField("auth_user_id", event.target.value)}
+                placeholder="Paste UID from Supabase Authentication > Users"
+                required
+              />
+            </label>
+
             <label className="portal-profile-field">
               <span>Full Name</span>
               <input
@@ -263,6 +309,63 @@ export function AdminMembers() {
             {isSubmitting ? "Saving..." : "Create Member Profile"}
           </button>
         </form>
+
+        <section className="portal-admin-link" aria-labelledby="link-member-heading">
+          <header className="portal-section-head">
+            <h2 id="link-member-heading">Link Existing Member Login</h2>
+            <p>
+              Link an existing member profile to the correct Supabase Auth User UID when
+              member_profiles.user_id does not match. auth.uid() must equal public.users.id and
+              member_profiles.user_id.
+            </p>
+          </header>
+
+          {linkMessage ? (
+            <p className="portal-alert portal-alert--success" role="status">
+              {linkMessage}
+            </p>
+          ) : null}
+
+          {linkError ? (
+            <p className="portal-alert portal-alert--error" role="alert">
+              {linkError}
+            </p>
+          ) : null}
+
+          <form className="portal-admin-form" onSubmit={handleLinkSubmit}>
+            <div className="portal-admin-form-grid">
+              <label className="portal-profile-field">
+                <span>Member Email</span>
+                <input
+                  type="email"
+                  value={linkEmail}
+                  onChange={(event) => setLinkEmail(event.target.value)}
+                  placeholder="member@email.com"
+                  required
+                />
+              </label>
+
+              <label className="portal-profile-field">
+                <span>Supabase Auth User UID</span>
+                <input
+                  type="text"
+                  value={linkAuthUserId}
+                  onChange={(event) => setLinkAuthUserId(event.target.value)}
+                  placeholder="Paste UID from Authentication > Users"
+                  required
+                />
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="portal-btn portal-btn--outline portal-admin-submit"
+              disabled={isLinking}
+            >
+              {isLinking ? "Linking..." : "Link Member To Auth UID"}
+            </button>
+          </form>
+        </section>
       </main>
     </div>
   );

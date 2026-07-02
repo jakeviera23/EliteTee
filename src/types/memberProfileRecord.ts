@@ -9,12 +9,16 @@ export type MemberProfileInsert = {
   golf_interests: string[];
   business_interests: string[];
   current_request: string;
+  traveling_to: string;
+  club_logo_url?: string | null;
+  user_id: string;
   membership_status: string;
   is_verified: boolean;
 };
 
-export type MemberProfileRecord = MemberProfileInsert & {
+export type MemberProfileRecord = Omit<MemberProfileInsert, "user_id"> & {
   id: string;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 };
