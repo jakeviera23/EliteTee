@@ -1,17 +1,19 @@
 import { Hero } from "./Hero";
-import { WhatMembersReceive } from "./WhatMembersReceive";
 import { MembershipPriorities } from "./MembershipPriorities";
-import { MemberIntroductionExamples } from "./MemberIntroductionExamples";
+import { PlatformFeatures } from "./PlatformFeatures";
+import { PortalProductPreview } from "./PortalProductPreview";
+import { ModernGolfer } from "./ModernGolfer";
 import { EditorialImagery } from "./EditorialImagery";
 
-/** Hero, value proposition, priorities, examples, then editorial imagery. */
+/** Hero, society positioning, platform pillars, product preview, modern golfer, editorial imagery. */
 export function EditorialSpread() {
   return (
     <div className="editorial-spread">
       <Hero />
-      <WhatMembersReceive />
       <MembershipPriorities />
-      <MemberIntroductionExamples />
+      <PlatformFeatures />
+      <PortalProductPreview />
+      <ModernGolfer />
       <EditorialImagery />
     </div>
   );

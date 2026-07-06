@@ -73,8 +73,8 @@
 }
 
 .portal-logo-mark {
-  height: 68px;
-  width: calc(68px * 1024 / 682);
+  height: 56px;
+  width: calc(56px * 1024 / 682);
 }
 
 .portal-signout {
@@ -1380,6 +1380,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.6rem 1rem;
+  border-radius: 6px;
   font-family: var(--sans);
   font-size: 0.625rem;
   font-weight: 400;
@@ -1628,3 +1629,2755 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* —— Golf social portal —— */
+
+.portal-page--social {
+  background: var(--inside-bg);
+  --portal-header-sticky-h: 5.25rem;
+  --portal-tabs-sticky-h: 3rem;
+  --portal-feed-sidebar-offset: calc(
+    var(--portal-header-sticky-h) + var(--portal-tabs-sticky-h) + 0.75rem
+  );
+  --portal-shell-max: 1340px;
+  --portal-card-pad: 1.3rem;
+  --portal-gap: 1.35rem;
+}
+
+.portal-main--social {
+  max-width: none;
+  width: 100%;
+  padding-inline: 0;
+}
+
+.portal-section-head--social h2 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.65rem, 3vw, 2rem);
+  color: var(--portal-heading);
+}
+
+.portal-section-head--social p {
+  margin: 0.35rem 0 0;
+  max-width: 36rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--portal-muted);
+}
+
+.portal-social-page {
+  display: grid;
+  gap: 1.35rem;
+  padding-bottom: 0.5rem;
+}
+
+.portal-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.35rem;
+  color: var(--inside-gold);
+  vertical-align: middle;
+}
+
+.portal-verified-pill-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.portal-composer {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.15rem;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-composer-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.15rem;
+  color: var(--portal-heading);
+}
+
+.portal-composer-photo {
+  display: grid;
+  place-items: center;
+  gap: 0.25rem;
+  min-height: 7rem;
+  padding: 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--inside-border-gold);
+}
+
+.portal-composer-photo span {
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-composer-photo p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--portal-faint);
+}
+
+.portal-composer-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.portal-composer-field span {
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-composer-field input,
+.portal-composer-field textarea {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  color: var(--portal-white);
+  background: var(--inside-bg);
+  border: 1px solid var(--inside-border-gold);
+  outline: none;
+}
+
+.portal-composer-field input:focus,
+.portal-composer-field textarea:focus {
+  border-color: var(--inside-gold);
+}
+
+.portal-composer-row {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .portal-composer-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-feed-list {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.portal-feed-list--compact {
+  gap: 1rem;
+}
+
+.portal-feed-card {
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border);
+}
+
+.portal-feed-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.75rem;
+}
+
+.portal-feed-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.portal-feed-author-text {
+  min-width: 0;
+}
+
+.portal-feed-author-name {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--portal-white);
+}
+
+.portal-feed-author-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--portal-muted);
+}
+
+.portal-feed-time {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-feed-course {
+  padding: 0 1rem 0.75rem;
+}
+
+.portal-feed-course h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.125rem;
+  color: var(--portal-heading);
+}
+
+.portal-feed-course p {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.portal-feed-media img {
+  display: block;
+  width: 100%;
+  max-height: 28rem;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.portal-feed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem 0.35rem;
+}
+
+.portal-feed-action {
+  padding: 0.35rem 0.55rem;
+  font-family: var(--sans);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    color 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+}
+
+.portal-feed-action:hover,
+.portal-feed-action.is-active {
+  color: var(--inside-gold);
+  border-color: var(--inside-border-gold);
+}
+
+.portal-feed-caption {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--portal-body);
+}
+
+.portal-feed-caption strong {
+  color: var(--portal-white);
+  font-weight: 500;
+}
+
+.portal-search-label--social {
+  margin: 0;
+}
+
+.portal-discover-block h3,
+.portal-golfer-recent h4 {
+  margin: 0 0 0.75rem;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.05rem;
+  color: var(--portal-heading);
+}
+
+.portal-discover-golfer-list,
+.portal-discover-course-chips,
+.portal-discover-destinations,
+.portal-discover-activity,
+.portal-course-grid,
+.portal-message-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-discover-block + .portal-discover-block {
+  margin-top: 0.25rem;
+}
+
+.portal-discover-golfer-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.portal-discover-golfer-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+}
+
+.portal-discover-golfer-name {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-discover-golfer-copy p {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.portal-discover-golfer-meta {
+  color: var(--portal-faint) !important;
+}
+
+.portal-discover-course-chips {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portal-discover-chip-card {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.65rem;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+}
+
+.portal-discover-chip-card img {
+  width: 100%;
+  height: 4.5rem;
+  object-fit: cover;
+}
+
+.portal-discover-chip-card h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-discover-chip-card p {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.portal-discover-chip-meta {
+  color: var(--inside-gold) !important;
+}
+
+.portal-discover-destinations li,
+.portal-discover-activity li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  font-size: 0.8125rem;
+  color: var(--portal-body);
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.portal-discover-activity li {
+  justify-content: flex-start;
+}
+
+.portal-course-grid {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.portal-course-card {
+  overflow: hidden;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-course-card-media img {
+  display: block;
+  width: 100%;
+  height: 11rem;
+  object-fit: cover;
+}
+
+.portal-course-card-body {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+}
+
+.portal-course-card-body h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.2rem;
+  color: var(--portal-heading);
+}
+
+.portal-course-location {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--inside-gold);
+}
+
+.portal-course-description {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--portal-muted);
+}
+
+.portal-course-stats {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0.25rem 0 0.35rem;
+}
+
+.portal-course-stats div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.portal-course-stats dt {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-course-stats dd {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-messages-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.portal-messages-unread {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--inside-gold);
+}
+
+.portal-message-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.portal-message-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.9rem;
+  text-align: left;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+  transition: border-color 0.25s var(--ease);
+}
+
+.portal-message-card:hover {
+  border-color: var(--inside-border-gold);
+}
+
+.portal-message-avatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(196, 169, 98, 0.35), rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-message-copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.portal-message-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.portal-message-name {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-message-top time {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  color: var(--portal-faint);
+}
+
+.portal-message-preview {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--portal-muted);
+}
+
+.portal-message-preview.is-unread {
+  color: var(--portal-white);
+}
+
+.portal-empty--social {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  padding: 1.5rem;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+}
+
+.portal-empty--social h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  color: var(--portal-heading);
+}
+
+.portal-empty--inline {
+  margin: 0;
+}
+
+.portal-btn--compact {
+  min-height: 2.25rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.625rem;
+}
+
+.portal-btn--full {
+  width: 100%;
+}
+
+.portal-profile-edit-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.portal-golfer-profile {
+  display: grid;
+  gap: 1.15rem;
+  padding: 1.15rem;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-golfer-profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.portal-golfer-profile-identity h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.5rem;
+  color: var(--portal-heading);
+}
+
+.portal-golfer-title {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-golfer-location {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--portal-muted);
+}
+
+.portal-golfer-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin: 0;
+}
+
+.portal-golfer-stats div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.portal-golfer-stats dt {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-golfer-stats dd {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--portal-white);
+}
+
+.portal-golfer-details {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-golfer-detail-block h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-golfer-detail-block p,
+.portal-golfer-detail-block li {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--portal-body);
+}
+
+.portal-golfer-detail-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+@media (min-width: 900px) {
+  .portal-course-grid--rich {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .portal-course-grid--rich {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* —— Social portal enhancements —— */
+
+.portal-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.portal-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+  background: transparent;
+  border: 1px solid var(--inside-border);
+}
+
+.portal-icon-btn:hover {
+  color: var(--portal-white);
+  border-color: var(--inside-border-gold);
+}
+
+.portal-icon-btn-label {
+  display: none;
+}
+
+.portal-icon-badge {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.25rem;
+  font-size: 0.5625rem;
+  line-height: 1rem;
+  text-align: center;
+  color: var(--inside-bg);
+  background: var(--inside-gold);
+  border-radius: 999px;
+}
+
+.portal-notifications {
+  margin: 0 clamp(1rem, 3vw, 2.5rem);
+  padding: 0.85rem 1rem;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-notifications-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-notifications ul {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.8125rem;
+  color: var(--portal-body);
+}
+
+.portal-bottom-nav {
+  display: none;
+}
+
+.portal-tabs--desktop {
+  display: flex;
+}
+
+@media (min-width: 900px) {
+  .portal-tabs--desktop {
+    position: sticky;
+    top: var(--portal-header-sticky-h);
+    z-index: 110;
+  }
+}
+
+.portal-feed-welcome {
+  padding: 1rem 1.1rem;
+  background: linear-gradient(145deg, rgba(196, 169, 98, 0.08), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-feed-welcome-greeting {
+  margin: 0 0 0.75rem;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.25rem;
+  color: var(--portal-heading);
+}
+
+.portal-feed-welcome-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.portal-feed-welcome-list li {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+  color: var(--portal-body);
+}
+
+.portal-feed-welcome-label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-feed-welcome-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.portal-composer--premium .portal-composer-lead {
+  margin: -0.35rem 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--portal-muted);
+}
+
+.portal-composer-field select {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  color: var(--portal-white);
+  background: var(--inside-bg);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-feed-head-meta {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+}
+
+.portal-feed-type {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-feed-rating,
+.portal-feed-played-with {
+  margin: 0.2rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--portal-faint);
+}
+
+.portal-feed-media--carousel {
+  position: relative;
+}
+
+.portal-feed-carousel-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 0.65rem;
+  display: flex;
+  gap: 0.35rem;
+  transform: translateX(-50%);
+}
+
+.portal-feed-carousel-dots span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.portal-feed-carousel-dots span.is-active {
+  background: var(--inside-gold);
+}
+
+.portal-feed-carousel-nav {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.35rem;
+  pointer-events: none;
+}
+
+.portal-feed-carousel-nav button {
+  pointer-events: auto;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.25rem;
+  color: var(--portal-white);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-feed-comment-preview {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.portal-follow-btn {
+  min-height: 2rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+  background: transparent;
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-follow-btn.is-following {
+  color: var(--portal-muted);
+  border-color: var(--inside-border);
+}
+
+.portal-follow-btn--compact {
+  min-height: 1.75rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.portal-course-card--rich .portal-course-card-media {
+  position: relative;
+}
+
+.portal-course-card-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 1rem;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.75), transparent);
+}
+
+.portal-course-card-overlay h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--portal-heading);
+}
+
+.portal-course-card-overlay p {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.portal-course-thumb-row {
+  display: flex;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-course-thumb-row img {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+}
+
+.portal-back-btn {
+  margin-bottom: 0.75rem;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--inside-gold);
+  background: none;
+  border: 0;
+}
+
+.portal-course-detail-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-course-detail-hero img {
+  display: block;
+  width: 100%;
+  max-height: 16rem;
+  object-fit: cover;
+}
+
+.portal-course-detail-hero-copy {
+  padding: 1rem;
+  background: var(--inside-surface);
+}
+
+.portal-course-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-course-detail-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.75rem 0 0;
+}
+
+.portal-course-detail-stats div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.portal-course-detail-stats dt {
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-course-detail-stats dd {
+  margin: 0;
+  color: var(--portal-white);
+}
+
+.portal-course-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-course-photo-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.portal-course-member-list,
+.portal-course-review-list,
+.portal-course-nearby-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.portal-course-member-list li,
+.portal-course-nearby-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.portal-course-review-list li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.portal-course-review-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.portal-discover-travel li,
+.portal-discover-contributors li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.portal-discover-rank {
+  color: var(--inside-gold);
+}
+
+.portal-messages-layout {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portal-message-card.is-selected {
+  border-color: var(--inside-gold);
+  background: rgba(196, 169, 98, 0.06);
+}
+
+.portal-messages-panel {
+  min-height: 14rem;
+  padding: 0.85rem;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+}
+
+.portal-messages-panel-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  font-family: var(--serif);
+  font-weight: 300;
+  color: var(--portal-heading);
+}
+
+.portal-messages-thread {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.portal-message-bubble {
+  max-width: 85%;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  border: 1px solid var(--inside-border);
+}
+
+.portal-message-bubble--them {
+  justify-self: start;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.portal-message-bubble--me {
+  justify-self: end;
+  background: rgba(196, 169, 98, 0.1);
+  border-color: var(--inside-border-gold);
+}
+
+.portal-message-bubble time {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+  color: var(--portal-faint);
+}
+
+.portal-messages-compose {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.portal-messages-compose input {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--portal-white);
+  background: var(--inside-bg);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-golfer-profile--rich {
+  padding: 0;
+  overflow: hidden;
+}
+
+.portal-golfer-cover {
+  position: relative;
+  min-height: 8.5rem;
+  max-height: 10rem;
+  background-size: cover;
+  background-position: center;
+  isolation: isolate;
+}
+
+.portal-golfer-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(9, 9, 8, 0.08) 0%,
+    rgba(9, 9, 8, 0.55) 72%,
+    var(--inside-bg-panel) 100%
+  );
+  pointer-events: none;
+}
+
+.portal-golfer-edit {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.85rem;
+  z-index: 2;
+}
+
+.portal-golfer-profile-main {
+  position: relative;
+  z-index: 1;
+  padding: 0 1.15rem 1.15rem;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+}
+
+.portal-golfer-profile-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: end;
+  margin-top: -3.25rem;
+  padding-bottom: 0.35rem;
+}
+
+.portal-golfer-avatar-wrap {
+  position: relative;
+  z-index: 2;
+  width: fit-content;
+  padding: 0.2rem;
+  background: var(--inside-bg-panel);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--inside-bg-panel);
+}
+
+.portal-golfer-profile--rich .portal-member-avatar--lg {
+  flex-shrink: 0;
+  border: 2px solid var(--inside-border-gold);
+}
+
+.portal-golfer-profile-identity {
+  min-width: 0;
+  padding-bottom: 0.35rem;
+}
+
+.portal-profile-form-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-profile-form-section {
+  grid-column: 1 / -1;
+  margin: 0.35rem 0 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1rem;
+  color: var(--portal-heading);
+}
+
+.portal-profile-form-section:first-child {
+  margin-top: 0;
+}
+
+.portal-profile-form-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--portal-faint);
+}
+
+.portal-dossier-header--identity .portal-dossier-header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.portal-dossier-header--identity h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.35rem;
+  color: var(--portal-heading);
+}
+
+.portal-golfer-profile-identity h2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.5rem;
+  color: var(--portal-heading);
+}
+
+.portal-achievement-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-achievement-list li {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-profile-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-profile-photo-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .portal-messages-layout {
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .portal-icon-btn-label {
+    display: inline;
+  }
+}
+
+@media (max-width: 767px) {
+  .portal-page--social {
+    padding-bottom: 4.5rem;
+  }
+
+  .portal-tabs--desktop {
+    display: none;
+  }
+
+  .portal-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 130;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
+    background: rgba(9, 9, 8, 0.98);
+    border-top: 1px solid var(--inside-border);
+    backdrop-filter: blur(12px);
+  }
+
+  .portal-bottom-nav-btn {
+    display: grid;
+    gap: 0.15rem;
+    justify-items: center;
+    padding: 0.35rem 0.15rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--portal-muted);
+    background: transparent;
+    border: 0;
+  }
+
+  .portal-bottom-nav-btn.is-active {
+    color: var(--inside-gold);
+  }
+
+  .portal-bottom-nav-btn--post .portal-bottom-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 1.1rem;
+    color: var(--inside-bg);
+    background: var(--inside-gold);
+    border-radius: 50%;
+  }
+
+  .portal-bottom-nav-icon {
+    font-size: 0.95rem;
+  }
+
+  .portal-signout {
+    display: none;
+  }
+
+  .portal-main--social {
+    max-width: none;
+    padding-inline: 0.85rem;
+  }
+
+  .portal-feed-card,
+  .portal-composer,
+  .portal-feed-welcome {
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .portal-messages-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-messages-sidebar {
+    max-height: 10rem;
+    overflow-y: auto;
+  }
+}
+
+/* ——— MVP polish: compact feed, toasts, modals ——— */
+
+.portal-section-head--compact {
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.portal-section-head--compact p {
+  font-size: 0.8125rem;
+}
+
+.portal-composer--compact {
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+}
+
+.portal-composer-compact-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 768px) {
+  .portal-composer-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .portal-composer-field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .portal-composer-photo--compact {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+.portal-composer-photo--compact {
+  min-height: 4.5rem;
+  padding: 0.35rem;
+}
+
+.portal-composer-photo-label {
+  display: grid;
+  place-items: center;
+  gap: 0.15rem;
+  width: 100%;
+  height: 100%;
+  min-height: 4rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.portal-composer-photo-label img {
+  width: 100%;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.portal-composer-photo-label span {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-composer-photo-label p {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--portal-faint);
+}
+
+.portal-composer-more-toggle {
+  justify-self: start;
+  padding: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-composer-more {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .portal-composer-more {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-composer-submit {
+  justify-self: start;
+  min-width: 7rem;
+}
+
+.portal-composer-field select {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  color: var(--portal-white);
+  background: var(--inside-bg);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-feed-welcome--compact {
+  padding: 0.75rem 0.9rem;
+}
+
+.portal-feed-welcome--compact .portal-feed-welcome-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (min-width: 768px) {
+  .portal-feed-welcome--compact .portal-feed-welcome-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1rem;
+  }
+}
+
+.portal-feed-meta-line {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--portal-faint);
+}
+
+.portal-feed-comments {
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.portal-feed-comments li {
+  font-size: 0.8125rem;
+  color: var(--portal-body);
+}
+
+.portal-feed-comment-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem;
+}
+
+.portal-feed-comment-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--portal-white);
+  background: var(--inside-bg);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 120;
+  display: grid;
+  gap: 0.5rem;
+  max-width: min(20rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+@media (min-width: 900px) {
+  .portal-toast-stack {
+    bottom: 1.25rem;
+  }
+}
+
+.portal-toast {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8125rem;
+  color: var(--portal-white);
+  background: rgba(9, 9, 8, 0.94);
+  border: 1px solid var(--inside-border-gold);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: portal-toast-in 0.25s var(--ease, ease) both;
+}
+
+@keyframes portal-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.portal-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(4, 4, 3, 0.72);
+}
+
+.portal-modal {
+  width: min(32rem, 100%);
+  max-height: min(90vh, 44rem);
+  overflow: auto;
+  padding: 1.15rem;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border-gold);
+}
+
+.portal-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.portal-modal-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.35rem;
+  color: var(--portal-heading);
+}
+
+.portal-modal-close {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--portal-faint);
+}
+
+.portal-modal-golfer-identity {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.portal-modal-actions {
+  margin-top: 1rem;
+}
+
+.portal-new-conversation-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-new-conversation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  max-height: 10rem;
+  overflow-y: auto;
+}
+
+.portal-new-conversation-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+}
+
+.portal-new-conversation-option.is-selected {
+  border-color: var(--inside-border-gold);
+}
+
+.portal-new-conversation-option strong {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-new-conversation-option span span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--portal-faint);
+}
+
+.portal-discover-golfer-open {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.portal-discover-chip-card--button {
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.portal-course-nearby-btn {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.5rem 0;
+  text-align: left;
+  color: var(--portal-body);
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.portal-course-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-btn.is-active {
+  box-shadow: inset 0 0 0 1px var(--inside-gold);
+}
+
+@media (max-width: 639px) {
+  .portal-golfer-profile-header {
+    grid-template-columns: 1fr;
+    margin-top: -2.5rem;
+    gap: 0.65rem;
+  }
+
+  .portal-golfer-profile-identity {
+    padding-bottom: 0;
+  }
+
+  .portal-golfer-stats--rich {
+    padding-top: 0.35rem;
+  }
+}
+
+/* ——— Wide layouts: Feed, Discover, Courses ——— */
+
+.portal-feed-layout {
+  display: grid;
+  gap: 1.15rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .portal-feed-layout {
+    grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
+    gap: 1.35rem;
+  }
+
+  .portal-feed-sidebar {
+    position: sticky;
+    top: var(--portal-feed-sidebar-offset);
+    align-self: start;
+    z-index: 90;
+    max-height: calc(100vh - var(--portal-feed-sidebar-offset) - 0.75rem);
+  }
+
+  .portal-feed-sidebar .portal-feed-welcome {
+    max-height: inherit;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .portal-feed-sidebar .portal-feed-welcome--compact .portal-feed-welcome-list {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-feed-main {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .portal-feed-page .portal-feed-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 899px) {
+  .portal-feed-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .portal-feed-main {
+    order: 1;
+  }
+
+  .portal-feed-sidebar {
+    order: 2;
+  }
+}
+
+@media (min-width: 1200px) {
+  .portal-feed-layout {
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  }
+}
+
+.portal-discover-layout {
+  display: grid;
+  gap: 1.15rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .portal-discover-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.35rem;
+  }
+}
+
+.portal-discover-column {
+  display: grid;
+  gap: 1.15rem;
+  align-content: start;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .portal-discover-course-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal-discover-golfer-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.portal-courses-page .portal-search-label--social {
+  max-width: 28rem;
+}
+
+.portal-course-grid--rich {
+  grid-template-columns: 1fr;
+}
+
+/* ——— MVP portal polish ——— */
+
+.portal-shell {
+  width: 100%;
+  max-width: var(--portal-shell-max);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 2.5vw, 2rem);
+}
+
+.portal-shell--bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.portal-top {
+  padding-inline: 0;
+}
+
+.portal-tabs--desktop {
+  padding-inline: 0;
+}
+
+.portal-tabs--desktop .portal-shell--bar {
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.portal-tabs--desktop .portal-shell--bar::-webkit-scrollbar {
+  display: none;
+}
+
+.portal-modal-backdrop .portal-modal {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+}
+
+.portal-feed-top {
+  display: grid;
+  gap: var(--portal-gap);
+  align-items: stretch;
+}
+
+@media (min-width: 900px) {
+  .portal-feed-top {
+    grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  }
+}
+
+.portal-snapshot-card,
+.portal-composer--inline,
+.portal-feed-card--polished,
+.portal-profile-card,
+.portal-discover-panel,
+.portal-course-card--mvp {
+  padding: var(--portal-card-pad);
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 6px;
+}
+
+.portal-snapshot-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.portal-snapshot-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.portal-snapshot-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.15rem;
+  color: var(--portal-heading);
+}
+
+.portal-snapshot-course {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--inside-gold);
+}
+
+.portal-snapshot-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.portal-snapshot-stats div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.portal-snapshot-stats dt {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-snapshot-stats dd {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--portal-white);
+}
+
+.portal-snapshot-next {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--inside-border);
+  font-size: 0.8125rem;
+  color: var(--portal-body);
+}
+
+.portal-snapshot-next span {
+  color: var(--portal-faint);
+}
+
+.portal-composer--inline {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-composer-inline-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .portal-composer-inline-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portal-composer-field--wide {
+    grid-column: 1 / 3;
+  }
+
+  .portal-composer-photo--inline {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}
+
+.portal-composer-photo--inline {
+  min-height: 3.5rem;
+}
+
+.portal-composer-photo--inline .portal-composer-photo-label {
+  min-height: 3.5rem;
+  border: 1px dashed var(--inside-border-gold);
+  border-radius: 6px;
+}
+
+.portal-composer-photo--inline .portal-composer-photo-label img {
+  height: 3.5rem;
+  border-radius: 6px;
+}
+
+.portal-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.portal-feed-activity-title {
+  margin: 0 0 1rem;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.25rem;
+  color: var(--portal-heading);
+}
+
+.portal-feed-list--polished {
+  display: grid;
+  gap: var(--portal-gap);
+}
+
+.portal-feed-card--polished {
+  overflow: hidden;
+  padding: 0;
+}
+
+.portal-feed-card--polished .portal-feed-card-head,
+.portal-feed-card--polished .portal-feed-card-body {
+  padding: var(--portal-card-pad);
+}
+
+.portal-feed-card--polished .portal-feed-card-head {
+  padding-bottom: 0.85rem;
+}
+
+.portal-feed-media--polished img {
+  width: 100%;
+  max-height: 22rem;
+  object-fit: cover;
+}
+
+.portal-feed-card-body {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-feed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.portal-feed-action {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--inside-border);
+  border-radius: 6px;
+}
+
+.portal-feed-action.is-active {
+  color: var(--inside-gold);
+  border-color: var(--inside-border-gold);
+  background: var(--inside-gold-soft);
+}
+
+.portal-golfer-profile--premium .portal-golfer-profile-main {
+  padding: 0 var(--portal-card-pad) var(--portal-card-pad);
+}
+
+.portal-golfer-stats--row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  padding: 1rem 0 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .portal-golfer-stats--row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.portal-profile-cards {
+  display: grid;
+  gap: var(--portal-gap);
+}
+
+@media (min-width: 768px) {
+  .portal-profile-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-profile-card h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+}
+
+.portal-profile-card p,
+.portal-profile-card li {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--portal-body);
+}
+
+.portal-profile-card ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.portal-profile-card--wide {
+  grid-column: 1 / -1;
+}
+
+.portal-profile-card-meta {
+  margin-top: 0.5rem !important;
+  font-size: 0.75rem !important;
+  color: var(--portal-faint) !important;
+}
+
+.portal-profile-connections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-profile-connections li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--inside-border);
+  border-radius: 6px;
+}
+
+.portal-discover-layout {
+  display: grid;
+  gap: var(--portal-gap);
+}
+
+@media (min-width: 900px) {
+  .portal-discover-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-discover-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.portal-discover-panel h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.1rem;
+  color: var(--portal-heading);
+}
+
+.portal-discover-card-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portal-discover-person-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--inside-border);
+  border-radius: 6px;
+}
+
+.portal-discover-person-open {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.portal-discover-info-cards {
+  display: grid;
+  gap: 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-discover-info-card {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--inside-border);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: var(--portal-body);
+}
+
+.portal-course-card--mvp {
+  overflow: hidden;
+  padding: 0;
+}
+
+.portal-course-card-media-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.portal-course-card--mvp .portal-course-card-media img {
+  height: 9.5rem;
+}
+
+.portal-course-card--mvp .portal-course-card-body {
+  padding: var(--portal-card-pad);
+}
+
+.portal-course-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-course-card-actions .portal-btn {
+  flex: 1 1 auto;
+  min-width: 7rem;
+}
+
+.portal-modal-actions--split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.portal-connection-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--portal-muted);
+}
+
+.portal-connection-sent {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-connection-sent-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.25rem;
+  color: var(--portal-heading);
+}
+
+.portal-messages-layout {
+  gap: var(--portal-gap);
+}
+
+.portal-message-bubble {
+  padding: 0.85rem 1rem;
+  border-radius: 6px;
+}
+
+@media (max-width: 767px) {
+  .portal-main--social .portal-shell {
+    padding-inline: 0.85rem;
+  }
+
+  .portal-golfer-stats--row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal-feed-top,
+  .portal-discover-layout,
+  .portal-profile-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ——— Courses page (scoped clean layout) ——— */
+
+.portal-courses-page {
+  display: grid;
+  gap: 1.35rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.portal-courses-header h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.65rem, 3vw, 2rem);
+  color: var(--portal-heading);
+}
+
+.portal-courses-header p {
+  margin: 0.4rem 0 0;
+  max-width: 36rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--portal-muted);
+}
+
+.portal-courses-search {
+  display: block;
+  max-width: 28rem;
+}
+
+.portal-courses-search-input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 6px;
+}
+
+.portal-courses-search-input::placeholder {
+  color: var(--portal-faint);
+}
+
+.portal-courses-search-input:focus {
+  outline: none;
+  border-color: var(--inside-gold);
+}
+
+.portal-courses-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.35rem;
+  align-items: start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .portal-courses-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-courses-grid > li {
+  min-width: 0;
+}
+
+/* Course card — block layout only, no overlays */
+.portal-courses-page .portal-course-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 6px;
+}
+
+.portal-courses-page .portal-course-card-hero {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 10.5rem;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(196, 169, 98, 0.12), rgba(9, 9, 8, 0.95));
+}
+
+.portal-courses-page .portal-course-card-content {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.3rem;
+}
+
+.portal-courses-page .portal-course-card-header {
+  position: static;
+}
+
+.portal-courses-page .portal-course-card-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  color: var(--portal-heading);
+}
+
+.portal-courses-page .portal-course-card-location {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--inside-gold);
+}
+
+.portal-courses-page .portal-course-card-description {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--portal-muted);
+}
+
+.portal-courses-page .portal-course-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0;
+}
+
+@media (min-width: 480px) {
+  .portal-courses-page .portal-course-card-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.portal-courses-page .portal-course-card-stats div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.portal-courses-page .portal-course-card-stats dt {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-courses-page .portal-course-card-stats dd {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-courses-page .portal-course-card-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.portal-courses-page .portal-course-card-thumbs li {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  background: linear-gradient(145deg, rgba(196, 169, 98, 0.12), rgba(9, 9, 8, 0.95));
+}
+
+.portal-courses-page .portal-course-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.15rem;
+}
+
+.portal-courses-page .portal-course-card-actions .portal-btn {
+  flex: 1 1 calc(33.333% - 0.5rem);
+  min-width: 6.5rem;
+}
+
+.portal-courses-page .portal-course-img,
+.portal-courses-page .portal-course-image-fallback {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portal-courses-page .portal-course-image-fallback {
+  background: linear-gradient(
+    145deg,
+    rgba(196, 169, 98, 0.18) 0%,
+    rgba(20, 19, 16, 0.95) 55%,
+    rgba(9, 9, 8, 1) 100%
+  );
+}
+
+/* Course detail modal */
+.portal-course-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: rgba(4, 4, 3, 0.78);
+  backdrop-filter: blur(4px);
+}
+
+.portal-course-modal {
+  width: min(42rem, 100%);
+  max-height: min(92vh, 52rem);
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: linear-gradient(160deg, var(--inside-surface) 0%, var(--inside-bg-panel) 100%);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 6px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.portal-course-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.portal-course-modal-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.25rem;
+  color: var(--portal-heading);
+}
+
+.portal-course-modal-close {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--portal-faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.portal-course-modal-close:hover {
+  color: var(--portal-white);
+}
+
+.portal-course-modal-hero {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border-radius: 6px;
+  background: linear-gradient(145deg, rgba(196, 169, 98, 0.12), rgba(9, 9, 8, 0.95));
+}
+
+.portal-course-modal-hero .portal-course-img,
+.portal-course-modal-hero .portal-course-image-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portal-course-modal-body {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-course-modal-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.35rem;
+  color: var(--portal-heading);
+}
+
+.portal-course-modal-description {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--portal-body);
+}
+
+.portal-course-modal-posts {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--inside-border);
+}
+
+.portal-course-modal-posts h3 {
+  margin: 0 0 0.85rem;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.1rem;
+  color: var(--portal-heading);
+}
+
+.portal-course-modal-body .portal-course-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0;
+}
+
+@media (min-width: 480px) {
+  .portal-course-modal-body .portal-course-card-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.portal-course-modal-body .portal-course-card-stats div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.portal-course-modal-body .portal-course-card-stats dt {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-course-modal-body .portal-course-card-stats dd {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--portal-white);
+}
+
+.portal-course-modal-body .portal-course-card-location {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--inside-gold);
+}
+
+.portal-course-modal-body .portal-course-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-course-modal-body .portal-course-card-actions .portal-btn {
+  flex: 1 1 auto;
+  min-width: 7rem;
+}
+
+/* Early-stage honest copy */
+.portal-early-badge {
+  display: inline-block;
+  margin: 0.5rem 0 0;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 4px;
+}
+
+.portal-empty-note,
+.portal-snapshot-note,
+.portal-profile-stats-note,
+.portal-course-card-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--portal-muted);
+}
+
+.portal-course-card-badge {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  z-index: 1;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inside-bg);
+  background: rgba(196, 169, 98, 0.92);
+  border-radius: 4px;
+}
+
+.portal-course-card-meta {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.portal-course-card-meta span {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-course-card-meta strong {
+  font-weight: 400;
+  color: var(--portal-white);
+}
+
+.portal-notifications-empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--portal-muted);
+}
+
+.portal-discover-layout--early {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .portal-discover-layout--early {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-messages-layout--empty {
+  min-height: 14rem;
+}
+
+.directory-empty--early {
+  padding: 2rem 0;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--portal-muted, rgba(240, 237, 230, 0.52));
+}
+
+.directory-empty--early p + p {
+  margin-top: 0.75rem;
+}
+

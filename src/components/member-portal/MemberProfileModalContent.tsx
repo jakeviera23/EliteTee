@@ -48,12 +48,12 @@ function MemberProfileModalBody({ member, onRequest }: MemberProfileModalContent
   const membershipLine =
     safeMember.membership_status === "Founding Member"
       ? "EliteTee Founding Member"
-      : formatMembershipLabel(displayProfileText(safeMember.membership_status, "Club Verified"));
+      : formatMembershipLabel(displayProfileText(safeMember.membership_status, "Verified"));
 
   if (!safeMember.full_name.trim()) {
     return (
       <p className="portal-alert portal-alert--error" role="alert">
-        This dossier could not be displayed because required profile details are missing.
+        This profile could not be displayed because required details are missing.
       </p>
     );
   }
@@ -63,32 +63,32 @@ function MemberProfileModalBody({ member, onRequest }: MemberProfileModalContent
       <header className="portal-dossier-header portal-dossier-header--identity">
         <MemberIdentity member={safeMember} size="lg" heading="h3" />
         <p className="portal-dossier-membership">{membershipLine}</p>
-        {safeMember.is_verified ? <p className="portal-dossier-verified">Club Verified · Private</p> : null}
+        {safeMember.is_verified ? <p className="portal-dossier-verified">Verified golfer</p> : null}
       </header>
       <div className="portal-dossier-body">
-        <TextBlock label="Primary Club" value={displayProfileText(safeMember.primary_club)} />
-        <ListBlock label="Additional Clubs" items={safeMember.additional_clubs} />
+        <TextBlock label="Home Course" value={displayProfileText(safeMember.primary_club)} />
+        <ListBlock label="Courses Played" items={safeMember.additional_clubs} />
         <TextBlock label="Based In" value={displayProfileText(safeMember.based_in)} />
-        <TextBlock label="Traveling To" value={displayProfileText(safeMember.traveling_to)} />
+        <TextBlock label="Upcoming Travel" value={displayProfileText(safeMember.traveling_to)} />
         <ListBlock label="Regions" items={safeMember.regions} />
-        <TextBlock label="Industry" value={displayProfileText(safeMember.industry)} />
+        <TextBlock label="Headline" value={displayProfileText(safeMember.industry)} />
         <ListBlock label="Golf Interests" items={safeMember.golf_interests} />
-        <ListBlock label="Business Interests" items={safeMember.business_interests} />
-        <TextBlock label="Currently Seeking" value={displayProfileText(safeMember.current_request)} />
+        <ListBlock label="Off-Course Interests" items={safeMember.business_interests} />
+        <TextBlock label="Bio" value={displayProfileText(safeMember.current_request)} />
       </div>
       <button type="button" className="portal-btn portal-btn--gold" onClick={() => onRequest(safeMember)}>
-        Request Private Introduction
+        Send Message
       </button>
     </div>
   );
 }
 
-type DossierErrorBoundaryState = {
+type ProfileErrorBoundaryState = {
   hasError: boolean;
 };
 
-class DossierErrorBoundary extends Component<{ children: ReactNode }, DossierErrorBoundaryState> {
-  state: DossierErrorBoundaryState = { hasError: false };
+class ProfileErrorBoundary extends Component<{ children: ReactNode }, ProfileErrorBoundaryState> {
+  state: ProfileErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError() {
     return { hasError: true };
@@ -102,7 +102,7 @@ class DossierErrorBoundary extends Component<{ children: ReactNode }, DossierErr
     if (this.state.hasError) {
       return (
         <p className="portal-alert portal-alert--error" role="alert">
-          This dossier could not be displayed. Please close and try again.
+          This profile could not be displayed. Please close and try again.
         </p>
       );
     }
@@ -113,8 +113,8 @@ class DossierErrorBoundary extends Component<{ children: ReactNode }, DossierErr
 
 export function MemberProfileModalContent(props: MemberProfileModalContentProps) {
   return (
-    <DossierErrorBoundary>
+    <ProfileErrorBoundary>
       <MemberProfileModalBody {...props} />
-    </DossierErrorBoundary>
+    </ProfileErrorBoundary>
   );
 }

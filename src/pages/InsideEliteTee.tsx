@@ -137,9 +137,9 @@ export function InsideEliteTee() {
       <InsideTopNav />
 
       <div className="inside-shell">
-        <aside className="inside-sidebar" aria-label="Member access">
+        <aside className="inside-sidebar" aria-label="Member sign in">
           <article id="member-access" className="inside-access-card">
-            <h2 className="inside-access-title">Member Access</h2>
+            <h2 className="inside-access-title">Sign In</h2>
             <p className="inside-access-lead">{memberAccessLead}</p>
             <form
               className="inside-access-form"
@@ -196,7 +196,7 @@ export function InsideEliteTee() {
             </form>
             <p className="inside-access-footer">
               <Link to="/#apply" className="inside-access-link">
-                Apply for Membership
+                Apply for Early Access
               </Link>
             </p>
           </article>
@@ -220,11 +220,11 @@ export function InsideEliteTee() {
           <p className="inside-sidebar-foot">
             <LockIcon />
             <span className="inside-sidebar-foot-copy">
-              Private network.
+              Curated golf community.
               <br />
-              Approved members only.
+              Serious golfers only.
               <br />
-              Discretion always.
+              Quality over scale.
             </span>
           </p>
         </aside>
@@ -232,7 +232,7 @@ export function InsideEliteTee() {
         <main className="inside-main">
           <section id="society" className="inside-section">
             <header className="inside-hero">
-              <p className="inside-eyebrow">Private Member Society</p>
+              <p className="inside-eyebrow">EliteTee Society</p>
               <h1>{societyHero.title}</h1>
               <p className="inside-lead">{societyHero.text}</p>
             </header>

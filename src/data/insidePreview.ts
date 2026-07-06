@@ -13,95 +13,88 @@ export const portalNavItems: SidebarNavItem[] = [
 ];
 
 export const memberAccessLead =
-  "Approved members can sign in to access the private EliteTee network.";
+  "Sign in to share your rounds, discover courses, and connect with serious golfers inside EliteTee.";
 
 export const societyHero = {
-  title: "EliteTee Private Member Society",
-  text: "An invitation-based private network connecting verified private club members for trusted golf access, private introductions, business relationships, and long-term connection.",
+  title: "EliteTee Society",
+  text: "A curated golf community where serious golfers share rounds, discover great courses, and build trusted relationships through the game.",
 };
 
 export const trustPoints: string[] = [
-  "Membership reviewed personally",
-  "Club affiliation considered",
-  "Private introductions only",
-  "Member privacy protected",
+  "Curated golf community",
+  "Thoughtful membership review",
+  "Optional profile verification",
+  "Trusted member experiences",
 ];
 
-export const memberBenefitsTitle = "Why Members Join EliteTee";
+export const memberBenefitsTitle = "Why Serious Golfers Join";
 
 export const whyEliteTee = {
-  title: "Private Clubs Have Always Been Built On Relationships",
-  text: "EliteTee extends those relationships beyond a member’s home club. Approved members can discover trusted connections while traveling, request introductions privately, and build meaningful golf and business relationships through a verified network.",
+  title: "The Highest-Quality Golf Community",
+  text: "EliteTee gives serious golfers a curated place to share rounds, discover courses, message members, and build trusted relationships — with optional verification for added trust.",
 };
 
 export const membershipSteps = [
   {
     step: "01",
-    title: "Apply Privately",
-    description: "Submit a private membership request.",
+    title: "Request Membership",
+    description: "Apply to join the curated EliteTee community.",
   },
   {
     step: "02",
-    title: "Verification Process",
-    description: "Club affiliation and background are reviewed carefully.",
+    title: "Thoughtful Review",
+    description: "Applications are reviewed to protect quality and a golf-first experience.",
   },
   {
     step: "03",
-    title: "Approved Access",
-    description: "Accepted members receive access to the private member network.",
+    title: "Member Sign In",
+    description: "Approved golfers receive access to share, discover, and connect.",
   },
   {
     step: "04",
-    title: "Request Introductions",
-    description: "Members privately request introductions to aligned members or regions.",
+    title: "Share & Discover",
+    description: "Post rounds and travel, explore courses through trusted member experiences.",
   },
   {
     step: "05",
-    title: "Mutual Approval",
-    description: "Contact details are shared only after approval.",
+    title: "Connect Through Golf",
+    description: "Build relationships and message golfers who share your love for the game.",
   },
 ];
 
 export const memberBenefits = [
   {
-    title: "Golf Access Beyond Your Home Club",
-    description: "Trusted introductions while traveling or spending time in new regions.",
+    title: "Share Your Rounds",
+    description: "Post photos, stories, and golf travel from wherever you play.",
   },
   {
-    title: "Relationships That Matter",
-    description:
-      "Build genuine long-term connections with members who share similar standards.",
+    title: "Discover Great Courses",
+    description: "Explore destinations through real posts and trusted recommendations.",
   },
   {
-    title: "Business Through Trust",
-    description:
-      "Professional relationships can develop naturally through golf, travel, and private member introductions.",
+    title: "Connect With Golfers",
+    description: "Follow members, message thoughtfully, and build relationships through the game.",
   },
   {
-    title: "Private Member Experiences",
+    title: "Build Trusted Relationships",
     description:
-      "Dinners, curated rounds, and regional gatherings as the network grows.",
-  },
-  {
-    title: "A Private Society Built For Decades",
-    description:
-      "EliteTee is being built deliberately around quality, trust, discretion, and shared standards.",
+      "Meaningful connections through golf, travel, and shared experiences — quality over volume.",
   },
 ];
 
-export const privacyTitle = "Built Around Privacy & Discretion";
+export const privacyTitle = "Built Around Trust & Quality";
 
 export const privacyPoints: string[] = [
-  "No public member directory",
+  "Profiles and messaging designed for members, not the open web",
   "Every application is reviewed individually",
-  "Member access is reserved for approved members",
+  "Optional verification supports trust within a curated community",
   "Contact details are never publicly visible",
-  "Mutual approval is required before introductions",
-  "Private club standards are maintained at all times",
+  "Mutual consent before member messaging",
+  "Respect for the game and fellow golfers at all times",
 ];
 
 export const foundingCta = {
-  title: "Become A Founding Member",
-  text: "EliteTee is privately reviewing a limited number of founding members as the network is built deliberately and without public growth. Membership is granted selectively.",
-  button: "Apply For Membership",
+  title: "Request Membership",
+  text: "EliteTee is a curated early community for serious golfers. Request membership to share rounds, discover courses, and connect as the community grows.",
+  button: "Request Membership",
 };

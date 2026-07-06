@@ -8,7 +8,7 @@ const PLACEHOLDER_ENDPOINT = /YOUR_FORM_ID|YOUR_REAL_FORM_ID/i.test(
 );
 
 const SUCCESS_MESSAGE =
-  "Thank you. Your request has been received and will be reviewed privately.";
+  "Thank you. Your early access request has been received and will be reviewed thoughtfully.";
 
 export function RequestIntroduction() {
   const [submitted, setSubmitted] = useState(false);
@@ -69,10 +69,10 @@ export function RequestIntroduction() {
       <div className="layout request-layout request-layout--membership">
         <header className="section-intro request-intro request-intro--membership">
           <span className="request-logo-mark" aria-hidden="true" />
-          <h2 id="request-heading">Request Membership Consideration</h2>
+          <h2 id="request-heading">Request Membership</h2>
           <p className="section-lead request-lead">
-            EliteTee is reviewing a limited number of founding member applications. Each
-            request is handled privately.
+            EliteTee is a curated golf community for serious golfers to share rounds, discover
+            courses, and build trusted relationships through the game.
           </p>
         </header>
 
@@ -92,28 +92,8 @@ export function RequestIntroduction() {
               </label>
 
               <label>
-                <span>Email Address</span>
+                <span>Email</span>
                 <input type="email" name="email" autoComplete="email" required />
-              </label>
-
-              <label>
-                <span>Home Club / Where You Play Golf</span>
-                <input type="text" name="homeClub" autoComplete="organization" required />
-              </label>
-
-              <label>
-                <span>Other Clubs or Golf Affiliations</span>
-                <input type="text" name="otherClubsAffiliations" />
-              </label>
-
-              <label>
-                <span>Company / Profession</span>
-                <input
-                  type="text"
-                  name="companyProfession"
-                  autoComplete="organization-title"
-                  required
-                />
               </label>
 
               <label>
@@ -122,18 +102,33 @@ export function RequestIntroduction() {
               </label>
 
               <label>
-                <span>How often do you travel for golf or business?</span>
-                <input type="text" name="travelFrequency" required />
+                <span>Home Course / Where You Play Most</span>
+                <input type="text" name="homeClub" autoComplete="organization" required />
+              </label>
+
+              <label>
+                <span>Handicap (optional)</span>
+                <input type="text" name="handicap" inputMode="decimal" />
+              </label>
+
+              <label>
+                <span>Instagram (optional)</span>
+                <input type="text" name="instagram" autoComplete="username" placeholder="@username" />
               </label>
 
               <label className="request-form-wide">
-                <span>What interests you most about EliteTee?</span>
-                <textarea name="interest" rows={4} required />
+                <span>What do you love most about golf?</span>
+                <textarea name="golfLove" rows={3} required />
+              </label>
+
+              <label className="request-form-wide">
+                <span>Why do you want to join EliteTee?</span>
+                <textarea name="whyJoin" rows={4} required />
               </label>
 
               <div className="request-form-actions">
                 <button type="submit" className="btn" disabled={submitting}>
-                  Request consideration
+                  Request Membership
                 </button>
                 {error ? (
                   <p className="request-form-error" role="alert">

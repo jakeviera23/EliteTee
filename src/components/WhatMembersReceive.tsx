@@ -1,4 +1,4 @@
-import { memberBenefits } from "../data/content";
+import { platformFeatures } from "../data/content";
 
 export function WhatMembersReceive() {
   return (
@@ -9,16 +9,16 @@ export function WhatMembersReceive() {
     >
       <div className="layout">
         <header className="section-intro section-intro--compact">
-          <h2 id="members-receive-heading">What Members Receive</h2>
+          <h2 id="members-receive-heading">Built for Serious Golfers</h2>
           <p className="section-lead members-receive-lead">
-            A private network helping golfers expand their circle through trusted
-            introductions, travel connections, and shared opportunities.
+            A curated community to share rounds, discover great courses, and build trusted
+            relationships through the game.
           </p>
         </header>
 
         <ul className="members-receive-grid">
-          {memberBenefits.map((item) => (
-            <li key={item.title}>
+          {platformFeatures.map((item) => (
+            <li key={item.id}>
               <article className="members-receive-card">
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>

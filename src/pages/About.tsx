@@ -20,14 +20,14 @@ export function About() {
               </h2>
               <div className="about-prose prose">
                 <p>
-                  EliteTee was created from years spent inside the golf world, where
-                  relationships, introductions, and trust often matter as much as the round
-                  itself.
+                  EliteTee was created for serious golfers who want more than a general-purpose
+                  feed — a curated community to share rounds, discover great courses, and build
+                  trusted relationships through the game.
                 </p>
                 <p>
-                  The network exists to help ambitious golfers build meaningful connections
-                  across golf, business, and travel while preserving the discretion, etiquette,
-                  and hospitality that define a trusted private network.
+                  We are not trying to be the biggest golf community. We are trying to be the
+                  highest-quality one — thoughtful membership, optional verification, and a
+                  premium experience built around golf.
                 </p>
               </div>
             </section>
@@ -38,9 +38,10 @@ export function About() {
               </h2>
               <div className="about-prose prose">
                 <p>
-                  Great golf communities have always been built on relationships. EliteTee brings
-                  that spirit into a carefully reviewed network where vetted members connect
-                  through geography, travel, business interests, shared pursuits, and the game.
+                  Great golf communities have always been built on shared experiences and trust.
+                  EliteTee brings that spirit into a curated network where serious golfers share
+                  rounds, explore courses through real stories, and build meaningful relationships
+                  — with optional verification when members want added trust.
                 </p>
               </div>
             </section>
@@ -64,18 +65,18 @@ export function About() {
                   <div className="about-prose prose">
                     <p>
                       Jake Viera founded EliteTee after more than a decade spent inside some of
-                      America&apos;s most respected golf clubs.
+                      America&apos;s most respected golf communities.
                     </p>
                     <p>
                       His experience includes McArthur Golf Club, Shinnecock Hills Golf Club,
                       National Golf Links of America, Sebonack Golf Club, La Gorce Country Club,
-                      Calusa Pines Golf Club, Westhampton Beach Country Club, and other private
-                      golf communities throughout New York and Florida.
+                      Calusa Pines Golf Club, Westhampton Beach Country Club, and other renowned
+                      courses throughout New York and Florida.
                     </p>
                     <p>
-                      Through those years, Jake saw firsthand that the greatest value golf creates
-                      is often not the round itself, but the trusted relationships, introductions,
-                      friendships, and opportunities formed around it.
+                      Through those years, Jake saw that the greatest value golf creates is often
+                      the rounds shared, friendships formed, and trusted relationships built around
+                      the game — the inspiration behind EliteTee.
                     </p>
                   </div>
                 </div>
@@ -83,7 +84,7 @@ export function About() {
             </section>
 
             <Link to="/#apply" className="btn about-return">
-              Return to Membership
+              Request Membership
             </Link>
           </div>
         </section>

@@ -1,4 +1,4 @@
-import { requestIntroductionBullets } from "../data/content";
+import { platformFeatures } from "../data/content";
 
 export function RequestIntroductionOverview() {
   return (
@@ -9,16 +9,16 @@ export function RequestIntroductionOverview() {
     >
       <div className="layout">
         <header className="section-intro section-intro--compact">
-          <h2 id="request-overview-heading">Request an Introduction</h2>
+          <h2 id="request-overview-heading">Request Membership</h2>
           <p className="section-lead request-overview-lead">
-            Approved members may submit private introduction requests based on travel plans,
-            business interests, geography, or personal connections they wish to build.
+            Request membership to share rounds, discover courses, and connect with serious golfers
+            in the EliteTee community.
           </p>
         </header>
 
         <ul className="request-overview-list">
-          {requestIntroductionBullets.map((item) => (
-            <li key={item}>{item}</li>
+          {platformFeatures.map((item) => (
+            <li key={item.id}>{item.title}</li>
           ))}
         </ul>
       </div>
