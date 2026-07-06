@@ -1,6 +1,7 @@
 import { photos } from "../assets/photos";
 
-export type MemberBenefit = {
+export type PlatformFeature = {
+  id: string;
   title: string;
   description: string;
 };
@@ -16,135 +17,116 @@ export type FeatureHero = {
   description: string;
   image: string;
   alt: string;
-  /** Fine-tunes crop for warm, club-oriented editorial framing. */
   objectPosition?: string;
 };
 
+export const membershipSocietyLead =
+  "EliteTee is a curated golf community where serious golfers share rounds, discover great courses, and build trusted relationships through the game.";
+
+export const platformFeatures: PlatformFeature[] = [
+  {
+    id: "feed",
+    title: "Share Your Rounds",
+    description:
+      "Post photos, stories, and memorable golf experiences from wherever you play — with golfers who care about the game.",
+  },
+  {
+    id: "discover",
+    title: "Discover Great Courses",
+    description:
+      "Explore courses through member-posted rounds and recommendations as the community grows.",
+  },
+  {
+    id: "community",
+    title: "Connect With Serious Golfers",
+    description:
+      "Follow members, build relationships, and message golfers who share your standards for the game.",
+  },
+  {
+    id: "network",
+    title: "Build Trusted Relationships",
+    description:
+      "Create meaningful connections through golf, travel, and shared experiences — quality over volume.",
+  },
+];
+
+export const modernGolfer = {
+  title: "Quality Over Scale",
+  lead: "EliteTee is not trying to be the biggest golf community. It is trying to be the highest-quality one.",
+  description:
+    "A curated home for serious golfers to share rounds, discover courses, and build trusted relationships — without the noise of mainstream social media.",
+};
+
 export const membershipWorksLead =
-  "Membership begins with a private application, review, and approval process designed to protect quality and trust.";
+  "EliteTee is an early-stage curated community. Membership is selective to protect quality, trust, and a golf-first experience for serious golfers.";
 
 export const membershipWorksSteps: MembershipWorksStep[] = [
   {
     step: "01",
-    title: "Submit Application",
+    title: "Request Membership",
     description:
-      "Complete a private membership request with your golf background, location, profession, and interests.",
+      "Tell us where you play, what you love about golf, and why you want to join EliteTee.",
   },
   {
     step: "02",
-    title: "Private Review",
+    title: "Thoughtful Review",
     description:
-      "Applications are reviewed for fit, golf involvement, professional background, and alignment with EliteTee standards.",
+      "Applications are reviewed to keep the community curated, golf-focused, and welcoming to serious golfers.",
   },
   {
     step: "03",
-    title: "Membership Approval",
+    title: "Join the Community",
     description:
-      "Approved applicants are invited into the founding member group as the initial network develops.",
+      "Approved members receive access to share rounds, discover courses, and connect with trusted golfers.",
   },
   {
     step: "04",
-    title: "Connection Mapping",
+    title: "Share & Discover",
     description:
-      "Member background, location, travel habits, and professional interests help identify strong future connections.",
+      "Post your rounds and travel, explore courses through shared experiences, and follow golf journeys as members join.",
   },
   {
     step: "05",
-    title: "Introductions Begin",
+    title: "Connect Through Golf",
     description:
-      "Connections are considered by geography, travel plans, business interests, golf background, and shared pursuits.",
+      "Build relationships, message members, and find golfers to play with — connection through the game.",
   },
-];
-
-export const memberBenefits: MemberBenefit[] = [
-  {
-    title: "Private Member Introductions",
-    description:
-      "Personally curated introductions to golfers aligned with your interests, business background, location, and travel plans.",
-  },
-  {
-    title: "Expanded Golf Network",
-    description:
-      "Build relationships beyond your home club and connect with ambitious golfers in new cities and golf communities.",
-  },
-  {
-    title: "Business Relationships",
-    description:
-      "Meet professionals, founders, executives, and ambitious golfers through trusted member connections.",
-  },
-  {
-    title: "Travel Connections",
-    description:
-      "Connect with members in cities you visit for golf, business, relocation, or extended stays.",
-  },
-];
-
-export const introductionExamples: MemberBenefit[] = [
-  {
-    title: "Business Travel",
-    description: "Connect with golfers in the cities where business brings you.",
-  },
-  {
-    title: "Golf Travel",
-    description:
-      "Meet members in destinations where you want to play, visit, or spend more time.",
-  },
-  {
-    title: "New Cities",
-    description:
-      "Build trusted relationships when relocating or spending time away from home.",
-  },
-  {
-    title: "Shared Opportunities",
-    description:
-      "Connect through aligned interests in golf, business, investing, hospitality, and enterprise.",
-  },
-];
-
-export const requestIntroductionBullets: string[] = [
-  "Visiting a new city",
-  "Meeting members in your industry",
-  "Relocating or spending time in a new market",
-  "Building relationships within the society",
 ];
 
 export const featureHeroes: FeatureHero[] = [
   {
-    title: "Trusted Connections",
+    title: "Rounds worth sharing",
     description:
-      "Meaningful introductions between members handled with privacy and discretion.",
+      "Follow golf experiences from members who take the game seriously — rounds, travel, and course discovery as the community grows.",
     image: photos.clubhouseSunsetLuxury,
-    alt: "Clubhouse terrace overlooking coastal course at sunset",
+    alt: "Golfer overlooking a coastal fairway at sunset",
     objectPosition: "center 50%",
   },
   {
-    title: "Golf culture",
-    description: "Standing, etiquette, and respect for the game and those who play it.",
+    title: "Trust, by design",
+    description:
+      "Optional verification helps members recognize trusted profiles. Curated membership keeps the community focused on quality.",
     image: photos.clubhouseEveningLuxury,
-    alt: "Clubhouse exterior at dusk with warm interior lighting",
+    alt: "Clubhouse terrace at dusk with warm lighting",
     objectPosition: "center 45%",
   },
 ];
 
-export const membershipSocietyLead =
-  "EliteTee exists for private club golfers who value discretion, trust, and meaningful connection beyond their home club.";
-
 export const memberStandardsLead =
-  "EliteTee is built on trust, discretion, etiquette, and quality relationships.";
+  "EliteTee is built on respect for the game, authentic sharing, and trusted relationships.";
 
 export const memberStandards: string[] = [
-  "Respect for the game, club culture, etiquette, and trusted introductions.",
-  "Conduct on and off the course consistent with the standards expected in a private network.",
-  "Membership information and correspondence handled with discretion.",
-  "Relationships offered in good faith among reviewed members.",
+  "Share golf experiences in good faith — rounds, travel, courses, and the culture of the game.",
+  "Treat fellow members with the courtesy expected on and off the course.",
+  "Optional verification supports trust within a curated community of serious golfers.",
+  "Connect to play together and build relationships through shared golf experiences.",
 ];
 
 export const navLinks = [
   { href: "#society", label: "Society" },
+  { href: "#feed", label: "Feed" },
+  { href: "#discover", label: "Discover" },
+  { href: "#community", label: "Community" },
   { href: "#membership", label: "Membership" },
-  { href: "#standards", label: "Standards" },
-  { href: "/about", label: "About Us" },
-  { href: "/inside", label: "Inside EliteTee" },
-  { href: "#apply", label: "Apply" },
-  { href: "/login", label: "Login", className: "nav-link--login" },
+  { href: "/login", label: "Sign In", className: "nav-link--login" },
 ];

@@ -18,6 +18,7 @@ export type MemberProfileSelfUpdate = {
   business_interests: string[];
   current_request: string;
   traveling_to: string;
+  club_logo_url: string | null;
 };
 
 function parsePostgresArrayString(value: string): string[] {

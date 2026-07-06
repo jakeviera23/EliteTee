@@ -27,6 +27,18 @@
   box-sizing: border-box;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -1104,6 +1116,53 @@ button {
   line-height: 1.55;
   letter-spacing: 0.02em;
   color: rgba(var(--hero-ivory), 0.48);
+}
+
+.hero-cinematic-actions {
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+.hero-cinematic-actions .btn-hero--ghost {
+  color: rgba(var(--hero-ivory), 0.62);
+}
+
+#society,
+#feed,
+#discover,
+#community,
+#network,
+#membership,
+#standards,
+#apply,
+#modern-golfer {
+  scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+
+.modern-golfer {
+  background: linear-gradient(180deg, transparent 0%, rgba(var(--scrim-deep), 0.35) 100%);
+}
+
+.modern-golfer-intro {
+  max-width: 42rem;
+}
+
+.modern-golfer-lead {
+  font-family: var(--serif);
+  font-size: clamp(1.125rem, 2vw, 1.3125rem);
+  font-weight: 300;
+  color: var(--ink);
+}
+
+.modern-golfer-copy {
+  margin: 0.75rem 0 0;
+  max-width: 40rem;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--ink-muted);
+}
+
+.platform-feature-card {
+  scroll-margin-top: calc(var(--nav-h) + 1rem);
 }
 
 .editorial-row {
@@ -2533,4 +2592,79 @@ button {
 .about-return {
   align-self: flex-start;
   margin-top: 0.25rem;
+}
+
+.priorities-sublead {
+  margin: 0.75rem 0 0;
+  max-width: 42rem;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ink-muted);
+}
+
+.portal-product-preview-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .portal-product-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .portal-product-preview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.portal-product-preview-card {
+  display: grid;
+  gap: 0.65rem;
+  height: 100%;
+  padding: 0.85rem;
+  background: var(--bg-paper);
+  border: 1px solid var(--line);
+}
+
+.portal-product-preview-media {
+  position: relative;
+  overflow: hidden;
+}
+
+.portal-product-preview-media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.portal-product-preview-label {
+  position: absolute;
+  left: 0.65rem;
+  bottom: 0.55rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(8, 11, 9, 0.72);
+}
+
+.portal-product-preview-card h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.125rem;
+}
+
+.portal-product-preview-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
 }

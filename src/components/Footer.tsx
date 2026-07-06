@@ -5,7 +5,8 @@ export function Footer() {
         <div className="footer-brand">
           <p className="footer-copy">© EliteTee</p>
           <p className="footer-tagline">
-            Building trusted relationships through golf, business, and travel.
+            A curated golf community for serious golfers — share rounds, discover courses, and
+            build trusted relationships through the game.
           </p>
           <p className="footer-contact">
             Questions? Contact us at{" "}

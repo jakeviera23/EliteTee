@@ -1,2 +1,2 @@
 export const privacyCopy =
-  "Member identities and contact details are never publicly visible. Contact information is released only after mutual approval.";
+  "EliteTee is a curated golf community. Your profile and messages stay within the member community — connect through the game with serious golfers.";

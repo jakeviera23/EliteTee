@@ -1,102 +1,55 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IntroductionRequestForm } from "../components/member-portal/IntroductionRequestForm";
-import { MemberCard } from "../components/member-portal/MemberCard";
-import { MemberProfileModalContent } from "../components/member-portal/MemberProfileModalContent";
-import { PortalHome } from "../components/member-portal/PortalHome";
-import { ProfileDossier } from "../components/member-portal/ProfileDossier";
-import { PrivateMessageModal } from "../components/member-portal/PrivateMessageModal";
-import { RequestsBoard } from "../components/member-portal/RequestsBoard";
+import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
+import { PortalCompose } from "../components/member-portal/PortalCompose";
+import { PortalCourses } from "../components/member-portal/PortalCourses";
+import { PortalDiscover } from "../components/member-portal/PortalDiscover";
+import { PortalFeed } from "../components/member-portal/PortalFeed";
+import { PortalMessages } from "../components/member-portal/PortalMessages";
+import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
+import { earlyStageCopy } from "../data/portalSocial";
+import type { FeedPost } from "../data/portalSocial";
 import { privacyCopy } from "../data/memberPortalDirectory";
-import {
-  createIntroductionRequest,
-  fetchIntroductionRequests,
-  updateIntroductionRequestStatus,
-} from "../lib/introductionRequests";
-import { fetchMemberProfiles, coerceProfileStringList, normalizeMemberProfileRecord } from "../lib/memberProfiles";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
-import {
-  buildRequestsNotificationLabel,
-  countUnseenPendingIntroductionRequests,
-  formatNotificationCount,
-  getPendingReceivedIntroductionRequestIds,
-  getSeenIntroductionRequestIds,
-  markIntroductionRequestsSeen,
-} from "../lib/portalNotifications";
-import { getCurrentAuthUserId } from "../lib/authUserLinking";
+import { formatNotificationCount } from "../lib/portalNotifications";
 import { supabase } from "../lib/supabase";
-import type { IntroductionRequestRecord, IntroductionRequestType } from "../types/introductionRequest";
-import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import "../inside-elitetee.css";
 import "../member-portal.css";
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;
+const FEED_COMPOSER_ID = "feed-composer";
 
-type PortalTab = "home" | "members" | "requests" | "network" | "profile";
+type PortalTab = "feed" | "discover" | "compose" | "courses" | "messages" | "profile";
 
-type PortalModal =
-  | { type: "intro-request"; member: MemberProfileRecord }
-  | { type: "intro-success"; memberName: string }
-  | { type: "profile"; member: MemberProfileRecord };
-
-const portalTabs: { id: PortalTab; label: string }[] = [
-  { id: "home", label: "Home" },
-  { id: "members", label: "Verified Network" },
-  { id: "requests", label: "Member Introductions" },
-  { id: "network", label: "Connections" },
+const desktopTabs: { id: PortalTab; label: string }[] = [
+  { id: "feed", label: "Feed" },
+  { id: "discover", label: "Discover" },
+  { id: "courses", label: "Courses" },
+  { id: "messages", label: "Messages" },
   { id: "profile", label: "Profile" },
 ];
 
-function matchesProfileSearch(member: MemberProfileRecord, query: string) {
-  if (!query.trim()) return true;
+const mobileTabs: { id: PortalTab; label: string }[] = [
+  { id: "feed", label: "Feed" },
+  { id: "discover", label: "Discover" },
+  { id: "compose", label: "Post" },
+  { id: "courses", label: "Courses" },
+  { id: "profile", label: "Profile" },
+];
 
-  const haystack = [
-    member.full_name,
-    member.based_in,
-    ...coerceProfileStringList(member.regions),
-    member.primary_club,
-    ...coerceProfileStringList(member.additional_clubs),
-    member.industry,
-    ...coerceProfileStringList(member.golf_interests),
-    ...coerceProfileStringList(member.business_interests),
-    member.current_request,
-    member.traveling_to,
-    member.membership_status,
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return query
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .every((term) => haystack.includes(term));
-}
-
-export function MemberPortal() {
+function MemberPortalContent() {
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [activeView, setActiveView] = useState<PortalTab>("home");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [modal, setModal] = useState<PortalModal | null>(null);
-  const [members, setMembers] = useState<MemberProfileRecord[]>([]);
-  const [membersLoading, setMembersLoading] = useState(false);
-  const [membersError, setMembersError] = useState<string | null>(null);
-  const [introductionRequests, setIntroductionRequests] = useState<IntroductionRequestRecord[]>([]);
-  const [requestsLoading, setRequestsLoading] = useState(false);
-  const [requestsError, setRequestsError] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
-  const [messageRequest, setMessageRequest] = useState<IntroductionRequestRecord | null>(null);
-  const [introSubmitting, setIntroSubmitting] = useState(false);
-  const [introError, setIntroError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<PortalTab>("feed");
+  const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [seenRequestIds, setSeenRequestIds] = useState<Set<string>>(() => new Set());
-  const [portalDataLoading, setPortalDataLoading] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
+  const scrollAfterTransition = useRef<PortalTab | null>(null);
 
   useEffect(() => {
     const fadeTimer = window.setTimeout(() => setIsInitialLoading(false), INITIAL_LOADER_MS);
@@ -117,241 +70,24 @@ export function MemberPortal() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-
-    async function bootstrapPortalData() {
-      setPortalDataLoading(true);
-      setMembersLoading(true);
-      setRequestsLoading(true);
-      setMembersError(null);
-      setRequestsError(null);
-
-      const { userId, error: userError } = await getCurrentAuthUserId();
-      if (!active) return;
-
-      setCurrentUserId(userId);
-      if (userError) {
-        setRequestsError(userError.message);
-      }
-      if (userId) {
-        setSeenRequestIds(getSeenIntroductionRequestIds(userId));
-      }
-
-      const unreadPromise = userId ? fetchUnreadMessageCount() : Promise.resolve({ count: 0, error: null });
-      const [membersResult, requestsResult, unreadResult] = await Promise.all([
-        fetchMemberProfiles(),
-        fetchIntroductionRequests(),
-        unreadPromise,
-      ]);
-
-      if (!active) return;
-
-      if (membersResult.error) {
-        setMembersError(membersResult.error.message);
-        setMembers([]);
-      } else {
-        setMembers(membersResult.data ?? []);
-      }
-
-      if (requestsResult.error) {
-        setRequestsError(requestsResult.error.message);
-        setIntroductionRequests([]);
-      } else {
-        setIntroductionRequests(requestsResult.data ?? []);
-      }
-
-      if (!unreadResult.error) {
-        setUnreadMessageCount(unreadResult.count);
-      }
-
-      setMembersLoading(false);
-      setRequestsLoading(false);
-      setPortalDataLoading(false);
-    }
-
-    bootstrapPortalData();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    void refreshUnreadMessageCount();
+  }, [refreshUnreadMessageCount]);
 
   useEffect(() => {
-    if (activeView !== "members" || members.length > 0 || membersLoading) return;
+    if (isTransitioning || scrollAfterTransition.current !== "feed") return;
 
-    let active = true;
-    setMembersLoading(true);
-    setMembersError(null);
-
-    fetchMemberProfiles().then(({ data, error }) => {
-      if (!active) return;
-
-      if (error) {
-        setMembersError(error.message);
-        setMembers([]);
-      } else {
-        setMembers(data ?? []);
-      }
-
-      setMembersLoading(false);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [activeView, members.length, membersLoading]);
-
-  const loadIntroductionRequests = useCallback(async () => {
-    setRequestsLoading(true);
-    setRequestsError(null);
-
-    const { data, error } = await fetchIntroductionRequests();
-
-    if (error) {
-      setRequestsError(error.message);
-      setIntroductionRequests([]);
-    } else {
-      setIntroductionRequests(data ?? []);
+    const composer = document.getElementById(FEED_COMPOSER_ID);
+    if (composer) {
+      composer.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-
-    setRequestsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (activeView !== "requests" || !currentUserId) return;
-
-    const pendingReceivedIds = getPendingReceivedIntroductionRequestIds(
-      introductionRequests,
-      currentUserId,
-    );
-
-    if (pendingReceivedIds.length === 0) return;
-
-    markIntroductionRequestsSeen(currentUserId, pendingReceivedIds);
-    setSeenRequestIds(getSeenIntroductionRequestIds(currentUserId));
-  }, [activeView, currentUserId, introductionRequests]);
-
-  const unseenIntroductionCount = useMemo(
-    () =>
-      countUnseenPendingIntroductionRequests({
-        requests: introductionRequests,
-        userId: currentUserId,
-        seenRequestIds,
-      }),
-    [introductionRequests, currentUserId, seenRequestIds],
-  );
-
-  const requestsNotificationCount = unreadMessageCount + unseenIntroductionCount;
-
-  const requestsNotificationLabel = useMemo(
-    () =>
-      buildRequestsNotificationLabel({
-        unreadMessageCount,
-        unseenIntroductionCount,
-      }),
-    [unreadMessageCount, unseenIntroductionCount],
-  );
-
-  async function handleAcceptRequest(requestId: string) {
-    setUpdatingRequestId(requestId);
-    setRequestsError(null);
-
-    const { error } = await updateIntroductionRequestStatus(requestId, "accepted");
-
-    setUpdatingRequestId(null);
-
-    if (error) {
-      setRequestsError(error.message);
-      return;
-    }
-
-    if (currentUserId) {
-      markIntroductionRequestsSeen(currentUserId, [requestId]);
-      setSeenRequestIds(getSeenIntroductionRequestIds(currentUserId));
-    }
-
-    await loadIntroductionRequests();
-  }
-
-  async function handleDeclineRequest(requestId: string) {
-    setUpdatingRequestId(requestId);
-    setRequestsError(null);
-
-    const { error } = await updateIntroductionRequestStatus(requestId, "declined");
-
-    setUpdatingRequestId(null);
-
-    if (error) {
-      setRequestsError(error.message);
-      return;
-    }
-
-    if (currentUserId) {
-      markIntroductionRequestsSeen(currentUserId, [requestId]);
-      setSeenRequestIds(getSeenIntroductionRequestIds(currentUserId));
-    }
-
-    await loadIntroductionRequests();
-  }
-
-  const filteredMembers = useMemo(
-    () => members.filter((member) => matchesProfileSearch(member, searchQuery)),
-    [members, searchQuery],
-  );
-
-  const homeStats = useMemo(
-    () => [
-      { value: String(members.length), label: "Verified Network" },
-      {
-        value: String(introductionRequests.filter((request) => request.status === "pending").length),
-        label: "Pending Introductions",
-      },
-      {
-        value: String(introductionRequests.filter((request) => request.status === "accepted").length),
-        label: "Active Connections",
-      },
-    ],
-    [members.length, introductionRequests],
-  );
-
-  const homeOpportunities = useMemo(
-    () =>
-      introductionRequests
-        .filter((request) => request.status === "pending")
-        .slice(0, 3)
-        .map((request) => ({
-          id: request.id,
-          category: request.request_type,
-          text: request.message,
-        })),
-    [introductionRequests],
-  );
-
-  const networkSummary = useMemo(() => {
-    if (!currentUserId) {
-      return {
-        pendingReceived: 0,
-        activeConnections: 0,
-        outboundPending: 0,
-      };
-    }
-
-    return {
-      pendingReceived: introductionRequests.filter(
-        (request) => request.status === "pending" && request.receiver_id === currentUserId,
-      ).length,
-      activeConnections: introductionRequests.filter(
-        (request) =>
-          request.status === "accepted" &&
-          (request.sender_id === currentUserId || request.receiver_id === currentUserId),
-      ).length,
-      outboundPending: introductionRequests.filter(
-        (request) => request.status === "pending" && request.sender_id === currentUserId,
-      ).length,
-    };
-  }, [currentUserId, introductionRequests]);
+    scrollAfterTransition.current = null;
+  }, [isTransitioning, activeView]);
 
   const showLoader = isInitialLoaderVisible || isTransitioning;
+
+  function handleNewPost(post: FeedPost) {
+    setFeedPosts((current) => [post, ...current]);
+  }
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -361,67 +97,38 @@ export function MemberPortal() {
     navigate("/login", { replace: true });
   }
 
-  function closeModal() {
-    setModal(null);
-    setIntroError(null);
-    setIntroSubmitting(false);
-  }
+  function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
+    if (view === activeView && !options?.scrollToComposer) return;
 
-  function openIntroRequestModal(member: MemberProfileRecord) {
-    setIntroError(null);
-    setModal({ type: "intro-request", member });
-  }
-
-  function openProfileModal(member: MemberProfileRecord) {
-    setModal({
-      type: "profile",
-      member: normalizeMemberProfileRecord(member as unknown as Record<string, unknown>),
-    });
-  }
-
-  async function handleIntroSubmit(
-    member: MemberProfileRecord,
-    payload: { requestType: IntroductionRequestType; message: string },
-  ) {
-    setIntroSubmitting(true);
-    setIntroError(null);
-
-    const { error } = await createIntroductionRequest({
-      receiverMember: member,
-      requestType: payload.requestType,
-      message: payload.message,
-    });
-
-    setIntroSubmitting(false);
-
-    if (error) {
-      setIntroError(error.message);
-      return;
+    if (options?.scrollToComposer) {
+      scrollAfterTransition.current = "feed";
     }
-
-    setModal({ type: "intro-success", memberName: member.full_name });
-  }
-
-  function transitionTo(view: PortalTab) {
-    if (view === activeView) return;
 
     setIsTransitioning(true);
     window.setTimeout(() => {
-      setActiveView(view);
+      setActiveView(view === "compose" && options?.scrollToComposer ? "feed" : view);
+      if (view === "messages") {
+        void refreshUnreadMessageCount();
+      }
       window.setTimeout(() => setIsTransitioning(false), TAB_TRANSITION_MS);
     }, TAB_TRANSITION_MS * 0.45);
   }
 
-  function handleTabChange(tab: PortalTab) {
+  function handleViewCourse(courseId: string) {
+    setPendingCourseId(courseId);
+    transitionTo("courses");
+  }
+
+  function handleMobileNav(tab: PortalTab) {
+    if (tab === "compose") {
+      transitionTo("feed", { scrollToComposer: true });
+      return;
+    }
     transitionTo(tab);
   }
 
-  function handleHomeSearchSubmit() {
-    transitionTo("members");
-  }
-
   return (
-    <div className="inside-page portal-page">
+    <div className="inside-page portal-page portal-page--social">
       {showLoader ? (
         <div
           className={`portal-loader${isInitialLoading || isTransitioning ? "" : " is-fading"}`}
@@ -432,268 +139,152 @@ export function MemberPortal() {
       ) : null}
 
       <header className="portal-top">
-        <button
-          type="button"
-          className="portal-logo-link"
-          aria-label="EliteTee member portal home"
-          onClick={() => transitionTo("home")}
-        >
-          <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          className="portal-btn portal-btn--gold portal-signout"
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-        >
-          {isSigningOut ? "Signing out..." : "Sign Out"}
-        </button>
+        <div className="portal-shell portal-shell--bar">
+          <button
+            type="button"
+            className="portal-logo-link"
+            aria-label="EliteTee feed"
+            onClick={() => transitionTo("feed")}
+          >
+            <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
+          </button>
+
+          <div className="portal-top-actions">
+          <button
+            type="button"
+            className="portal-icon-btn"
+            aria-label="Notifications"
+            aria-expanded={showNotifications}
+            onClick={() => setShowNotifications((value) => !value)}
+          >
+            <span aria-hidden="true">◦</span>
+            <span className="portal-icon-btn-label">Alerts</span>
+          </button>
+          <button
+            type="button"
+            className="portal-icon-btn portal-icon-btn--messages"
+            aria-label={
+              unreadMessageCount > 0
+                ? `${unreadMessageCount} unread messages`
+                : "Open messages"
+            }
+            onClick={() => transitionTo("messages")}
+          >
+            <span aria-hidden="true">✉</span>
+            <span className="portal-icon-btn-label">Messages</span>
+            {unreadMessageCount > 0 ? (
+              <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            className="portal-btn portal-btn--gold portal-signout"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+          >
+            {isSigningOut ? "Signing out..." : "Sign Out"}
+          </button>
+        </div>
+        </div>
       </header>
 
-      <nav className="portal-tabs" aria-label="Private member portal">
-        {portalTabs.map((tab) => (
+      {showNotifications ? (
+        <aside className="portal-notifications" aria-label="Notifications">
+          <p className="portal-notifications-title">Alerts</p>
+          <p className="portal-notifications-empty">{earlyStageCopy.notificationsEmpty}</p>
+        </aside>
+      ) : null}
+
+      <nav className="portal-tabs portal-tabs--desktop" aria-label="EliteTee member portal">
+        <div className="portal-shell portal-shell--bar">
+        {desktopTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
             className={`portal-tab${activeView === tab.id ? " is-active" : ""}`}
-            onClick={() => handleTabChange(tab.id)}
+            onClick={() => transitionTo(tab.id)}
             aria-current={activeView === tab.id ? "page" : undefined}
           >
             <span className="portal-tab-label">
               {tab.label}
-              {tab.id === "requests" && requestsNotificationCount > 0 ? (
-                <span
-                  className="portal-tab-badge"
-                  aria-label={requestsNotificationLabel}
-                  title={requestsNotificationLabel}
-                >
-                  {formatNotificationCount(requestsNotificationCount)}
+              {tab.id === "messages" && unreadMessageCount > 0 ? (
+                <span className="portal-tab-badge" aria-hidden="true">
+                  {formatNotificationCount(unreadMessageCount)}
                 </span>
               ) : null}
             </span>
           </button>
         ))}
+        </div>
       </nav>
 
-      <main className={`portal-main${isInitialLoading ? " is-loading" : ""}`}>
-        {activeView === "home" ? (
-          <PortalHome
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onSearchSubmit={handleHomeSearchSubmit}
-            onViewOpportunity={() => transitionTo("requests")}
-            stats={homeStats}
-            opportunities={homeOpportunities}
-            isLoading={portalDataLoading}
+      <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
+        <div className="portal-shell">
+        {activeView === "feed" ? (
+          <PortalFeed
+            posts={feedPosts}
+            onPost={handleNewPost}
+            showComposer
+            composerId={FEED_COMPOSER_ID}
           />
         ) : null}
-
-        {activeView === "members" ? (
-          <section className="portal-directory" aria-labelledby="members-heading">
-            <header className="portal-section-head">
-              <h2 id="members-heading">The Verified Network</h2>
-              <p>Discreetly explore private club members within the EliteTee circle.</p>
-            </header>
-            <label className="portal-search-label">
-              <span className="visually-hidden">Search the verified network</span>
-              <input
-                type="search"
-                className="portal-search-input"
-                placeholder="Search clubs, destinations, industries..."
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-            </label>
-
-            {membersLoading ? (
-              <p className="portal-empty">Retrieving the verified network...</p>
-            ) : membersError ? (
-              <p className="portal-alert portal-alert--error" role="alert">
-                {membersError}
-              </p>
-            ) : members.length === 0 ? (
-              <p className="portal-empty portal-empty--directory">
-                The verified network will appear here as memberships are confirmed.
-              </p>
-            ) : (
-              <>
-                <ul className="portal-member-grid">
-                  {filteredMembers.map((member) => (
-                    <li key={member.id}>
-                      <MemberCard
-                        member={member}
-                        onViewProfile={openProfileModal}
-                        onRequest={openIntroRequestModal}
-                      />
-                    </li>
-                  ))}
-                </ul>
-                {filteredMembers.length === 0 ? (
-                  <p className="portal-empty">No members match this inquiry at present.</p>
-                ) : null}
-              </>
-            )}
-          </section>
+        {activeView === "discover" ? (
+          <PortalDiscover onViewCourse={handleViewCourse} />
         ) : null}
-
-        {activeView === "requests" ? (
-          <section className="portal-requests" aria-labelledby="requests-heading">
-            <header className="portal-section-head">
-              <h2 id="requests-heading">Member Introductions</h2>
-              <p>
-                Private introduction requests within the EliteTee network.
-              </p>
-            </header>
-
-            {requestsLoading ? (
-              <p className="portal-empty">Retrieving member introductions...</p>
-            ) : requestsError ? (
-              <p className="portal-alert portal-alert--error" role="alert">
-                {requestsError}
-              </p>
-            ) : introductionRequests.length === 0 ? (
-              <p className="portal-empty portal-empty--directory">
-                Private introductions will appear here once initiated.
-              </p>
-            ) : (
-              <RequestsBoard
-                requests={introductionRequests}
-                currentUserId={currentUserId}
-                updatingRequestId={updatingRequestId}
-                onAccept={handleAcceptRequest}
-                onDecline={handleDeclineRequest}
-                onMessageMember={setMessageRequest}
-              />
-            )}
-          </section>
+        {activeView === "compose" ? (
+          <PortalCompose onPost={handleNewPost} onPosted={() => transitionTo("feed")} />
         ) : null}
-
-        {messageRequest && currentUserId ? (
-          <PrivateMessageModal
-            request={messageRequest}
-            currentUserId={currentUserId}
-            onClose={() => {
-              setMessageRequest(null);
-              void refreshUnreadMessageCount();
-            }}
-            onMessagesRead={refreshUnreadMessageCount}
+        {activeView === "courses" ? (
+          <PortalCourses
+            initialCourseId={pendingCourseId}
+            onCourseOpened={() => setPendingCourseId(null)}
           />
         ) : null}
-
-        {activeView === "network" ? (
-          <section className="portal-network" aria-labelledby="network-heading">
-            <header className="portal-section-head">
-              <h2 id="network-heading">Connections</h2>
-              <p>Your private introductions and established relationships.</p>
-            </header>
-            <div className="portal-network-grid">
-              <article className="portal-panel-card portal-panel-card--network">
-                <h3>Pending Introductions</h3>
-                <p>
-                  {networkSummary.pendingReceived === 0
-                    ? "Introductions awaiting your review will appear here."
-                    : `${networkSummary.pendingReceived} introduction${networkSummary.pendingReceived === 1 ? "" : "s"} awaiting your review.`}
-                </p>
-              </article>
-              <article className="portal-panel-card portal-panel-card--network">
-                <h3>Active Connections</h3>
-                <p>
-                  {networkSummary.activeConnections === 0
-                    ? "Approved private connections will appear here."
-                    : `${networkSummary.activeConnections} active connection${networkSummary.activeConnections === 1 ? "" : "s"} within your network.`}
-                </p>
-              </article>
-              <article className="portal-panel-card portal-panel-card--network">
-                <h3>Outbound Introductions</h3>
-                <p>
-                  {networkSummary.outboundPending === 0
-                    ? "Outbound introductions awaiting response will appear here."
-                    : `${networkSummary.outboundPending} outbound introduction${networkSummary.outboundPending === 1 ? "" : "s"} awaiting response.`}
-                </p>
-              </article>
-            </div>
-          </section>
-        ) : null}
-
+        {activeView === "messages" ? <PortalMessages unreadCount={unreadMessageCount} /> : null}
         {activeView === "profile" ? (
-          <section className="portal-profile" aria-labelledby="profile-heading">
-            <header className="portal-section-head portal-section-head--profile">
-              <h2 id="profile-heading">Private Dossier</h2>
-              <p>Your confidential profile within the EliteTee network.</p>
-            </header>
-            <ProfileDossier isActive={activeView === "profile"} />
-          </section>
+          <GolferProfilePage isActive={activeView === "profile"} feedPosts={feedPosts} />
         ) : null}
 
         <section className="portal-privacy">
           <p>{privacyCopy}</p>
         </section>
+        </div>
       </main>
 
-      {modal ? (
-        <div className="portal-modal" role="dialog" aria-modal="true" aria-labelledby="portal-modal-title">
+      <nav className="portal-bottom-nav" aria-label="Mobile navigation">
+        {mobileTabs.map((tab) => (
           <button
+            key={tab.id}
             type="button"
-            className="portal-modal-backdrop"
-            aria-label="Close dialog"
-            onClick={closeModal}
-          />
-          <div
-            className={`portal-modal-card${
-              modal.type === "profile" ? " portal-modal-card--wide portal-modal-card--dossier" : ""
-            }`}
+            className={`portal-bottom-nav-btn${(tab.id === "compose" ? activeView === "feed" : activeView === tab.id) ? " is-active" : ""}${tab.id === "compose" ? " portal-bottom-nav-btn--post" : ""}`}
+            onClick={() => handleMobileNav(tab.id)}
+            aria-current={
+              (tab.id === "compose" ? activeView === "feed" : activeView === tab.id) ? "page" : undefined
+            }
           >
-            {modal.type === "intro-request" ? (
-              <IntroductionRequestForm
-                member={modal.member}
-                isSubmitting={introSubmitting}
-                errorMessage={introError}
-                onSubmit={(payload) => handleIntroSubmit(modal.member, payload)}
-                onCancel={closeModal}
-              />
-            ) : null}
-
-            {modal.type === "intro-success" ? (
-              <>
-                <p className="portal-eyebrow">EliteTee Private Network</p>
-                <h3 id="portal-modal-title">Introduction Submitted</h3>
-                <p className="portal-alert portal-alert--success" role="status">
-                  Your private introduction to {modal.memberName} has been submitted for review.
-                </p>
-                <button type="button" className="portal-btn portal-btn--gold" onClick={closeModal}>
-                  Close
-                </button>
-              </>
-            ) : null}
-
-            {modal.type === "profile" ? (
-              <div className="portal-modal-dossier">
-                <h3 id="portal-modal-title" className="visually-hidden">
-                  {modal.member.full_name} private dossier
-                </h3>
-                <div className="portal-modal-dossier-scroll">
-                  <MemberProfileModalContent
-                    member={modal.member}
-                    onRequest={(member) => {
-                      setModal({ type: "intro-request", member });
-                      setIntroError(null);
-                    }}
-                  />
-                </div>
-                <div className="portal-modal-dossier-footer">
-                  <button
-                    type="button"
-                    className="portal-btn portal-btn--outline portal-modal-secondary"
-                    onClick={closeModal}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+            <span className="portal-bottom-nav-icon" aria-hidden="true">
+              {tab.id === "feed"
+                ? "⌂"
+                : tab.id === "discover"
+                  ? "◎"
+                  : tab.id === "compose"
+                    ? "+"
+                    : tab.id === "courses"
+                      ? "⛳"
+                      : "◉"}
+            </span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
+  );
+}
+
+export function MemberPortal() {
+  return (
+    <PortalToastProvider>
+      <MemberPortalContent />
+    </PortalToastProvider>
   );
 }
