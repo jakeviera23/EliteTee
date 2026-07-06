@@ -1,6 +1,6 @@
 # EliteTee
 
-EliteTee is an invite-only platform connecting verified private golf club members for golf, travel, networking, and trusted introductions.
+EliteTee is a premium golf social platform built for serious golfers to share rounds, discover great courses, and build trusted relationships through the game.
 
 
 🌐 Live Website: https://elitetee.club
