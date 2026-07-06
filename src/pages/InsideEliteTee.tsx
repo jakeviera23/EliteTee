@@ -14,6 +14,7 @@ import {
   trustPoints,
   whyEliteTee,
 } from "../data/insidePreview";
+import { photos } from "../assets/photos";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import "../inside-elitetee.css";
 
@@ -78,7 +79,7 @@ export function InsideEliteTee() {
     setLoginError(null);
 
     if (!isSupabaseConfigured || !supabase) {
-      setLoginError("Member login is temporarily unavailable.");
+      setLoginError("Member login is temporarily unavailable. You can still request membership below.");
       return;
     }
 
@@ -139,6 +140,15 @@ export function InsideEliteTee() {
       <div className="inside-shell">
         <aside className="inside-sidebar" aria-label="Member sign in">
           <article id="member-access" className="inside-access-card">
+            <div className="inside-access-visual" aria-hidden="true">
+              <img
+                src={photos.heroAerial}
+                alt="Aerial view of sand bunkers on a private fairway"
+                loading="eager"
+                decoding="async"
+                style={{ objectFit: "cover", objectPosition: "center", width: "100%", height: "100%" }}
+              />
+            </div>
             <h2 className="inside-access-title">Sign In</h2>
             <p className="inside-access-lead">{memberAccessLead}</p>
             <form
@@ -282,6 +292,15 @@ export function InsideEliteTee() {
               {memberBenefits.map((benefit) => (
                 <li key={benefit.title}>
                   <article className="inside-benefit-card">
+                    <div className="inside-benefit-media">
+                      <img
+                        src={benefit.image.src}
+                        alt={benefit.image.alt}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ objectFit: "cover", objectPosition: "center", width: "100%", height: "100%" }}
+                      />
+                    </div>
                     <h3>{benefit.title}</h3>
                     <p>{benefit.description}</p>
                   </article>

@@ -8,7 +8,7 @@ const PLACEHOLDER_ENDPOINT = /YOUR_FORM_ID|YOUR_REAL_FORM_ID/i.test(
 );
 
 const SUCCESS_MESSAGE =
-  "Thank you. Your early access request has been received and will be reviewed thoughtfully.";
+  "Your request has been received. We'll review it thoughtfully.";
 
 export function RequestIntroduction() {
   const [submitted, setSubmitted] = useState(false);

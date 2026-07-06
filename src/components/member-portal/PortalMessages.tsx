@@ -1,19 +1,12 @@
-import { useState } from "react";
 import { earlyStageCopy } from "../../data/portalSocial";
-import { NewConversationModal } from "./NewConversationModal";
-import { usePortalToast } from "./PortalToastProvider";
+import { useComingSoon } from "./ComingSoonProvider";
 
 type PortalMessagesProps = {
   unreadCount?: number;
 };
 
 export function PortalMessages({ unreadCount = 0 }: PortalMessagesProps) {
-  const { showToast } = usePortalToast();
-  const [showNewConversation, setShowNewConversation] = useState(false);
-
-  function handleStartConversation(_golferId: string, _golferName: string, _message: string) {
-    showToast("Message saved locally — messaging opens as members join.");
-  }
+  const { showComingSoon } = useComingSoon();
 
   return (
     <section className="portal-social-page portal-messages-page" aria-labelledby="messages-heading">
@@ -26,7 +19,7 @@ export function PortalMessages({ unreadCount = 0 }: PortalMessagesProps) {
         <button
           type="button"
           className="portal-btn portal-btn--gold portal-btn--compact"
-          onClick={() => setShowNewConversation(true)}
+          onClick={() => showComingSoon("New Conversation")}
         >
           New Conversation
         </button>
@@ -45,19 +38,12 @@ export function PortalMessages({ unreadCount = 0 }: PortalMessagesProps) {
           <button
             type="button"
             className="portal-btn portal-btn--outline"
-            onClick={() => setShowNewConversation(true)}
+            onClick={() => showComingSoon("New Conversation")}
           >
             New Conversation
           </button>
         </div>
       </div>
-
-      {showNewConversation ? (
-        <NewConversationModal
-          onClose={() => setShowNewConversation(false)}
-          onStart={handleStartConversation}
-        />
-      ) : null}
     </section>
   );
 }

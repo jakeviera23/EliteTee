@@ -6,8 +6,8 @@ import { PortalCourses } from "../components/member-portal/PortalCourses";
 import { PortalDiscover } from "../components/member-portal/PortalDiscover";
 import { PortalFeed } from "../components/member-portal/PortalFeed";
 import { PortalMessages } from "../components/member-portal/PortalMessages";
+import { ComingSoonProvider, useComingSoon } from "../components/member-portal/ComingSoonProvider";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
-import { earlyStageCopy } from "../data/portalSocial";
 import type { FeedPost } from "../data/portalSocial";
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
@@ -40,6 +40,7 @@ const mobileTabs: { id: PortalTab; label: string }[] = [
 
 function MemberPortalContent() {
   const navigate = useNavigate();
+  const { showComingSoon } = useComingSoon();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
@@ -47,7 +48,6 @@ function MemberPortalContent() {
   const [activeView, setActiveView] = useState<PortalTab>("feed");
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
 
@@ -154,8 +154,7 @@ function MemberPortalContent() {
             type="button"
             className="portal-icon-btn"
             aria-label="Notifications"
-            aria-expanded={showNotifications}
-            onClick={() => setShowNotifications((value) => !value)}
+            onClick={() => showComingSoon("Notifications")}
           >
             <span aria-hidden="true">◦</span>
             <span className="portal-icon-btn-label">Alerts</span>
@@ -187,13 +186,6 @@ function MemberPortalContent() {
         </div>
         </div>
       </header>
-
-      {showNotifications ? (
-        <aside className="portal-notifications" aria-label="Notifications">
-          <p className="portal-notifications-title">Alerts</p>
-          <p className="portal-notifications-empty">{earlyStageCopy.notificationsEmpty}</p>
-        </aside>
-      ) : null}
 
       <nav className="portal-tabs portal-tabs--desktop" aria-label="EliteTee member portal">
         <div className="portal-shell portal-shell--bar">
@@ -284,7 +276,9 @@ function MemberPortalContent() {
 export function MemberPortal() {
   return (
     <PortalToastProvider>
-      <MemberPortalContent />
+      <ComingSoonProvider>
+        <MemberPortalContent />
+      </ComingSoonProvider>
     </PortalToastProvider>
   );
 }

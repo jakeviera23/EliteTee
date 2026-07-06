@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { MouseEvent } from "react";
 import { photos } from "../assets/photos";
+import { publicEarlyStageCopy } from "../data/content";
 
 function scrollToApply(event: MouseEvent<HTMLAnchorElement>) {
   if (window.location.pathname !== "/") return;
@@ -23,6 +24,7 @@ export function Hero() {
         loading="eager"
         decoding="async"
         fetchPriority="high"
+        style={{ objectFit: "cover", objectPosition: "center" }}
       />
       <div className="hero-cinematic-overlay" aria-hidden />
       <div className="hero-cinematic-inner layout">
@@ -44,8 +46,8 @@ export function Hero() {
             </Link>
           </div>
           <p className="hero-cinematic-note">
-            Not the biggest golf community — the highest-quality one. Curated membership for
-            serious golfers.
+            Not the biggest golf community — the highest-quality one. {publicEarlyStageCopy.earlyCommunity}
+            . {publicEarlyStageCopy.applicationsReviewed}.
           </p>
         </div>
       </div>

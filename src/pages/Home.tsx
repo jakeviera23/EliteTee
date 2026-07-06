@@ -11,8 +11,8 @@ export function Home() {
       <Navbar />
       <main>
         <EditorialSpread />
-        <HowMembershipWorks />
         <MemberStandards />
+        <HowMembershipWorks />
         <RequestIntroduction />
       </main>
       <Footer />

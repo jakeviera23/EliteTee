@@ -15,7 +15,7 @@ export function PlatformFeatures() {
 
         <ul className="members-receive-grid platform-features-grid">
           {platformFeatures.map((item) => (
-            <li key={item.id} id={item.id}>
+            <li key={item.id}>
               <article className="members-receive-card platform-feature-card">
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>

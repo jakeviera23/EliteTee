@@ -72,15 +72,14 @@ export type FeedPost = {
   likes: number;
   comments: number;
   timestamp: string;
-  isLiked?: boolean;
-  isSaved?: boolean;
-  rating?: number;
-  playedWith?: string;
   roundType?: RoundType;
-  commentPreview?: { author: string; text: string };
+  playedWith?: string;
+  rating?: number;
   weather?: string;
   score?: string;
-  travelNotes?: string;
+  isLiked?: boolean;
+  isSaved?: boolean;
+  commentPreview?: { author: string; text: string };
 };
 
 export type CourseListing = {
@@ -96,18 +95,27 @@ export type CourseListing = {
 
 export type MessagePreview = {
   id: string;
-  name: string;
+  golferId: string;
+  golferName: string;
   preview: string;
   timestamp: string;
   unread: boolean;
-  isVerified: boolean;
 };
 
 export type MessageThread = {
   id: string;
-  name: string;
-  isVerified: boolean;
-  messages: { id: string; sender: "me" | "them"; text: string; time: string }[];
+  golferId: string;
+  golferName: string;
+  messages: { id: string; sender: string; text: string; timestamp: string }[];
+};
+
+export const postTypeLabels: Record<PostType, string> = {
+  photo: "Photo",
+  carousel: "Carousel",
+  "played-today": "Played Today",
+  "bucket-list": "Bucket List",
+  "golf-travel": "Golf Travel",
+  "course-review": "Course Review",
 };
 
 export const roundTypeOptions: RoundType[] = [
@@ -118,14 +126,18 @@ export const roundTypeOptions: RoundType[] = [
   "Bucket List",
 ];
 
-export const postTypeLabels: Record<PostType, string> = {
-  photo: "Round Photo",
-  carousel: "Round Gallery",
-  "played-today": "Played Today",
-  "bucket-list": "Bucket List Course",
-  "golf-travel": "Golf Travel",
-  "course-review": "Course Review",
+const courseImageById: Record<string, string> = {
+  "course-ngla": photos.courseNationalGolfLinks,
+  "course-pebble": photos.coursePebbleBeach,
+  "course-bandon": photos.courseBandonDunes,
+  "course-standrews": photos.courseStAndrews,
+  "course-cabot": photos.courseCabotCliffs,
+  "course-rcd": photos.courseRoyalCountyDown,
 };
+
+export function getCourseImagePath(courseId: string): string {
+  return courseImageById[courseId] ?? photos.courseNationalGolfLinks;
+}
 
 /** Fallback golfer shape for composers when profile fields are empty. */
 export const emptyGolferDefaults: PortalGolfer = {

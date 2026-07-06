@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { photos } from "../../assets/photos";
 import { earlyStageCopy } from "../../data/portalSocial";
 
 type PortalDiscoverProps = {
@@ -10,6 +11,16 @@ export function PortalDiscover({ onViewCourse: _onViewCourse }: PortalDiscoverPr
 
   return (
     <section className="portal-social-page portal-discover-page" aria-labelledby="discover-heading">
+      <div className="portal-discover-hero" aria-hidden="true">
+        <img
+          src={photos.heroAerial}
+          alt="Aerial view of sand bunkers on a private fairway"
+          style={{ objectFit: "cover", objectPosition: "center", width: "100%", height: "100%" }}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
       <header className="portal-section-head portal-section-head--social portal-section-head--compact">
         <h2 id="discover-heading">Discover</h2>
         <p>Find golfers, courses, and destinations as the EliteTee community grows.</p>

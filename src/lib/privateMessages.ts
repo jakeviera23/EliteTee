@@ -77,7 +77,11 @@ export async function fetchPrivateMessages(introductionRequestId: string) {
     return { data: null, error: accessError };
   }
 
-  const { data, error } = await supabase!
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase
     .from("private_messages")
     .select("id, introduction_request_id, sender_id, receiver_id, body, created_at")
     .eq("introduction_request_id", introductionRequestId)
@@ -134,7 +138,11 @@ export async function sendPrivateMessage({
 
   console.debug("[private_messages insert]", insertPayload);
 
-  const { data, error } = await supabase!
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase
     .from("private_messages")
     .insert(insertPayload)
     .select("id")
