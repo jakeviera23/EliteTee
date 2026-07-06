@@ -35,7 +35,7 @@ export function CourseGridCard({ course, onView }: CourseGridCardProps) {
   return (
     <article className="portal-course-card">
       <div className="portal-course-card-hero">
-        <CourseImage src={course.image} alt={course.imageAlt} fill />
+        <CourseImage src={course.image} alt={course.imageAlt} objectPosition="center" fill />
         <span className="portal-course-card-badge">{earlyStageCopy.featuredCourseLabel}</span>
       </div>
 

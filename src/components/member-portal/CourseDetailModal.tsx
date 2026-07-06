@@ -71,7 +71,7 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
         </header>
 
         <div className="portal-course-modal-hero">
-          <CourseImage src={course.image} alt={course.imageAlt} fill />
+          <CourseImage src={course.image} alt={course.imageAlt} objectPosition="center" fill />
           <span className="portal-course-card-badge">{earlyStageCopy.featuredCourseLabel}</span>
         </div>
 

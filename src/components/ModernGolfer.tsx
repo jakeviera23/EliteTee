@@ -1,4 +1,4 @@
-import { modernGolfer } from "../data/content";
+import { modernGolfer, publicEarlyStageCopy } from "../data/content";
 
 export function ModernGolfer() {
   return (
@@ -12,6 +12,7 @@ export function ModernGolfer() {
           <h2 id="modern-golfer-heading">{modernGolfer.title}</h2>
           <p className="section-lead modern-golfer-lead">{modernGolfer.lead}</p>
           <p className="modern-golfer-copy">{modernGolfer.description}</p>
+          <p className="section-note">{publicEarlyStageCopy.activityGrows}</p>
         </header>
       </div>
     </section>

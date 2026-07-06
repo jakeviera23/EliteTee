@@ -1,35 +1,32 @@
-import { useState } from "react";
+import { SafeImage } from "../SafeImage";
 
 type CourseImageProps = {
   src: string;
   alt: string;
   className?: string;
+  objectPosition?: string;
   /** Fill a positioned parent (hero / thumbnail slots). */
   fill?: boolean;
 };
 
-export function CourseImage({ src, alt, className, fill = false }: CourseImageProps) {
-  const [failed, setFailed] = useState(false);
-  const classes = [fill ? "portal-course-img" : "", className].filter(Boolean).join(" ");
-
-  if (failed || !src.trim()) {
-    return (
-      <div
-        className={`portal-course-image-fallback${classes ? ` ${classes}` : ""}`}
-        role="img"
-        aria-label={alt}
-      />
-    );
-  }
-
+/** Local approved assets — see src/assets/photos.ts. */
+export function CourseImage({
+  src,
+  alt,
+  className,
+  objectPosition = "center 50%",
+  fill = false,
+}: CourseImageProps) {
   return (
-    <img
+    <SafeImage
       src={src}
       alt={alt}
-      className={classes || undefined}
+      objectPosition={objectPosition}
+      fill={fill}
+      className={className}
+      fallbackClassName="portal-course-image-fallback"
       loading="lazy"
       decoding="async"
-      onError={() => setFailed(true)}
     />
   );
 }

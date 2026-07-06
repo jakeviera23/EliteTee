@@ -1,4 +1,4 @@
-import { membershipWorksLead, membershipWorksSteps } from "../data/content";
+import { membershipWorksLead, membershipWorksSteps, publicEarlyStageCopy } from "../data/content";
 
 export function HowMembershipWorks() {
   return (
@@ -7,11 +7,15 @@ export function HowMembershipWorks() {
       className="section section--compact membership-works"
       aria-labelledby="membership-works-heading"
     >
-      <div className="layout">
-        <header className="membership-works-header">
-          <h2 id="membership-works-heading">Membership</h2>
-          <p className="membership-works-lead">{membershipWorksLead}</p>
-        </header>
+      <div className="layout membership-works-layout">
+        <div className="membership-works-content">
+          <header className="membership-works-header">
+            <p className="section-eyebrow">{publicEarlyStageCopy.memberAccessSoon}</p>
+            <h2 id="membership-works-heading">Membership</h2>
+            <p className="membership-works-lead">{membershipWorksLead}</p>
+            <p className="section-note">{publicEarlyStageCopy.applicationsReviewed}</p>
+          </header>
+        </div>
 
         <ol className="membership-works-steps membership-works-steps--five">
           {membershipWorksSteps.map((item) => (

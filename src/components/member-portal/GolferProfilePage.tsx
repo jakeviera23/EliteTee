@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { demoCourses, earlyStageCopy, type FeedPost } from "../../data/portalSocial";
 import { photos } from "../../assets/photos";
+import { SafeImage } from "../SafeImage";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getBucketListCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
@@ -94,10 +95,14 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
       {isLoading ? <p className="portal-empty">Loading your profile...</p> : null}
 
       <article className="portal-golfer-profile portal-golfer-profile--premium">
-        <div
-          className="portal-golfer-cover"
-          style={{ backgroundImage: `url(${display.coverImage || photos.courseNationalGolfLinks})` }}
-        >
+        <div className="portal-golfer-cover">
+          <SafeImage
+            src={display.coverImage || photos.heroSunset}
+            alt="Profile cover"
+            objectPosition="center"
+            fill
+            fallbackClassName="portal-golfer-cover-fallback"
+          />
           <button
             type="button"
             className="portal-btn portal-btn--gold portal-btn--compact portal-golfer-edit"

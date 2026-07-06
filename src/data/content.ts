@@ -93,6 +93,13 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
   },
 ];
 
+export const publicEarlyStageCopy = {
+  earlyCommunity: "Early community",
+  memberAccessSoon: "Member access opening soon",
+  applicationsReviewed: "Applications reviewed thoughtfully",
+  activityGrows: "Course and member activity will grow as members join.",
+} as const;
+
 export const featureHeroes: FeatureHero[] = [
   {
     title: "Rounds worth sharing",
@@ -108,7 +115,7 @@ export const featureHeroes: FeatureHero[] = [
       "Optional verification helps members recognize trusted profiles. Curated membership keeps the community focused on quality.",
     image: photos.clubhouseEveningLuxury,
     alt: "Clubhouse terrace at dusk with warm lighting",
-    objectPosition: "center 45%",
+    objectPosition: "center",
   },
 ];
 
@@ -124,8 +131,8 @@ export const memberStandards: string[] = [
 
 export const navLinks = [
   { href: "#society", label: "Society" },
-  { href: "#feed", label: "Feed" },
-  { href: "#discover", label: "Discover" },
+  { href: "#feed-preview", label: "Feed" },
+  { href: "#discover-preview", label: "Discover" },
   { href: "#community", label: "Community" },
   { href: "#membership", label: "Membership" },
   { href: "/login", label: "Sign In", className: "nav-link--login" },

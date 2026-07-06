@@ -11,8 +11,8 @@ export function EditorialSpread() {
     <div className="editorial-spread">
       <Hero />
       <MembershipPriorities />
-      <PlatformFeatures />
       <PortalProductPreview />
+      <PlatformFeatures />
       <ModernGolfer />
       <EditorialImagery />
     </div>

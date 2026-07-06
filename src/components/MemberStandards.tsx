@@ -1,15 +1,17 @@
-import { memberStandards, memberStandardsLead } from "../data/content";
+import { memberStandards, memberStandardsLead, publicEarlyStageCopy } from "../data/content";
 
 export function MemberStandards() {
   return (
     <section
-      id="standards"
+      id="community"
       className="section section--compact standards standards--dark"
       aria-labelledby="standards-heading"
     >
       <div className="layout standards-layout">
         <header className="standards-statement">
+          <p className="section-eyebrow">{publicEarlyStageCopy.earlyCommunity}</p>
           <p className="standards-statement-title">{memberStandardsLead}</p>
+          <p className="section-note">{publicEarlyStageCopy.activityGrows}</p>
         </header>
 
         <div className="standards-body">

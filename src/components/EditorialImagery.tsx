@@ -12,9 +12,7 @@ export function EditorialImagery() {
                 alt={item.alt}
                 loading="lazy"
                 decoding="async"
-                {...(item.objectPosition
-                  ? { style: { objectPosition: item.objectPosition } }
-                  : {})}
+                style={{ objectFit: "cover", objectPosition: "center" }}
               />
               <div className="editorial-card-scrim" aria-hidden />
               <div className="editorial-card-overlay-copy layout">

@@ -2773,15 +2773,35 @@
   position: relative;
   min-height: 8.5rem;
   max-height: 10rem;
-  background-size: cover;
-  background-position: center;
   isolation: isolate;
+  overflow: hidden;
+}
+
+.portal-golfer-cover .site-image--fill {
+  z-index: 0;
+}
+
+.portal-golfer-cover-fallback,
+.portal-course-image-fallback.site-image--fallback {
+  background:
+    linear-gradient(145deg, #121210 0%, #242420 45%, #121210 100%),
+    radial-gradient(circle at 70% 30%, rgba(196, 164, 98, 0.14), transparent 50%);
+}
+
+.portal-discover-hero {
+  position: relative;
+  height: 9rem;
+  margin: 0 0 1rem;
+  overflow: hidden;
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 6px;
 }
 
 .portal-golfer-cover::after {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(
     180deg,
     rgba(9, 9, 8, 0.08) 0%,
@@ -2795,6 +2815,7 @@
   position: absolute;
   right: 0.85rem;
   bottom: 0.85rem;
+  z-index: 2;
   z-index: 2;
 }
 
@@ -3249,6 +3270,13 @@
   font-size: 1.5rem;
   line-height: 1;
   color: var(--portal-faint);
+}
+
+.portal-coming-soon-copy {
+  margin: 0 0 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--portal-body);
 }
 
 .portal-modal-golfer-identity {

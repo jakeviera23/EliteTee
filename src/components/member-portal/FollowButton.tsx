@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useComingSoon } from "./ComingSoonProvider";
 
 type FollowButtonProps = {
   initialFollowing?: boolean;
@@ -6,25 +6,17 @@ type FollowButtonProps = {
   onToggle?: (following: boolean) => void;
 };
 
-export function FollowButton({ initialFollowing = false, compact = false, onToggle }: FollowButtonProps) {
-  const [following, setFollowing] = useState(initialFollowing);
-
-  function handleClick() {
-    setFollowing((current) => {
-      const next = !current;
-      onToggle?.(next);
-      return next;
-    });
-  }
+export function FollowButton({ compact = false }: FollowButtonProps) {
+  const { showComingSoon } = useComingSoon();
 
   return (
     <button
       type="button"
-      className={`portal-follow-btn${following ? " is-following" : ""}${compact ? " portal-follow-btn--compact" : ""}`}
-      onClick={handleClick}
-      aria-pressed={following}
+      className={`portal-follow-btn${compact ? " portal-follow-btn--compact" : ""}`}
+      onClick={() => showComingSoon("Follow")}
+      aria-pressed={false}
     >
-      {following ? "Following" : "Follow"}
+      Follow
     </button>
   );
 }

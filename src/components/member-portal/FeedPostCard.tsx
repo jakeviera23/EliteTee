@@ -1,8 +1,8 @@
 import { FormEvent, useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
+import { useComingSoon } from "./ComingSoonProvider";
 import { MemberClubAvatar } from "./MemberClubAvatar";
-import { RequestConnectionModal } from "./RequestConnectionModal";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 type FeedPostComment = {
@@ -39,13 +39,13 @@ function ActionButton({
 }
 
 export function FeedPostCard({ post, compact = false, onToast }: FeedPostCardProps) {
+  const { showComingSoon } = useComingSoon();
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [saved, setSaved] = useState(Boolean(post.isSaved));
   const [likeCount, setLikeCount] = useState(post.likes);
   const [commentCount, setCommentCount] = useState(post.comments);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
-  const [showRequestRound, setShowRequestRound] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [comments, setComments] = useState<FeedPostComment[]>(
     post.commentPreview
@@ -72,8 +72,11 @@ export function FeedPostCard({ post, compact = false, onToast }: FeedPostCardPro
   }
 
   function handleMessage() {
-    // TODO: Open Messages thread with author when messaging API is wired.
-    onToast?.(`Message ${post.author.name.split(" ")[0]}`);
+    showComingSoon("Messaging");
+  }
+
+  function handleRequestRound() {
+    showComingSoon("Request Round");
   }
 
   function handleCommentSubmit(event: FormEvent<HTMLFormElement>) {
@@ -168,7 +171,7 @@ export function FeedPostCard({ post, compact = false, onToast }: FeedPostCardPro
             <ActionButton label={saved ? "Saved" : "Save"} active={saved} onClick={toggleSave} />
             <ActionButton label="Message" onClick={handleMessage} />
             {!isOwnPost ? (
-              <ActionButton label="Request Round" onClick={() => setShowRequestRound(true)} />
+              <ActionButton label="Request Round" onClick={handleRequestRound} />
             ) : null}
           </div>
 
@@ -201,14 +204,6 @@ export function FeedPostCard({ post, compact = false, onToast }: FeedPostCardPro
           ) : null}
         </div>
       </article>
-
-      {showRequestRound ? (
-        <RequestConnectionModal
-          golferName={post.author.name}
-          onClose={() => setShowRequestRound(false)}
-          onSent={() => onToast?.("Request sent")}
-        />
-      ) : null}
     </>
   );
 }

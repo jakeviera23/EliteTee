@@ -1,6 +1,19 @@
+import { photos } from "../assets/photos";
+
+const base = import.meta.env.BASE_URL;
+
+function asset(path: string) {
+  return `${base}${path.replace(/^\//, "")}`;
+}
+
 export type SidebarNavItem = {
   id: string;
   label: string;
+};
+
+export type BenefitImage = {
+  src: string;
+  alt: string;
 };
 
 export const portalNavItems: SidebarNavItem[] = [
@@ -62,23 +75,36 @@ export const membershipSteps = [
   },
 ];
 
-export const memberBenefits = [
+export type MemberBenefit = {
+  title: string;
+  description: string;
+  image: BenefitImage;
+};
+
+export const memberBenefits: MemberBenefit[] = [
   {
     title: "Share Your Rounds",
     description: "Post photos, stories, and golf travel from wherever you play.",
+    image: { src: photos.swingHorizon, alt: "Golfer mid-swing on a sunlit fairway" },
   },
   {
     title: "Discover Great Courses",
     description: "Explore destinations through real posts and trusted recommendations.",
+    image: { src: photos.coastAerial, alt: "Aerial view of coastal golf landscape" },
   },
   {
     title: "Connect With Golfers",
     description: "Follow members, message thoughtfully, and build relationships through the game.",
+    image: { src: photos.clubhouseEveningLuxury, alt: "Clubhouse terrace at dusk" },
   },
   {
     title: "Build Trusted Relationships",
     description:
       "Meaningful connections through golf, travel, and shared experiences — quality over volume.",
+    image: {
+      src: asset("images/member-portal/portal-profile-cover.jpg"),
+      alt: "Sunset over a private golf course",
+    },
   },
 ];
 
