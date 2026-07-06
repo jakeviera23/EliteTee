@@ -78,7 +78,7 @@ export function InsideEliteTee() {
     setLoginError(null);
 
     if (!isSupabaseConfigured || !supabase) {
-      setLoginError("Member login is temporarily unavailable.");
+      setLoginError("Member login is temporarily unavailable. You can still request membership below.");
       return;
     }
 

@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { isAdminEmail } from "../lib/admin";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { RouteLoading } from "./RouteLoading";
 
 export function AdminRoute({ children }: { children: ReactNode }) {
   const [checked, setChecked] = useState(false);
@@ -16,13 +17,21 @@ export function AdminRoute({ children }: { children: ReactNode }) {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!active) return;
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!active) return;
 
-      const email = session?.user.email;
-      setIsAllowed(!!session && isAdminEmail(email));
-      setChecked(true);
-    });
+        const email = session?.user.email;
+        setIsAllowed(!!session && isAdminEmail(email));
+        setChecked(true);
+      })
+      .catch((error) => {
+        console.warn("Admin session check failed:", error);
+        if (!active) return;
+        setIsAllowed(false);
+        setChecked(true);
+      });
 
     return () => {
       active = false;
@@ -30,7 +39,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
   }, []);
 
   if (!checked) {
-    return null;
+    return <RouteLoading label="Checking admin access" />;
   }
 
   if (!isAllowed) {
