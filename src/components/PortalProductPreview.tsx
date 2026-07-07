@@ -5,38 +5,48 @@ const previewCards = [
     id: "feed",
     sectionId: "feed-preview",
     title: "Feed",
-    description: "Share rounds, photos, and stories as the community grows.",
-    src: "/images/homepage/homepage-feed.jpg",
-    alt: "Coastal links green beside the sea",
+    description:
+      "Share rounds, ask for introductions, find games while traveling, and learn where members are playing.",
+    src: "/images/homepage/product-feed.png",
+    alt: "EliteTee Feed page — post a round, request a game, or ask for an introduction",
+    objectPosition: "top",
   },
   {
     id: "courses",
     title: "Courses",
-    description: "Preview featured courses — member posts and recommendations will follow.",
-    src: "/images/homepage/homepage-courses.jpg",
-    alt: "Clifftop green and bunker with a resort clubhouse above the coast",
+    description:
+      "Discover the world's greatest golf courses through trusted member reviews, recommendations, and travel plans.",
+    src: "/images/homepage/product-courses.png",
+    alt: "EliteTee Courses page — course cards, filters, and Course Signals",
+    objectPosition: "top",
   },
   {
     id: "discover",
     sectionId: "discover-preview",
     title: "Discover",
-    description: "Find golfers and destinations as approved members join EliteTee.",
-    src: "/images/homepage/homepage-discover.jpg",
-    alt: "Rolling fairways at golden hour",
+    description:
+      "Search members by club, location, destination, and interests to build meaningful golf connections.",
+    src: "/images/homepage/product-discover.png",
+    alt: "EliteTee Discover page — find golfers, filters, and Travel Board",
+    objectPosition: "top",
   },
   {
     id: "messages",
     title: "Messages",
-    description: "Connect through golf with thoughtful conversations and trusted relationships.",
-    src: "/images/homepage/homepage-messages.jpg",
-    alt: "Coastal green beside cliffs and the sea",
+    description:
+      "Start thoughtful conversations around rounds, travel, introductions, and shared golf interests.",
+    src: "/images/homepage/product-messages.png",
+    alt: "EliteTee Messages page — member conversations and threads",
+    objectPosition: "top",
   },
   {
     id: "profile",
     title: "Profile",
-    description: "Show your golf journey — home course, favorite courses, travel, and recent rounds.",
-    src: "/images/homepage/homepage-profile.jpg",
-    alt: "Clubhouse patio overlooking the course and coast",
+    description:
+      "Show your golf identity — home club, favorite courses, travel plans, recent rounds, and connections.",
+    src: "/images/homepage/product-profile.png",
+    alt: "EliteTee Profile page — golfer identity, stats, and course lists",
+    objectPosition: "top",
   },
 ];
 
@@ -68,7 +78,7 @@ export function PortalProductPreview() {
                     alt={card.alt}
                     loading="lazy"
                     decoding="async"
-                    style={{ objectFit: "cover", objectPosition: "center" }}
+                    style={{ objectFit: "cover", objectPosition: card.objectPosition ?? "center" }}
                   />
                   <span className="portal-product-preview-label">{card.title}</span>
                 </div>

@@ -3514,7 +3514,7 @@
   margin: 0 0 1.25rem;
   font-size: 0.9375rem;
   line-height: 1.65;
-  color: var(--portal-body);
+  color: var(--portal-white);
 }
 
 .portal-modal-golfer-identity {
@@ -3767,6 +3767,37 @@
   position: relative;
   inset: auto;
   z-index: auto;
+}
+
+/* Coming Soon dialog (opened from Alerts) — guarantee a solid, readable card.
+   Scoped to --coming-soon so other modals are untouched. */
+.portal-modal-backdrop:has(.portal-modal--coming-soon) {
+  z-index: 300;
+  background: rgba(4, 4, 3, 0.86);
+  backdrop-filter: blur(6px);
+}
+
+.portal-modal.portal-modal--coming-soon {
+  display: block;
+  width: min(28rem, 100%);
+  max-height: none;
+  padding: 1.5rem;
+  background: var(--inside-surface-raised);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 14px;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.85);
+}
+
+.portal-modal--coming-soon .portal-modal-head h2 {
+  color: var(--portal-white);
+}
+
+.portal-modal--coming-soon .portal-coming-soon-copy {
+  color: var(--portal-white);
+}
+
+.portal-modal--coming-soon .portal-modal-close {
+  color: var(--portal-body);
 }
 
 .portal-feed-top {
@@ -4810,11 +4841,156 @@
   border-bottom-color: var(--inside-gold);
 }
 
+.feed-composer-title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.05rem;
+  color: var(--portal-heading);
+}
+
 .feed-composer-expand {
   display: grid;
   gap: 0.85rem;
   margin-top: 0.85rem;
   animation: feed-composer-reveal 0.35s var(--ease) both;
+}
+
+/* Post-type selector — quiet private-club pill row */
+.feed-composer-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.feed-composer-type {
+  padding: 0.4rem 0.75rem;
+  font-family: var(--sans);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--inside-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    background 0.3s var(--ease);
+}
+
+.feed-composer-type:hover {
+  color: var(--portal-body);
+  border-color: var(--inside-border-gold);
+}
+
+.feed-composer-type.is-active {
+  color: var(--inside-bg);
+  background: var(--inside-gold);
+  border-color: var(--inside-gold);
+}
+
+.feed-composer-field textarea {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--portal-white);
+  background: var(--inside-bg);
+  border: 1px solid var(--inside-border);
+  border-radius: 6px;
+  resize: vertical;
+  transition: border-color 0.3s var(--ease);
+}
+
+.feed-composer-field textarea:focus {
+  outline: none;
+  border-color: var(--inside-gold);
+}
+
+.feed-composer-footer-note {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--portal-faint);
+}
+
+.feed-composer-helper {
+  margin: 0.7rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--portal-muted);
+}
+
+/* —— Text-forward feed cards (travel / requests / discussion) —— */
+.feed-card-topline {
+  display: grid;
+  gap: 0.35rem;
+  padding: var(--feed-pad) var(--feed-pad) 0;
+}
+
+.feed-card-badge {
+  justify-self: start;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+  background: rgba(196, 169, 98, 0.1);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 999px;
+}
+
+.feed-card-topline-title {
+  margin: 0.15rem 0 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.3rem, 1.6vw, 1.6rem);
+  line-height: 1.2;
+  color: var(--portal-heading);
+}
+
+.feed-card-topline-location {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--inside-gold);
+}
+
+/* Structured metadata rows */
+.feed-card-details {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--inside-border);
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.feed-card-detail {
+  display: grid;
+  grid-template-columns: minmax(6rem, 8rem) 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.feed-card-detail dt {
+  margin: 0;
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.feed-card-detail dd {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--portal-body);
 }
 
 .feed-composer-grid {
@@ -4952,9 +5128,11 @@
   border: 1px solid var(--inside-border);
   border-radius: 14px;
   box-shadow: 0 22px 48px -34px rgba(0, 0, 0, 0.85);
-  opacity: 0;
-  transform: translateY(18px);
-  animation: feed-card-in 0.6s var(--ease) both;
+  /* Resting state has no transform so the card is not stuck on a composited
+     layer, which caused the media to rasterize soft on HiDPI displays.
+     `backwards` fill still holds the hidden start state during the stagger. */
+  opacity: 1;
+  animation: feed-card-in 0.6s var(--ease) backwards;
   transition:
     transform 0.4s var(--ease),
     border-color 0.4s var(--ease),
@@ -5120,6 +5298,7 @@
   font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--portal-body);
+  white-space: pre-line;
 }
 
 .feed-card-played-with {
