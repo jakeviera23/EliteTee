@@ -2,7 +2,7 @@ import { photos } from "../assets/photos";
 import { emptyGolferDefaults, earlyStageCopy } from "../data/portalSocial";
 import type { PortalGolfer } from "../data/portalSocial";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
-import { getPortalProfileExtras, type PortalProfileExtras } from "./portalProfileExtras";
+import { getPortalProfileExtras, parseFavoriteCoursesFromExtras, type PortalProfileExtras } from "./portalProfileExtras";
 
 export type GolferProfileDisplay = {
   name: string;
@@ -35,48 +35,58 @@ export function buildGolferProfileDisplay(
   const userExtras = extras ?? getPortalProfileExtras(member?.user_id);
 
   if (!member) {
+    const useLocal = userExtras.has_local_snapshot;
     return {
-      name: "Your profile",
-      title: "",
-      location: "",
-      homeCourse: "",
-      bio: earlyStageCopy.beAmongFirst,
+      name: useLocal && userExtras.full_name.trim() ? userExtras.full_name : "Your profile",
+      title: useLocal ? userExtras.headline : "",
+      location: useLocal ? userExtras.based_in : "",
+      homeCourse: useLocal ? userExtras.primary_club : "",
+      bio: useLocal && userExtras.bio.trim() ? userExtras.bio : earlyStageCopy.beAmongFirst,
       isVerified: false,
-      avatarImage: photos.founderPortrait,
+      avatarImage:
+        useLocal && userExtras.profile_photo_url.trim()
+          ? userExtras.profile_photo_url
+          : photos.founderPortrait,
       coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
       followers: 0,
       following: 0,
       coursesPlayed: parseOptionalNumber(userExtras.courses_played_count),
       roundsPosted: parseOptionalNumber(userExtras.rounds_posted),
       countriesPlayed: parseOptionalNumber(userExtras.countries_played),
-      favoriteCourses: [],
-      upcomingTravel: "",
+      favoriteCourses: useLocal
+        ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
+        : [],
+      upcomingTravel: useLocal ? userExtras.traveling_to : "",
       handicap: userExtras.handicap.trim() ? Number(userExtras.handicap) : undefined,
     };
   }
 
   const handicapText = userExtras.handicap.trim();
   const parsedHandicap = handicapText ? Number(handicapText) : undefined;
+  const useLocal = userExtras.has_local_snapshot;
 
   return {
-    name: member.full_name,
-    title: member.industry || "",
-    location: member.based_in,
-    homeCourse: member.primary_club,
-    bio: member.current_request || earlyStageCopy.beAmongFirst,
+    name: useLocal ? userExtras.full_name : member.full_name,
+    title: useLocal ? userExtras.headline : member.industry || "",
+    location: useLocal ? userExtras.based_in : member.based_in,
+    homeCourse: useLocal ? userExtras.primary_club : member.primary_club,
+    bio: useLocal
+      ? userExtras.bio || earlyStageCopy.beAmongFirst
+      : member.current_request || earlyStageCopy.beAmongFirst,
     isVerified: member.is_verified,
-    avatarImage: member.club_logo_url?.trim() || photos.founderPortrait,
+    avatarImage: useLocal
+      ? userExtras.profile_photo_url.trim() || photos.founderPortrait
+      : member.club_logo_url?.trim() || photos.founderPortrait,
     coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
     followers: 0,
     following: 0,
-    coursesPlayed: parseOptionalNumber(
-      userExtras.courses_played_count,
-      member.additional_clubs.length > 0 ? member.additional_clubs.length : 0,
-    ),
+    coursesPlayed: parseOptionalNumber(userExtras.courses_played_count),
     roundsPosted: parseOptionalNumber(userExtras.rounds_posted),
     countriesPlayed: parseOptionalNumber(userExtras.countries_played),
-    favoriteCourses: member.additional_clubs,
-    upcomingTravel: member.traveling_to || "",
+    favoriteCourses: useLocal
+      ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
+      : member.additional_clubs,
+    upcomingTravel: useLocal ? userExtras.traveling_to : member.traveling_to || "",
     handicap:
       parsedHandicap !== undefined && Number.isFinite(parsedHandicap) ? parsedHandicap : undefined,
   };

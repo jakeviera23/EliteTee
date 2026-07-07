@@ -221,7 +221,10 @@ function MemberPortalContent() {
           />
         ) : null}
         {activeView === "discover" ? (
-          <PortalDiscover onViewCourse={handleViewCourse} />
+          <PortalDiscover
+            onViewCourse={handleViewCourse}
+            onNavigate={(tab) => transitionTo(tab)}
+          />
         ) : null}
         {activeView === "compose" ? (
           <PortalCompose onPost={handleNewPost} onPosted={() => transitionTo("feed")} />

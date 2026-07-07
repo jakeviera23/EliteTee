@@ -91,6 +91,10 @@ export type CourseListing = {
   image: string;
   imageAlt: string;
   nearbyCourseIds: string[];
+  membersPlayed: number;
+  membersWantToPlay: number;
+  recentActivity: string;
+  tags: string[];
 };
 
 export type MessagePreview = {
@@ -166,66 +170,90 @@ export const demoCourses: CourseListing[] = [
     name: "National Golf Links of America",
     location: "Southampton, New York",
     description:
-      "A historic American links with bold landforms, wind, and a timeless sense of place.",
+      "Historic American links with bold landforms, wind, and a timeless sense of place.",
     bestMonths: "May – October",
     image: photos.courseNationalGolfLinks,
     imageAlt: "National Golf Links of America windmill fairway",
     nearbyCourseIds: ["course-pebble"],
+    membersPlayed: 42,
+    membersWantToPlay: 18,
+    recentActivity: "3 rounds shared this month",
+    tags: ["private", "links"],
   },
   {
     id: "course-pebble",
     name: "Pebble Beach Golf Links",
     location: "Pebble Beach, California",
     description:
-      "Iconic coastal golf where every hole sits above the Pacific — a benchmark for seaside design.",
+      "Iconic coastal golf above the Pacific and one of the great public golf experiences.",
     bestMonths: "April – October",
     image: photos.coursePebbleBeach,
     imageAlt: "Pebble Beach Golf Links",
     nearbyCourseIds: ["course-bandon"],
+    membersPlayed: 57,
+    membersWantToPlay: 31,
+    recentActivity: "6 members saved this course",
+    tags: ["coastal", "links"],
   },
   {
     id: "course-bandon",
     name: "Bandon Dunes",
     location: "Bandon, Oregon",
     description:
-      "A pilgrimage destination for walking golf, Pacific views, and multi-course adventures.",
+      "A walking-golf destination built around dunes, ocean, wind, and multiple courses.",
     bestMonths: "June – September",
     image: photos.courseBandonDunes,
     imageAlt: "Bandon Dunes",
     nearbyCourseIds: ["course-pebble", "course-cabot"],
+    membersPlayed: 36,
+    membersWantToPlay: 44,
+    recentActivity: "Popular for summer trips",
+    tags: ["coastal", "links", "bucket-list"],
   },
   {
     id: "course-standrews",
     name: "St Andrews Links",
     location: "St Andrews, Scotland",
     description:
-      "The home of golf — a links tapestry defined by history, firm turf, and endless angles.",
+      "The home of golf, defined by history, firm turf, angles, and tradition.",
     bestMonths: "May – September",
     image: photos.courseStAndrews,
     imageAlt: "St Andrews Links",
     nearbyCourseIds: ["course-rcd"],
+    membersPlayed: 61,
+    membersWantToPlay: 39,
+    recentActivity: "4 members traveling soon",
+    tags: ["links", "traveling-soon"],
   },
   {
     id: "course-cabot",
     name: "Cabot Cliffs",
     location: "Inverness, Nova Scotia",
     description:
-      "Dramatic cliffside golf on the Atlantic — among the most striking walks in modern golf.",
+      "Dramatic cliffside golf on the Atlantic and one of the most striking modern walks.",
     bestMonths: "July – September",
     image: photos.courseCabotCliffs,
     imageAlt: "Cabot Cliffs",
     nearbyCourseIds: ["course-bandon", "course-rcd"],
+    membersPlayed: 28,
+    membersWantToPlay: 35,
+    recentActivity: "2 rounds shared recently",
+    tags: ["coastal"],
   },
   {
     id: "course-rcd",
     name: "Royal County Down",
     location: "Newcastle, Northern Ireland",
     description:
-      "Mountains, dunes, and one of the world's great walking tests along the Irish Sea.",
+      "Mountains, dunes, blind shots, and one of the great walking tests in golf.",
     bestMonths: "June – August",
     image: photos.courseRoyalCountyDown,
     imageAlt: "Royal County Down",
     nearbyCourseIds: ["course-standrews"],
+    membersPlayed: 33,
+    membersWantToPlay: 41,
+    recentActivity: "High on member wish lists",
+    tags: ["links", "coastal", "bucket-list"],
   },
 ];
 

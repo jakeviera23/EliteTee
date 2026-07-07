@@ -1,6 +1,15 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createMemberProfile, linkMemberProfileToAuthUser, parseListInput, AUTH_USER_ID_LINKING_NOTE } from "../lib/memberProfiles";
+import {
+  createMemberProfile,
+  fetchAdminDashboardCounts,
+  fetchRecentMemberProfilesForAdmin,
+  formatAdminError,
+  linkMemberProfileToAuthUser,
+  parseListInput,
+  AUTH_USER_ID_LINKING_NOTE,
+  type AdminMemberRow,
+} from "../lib/memberProfiles";
 import { supabase } from "../lib/supabase";
 import "../inside-elitetee.css";
 import "../member-portal.css";
@@ -17,6 +26,7 @@ type FormState = {
   golf_interests: string;
   business_interests: string;
   current_request: string;
+  traveling_to: string;
   membership_status: string;
   is_verified: boolean;
 };
@@ -33,9 +43,17 @@ const initialFormState: FormState = {
   golf_interests: "",
   business_interests: "",
   current_request: "",
+  traveling_to: "",
   membership_status: "Verified Member",
   is_verified: true,
 };
+
+function formatAdminDate(value: string) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 export function AdminMembers() {
   const navigate = useNavigate();
@@ -49,6 +67,29 @@ export function AdminMembers() {
   const [isLinking, setIsLinking] = useState(false);
   const [linkMessage, setLinkMessage] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [dashboardCounts, setDashboardCounts] = useState({
+    profilesCreated: 0,
+    approvedMembers: 0,
+  });
+  const [recentMembers, setRecentMembers] = useState<AdminMemberRow[]>([]);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+
+  const refreshAdminData = useCallback(async () => {
+    setIsLoadingDashboard(true);
+
+    const [counts, recent] = await Promise.all([
+      fetchAdminDashboardCounts(),
+      fetchRecentMemberProfilesForAdmin(10),
+    ]);
+
+    setDashboardCounts(counts);
+    setRecentMembers(recent.data);
+    setIsLoadingDashboard(false);
+  }, []);
+
+  useEffect(() => {
+    void refreshAdminData();
+  }, [refreshAdminData]);
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -70,7 +111,7 @@ export function AdminMembers() {
     setSuccessMessage(null);
     setErrorMessage(null);
 
-    const { data, error } = await createMemberProfile({
+    const { data, error, travelingToSkipped } = await createMemberProfile({
       user_id: form.auth_user_id.trim(),
       full_name: form.full_name.trim(),
       email: form.email.trim().toLowerCase(),
@@ -82,7 +123,7 @@ export function AdminMembers() {
       golf_interests: parseListInput(form.golf_interests),
       business_interests: parseListInput(form.business_interests),
       current_request: form.current_request.trim(),
-      traveling_to: "",
+      traveling_to: form.traveling_to.trim(),
       membership_status: form.membership_status.trim(),
       is_verified: form.is_verified,
     });
@@ -90,16 +131,19 @@ export function AdminMembers() {
     setIsSubmitting(false);
 
     if (error) {
-      const message =
-        error.message.includes("duplicate") || error.message.includes("unique")
-          ? "A member profile with this email already exists."
-          : error.message;
-      setErrorMessage(message);
+      setErrorMessage(formatAdminError(error));
       return;
     }
 
-    setSuccessMessage(`Member profile created successfully.${data?.id ? ` ID: ${data.id}` : ""}`);
+    const travelingNote = travelingToSkipped
+      ? " Note: traveling_to column is not in the database yet — profile saved without it."
+      : "";
+
+    setSuccessMessage(
+      `Member profile created successfully.${data?.id ? ` ID: ${data.id}` : ""}${travelingNote}`,
+    );
     setForm(initialFormState);
+    void refreshAdminData();
   }
 
   async function handleLinkSubmit(event: FormEvent<HTMLFormElement>) {
@@ -116,7 +160,7 @@ export function AdminMembers() {
     setIsLinking(false);
 
     if (error) {
-      setLinkError(error.message);
+      setLinkError(formatAdminError(error));
       return;
     }
 
@@ -125,6 +169,7 @@ export function AdminMembers() {
     );
     setLinkEmail("");
     setLinkAuthUserId("");
+    void refreshAdminData();
   }
 
   return (
@@ -144,179 +189,298 @@ export function AdminMembers() {
       </header>
 
       <main className="portal-main portal-admin-main">
-        <header className="portal-section-head">
-          <h1>Admin — Create Member Profile</h1>
+        <header className="portal-section-head portal-admin-head">
+          <h1>EliteTee Admin</h1>
           <p>
-            Manually add approved applicants to the EliteTee member directory. Applications continue
-            to arrive through Formspree.
+            Internal dashboard for onboarding approved members, linking logins, and keeping member
+            records accurate.
           </p>
-          <p className="portal-admin-note">{AUTH_USER_ID_LINKING_NOTE}</p>
         </header>
 
-        {successMessage ? (
-          <p className="portal-alert portal-alert--success" role="status">
-            {successMessage}
-          </p>
-        ) : null}
+        <section className="admin-dashboard" aria-label="Admin overview">
+          <article className="admin-stat-card admin-stat-card--placeholder">
+            <p className="admin-stat-label">Pending Applications</p>
+            <p className="admin-stat-value admin-stat-value--placeholder">—</p>
+            <p className="admin-stat-note">Coming soon — reviewed via Formspree</p>
+          </article>
+          <article className="admin-stat-card">
+            <p className="admin-stat-label">Approved Members</p>
+            <p className="admin-stat-value">
+              {isLoadingDashboard ? "…" : dashboardCounts.approvedMembers}
+            </p>
+            <p className="admin-stat-note">Founding, verified, approved, or active status</p>
+          </article>
+          <article className="admin-stat-card">
+            <p className="admin-stat-label">Member Profiles Created</p>
+            <p className="admin-stat-value">
+              {isLoadingDashboard ? "…" : dashboardCounts.profilesCreated}
+            </p>
+            <p className="admin-stat-note">Profiles in member_profiles</p>
+          </article>
+        </section>
 
-        {errorMessage ? (
-          <p className="portal-alert portal-alert--error" role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
+        <section className="admin-section" aria-labelledby="recent-members-heading">
+          <header className="admin-section-head">
+            <h2 id="recent-members-heading">Recent Member Profiles</h2>
+            <p>Latest profiles created in Supabase, most recent first.</p>
+          </header>
 
-        <form className="portal-admin-form" onSubmit={handleSubmit}>
-          <div className="portal-admin-form-grid">
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Supabase Auth User UID</span>
-              <input
-                type="text"
-                value={form.auth_user_id}
-                onChange={(event) => updateField("auth_user_id", event.target.value)}
-                placeholder="Paste UID from Supabase Authentication > Users"
-                required
-              />
-            </label>
+          {isLoadingDashboard ? (
+            <p className="admin-empty-state">Loading member profiles…</p>
+          ) : recentMembers.length === 0 ? (
+            <div className="admin-empty-state">
+              <p>No member profiles yet.</p>
+              <p className="admin-empty-state-note">
+                Create the first approved member profile below to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="admin-members-table-wrap">
+              <table className="admin-members-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Primary Club</th>
+                    <th scope="col">Based In</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Verified</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Linked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentMembers.map((member) => (
+                    <tr key={member.id}>
+                      <td data-label="Name">{member.full_name || "—"}</td>
+                      <td data-label="Email">{member.email || "—"}</td>
+                      <td data-label="Primary Club">{member.primary_club || "—"}</td>
+                      <td data-label="Based In">{member.based_in || "—"}</td>
+                      <td data-label="Status">{member.membership_status || "—"}</td>
+                      <td data-label="Verified">
+                        {member.is_verified ? (
+                          <span className="admin-badge admin-badge--verified">Verified</span>
+                        ) : (
+                          <span className="admin-badge admin-badge--muted">No</span>
+                        )}
+                      </td>
+                      <td data-label="Created">{formatAdminDate(member.created_at)}</td>
+                      <td data-label="Linked">
+                        {member.user_id ? (
+                          <span className="admin-badge admin-badge--linked">Yes</span>
+                        ) : (
+                          <span className="admin-badge admin-badge--unlinked">No</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-            <label className="portal-profile-field">
-              <span>Full Name</span>
-              <input
-                type="text"
-                value={form.full_name}
-                onChange={(event) => updateField("full_name", event.target.value)}
-                required
-              />
-            </label>
+        <section className="admin-section" aria-labelledby="create-member-heading">
+          <header className="admin-section-head">
+            <h2 id="create-member-heading">Create Approved Member Profile</h2>
+            <p>
+              Use this when an applicant has been approved and you need to create their member
+              profile before they can use the portal. Requires the member&apos;s Supabase Auth UID.
+            </p>
+          </header>
 
-            <label className="portal-profile-field">
-              <span>Email</span>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => updateField("email", event.target.value)}
-                required
-              />
-            </label>
+          {successMessage ? (
+            <p className="portal-alert portal-alert--success" role="status">
+              {successMessage}
+            </p>
+          ) : null}
 
-            <label className="portal-profile-field">
-              <span>Primary Club</span>
-              <input
-                type="text"
-                value={form.primary_club}
-                onChange={(event) => updateField("primary_club", event.target.value)}
-                required
-              />
-            </label>
+          {errorMessage ? (
+            <p className="portal-alert portal-alert--error" role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
 
-            <label className="portal-profile-field">
-              <span>Based In</span>
-              <input
-                type="text"
-                value={form.based_in}
-                onChange={(event) => updateField("based_in", event.target.value)}
-                required
-              />
-            </label>
+          <form className="portal-admin-form" onSubmit={handleSubmit}>
+            <div className="admin-form-card">
+              <h3 className="admin-form-group-title">Account</h3>
+              <div className="portal-admin-form-grid">
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Supabase Auth User UID</span>
+                  <input
+                    type="text"
+                    value={form.auth_user_id}
+                    onChange={(event) => updateField("auth_user_id", event.target.value)}
+                    placeholder="Paste UID from Supabase Authentication > Users"
+                    required
+                  />
+                </label>
 
-            <label className="portal-profile-field">
-              <span>Industry</span>
-              <input
-                type="text"
-                value={form.industry}
-                onChange={(event) => updateField("industry", event.target.value)}
-                required
-              />
-            </label>
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => updateField("email", event.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+            </div>
 
-            <label className="portal-profile-field">
-              <span>Membership Status</span>
-              <select
-                value={form.membership_status}
-                onChange={(event) => updateField("membership_status", event.target.value)}
-                required
-              >
-                <option value="Founding Member">Founding Member</option>
-                <option value="Verified Member">Verified Member</option>
-              </select>
-            </label>
+            <div className="admin-form-card">
+              <h3 className="admin-form-group-title">Member Identity</h3>
+              <div className="portal-admin-form-grid">
+                <label className="portal-profile-field">
+                  <span>Full Name</span>
+                  <input
+                    type="text"
+                    value={form.full_name}
+                    onChange={(event) => updateField("full_name", event.target.value)}
+                    required
+                  />
+                </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Additional Clubs</span>
-              <textarea
-                rows={3}
-                value={form.additional_clubs}
-                onChange={(event) => updateField("additional_clubs", event.target.value)}
-                placeholder="One club per line"
-              />
-            </label>
+                <label className="portal-profile-field">
+                  <span>Primary Club</span>
+                  <input
+                    type="text"
+                    value={form.primary_club}
+                    onChange={(event) => updateField("primary_club", event.target.value)}
+                    required
+                  />
+                </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Regions</span>
-              <textarea
-                rows={3}
-                value={form.regions}
-                onChange={(event) => updateField("regions", event.target.value)}
-                placeholder="One region per line"
-                required
-              />
-            </label>
+                <label className="portal-profile-field">
+                  <span>Based In</span>
+                  <input
+                    type="text"
+                    value={form.based_in}
+                    onChange={(event) => updateField("based_in", event.target.value)}
+                    required
+                  />
+                </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Golf Interests</span>
-              <textarea
-                rows={3}
-                value={form.golf_interests}
-                onChange={(event) => updateField("golf_interests", event.target.value)}
-                placeholder="One interest per line"
-              />
-            </label>
+                <label className="portal-profile-field">
+                  <span>Industry</span>
+                  <input
+                    type="text"
+                    value={form.industry}
+                    onChange={(event) => updateField("industry", event.target.value)}
+                    required
+                  />
+                </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Business Interests</span>
-              <textarea
-                rows={3}
-                value={form.business_interests}
-                onChange={(event) => updateField("business_interests", event.target.value)}
-                placeholder="One interest per line"
-              />
-            </label>
+                <label className="portal-profile-field">
+                  <span>Membership Status</span>
+                  <select
+                    value={form.membership_status}
+                    onChange={(event) => updateField("membership_status", event.target.value)}
+                    required
+                  >
+                    <option value="Founding Member">Founding Member</option>
+                    <option value="Verified Member">Verified Member</option>
+                  </select>
+                </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Current Request</span>
-              <textarea
-                rows={3}
-                value={form.current_request}
-                onChange={(event) => updateField("current_request", event.target.value)}
-                placeholder="What the member is currently seeking"
-              />
-            </label>
+                <label className="portal-profile-field portal-profile-field--checkbox">
+                  <input
+                    type="checkbox"
+                    checked={form.is_verified}
+                    onChange={(event) => updateField("is_verified", event.target.checked)}
+                  />
+                  <span>Verified Member</span>
+                </label>
+              </div>
+            </div>
 
-            <label className="portal-profile-field portal-profile-field--checkbox">
-              <input
-                type="checkbox"
-                checked={form.is_verified}
-                onChange={(event) => updateField("is_verified", event.target.checked)}
-              />
-              <span>Verified Member</span>
-            </label>
-          </div>
+            <div className="admin-form-card">
+              <h3 className="admin-form-group-title">Golf Profile</h3>
+              <div className="portal-admin-form-grid">
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Additional Clubs</span>
+                  <textarea
+                    rows={3}
+                    value={form.additional_clubs}
+                    onChange={(event) => updateField("additional_clubs", event.target.value)}
+                    placeholder="One club per line"
+                  />
+                </label>
 
-          <button
-            type="submit"
-            className="portal-btn portal-btn--gold portal-admin-submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Saving..." : "Create Member Profile"}
-          </button>
-        </form>
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Regions</span>
+                  <textarea
+                    rows={3}
+                    value={form.regions}
+                    onChange={(event) => updateField("regions", event.target.value)}
+                    placeholder="One region per line"
+                    required
+                  />
+                </label>
 
-        <section className="portal-admin-link" aria-labelledby="link-member-heading">
-          <header className="portal-section-head">
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Traveling To</span>
+                  <input
+                    type="text"
+                    value={form.traveling_to}
+                    onChange={(event) => updateField("traveling_to", event.target.value)}
+                    placeholder="Upcoming travel destination, if any"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="admin-form-card">
+              <h3 className="admin-form-group-title">Interests &amp; Requests</h3>
+              <div className="portal-admin-form-grid">
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Golf Interests</span>
+                  <textarea
+                    rows={3}
+                    value={form.golf_interests}
+                    onChange={(event) => updateField("golf_interests", event.target.value)}
+                    placeholder="One interest per line"
+                  />
+                </label>
+
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Business Interests</span>
+                  <textarea
+                    rows={3}
+                    value={form.business_interests}
+                    onChange={(event) => updateField("business_interests", event.target.value)}
+                    placeholder="One interest per line"
+                  />
+                </label>
+
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Current Request</span>
+                  <textarea
+                    rows={3}
+                    value={form.current_request}
+                    onChange={(event) => updateField("current_request", event.target.value)}
+                    placeholder="What the member is currently seeking"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="portal-btn portal-btn--gold portal-admin-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : "Create Member Profile"}
+            </button>
+          </form>
+        </section>
+
+        <section className="admin-section" aria-labelledby="link-member-heading">
+          <header className="admin-section-head">
             <h2 id="link-member-heading">Link Existing Member Login</h2>
             <p>
-              Link an existing member profile to the correct Supabase Auth User UID when
-              member_profiles.user_id does not match. auth.uid() must equal public.users.id and
-              member_profiles.user_id.
+              Use this when a member profile already exists but their Supabase Auth UID is missing
+              or incorrect. This connects their login to the correct member_profiles record.
             </p>
           </header>
 
@@ -333,28 +497,30 @@ export function AdminMembers() {
           ) : null}
 
           <form className="portal-admin-form" onSubmit={handleLinkSubmit}>
-            <div className="portal-admin-form-grid">
-              <label className="portal-profile-field">
-                <span>Member Email</span>
-                <input
-                  type="email"
-                  value={linkEmail}
-                  onChange={(event) => setLinkEmail(event.target.value)}
-                  placeholder="member@email.com"
-                  required
-                />
-              </label>
+            <div className="admin-form-card">
+              <div className="portal-admin-form-grid">
+                <label className="portal-profile-field">
+                  <span>Member Email</span>
+                  <input
+                    type="email"
+                    value={linkEmail}
+                    onChange={(event) => setLinkEmail(event.target.value)}
+                    placeholder="member@email.com"
+                    required
+                  />
+                </label>
 
-              <label className="portal-profile-field">
-                <span>Supabase Auth User UID</span>
-                <input
-                  type="text"
-                  value={linkAuthUserId}
-                  onChange={(event) => setLinkAuthUserId(event.target.value)}
-                  placeholder="Paste UID from Authentication > Users"
-                  required
-                />
-              </label>
+                <label className="portal-profile-field">
+                  <span>Supabase Auth User UID</span>
+                  <input
+                    type="text"
+                    value={linkAuthUserId}
+                    onChange={(event) => setLinkAuthUserId(event.target.value)}
+                    placeholder="Paste UID from Authentication > Users"
+                    required
+                  />
+                </label>
+              </div>
             </div>
 
             <button
@@ -365,6 +531,31 @@ export function AdminMembers() {
               {isLinking ? "Linking..." : "Link Member To Auth UID"}
             </button>
           </form>
+        </section>
+
+        <section className="admin-section admin-section--notes" aria-labelledby="admin-notes-heading">
+          <header className="admin-section-head">
+            <h2 id="admin-notes-heading">Admin Notes</h2>
+            <p>Reference guidance for onboarding and account linking.</p>
+          </header>
+          <div className="admin-notes-card">
+            <p>{AUTH_USER_ID_LINKING_NOTE}</p>
+            <ul>
+              <li>Applications arrive through Formspree and are reviewed outside this dashboard.</li>
+              <li>
+                Create a profile only after approval and after the member has a Supabase Auth
+                account.
+              </li>
+              <li>
+                Use Link Existing Member Login when a profile exists but portal access fails due to
+                a UID mismatch.
+              </li>
+              <li>
+                <code>auth.uid()</code> must equal <code>public.users.id</code> and{" "}
+                <code>member_profiles.user_id</code>.
+              </li>
+            </ul>
+          </div>
         </section>
       </main>
     </div>

@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
-import { earlyStageCopy } from "../../data/portalSocial";
+import { getMockFeedPosts } from "../../data/feedMockData";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
-import { FeedPostCard } from "./FeedPostCard";
-import { MemberSnapshotCard } from "./MemberSnapshotCard";
-import { PostComposer } from "./PostComposer";
+import { FeedCard } from "./FeedCard";
+import { FeedComposer } from "./FeedComposer";
 import { usePortalToast } from "./PortalToastProvider";
 
 type PortalFeedProps = {
@@ -30,6 +29,10 @@ export function PortalFeed({ posts, onPost, showComposer = true, composerId = "f
     void loadAuthor();
   }, [loadAuthor]);
 
+  // Member-created posts appear first, followed by the sample community feed.
+  // The mock data is shaped like a future Supabase query result.
+  const feedItems = useMemo(() => [...posts, ...getMockFeedPosts()], [posts]);
+
   function handlePost(post: FeedPost) {
     onPost(post);
     showToast("Round shared");
@@ -43,30 +46,22 @@ export function PortalFeed({ posts, onPost, showComposer = true, composerId = "f
           A curated golf community for serious golfers to share rounds, discover courses, and build
           trusted relationships through the game.
         </p>
-        <p className="portal-early-badge">{earlyStageCopy.earlyCommunity}</p>
       </header>
 
-      <div className="portal-feed-top">
-        <MemberSnapshotCard />
-        {showComposer ? (
-          <PostComposer id={composerId} author={composerAuthor} onPost={handlePost} />
-        ) : null}
-      </div>
+      {showComposer ? (
+        <div className="portal-feed-top">
+          <FeedComposer id={composerId} author={composerAuthor} onPost={handlePost} />
+        </div>
+      ) : null}
 
       <section className="portal-feed-activity" aria-labelledby="latest-activity-heading">
         <h3 id="latest-activity-heading" className="portal-feed-activity-title">
           Latest Activity
         </h3>
-        <div className="portal-feed-list portal-feed-list--polished">
-          {posts.length > 0 ? (
-            posts.map((post) => <FeedPostCard key={post.id} post={post} onToast={showToast} />)
-          ) : (
-            <div className="portal-empty portal-empty--social">
-              <h3>{earlyStageCopy.earlyCommunity}</h3>
-              <p>{earlyStageCopy.feedEmpty}</p>
-              <p className="portal-empty-note">{earlyStageCopy.beAmongFirst}</p>
-            </div>
-          )}
+        <div className="portal-feed-list portal-feed-grid">
+          {feedItems.map((post, index) => (
+            <FeedCard key={post.id} post={post} index={index} onToast={showToast} />
+          ))}
         </div>
       </section>
     </section>

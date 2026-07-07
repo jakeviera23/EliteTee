@@ -163,6 +163,154 @@ export function formatListForInput(value: string[] | null | undefined | unknown)
 
 export { AUTH_USER_ID_LINKING_NOTE };
 
+export type AdminDashboardCounts = {
+  profilesCreated: number;
+  approvedMembers: number;
+};
+
+export type AdminMemberRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  primary_club: string;
+  based_in: string;
+  membership_status: string;
+  is_verified: boolean;
+  created_at: string;
+  user_id: string | null;
+};
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
+}
+
+function getErrorCode(error: unknown) {
+  if (typeof error === "object" && error && "code" in error) {
+    return String((error as { code: unknown }).code);
+  }
+  return "";
+}
+
+function isMissingTravelingToColumnError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return isMissingColumnError(error) && message.includes("traveling");
+}
+
+export function isMissingColumnError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return (
+    message.includes("column") &&
+    (message.includes("does not exist") ||
+      message.includes("could not find") ||
+      message.includes("unknown column"))
+  );
+}
+
+export function isRlsError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  const code = getErrorCode(error);
+  return (
+    code === "42501" ||
+    message.includes("row-level security") ||
+    message.includes("permission denied") ||
+    message.includes("violates row-level security")
+  );
+}
+
+export function formatAdminError(error: unknown) {
+  const message = getErrorMessage(error);
+  const lower = message.toLowerCase();
+  const code = getErrorCode(error);
+
+  if (lower.includes("must be a valid uuid") || (lower.includes("uuid") && lower.includes("valid"))) {
+    return "Supabase Auth User UID must be a valid UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).";
+  }
+
+  if (lower.includes("duplicate") || lower.includes("unique") || code === "23505") {
+    return "A member profile with this email already exists.";
+  }
+
+  if (isRlsError(error)) {
+    return "Permission denied. Confirm your admin email is listed in Supabase RLS policies for member_profiles and users.";
+  }
+
+  if (isMissingColumnError(error)) {
+    return "Database schema mismatch: a column may be missing from member_profiles. Check Supabase migrations.";
+  }
+
+  if (lower.includes("supabase is not configured")) {
+    return "Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.";
+  }
+
+  if (lower.includes("no member profile found for that email")) {
+    return "No member profile found for that email. Create a profile first or check the spelling.";
+  }
+
+  if (lower.includes("auth user uid is required")) {
+    return "Supabase Auth User UID is required before creating a member profile.";
+  }
+
+  return message;
+}
+
+export async function fetchAdminDashboardCounts(): Promise<AdminDashboardCounts> {
+  if (!supabase) {
+    return { profilesCreated: 0, approvedMembers: 0 };
+  }
+
+  const [totalResult, approvedResult] = await Promise.all([
+    supabase.from("member_profiles").select("*", { count: "exact", head: true }),
+    supabase
+      .from("member_profiles")
+      .select("*", { count: "exact", head: true })
+      .or(
+        "membership_status.ilike.%founding%,membership_status.ilike.%verified%,membership_status.ilike.%approved%,membership_status.ilike.%active%",
+      ),
+  ]);
+
+  return {
+    profilesCreated: totalResult.error ? 0 : totalResult.count ?? 0,
+    approvedMembers: approvedResult.error ? 0 : approvedResult.count ?? 0,
+  };
+}
+
+export async function fetchRecentMemberProfilesForAdmin(limit = 10) {
+  if (!supabase) {
+    return { data: [] as AdminMemberRow[], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("member_profiles")
+    .select(
+      "id, full_name, email, primary_club, based_in, membership_status, is_verified, created_at, user_id",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    return { data: [] as AdminMemberRow[], error };
+  }
+
+  return {
+    data: (data ?? []).map((row) => ({
+      id: String(row.id ?? ""),
+      full_name: String(row.full_name ?? ""),
+      email: String(row.email ?? ""),
+      primary_club: String(row.primary_club ?? ""),
+      based_in: String(row.based_in ?? ""),
+      membership_status: String(row.membership_status ?? ""),
+      is_verified: Boolean(row.is_verified),
+      created_at: String(row.created_at ?? ""),
+      user_id: row.user_id ? String(row.user_id) : null,
+    })),
+    error: null,
+  };
+}
+
 export async function createMemberProfile(record: MemberProfileInsert) {
   if (!supabase) {
     return { error: new Error("Supabase is not configured.") };
@@ -190,17 +338,38 @@ export async function createMemberProfile(record: MemberProfileInsert) {
     return { error: userError };
   }
 
-  const { data, error } = await supabase
+  const insertPayload = {
+    ...record,
+    email: record.email.trim().toLowerCase(),
+    user_id: authUserId,
+  };
+
+  let { data, error } = await supabase
     .from("member_profiles")
-    .insert({
-      ...record,
-      email: record.email.trim().toLowerCase(),
-      user_id: authUserId,
-    })
+    .insert(insertPayload)
     .select("id")
     .single();
 
-  return { data, error };
+  let travelingToSkipped = false;
+
+  if (error && isMissingTravelingToColumnError(error)) {
+    const { traveling_to: _travelingTo, ...payloadWithoutTravelingTo } = insertPayload;
+    const retry = await supabase
+      .from("member_profiles")
+      .insert(payloadWithoutTravelingTo)
+      .select("id")
+      .single();
+
+    if (!retry.error) {
+      data = retry.data;
+      error = null;
+      travelingToSkipped = true;
+    } else {
+      error = retry.error;
+    }
+  }
+
+  return { data, error, travelingToSkipped };
 }
 
 export async function linkMemberProfileToAuthUser({
@@ -238,7 +407,7 @@ export async function linkMemberProfileToAuthUser({
     .maybeSingle();
 
   if (error) {
-    return { error };
+    return { error: new Error(formatAdminError(error)) };
   }
 
   if (!data) {
