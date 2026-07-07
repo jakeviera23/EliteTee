@@ -3258,11 +3258,6 @@
   .portal-messages-layout {
     grid-template-columns: 1fr;
   }
-
-  .portal-messages-sidebar {
-    max-height: 10rem;
-    overflow-y: auto;
-  }
 }
 
 /* ——— MVP polish: compact feed, toasts, modals ——— */
@@ -6134,7 +6129,18 @@
   justify-content: flex-end;
 }
 
+/* Tablet / mobile master-detail: one column, list OR chat (never both) */
 @media (max-width: 899px) {
+  .messages-layout {
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .messages-sidebar {
+    max-height: none;
+    overflow: visible;
+  }
+
   .messages-sidebar.is-hidden-mobile {
     display: none;
   }
@@ -6151,6 +6157,66 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+}
+
+/* Phone: iMessage-style single-column flow with full-screen chat */
+@media (max-width: 767px) {
+  /* New Conversation spans full width, sitting above the list */
+  .portal-messages-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .portal-messages-head .portal-btn {
+    width: 100%;
+  }
+
+  /* Conversation list: clean, full-width rows, no leftover blank space */
+  .messages-layout {
+    gap: 0.5rem;
+  }
+
+  .messages-conversation {
+    width: 100%;
+  }
+
+  /* Tapping a conversation opens a full-screen chat above the bottom nav */
+  .messages-panel.is-visible-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(3.5rem + env(safe-area-inset-bottom));
+    z-index: 125;
+    min-height: 0;
+    margin: 0;
+    padding: 0.9rem 20px 0.75rem;
+    background: var(--inside-bg);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .messages-panel.is-visible-mobile .messages-panel-head {
+    flex: 0 0 auto;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--inside-border);
+  }
+
+  /* Messages scroll independently between the header and the input */
+  .messages-panel.is-visible-mobile .messages-thread {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0.75rem 0 0;
+    overflow-y: auto;
+  }
+
+  /* Compose bar pinned to the bottom of the chat */
+  .messages-panel.is-visible-mobile .messages-compose {
+    flex: 0 0 auto;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
