@@ -51,6 +51,10 @@ export function PortalFeed({ posts, onPost, showComposer = true, composerId = "f
       {showComposer ? (
         <div className="portal-feed-top">
           <FeedComposer id={composerId} author={composerAuthor} onPost={handlePost} />
+          <p className="feed-composer-helper">
+            Use the feed to share rounds, find games while traveling, request introductions, and
+            connect through golf.
+          </p>
         </div>
       ) : null}
 

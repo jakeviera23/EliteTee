@@ -37,13 +37,18 @@ export const photos = {
   swingHorizon: asset("images/elitetee-swing-horizon.png"),
   swingingNew: asset("images/elitetee-swinging-new.png"),
 
-  // Course hero images (match asset sheet subtitles)
-  courseNationalGolfLinks: asset("images/course-national-golf-links.png"),
-  coursePebbleBeach: asset("images/hero-coastal.jpg"),
-  courseStAndrews: asset("images/region-london-heathland-club.png"),
-  courseBandonDunes: asset("images/hero-aerial.jpg"),
-  courseCabotCliffs: asset("images/elitetee-coast-aerial.png"),
-  courseRoyalCountyDown: asset("images/region-scandinavian-coastal-club.png"),
+  // Course hero images — dedicated course photos in public/images/courses/
+  courseNationalGolfLinks: asset("images/courses/national-golf-links.png"),
+  coursePebbleBeach: asset("images/courses/pebble-beach.png"),
+  courseStAndrews: asset("images/courses/st-andrews.png"),
+  courseBandonDunes: asset("images/courses/bandon-dunes.png"),
+  courseCabotCliffs: asset("images/courses/cabot-cliffs.png"),
+  courseRoyalCountyDown: asset("images/courses/royal-county-down.png"),
+  courseWingedFoot: asset("images/courses/winged-foot.png"),
+  coursePineValley: asset("images/courses/pine-valley.png"),
+  courseSeminole: asset("images/courses/seminole.png"),
+  courseCypressPoint: asset("images/courses/cypress-point.png"),
+  courseRoyalMelbourne: asset("images/courses/royal-melbourne.png"),
 
   // Regional / thumbnail references
   regionLondon: asset("images/region-london-heathland-club.png"),

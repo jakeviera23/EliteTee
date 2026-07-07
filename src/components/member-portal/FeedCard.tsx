@@ -78,7 +78,8 @@ export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
       : [],
   );
 
-  const roundLabel = post.roundType ?? postTypeLabels[post.postType];
+  const roundLabel = post.requestLabel ?? post.roundType ?? postTypeLabels[post.postType];
+  const hasImage = Boolean(post.images?.[0]);
   const entranceStyle = { animationDelay: `${Math.min(index, 9) * 70}ms` };
 
   // Like count is derived from a single boolean so it can only ever move by 1
@@ -154,18 +155,39 @@ export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
         ) : null}
       </header>
 
-      <div className="feed-card-media">
-        <img src={post.images[0]} alt={post.imageAlt} loading="lazy" decoding="async" />
-        <div className="feed-card-media-scrim" aria-hidden="true" />
-        {roundLabel ? <span className="feed-card-chip">{roundLabel}</span> : null}
-        <div className="feed-card-media-caption">
-          <p className="feed-card-course">{post.courseName}</p>
-          <p className="feed-card-location">{post.courseLocation}</p>
+      {hasImage ? (
+        <div className="feed-card-media">
+          <img src={post.images[0]} alt={post.imageAlt} loading="lazy" decoding="async" />
+          <div className="feed-card-media-scrim" aria-hidden="true" />
+          {roundLabel ? <span className="feed-card-chip">{roundLabel}</span> : null}
+          <div className="feed-card-media-caption">
+            <p className="feed-card-course">{post.courseName}</p>
+            <p className="feed-card-location">{post.courseLocation}</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="feed-card-topline">
+          {roundLabel ? <span className="feed-card-badge">{roundLabel}</span> : null}
+          {post.courseName ? <p className="feed-card-topline-title">{post.courseName}</p> : null}
+          {post.courseLocation ? (
+            <p className="feed-card-topline-location">{post.courseLocation}</p>
+          ) : null}
+        </div>
+      )}
 
       <div className="feed-card-body">
         <p className="feed-card-caption">{post.caption}</p>
+
+        {post.details?.length ? (
+          <dl className="feed-card-details">
+            {post.details.map((detail) => (
+              <div key={detail.label} className="feed-card-detail">
+                <dt>{detail.label}</dt>
+                <dd>{detail.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
 
         {post.playedWith ? (
           <p className="feed-card-played-with">

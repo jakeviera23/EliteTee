@@ -1,7 +1,13 @@
 import { FormEvent, useRef, useState } from "react";
-import type { FeedPost, PortalGolfer, RoundType } from "../../data/portalSocial";
-import { MAX_RATING, ratingOptions, roundTypeOptions } from "../../data/portalSocial";
-import { photos } from "../../assets/photos";
+import type { FeedPost, PortalGolfer, PostType, ComposerPostType } from "../../data/portalSocial";
+import {
+  MAX_RATING,
+  ratingOptions,
+  composerPostTypeLabels,
+  composerPostTypeBadges,
+  composerPostTypePlaceholders,
+  composerPostTypeOrder,
+} from "../../data/portalSocial";
 import { FeedAvatar } from "./FeedAvatar";
 
 type FeedComposerProps = {
@@ -10,28 +16,131 @@ type FeedComposerProps = {
   id?: string;
 };
 
+type FieldType = "text" | "select" | "rating";
+
+type ComposerField = {
+  key: string;
+  label: string;
+  type: FieldType;
+  placeholder?: string;
+  optional?: boolean;
+};
+
+type ComposerTypeConfig = {
+  /** Existing FeedPost.postType this maps to (keeps rendering intact). */
+  internalPostType: PostType;
+  /** Field used as the card headline. */
+  primaryKey?: string;
+  /** Whether this type shows a photo picker (and can carry a course image). */
+  hasPhoto?: boolean;
+  /** Metadata fields shown above the message. */
+  fields: ComposerField[];
+};
+
+const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
+  "round-review": {
+    internalPostType: "course-review",
+    primaryKey: "course",
+    hasPhoto: true,
+    fields: [
+      { key: "course", label: "Course", type: "text", placeholder: "Course name" },
+      { key: "rating", label: "Rating", type: "rating" },
+      { key: "playedWith", label: "Played With", type: "text", placeholder: "Optional", optional: true },
+    ],
+  },
+  "looking-for-game": {
+    internalPostType: "played-today",
+    primaryKey: "location",
+    fields: [
+      { key: "location", label: "Club / Course", type: "text", placeholder: "Where you'd like to play" },
+      { key: "dates", label: "Dates", type: "text", placeholder: "e.g. Next week" },
+      { key: "players", label: "Looking For", type: "text", placeholder: "e.g. 1–2 players", optional: true },
+    ],
+  },
+  traveling: {
+    internalPostType: "golf-travel",
+    primaryKey: "destination",
+    fields: [
+      { key: "destination", label: "Destination", type: "text", placeholder: "City or region" },
+      { key: "dates", label: "Dates", type: "text", placeholder: "e.g. Sept 3–10" },
+      { key: "courses", label: "Courses / Clubs", type: "text", placeholder: "Optional", optional: true },
+    ],
+  },
+  introduction: {
+    internalPostType: "played-today",
+    primaryKey: "club",
+    fields: [
+      { key: "club", label: "Club / Course", type: "text", placeholder: "Where you'd like an introduction" },
+      { key: "lookingFor", label: "Looking For", type: "text", placeholder: "e.g. A member host", optional: true },
+    ],
+  },
+  "business-golf": {
+    internalPostType: "played-today",
+    primaryKey: "city",
+    fields: [
+      { key: "city", label: "City / Location", type: "text", placeholder: "Where" },
+      { key: "dates", label: "Availability", type: "text", placeholder: "e.g. Next week", optional: true },
+      { key: "industry", label: "Industry / Interests", type: "text", placeholder: "e.g. Founders, investors", optional: true },
+    ],
+  },
+  general: {
+    internalPostType: "played-today",
+    hasPhoto: true,
+    fields: [],
+  },
+};
+
+/** Field label → post detail label shown on the card. */
+const detailLabels: Record<string, string> = {
+  location: "Club/Course",
+  club: "Club/Course",
+  city: "City",
+  destination: "Destination",
+  dates: "Dates",
+  players: "Looking for",
+  lookingFor: "Looking for",
+  courses: "Courses",
+  industry: "Industry",
+  playedWith: "Played with",
+  rating: "Rating",
+};
+
+function defaultValuesFor(type: ComposerPostType): Record<string, string> {
+  const values: Record<string, string> = { message: "" };
+  for (const field of composerConfig[type].fields) {
+    values[field.key] = field.type === "rating" ? String(MAX_RATING) : "";
+  }
+  return values;
+}
+
 export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
   const [expanded, setExpanded] = useState(false);
-  const [caption, setCaption] = useState("");
-  const [courseName, setCourseName] = useState("");
-  const [location, setLocation] = useState("");
-  const [playedWith, setPlayedWith] = useState("");
-  const [rating, setRating] = useState(String(MAX_RATING));
-  const [roundType, setRoundType] = useState<RoundType>("Casual Round");
+  const [postType, setPostType] = useState<ComposerPostType>("round-review");
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    defaultValuesFor("round-review"),
+  );
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputId = id ? `${id}-photo` : "feed-composer-photo";
 
+  const config = composerConfig[postType];
+
   function reset() {
-    setCaption("");
-    setCourseName("");
-    setLocation("");
-    setPlayedWith("");
-    setRating(String(MAX_RATING));
-    setRoundType("Casual Round");
+    setPostType("round-review");
+    setValues(defaultValuesFor("round-review"));
     setPhotoPreview(null);
     setExpanded(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function selectType(next: ComposerPostType) {
+    setPostType(next);
+    setValues(defaultValuesFor(next));
+    if (!composerConfig[next].hasPhoto) setPhotoPreview(null);
+  }
+
+  function updateValue(key: string, value: string) {
+    setValues((current) => ({ ...current, [key]: value }));
   }
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -39,25 +148,48 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
     setPhotoPreview(file ? URL.createObjectURL(file) : null);
   }
 
+  const messageMissing = !values.message?.trim();
+  const primaryMissing = config.primaryKey
+    ? !values[config.primaryKey]?.trim()
+    : false;
+  const canSubmit = !messageMissing && !primaryMissing;
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!caption.trim() || !courseName.trim()) return;
+    if (!canSubmit) return;
+
+    const message = values.message.trim();
+    const isReview = postType === "round-review";
+
+    const details = config.fields
+      .filter((field) => field.key !== "rating" && values[field.key]?.trim())
+      .map((field) => ({
+        label: detailLabels[field.key] ?? field.label,
+        value: values[field.key].trim(),
+      }));
+
+    const primaryValue = config.primaryKey ? values[config.primaryKey]?.trim() : "";
+    const badge = composerPostTypeBadges[postType];
+    const hasPhoto = Boolean(photoPreview);
 
     const newPost: FeedPost = {
       id: `post-${Date.now()}`,
-      postType: roundType === "Bucket List" ? "bucket-list" : "played-today",
+      postType: config.internalPostType,
       author,
-      courseName: courseName.trim(),
-      courseLocation: location.trim() || "Location not set",
-      images: [photoPreview ?? photos.swingHorizon],
-      imageAlt: `Round at ${courseName.trim()}`,
-      caption: caption.trim(),
+      courseName: primaryValue || composerPostTypeLabels[postType],
+      courseLocation: author.location || "",
+      // Only attach an image when the member actually provided one — never a
+      // mismatched placeholder. Text posts render as clean text cards.
+      images: hasPhoto ? [photoPreview as string] : [],
+      imageAlt: primaryValue ? `${badge}: ${primaryValue}` : badge,
+      caption: message,
       likes: 0,
       comments: 0,
       timestamp: "Just now",
-      roundType,
-      playedWith: playedWith.trim() || undefined,
-      rating: Number(rating),
+      requestLabel: badge,
+      details: details.length ? details : undefined,
+      rating: isReview ? Number(values.rating) : undefined,
+      playedWith: isReview ? values.playedWith?.trim() || undefined : undefined,
     };
 
     onPost(newPost);
@@ -73,115 +205,116 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
       <div className="feed-composer-bar">
         <FeedAvatar name={author.name} src={author.avatarImage} size="sm" />
         {expanded ? (
-          <input
-            className="feed-composer-caption"
-            type="text"
-            value={caption}
-            onChange={(event) => setCaption(event.target.value)}
-            placeholder="What made this round memorable?"
-            autoFocus
-            required
-          />
+          <p className="feed-composer-title">Post to the community</p>
         ) : (
           <button
             type="button"
             className="feed-composer-trigger"
             onClick={() => setExpanded(true)}
           >
-            Share a round from your latest game…
+            Post a round, request a game, or ask for an introduction…
           </button>
         )}
         {!expanded ? (
           <span className="feed-composer-bar-hint" aria-hidden="true">
-            Share Round
+            New Post
           </span>
         ) : null}
       </div>
 
       {expanded ? (
         <div className="feed-composer-expand">
-          <div className="feed-composer-grid">
-            <label className="feed-composer-field">
-              <span>Course</span>
-              <input
-                type="text"
-                value={courseName}
-                onChange={(event) => setCourseName(event.target.value)}
-                placeholder="Course name"
-                required
-              />
-            </label>
-            <label className="feed-composer-field">
-              <span>Location</span>
-              <input
-                type="text"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder="City or region"
-              />
-            </label>
-            <label className="feed-composer-field">
-              <span>Rating</span>
-              <select value={rating} onChange={(event) => setRating(event.target.value)}>
-                {ratingOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value} / {MAX_RATING}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="feed-composer-field">
-              <span>Round type</span>
-              <select
-                value={roundType}
-                onChange={(event) => setRoundType(event.target.value as RoundType)}
+          <div className="feed-composer-types" role="group" aria-label="Choose a post type">
+            {composerPostTypeOrder.map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={`feed-composer-type${postType === type ? " is-active" : ""}`}
+                onClick={() => selectType(type)}
+                aria-pressed={postType === type}
               >
-                {roundTypeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="feed-composer-field feed-composer-field--wide">
-              <span>Played with</span>
-              <input
-                type="text"
-                value={playedWith}
-                onChange={(event) => setPlayedWith(event.target.value)}
-                placeholder="Partners (optional)"
-              />
-            </label>
+                {composerPostTypeLabels[type]}
+              </button>
+            ))}
           </div>
 
-          <div className="feed-composer-footer">
-            <div className="feed-composer-photo">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="visually-hidden"
-                id={photoInputId}
-                onChange={handlePhotoChange}
-              />
-              <label htmlFor={photoInputId} className="feed-composer-photo-label">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Selected round photo" />
-                ) : (
-                  <span>+ Photo</span>
-                )}
-              </label>
+          {config.fields.length > 0 ? (
+            <div className="feed-composer-grid">
+              {config.fields.map((field) => (
+                <label key={field.key} className="feed-composer-field">
+                  <span>
+                    {field.label}
+                    {field.optional ? " (optional)" : ""}
+                  </span>
+                  {field.type === "rating" ? (
+                    <select
+                      value={values[field.key] ?? String(MAX_RATING)}
+                      onChange={(event) => updateValue(field.key, event.target.value)}
+                    >
+                      {ratingOptions.map((value) => (
+                        <option key={value} value={value}>
+                          {value} / {MAX_RATING}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={values[field.key] ?? ""}
+                      onChange={(event) => updateValue(field.key, event.target.value)}
+                      placeholder={field.placeholder}
+                      required={!field.optional}
+                    />
+                  )}
+                </label>
+              ))}
             </div>
+          ) : null}
+
+          <label className="feed-composer-field feed-composer-field--wide">
+            <span>Message</span>
+            <textarea
+              rows={3}
+              value={values.message ?? ""}
+              onChange={(event) => updateValue("message", event.target.value)}
+              placeholder={composerPostTypePlaceholders[postType]}
+              required
+              autoFocus
+            />
+          </label>
+
+          <div className="feed-composer-footer">
+            {config.hasPhoto ? (
+              <div className="feed-composer-photo">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="visually-hidden"
+                  id={photoInputId}
+                  onChange={handlePhotoChange}
+                />
+                <label htmlFor={photoInputId} className="feed-composer-photo-label">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Selected photo" />
+                  ) : (
+                    <span>+ Photo</span>
+                  )}
+                </label>
+              </div>
+            ) : (
+              <span className="feed-composer-footer-note">Shared with approved members only</span>
+            )}
             <div className="feed-composer-footer-actions">
-              <button
-                type="button"
-                className="feed-composer-cancel"
-                onClick={reset}
-              >
+              <button type="button" className="feed-composer-cancel" onClick={reset}>
                 Cancel
               </button>
-              <button type="submit" className="portal-btn portal-btn--gold portal-btn--compact">
-                Share Round
+              <button
+                type="submit"
+                className="portal-btn portal-btn--gold portal-btn--compact"
+                disabled={!canSubmit}
+              >
+                Post to Feed
               </button>
             </div>
           </div>

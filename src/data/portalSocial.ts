@@ -39,6 +39,58 @@ export type RoundType =
   | "Practice"
   | "Bucket List";
 
+/**
+ * Composer post types — front-end only. These drive the Feed composer's
+ * dynamic fields, the per-type placeholder, and the badge shown on a post.
+ * Structured details live in FeedPost.details (additive, no backend change).
+ */
+export type ComposerPostType =
+  | "round-review"
+  | "looking-for-game"
+  | "traveling"
+  | "introduction"
+  | "business-golf"
+  | "general";
+
+/** Composer button / section labels. */
+export const composerPostTypeLabels: Record<ComposerPostType, string> = {
+  "round-review": "Round Review",
+  "looking-for-game": "Looking for a Game",
+  traveling: "Traveling",
+  introduction: "Introduction Request",
+  "business-golf": "Business Golf",
+  general: "General Discussion",
+};
+
+/** Short badge shown on the post card (rendered uppercase in CSS). */
+export const composerPostTypeBadges: Record<ComposerPostType, string> = {
+  "round-review": "Round Review",
+  "looking-for-game": "Looking for Game",
+  traveling: "Traveling",
+  introduction: "Introduction",
+  "business-golf": "Business Golf",
+  general: "Discussion",
+};
+
+/** Per-type placeholder for the main message field. */
+export const composerPostTypePlaceholders: Record<ComposerPostType, string> = {
+  "round-review": "Share where you played, what stood out, and who you played with…",
+  "looking-for-game": "Looking for a game in Palm Beach next week…",
+  traveling: "I'll be in Scotland August 3–10 and would love to connect…",
+  introduction: "Looking for an introduction to a member at Fishers Island…",
+  "business-golf": "In NYC next week and open to meeting founders or investors over a round…",
+  general: "Start a thoughtful golf conversation…",
+};
+
+export const composerPostTypeOrder: ComposerPostType[] = [
+  "round-review",
+  "looking-for-game",
+  "traveling",
+  "introduction",
+  "business-golf",
+  "general",
+];
+
 export type PortalGolfer = {
   id: string;
   name: string;
@@ -80,6 +132,10 @@ export type FeedPost = {
   isLiked?: boolean;
   isSaved?: boolean;
   commentPreview?: { author: string; text: string };
+  /** Optional short badge (e.g. "Looking for Game"). Front-end only. */
+  requestLabel?: string;
+  /** Optional structured metadata rows (Destination, Dates, etc.). Front-end only. */
+  details?: { label: string; value: string }[];
 };
 
 export type CourseListing = {
