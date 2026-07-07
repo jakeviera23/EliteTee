@@ -17,6 +17,7 @@ function readList(key: string): string[] {
 function writeList(key: string, ids: string[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(ids));
+  window.dispatchEvent(new CustomEvent("elitetee:course-state-changed"));
 }
 
 export function getBucketListCourseIds(): string[] {

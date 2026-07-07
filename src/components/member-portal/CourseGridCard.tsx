@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { CourseListing } from "../../data/portalSocial";
-import { earlyStageCopy } from "../../data/portalSocial";
 import {
   isCourseOnBucketList,
   isCoursePlayed,
@@ -13,9 +12,10 @@ import { usePortalToast } from "./PortalToastProvider";
 type CourseGridCardProps = {
   course: CourseListing;
   onView: () => void;
+  onStatusChange?: () => void;
 };
 
-export function CourseGridCard({ course, onView }: CourseGridCardProps) {
+export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCardProps) {
   const { showToast } = usePortalToast();
   const [played, setPlayed] = useState(() => isCoursePlayed(course.id));
   const [bucketListed, setBucketListed] = useState(() => isCourseOnBucketList(course.id));
@@ -23,20 +23,21 @@ export function CourseGridCard({ course, onView }: CourseGridCardProps) {
   function handlePlayed() {
     const next = togglePlayedCourse(course.id);
     setPlayed(next);
-    showToast(next ? "Added to played courses" : "Removed from played courses");
+    showToast(next ? "Marked as played" : "Removed from played courses");
+    onStatusChange?.();
   }
 
   function handleBucketList() {
     const next = toggleBucketListCourse(course.id);
     setBucketListed(next);
-    showToast(next ? "Course saved to your list" : "Removed from your list");
+    showToast(next ? "Added to your list" : "Removed from your list");
+    onStatusChange?.();
   }
 
   return (
     <article className="portal-course-card">
       <div className="portal-course-card-hero">
         <CourseImage src={course.image} alt={course.imageAlt} objectPosition="center" fill />
-        <span className="portal-course-card-badge">{earlyStageCopy.featuredCourseLabel}</span>
       </div>
 
       <div className="portal-course-card-content">
@@ -52,7 +53,18 @@ export function CourseGridCard({ course, onView }: CourseGridCardProps) {
           <strong>{course.bestMonths}</strong>
         </p>
 
-        <p className="portal-course-card-note">{earlyStageCopy.courseMemberPhotosNote}</p>
+        <dl className="portal-course-card-stats">
+          <div>
+            <dt>Members played</dt>
+            <dd>{course.membersPlayed}</dd>
+          </div>
+          <div>
+            <dt>Want to play</dt>
+            <dd>{course.membersWantToPlay}</dd>
+          </div>
+        </dl>
+
+        <p className="portal-course-card-activity">{course.recentActivity}</p>
 
         <div className="portal-course-card-actions">
           <button type="button" className="portal-btn portal-btn--gold" onClick={onView}>
@@ -64,7 +76,7 @@ export function CourseGridCard({ course, onView }: CourseGridCardProps) {
             onClick={handlePlayed}
             aria-pressed={played}
           >
-            {played ? "Added" : "Played"}
+            {played ? "Played ✓" : "Played"}
           </button>
           <button
             type="button"
@@ -72,7 +84,7 @@ export function CourseGridCard({ course, onView }: CourseGridCardProps) {
             onClick={handleBucketList}
             aria-pressed={bucketListed}
           >
-            {bucketListed ? "Saved" : "Add Course to List"}
+            {bucketListed ? "Added ✓" : "Add to List"}
           </button>
         </div>
       </div>
