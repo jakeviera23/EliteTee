@@ -33,8 +33,8 @@ const desktopTabs: { id: PortalTab; label: string }[] = [
 const mobileTabs: { id: PortalTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
-  { id: "compose", label: "Post" },
   { id: "courses", label: "Courses" },
+  { id: "messages", label: "Messages" },
   { id: "profile", label: "Profile" },
 ];
 
@@ -251,22 +251,25 @@ function MemberPortalContent() {
           <button
             key={tab.id}
             type="button"
-            className={`portal-bottom-nav-btn${(tab.id === "compose" ? activeView === "feed" : activeView === tab.id) ? " is-active" : ""}${tab.id === "compose" ? " portal-bottom-nav-btn--post" : ""}`}
+            className={`portal-bottom-nav-btn${activeView === tab.id ? " is-active" : ""}`}
             onClick={() => handleMobileNav(tab.id)}
-            aria-current={
-              (tab.id === "compose" ? activeView === "feed" : activeView === tab.id) ? "page" : undefined
-            }
+            aria-current={activeView === tab.id ? "page" : undefined}
           >
             <span className="portal-bottom-nav-icon" aria-hidden="true">
               {tab.id === "feed"
                 ? "⌂"
                 : tab.id === "discover"
                   ? "◎"
-                  : tab.id === "compose"
-                    ? "+"
-                    : tab.id === "courses"
-                      ? "⛳"
+                  : tab.id === "courses"
+                    ? "⛳"
+                    : tab.id === "messages"
+                      ? "✉"
                       : "◉"}
+              {tab.id === "messages" && unreadMessageCount > 0 ? (
+                <span className="portal-bottom-nav-badge">
+                  {formatNotificationCount(unreadMessageCount)}
+                </span>
+              ) : null}
             </span>
             <span>{tab.label}</span>
           </button>
