@@ -2812,3 +2812,74 @@ button {
   text-transform: uppercase;
   color: rgba(240, 237, 230, 0.62);
 }
+
+/* ============================================================
+   Mobile polish & hardening — public site (≤600px)
+   Keep desktop untouched; only refine the small-screen layout.
+   ============================================================ */
+@media (max-width: 600px) {
+  :root {
+    --pad-x: 20px;
+    --section-y: clamp(3rem, 8vw, 4.5rem);
+  }
+
+  /* No accidental horizontal scrolling on any page */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Media never spills past its container */
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  /* Prevent iOS Safari from zooming in when a field is focused */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* CTA groups stack full-width and stay comfortably tappable */
+  .hero-actions,
+  .hero-cinematic-actions,
+  .request-form-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .hero-actions .btn,
+  .hero-actions .btn-hero,
+  .hero-cinematic-actions .btn,
+  .hero-cinematic-actions .btn-hero,
+  .request-form-actions .btn {
+    width: 100%;
+  }
+
+  .btn {
+    min-height: 3rem;
+  }
+
+  /* Request / application form: single column, full-width fields */
+  .request-form,
+  .request-form--application {
+    grid-template-columns: 1fr;
+  }
+
+  .request-form-wide {
+    grid-column: auto;
+  }
+}

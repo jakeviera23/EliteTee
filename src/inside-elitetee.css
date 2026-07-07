@@ -641,3 +641,46 @@
     min-width: 0;
   }
 }
+
+/* ============================================================
+   Mobile polish — login / Inside page (≤600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .inside-page {
+    overflow-x: hidden;
+  }
+
+  .inside-shell {
+    padding-inline: 0;
+  }
+
+  .inside-sidebar {
+    padding: 1.1rem 20px 1.35rem;
+  }
+
+  /* Sign-in card: readable width, comfortably centered */
+  .inside-access-card {
+    max-width: 26rem;
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .inside-access-card .inside-access-title,
+  .inside-access-card .inside-access-lead,
+  .inside-access-card .inside-access-form,
+  .inside-access-card .inside-access-footer {
+    margin-inline: 1.1rem;
+  }
+
+  /* 16px inputs stop iOS from zooming on focus */
+  .inside-access-form input {
+    font-size: 16px;
+    padding: 0.75rem 0.8rem;
+  }
+
+  .inside-access-form .inside-btn {
+    width: 100%;
+    min-height: 2.9rem;
+    padding: 0.85rem 1rem;
+  }
+}

@@ -6408,3 +6408,75 @@
   }
 }
 
+/* ——— Mobile bottom-nav unread badge ——— */
+.portal-bottom-nav-icon {
+  position: relative;
+}
+
+.portal-bottom-nav-badge {
+  position: absolute;
+  top: -0.35rem;
+  left: 55%;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.2rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.5rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--inside-bg);
+  background: var(--inside-gold);
+  border-radius: 999px;
+}
+
+/* ============================================================
+   Member portal — mobile polish & hardening (≤600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .portal-page,
+  .portal-page--social {
+    overflow-x: hidden;
+  }
+
+  /* 16px form controls prevent iOS focus-zoom and stay tappable */
+  .portal-page input,
+  .portal-page select,
+  .portal-page textarea {
+    font-size: 16px !important;
+  }
+
+  /* Compact top bar: trim padding, drop verbose icon labels */
+  .portal-shell--bar {
+    padding-inline: 20px;
+  }
+
+  .portal-icon-btn-label {
+    display: none;
+  }
+
+  .portal-top-actions {
+    gap: 0.4rem;
+  }
+
+  /* Cards go edge-to-edge and never exceed the viewport */
+  .portal-main--social {
+    padding-inline: 20px;
+  }
+
+  .portal-feed-card,
+  .portal-composer,
+  .portal-golfer-profile,
+  .portal-course-card,
+  .portal-member-card {
+    max-width: 100%;
+  }
+
+  /* Media crops cleanly rather than stretching */
+  .portal-feed-card img,
+  .portal-course-card img,
+  .portal-member-card img {
+    object-fit: cover;
+  }
+}
+
