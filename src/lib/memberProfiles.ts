@@ -108,6 +108,10 @@ export function normalizeMemberProfileRecord(row: Record<string, unknown>): Memb
     club_logo_url: row.club_logo_url ? String(row.club_logo_url) : null,
     membership_status: String(row.membership_status ?? ""),
     is_verified: Boolean(row.is_verified),
+    founding_member_number: row.founding_member_number
+      ? String(row.founding_member_number)
+      : null,
+    portal_access_enabled: Boolean(row.portal_access_enabled),
     user_id: row.user_id ? String(row.user_id) : null,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
@@ -176,6 +180,8 @@ export type AdminMemberRow = {
   based_in: string;
   membership_status: string;
   is_verified: boolean;
+  founding_member_number: string | null;
+  portal_access_enabled: boolean;
   created_at: string;
   user_id: string | null;
 };
@@ -286,7 +292,7 @@ export async function fetchRecentMemberProfilesForAdmin(limit = 10) {
   const { data, error } = await supabase
     .from("member_profiles")
     .select(
-      "id, full_name, email, primary_club, based_in, membership_status, is_verified, created_at, user_id",
+      "id, full_name, email, primary_club, based_in, membership_status, is_verified, founding_member_number, portal_access_enabled, created_at, user_id",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -304,6 +310,10 @@ export async function fetchRecentMemberProfilesForAdmin(limit = 10) {
       based_in: String(row.based_in ?? ""),
       membership_status: String(row.membership_status ?? ""),
       is_verified: Boolean(row.is_verified),
+      founding_member_number: row.founding_member_number
+        ? String(row.founding_member_number)
+        : null,
+      portal_access_enabled: Boolean(row.portal_access_enabled),
       created_at: String(row.created_at ?? ""),
       user_id: row.user_id ? String(row.user_id) : null,
     })),
@@ -372,6 +382,72 @@ export async function createMemberProfile(record: MemberProfileInsert) {
   return { data, error, travelingToSkipped };
 }
 
+export type ApprovalMemberProfileInsert = Omit<MemberProfileInsert, "user_id"> & {
+  user_id?: string | null;
+  founding_member_number: string;
+  portal_access_enabled: boolean;
+};
+
+export async function createMemberProfileFromApproval(record: ApprovalMemberProfileInsert) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const authUserId = record.user_id?.trim() || null;
+
+  if (authUserId) {
+    if (!isValidAuthUserId(authUserId)) {
+      return { data: null, error: new Error("Supabase Auth User UID must be a valid UUID.") };
+    }
+
+    const { error: userError } = await upsertPublicUser({
+      id: authUserId,
+      email: record.email,
+    });
+
+    if (userError) {
+      return { data: null, error: userError };
+    }
+  }
+
+  const insertPayload = {
+    ...record,
+    email: record.email.trim().toLowerCase(),
+    user_id: authUserId,
+  };
+
+  let { data, error } = await supabase
+    .from("member_profiles")
+    .insert(insertPayload)
+    .select("id")
+    .single();
+
+  let travelingToSkipped = false;
+
+  if (error && isMissingTravelingToColumnError(error)) {
+    const { traveling_to: _travelingTo, ...payloadWithoutTravelingTo } = insertPayload;
+    const retry = await supabase
+      .from("member_profiles")
+      .insert(payloadWithoutTravelingTo)
+      .select("id")
+      .single();
+
+    if (!retry.error) {
+      data = retry.data;
+      error = null;
+      travelingToSkipped = true;
+    } else {
+      error = retry.error;
+    }
+  }
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null, travelingToSkipped };
+}
+
 export async function linkMemberProfileToAuthUser({
   email,
   authUserId,
@@ -415,6 +491,34 @@ export async function linkMemberProfileToAuthUser({
   }
 
   return { data, error: null };
+}
+
+export async function fetchMemberPortalAccess() {
+  if (!supabase) {
+    return { hasAccess: false, profile: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+
+  if (sessionError || !userId) {
+    return { hasAccess: false, profile: null, error: sessionError };
+  }
+
+  const { data, error } = await supabase
+    .from("member_profiles")
+    .select("id, portal_access_enabled, membership_status, founding_member_number")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return { hasAccess: false, profile: null, error: error ?? null };
+  }
+
+  return {
+    hasAccess: Boolean(data.portal_access_enabled),
+    profile: data,
+    error: null,
+  };
 }
 
 export async function fetchOwnMemberProfile() {

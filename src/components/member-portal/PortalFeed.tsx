@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
-import { getMockFeedPosts } from "../../data/feedMockData";
+import { earlyStageCopy } from "../../data/portalSocial";
+import { getFounderWelcomePost } from "../../data/feedMockData";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import { FeedCard } from "./FeedCard";
 import { FeedComposer } from "./FeedComposer";
+import { FoundingWelcomeBanner } from "./FoundingWelcomeBanner";
 import { usePortalToast } from "./PortalToastProvider";
 
 type PortalFeedProps = {
@@ -29,22 +31,23 @@ export function PortalFeed({ posts, onPost, showComposer = true, composerId = "f
     void loadAuthor();
   }, [loadAuthor]);
 
-  // Member-created posts appear first, followed by the sample community feed.
-  // The mock data is shaped like a future Supabase query result.
-  const feedItems = useMemo(() => [...posts, ...getMockFeedPosts()], [posts]);
+  const founderWelcome = useMemo(() => getFounderWelcomePost(), []);
+  const hasMemberPosts = posts.length > 0;
 
   function handlePost(post: FeedPost) {
     onPost(post);
-    showToast("Round shared");
+    showToast("Post shared");
   }
 
   return (
     <section className="portal-social-page portal-feed-page" aria-labelledby="feed-heading">
+      <FoundingWelcomeBanner />
+
       <header className="portal-section-head portal-section-head--social portal-section-head--compact">
         <h2 id="feed-heading">Feed</h2>
         <p>
-          A curated golf community for serious golfers to share rounds, discover courses, and build
-          trusted relationships through the game.
+          Share rounds, request introductions, and connect with founding members as the community
+          grows.
         </p>
       </header>
 
@@ -52,8 +55,8 @@ export function PortalFeed({ posts, onPost, showComposer = true, composerId = "f
         <div className="portal-feed-top">
           <FeedComposer id={composerId} author={composerAuthor} onPost={handlePost} />
           <p className="feed-composer-helper">
-            Use the feed to share rounds, find games while traveling, request introductions, and
-            connect through golf.
+            Use the feed to introduce yourself, share where you play, and ask for introductions as
+            EliteTee grows.
           </p>
         </div>
       ) : null}
@@ -62,11 +65,26 @@ export function PortalFeed({ posts, onPost, showComposer = true, composerId = "f
         <h3 id="latest-activity-heading" className="portal-feed-activity-title">
           Latest Activity
         </h3>
-        <div className="portal-feed-list portal-feed-grid">
-          {feedItems.map((post, index) => (
-            <FeedCard key={post.id} post={post} index={index} onToast={showToast} />
-          ))}
+
+        {hasMemberPosts ? (
+          <div className="portal-feed-list portal-feed-grid">
+            {posts.map((post, index) => (
+              <FeedCard key={post.id} post={post} index={index} onToast={showToast} />
+            ))}
+          </div>
+        ) : null}
+
+        <div className="portal-feed-list portal-feed-grid portal-feed-list--founder">
+          <FeedCard post={founderWelcome} index={0} onToast={showToast} />
         </div>
+
+        {!hasMemberPosts ? (
+          <div className="portal-feed-empty">
+            <p className="portal-feed-empty-title">{earlyStageCopy.feedEmptyTitle}</p>
+            <p className="portal-feed-empty-lead">{earlyStageCopy.feedEmptyHint}</p>
+            <p className="portal-feed-empty-note">{earlyStageCopy.feedEmptyCta}</p>
+          </div>
+        ) : null}
       </section>
     </section>
   );

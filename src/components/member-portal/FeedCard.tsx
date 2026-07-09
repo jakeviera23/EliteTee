@@ -139,11 +139,21 @@ export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
               {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
             </p>
             <p className="feed-card-meta">
-              <span className="feed-card-club">{post.author.homeCourse}</span>
-              <span className="feed-card-dot" aria-hidden="true">
-                ·
-              </span>
-              <time className="feed-card-time">{post.timestamp}</time>
+              {post.author.title ? (
+                <span className="feed-card-club">{post.author.title}</span>
+              ) : post.author.homeCourse ? (
+                <>
+                  <span className="feed-card-club">{post.author.homeCourse}</span>
+                  {post.timestamp ? (
+                    <span className="feed-card-dot" aria-hidden="true">
+                      ·
+                    </span>
+                  ) : null}
+                </>
+              ) : null}
+              {post.timestamp ? (
+                <time className="feed-card-time">{post.timestamp}</time>
+              ) : null}
             </p>
           </div>
         </div>

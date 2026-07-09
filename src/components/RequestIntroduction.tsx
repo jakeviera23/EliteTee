@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
+import { submitMembershipApplication } from "../lib/membershipApplications";
 
-// Paste your Formspree endpoint here (Formspree dashboard → your form → Integration → Endpoint):
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
 
 const PLACEHOLDER_ENDPOINT = /YOUR_FORM_ID|YOUR_REAL_FORM_ID/i.test(
@@ -19,38 +19,45 @@ export function RequestIntroduction() {
     event.preventDefault();
     setError(null);
 
-    if (PLACEHOLDER_ENDPOINT) {
-      setError(
-        "Form endpoint is not configured. Update FORMSPREE_ENDPOINT in src/components/RequestIntroduction.tsx.",
-      );
-      return;
-    }
-
     const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    const application = {
+      full_name: String(formData.get("fullName") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      location: String(formData.get("location") ?? "").trim(),
+      home_club: String(formData.get("homeClub") ?? "").trim(),
+      handicap: String(formData.get("handicap") ?? "").trim(),
+      instagram: String(formData.get("instagram") ?? "").trim(),
+      golf_love: String(formData.get("golfLove") ?? "").trim(),
+      why_join: String(formData.get("whyJoin") ?? "").trim(),
+    };
+
     setSubmitting(true);
 
     try {
-      const response = await fetch(FORMSPREE_ENDPOINT, {
-        method: "POST",
-        body: new FormData(form),
-        headers: { Accept: "application/json" },
-      });
+      const { error: supabaseError } = await submitMembershipApplication(application);
 
-      if (response.ok) {
-        setSubmitted(true);
+      if (supabaseError) {
+        setError(
+          "Unable to save your application right now. Please try again or email membership@elitetee.club.",
+        );
         return;
       }
 
-      let message = "Something went wrong. Please try again.";
-      try {
-        const data = (await response.json()) as { error?: string };
-        if (data.error) {
-          message = data.error;
+      if (!PLACEHOLDER_ENDPOINT) {
+        try {
+          await fetch(FORMSPREE_ENDPOINT, {
+            method: "POST",
+            body: formData,
+            headers: { Accept: "application/json" },
+          });
+        } catch {
+          // Supabase save succeeded; Formspree notification is optional.
         }
-      } catch {
-        // Non-JSON error body; keep default message.
       }
-      setError(message);
+
+      setSubmitted(true);
     } catch {
       setError(
         "Unable to send your application. Please check your connection and try again.",
@@ -128,7 +135,7 @@ export function RequestIntroduction() {
 
               <div className="request-form-actions">
                 <button type="submit" className="btn" disabled={submitting}>
-                  Request Membership
+                  {submitting ? "Submitting…" : "Request Membership"}
                 </button>
                 {error ? (
                   <p className="request-form-error" role="alert">

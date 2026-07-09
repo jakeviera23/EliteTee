@@ -7,6 +7,7 @@ import {
   composerPostTypeBadges,
   composerPostTypePlaceholders,
   composerPostTypeOrder,
+  earlyStageCopy,
 } from "../../data/portalSocial";
 import { FeedAvatar } from "./FeedAvatar";
 
@@ -212,7 +213,7 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
             className="feed-composer-trigger"
             onClick={() => setExpanded(true)}
           >
-            Post a round, request a game, or ask for an introduction…
+            {earlyStageCopy.composerCollapsedPlaceholder}
           </button>
         )}
         {!expanded ? (

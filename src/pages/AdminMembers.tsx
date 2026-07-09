@@ -1,5 +1,15 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ApplicationViewModal } from "../components/admin/ApplicationViewModal";
+import { InvitationDraftModal } from "../components/admin/InvitationDraftModal";
+import {
+  approveMembershipApplication,
+  declineMembershipApplication,
+  fetchPendingApplications,
+  fetchPendingApplicationCount,
+} from "../lib/membershipApplications";
+import type { ApproveApplicationResult } from "../lib/membershipApplications";
+import type { MembershipApplicationRecord } from "../types/membershipApplication";
 import {
   createMemberProfile,
   fetchAdminDashboardCounts,
@@ -73,17 +83,32 @@ export function AdminMembers() {
   });
   const [recentMembers, setRecentMembers] = useState<AdminMemberRow[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [pendingApplications, setPendingApplications] = useState<MembershipApplicationRecord[]>(
+    [],
+  );
+  const [pendingCount, setPendingCount] = useState(0);
+  const [viewingApplication, setViewingApplication] = useState<MembershipApplicationRecord | null>(
+    null,
+  );
+  const [invitationDraft, setInvitationDraft] = useState<ApproveApplicationResult | null>(null);
+  const [applicationActionId, setApplicationActionId] = useState<string | null>(null);
+  const [applicationMessage, setApplicationMessage] = useState<string | null>(null);
+  const [applicationError, setApplicationError] = useState<string | null>(null);
 
   const refreshAdminData = useCallback(async () => {
     setIsLoadingDashboard(true);
 
-    const [counts, recent] = await Promise.all([
+    const [counts, recent, pending, pendingTotal] = await Promise.all([
       fetchAdminDashboardCounts(),
       fetchRecentMemberProfilesForAdmin(10),
+      fetchPendingApplications(),
+      fetchPendingApplicationCount(),
     ]);
 
     setDashboardCounts(counts);
     setRecentMembers(recent.data);
+    setPendingApplications(pending.data);
+    setPendingCount(pendingTotal);
     setIsLoadingDashboard(false);
   }, []);
 
@@ -172,6 +197,51 @@ export function AdminMembers() {
     void refreshAdminData();
   }
 
+  async function handleApproveApplication(applicationId: string) {
+    setApplicationActionId(applicationId);
+    setApplicationMessage(null);
+    setApplicationError(null);
+
+    const { data, error } = await approveMembershipApplication(applicationId);
+
+    setApplicationActionId(null);
+
+    if (error) {
+      setApplicationError(formatAdminError(error));
+      return;
+    }
+
+    if (data) {
+      setInvitationDraft(data);
+      setApplicationMessage(
+        `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
+      );
+    }
+
+    void refreshAdminData();
+  }
+
+  async function handleDeclineApplication(applicationId: string) {
+    const reason = window.prompt("Optional decline note for your records:");
+    if (reason === null) return;
+
+    setApplicationActionId(applicationId);
+    setApplicationMessage(null);
+    setApplicationError(null);
+
+    const { error } = await declineMembershipApplication(applicationId, reason);
+
+    setApplicationActionId(null);
+
+    if (error) {
+      setApplicationError(formatAdminError(error));
+      return;
+    }
+
+    setApplicationMessage("Application declined.");
+    void refreshAdminData();
+  }
+
   return (
     <div className="inside-page portal-page">
       <header className="portal-top">
@@ -198,10 +268,12 @@ export function AdminMembers() {
         </header>
 
         <section className="admin-dashboard" aria-label="Admin overview">
-          <article className="admin-stat-card admin-stat-card--placeholder">
+          <article className="admin-stat-card">
             <p className="admin-stat-label">Pending Applications</p>
-            <p className="admin-stat-value admin-stat-value--placeholder">—</p>
-            <p className="admin-stat-note">Coming soon — reviewed via Formspree</p>
+            <p className="admin-stat-value">
+              {isLoadingDashboard ? "…" : pendingCount}
+            </p>
+            <p className="admin-stat-note">Awaiting review in EliteTee Admin</p>
           </article>
           <article className="admin-stat-card">
             <p className="admin-stat-label">Approved Members</p>
@@ -217,6 +289,92 @@ export function AdminMembers() {
             </p>
             <p className="admin-stat-note">Profiles in member_profiles</p>
           </article>
+        </section>
+
+        <section className="admin-section" aria-labelledby="pending-applications-heading">
+          <header className="admin-section-head">
+            <h2 id="pending-applications-heading">Pending Applications</h2>
+            <p>
+              Review membership requests submitted through the website. Approve to create a Founding
+              Member profile and generate an invitation.
+            </p>
+          </header>
+
+          {applicationMessage ? (
+            <p className="portal-alert portal-alert--success" role="status">
+              {applicationMessage}
+            </p>
+          ) : null}
+
+          {applicationError ? (
+            <p className="portal-alert portal-alert--error" role="alert">
+              {applicationError}
+            </p>
+          ) : null}
+
+          {isLoadingDashboard ? (
+            <p className="admin-empty-state">Loading applications…</p>
+          ) : pendingApplications.length === 0 ? (
+            <div className="admin-empty-state">
+              <p>No applications waiting for review.</p>
+              <p className="admin-empty-state-note">
+                New requests from the homepage application form will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="admin-members-table-wrap">
+              <table className="admin-members-table admin-applications-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Date Applied</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingApplications.map((application) => (
+                    <tr key={application.id}>
+                      <td data-label="Name">{application.full_name}</td>
+                      <td data-label="Email">{application.email}</td>
+                      <td data-label="Date Applied">{formatAdminDate(application.applied_at)}</td>
+                      <td data-label="Status">
+                        <span className="admin-badge admin-badge--pending">Pending Review</span>
+                      </td>
+                      <td data-label="Actions">
+                        <div className="admin-application-actions">
+                          <button
+                            type="button"
+                            className="portal-btn portal-btn--gold portal-btn--compact"
+                            disabled={applicationActionId === application.id}
+                            onClick={() => void handleApproveApplication(application.id)}
+                          >
+                            {applicationActionId === application.id ? "Approving…" : "Approve"}
+                          </button>
+                          <button
+                            type="button"
+                            className="portal-btn portal-btn--outline portal-btn--compact"
+                            disabled={applicationActionId === application.id}
+                            onClick={() => void handleDeclineApplication(application.id)}
+                          >
+                            Decline
+                          </button>
+                          <button
+                            type="button"
+                            className="portal-btn portal-btn--outline portal-btn--compact"
+                            onClick={() => setViewingApplication(application)}
+                          >
+                            View Application
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="admin-section" aria-labelledby="recent-members-heading">
@@ -244,6 +402,8 @@ export function AdminMembers() {
                     <th scope="col">Primary Club</th>
                     <th scope="col">Based In</th>
                     <th scope="col">Status</th>
+                    <th scope="col">FM #</th>
+                    <th scope="col">Portal</th>
                     <th scope="col">Verified</th>
                     <th scope="col">Created</th>
                     <th scope="col">Linked</th>
@@ -257,6 +417,14 @@ export function AdminMembers() {
                       <td data-label="Primary Club">{member.primary_club || "—"}</td>
                       <td data-label="Based In">{member.based_in || "—"}</td>
                       <td data-label="Status">{member.membership_status || "—"}</td>
+                      <td data-label="FM #">{member.founding_member_number || "—"}</td>
+                      <td data-label="Portal">
+                        {member.portal_access_enabled ? (
+                          <span className="admin-badge admin-badge--linked">Enabled</span>
+                        ) : (
+                          <span className="admin-badge admin-badge--muted">No</span>
+                        )}
+                      </td>
                       <td data-label="Verified">
                         {member.is_verified ? (
                           <span className="admin-badge admin-badge--verified">Verified</span>
@@ -541,14 +709,20 @@ export function AdminMembers() {
           <div className="admin-notes-card">
             <p>{AUTH_USER_ID_LINKING_NOTE}</p>
             <ul>
-              <li>Applications arrive through Formspree and are reviewed outside this dashboard.</li>
               <li>
-                Create a profile only after approval and after the member has a Supabase Auth
-                account.
+                Applications submit to Supabase and appear in Pending Applications above for review.
               </li>
               <li>
-                Use Link Existing Member Login when a profile exists but portal access fails due to
-                a UID mismatch.
+                Approving creates a Founding Member profile (FM-001, FM-002, …), enables portal
+                access, and generates an invitation email draft (not sent automatically).
+              </li>
+              <li>
+                Add <code>VITE_SUPABASE_SERVICE_ROLE_KEY</code> to create auth accounts and invite
+                links automatically on approval.
+              </li>
+              <li>
+                Create a profile manually below when needed. Link Existing Member Login when a
+                profile exists but portal access fails due to a UID mismatch.
               </li>
               <li>
                 <code>auth.uid()</code> must equal <code>public.users.id</code> and{" "}
@@ -558,6 +732,23 @@ export function AdminMembers() {
           </div>
         </section>
       </main>
+
+      {viewingApplication ? (
+        <ApplicationViewModal
+          application={viewingApplication}
+          onClose={() => setViewingApplication(null)}
+        />
+      ) : null}
+
+      {invitationDraft ? (
+        <InvitationDraftModal
+          foundingMemberNumber={invitationDraft.foundingMemberNumber}
+          invitationEmailDraft={invitationDraft.invitationEmailDraft}
+          invitationLink={invitationDraft.invitationLink}
+          authNote={invitationDraft.authNote}
+          onClose={() => setInvitationDraft(null)}
+        />
+      ) : null}
     </div>
   );
 }
