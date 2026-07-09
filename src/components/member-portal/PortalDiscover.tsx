@@ -4,6 +4,7 @@ import { earlyStageCopy } from "../../data/portalSocial";
 import { fetchDiscoverablePortalMembers } from "../../lib/memberProfiles";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { MemberCard } from "./MemberCard";
+import { MemberProfileModalContent } from "./MemberProfileModalContent";
 
 const discoverFilters = [
   "All Members",
@@ -70,13 +71,14 @@ function memberMatchesFilter(member: MemberProfileRecord, filter: string) {
 
 export function PortalDiscover({
   onViewCourse: _onViewCourse,
-  onNavigate: _onNavigate,
+  onNavigate,
 }: PortalDiscoverProps) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("All Members");
   const [members, setMembers] = useState<MemberProfileRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberProfileRecord | null>(null);
 
   const loadMembers = useCallback(async () => {
     setIsLoading(true);
@@ -211,8 +213,11 @@ export function PortalDiscover({
                   <li key={member.id}>
                     <MemberCard
                       member={member}
-                      onViewProfile={() => undefined}
-                      onRequest={() => undefined}
+                      onViewProfile={setSelectedMember}
+                      onRequest={() => {
+                        setSelectedMember(null);
+                        onNavigate?.("messages");
+                      }}
                     />
                   </li>
                 ))}
@@ -221,6 +226,41 @@ export function PortalDiscover({
           </section>
         </div>
       </div>
+
+      {selectedMember ? (
+        <div
+          className="portal-modal-backdrop"
+          role="presentation"
+          onClick={() => setSelectedMember(null)}
+        >
+          <div
+            className="portal-modal"
+            role="dialog"
+            aria-labelledby="member-dossier-heading"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="portal-modal-head">
+              <h3 id="member-dossier-heading">{selectedMember.full_name}</h3>
+              <button
+                type="button"
+                className="portal-modal-close"
+                onClick={() => setSelectedMember(null)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </header>
+            <MemberProfileModalContent
+              member={selectedMember}
+              onRequest={() => {
+                setSelectedMember(null);
+                onNavigate?.("messages");
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
