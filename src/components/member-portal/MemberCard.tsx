@@ -7,40 +7,48 @@ type MemberCardProps = {
   onRequest: (member: MemberProfileRecord) => void;
 };
 
+function displayValue(value: string | null | undefined) {
+  const text = value?.trim();
+  return text || "—";
+}
+
 export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps) {
+  const interests =
+    member.golf_interests.length > 0
+      ? member.golf_interests.join(", ")
+      : member.business_interests.length > 0
+        ? member.business_interests.join(", ")
+        : "—";
+
   return (
     <article className="portal-member-card">
       <header className="portal-member-head">
         <MemberIdentity member={member} size="sm" />
-        {member.founding_member_number ? (
-          <span className="portal-member-fm-badge">{member.founding_member_number}</span>
-        ) : null}
+        <span className="portal-member-fm-badge">
+          {displayValue(member.founding_member_number)}
+        </span>
       </header>
       <dl className="portal-member-details">
         <div>
           <dt>Home Club</dt>
-          <dd>{member.primary_club || "—"}</dd>
+          <dd>{displayValue(member.primary_club)}</dd>
         </div>
         <div>
           <dt>Location</dt>
-          <dd>{member.based_in || "—"}</dd>
+          <dd>{displayValue(member.based_in)}</dd>
         </div>
-        {member.traveling_to ? (
-          <div>
+        <div className="portal-member-details-wide">
+          <dt>Interests</dt>
+          <dd>{interests}</dd>
+        </div>
+        <div className="portal-member-details-wide">
+          <dt>Current Request</dt>
+          <dd>{displayValue(member.current_request)}</dd>
+        </div>
+        {member.traveling_to?.trim() ? (
+          <div className="portal-member-details-wide">
             <dt>Traveling To</dt>
             <dd>{member.traveling_to}</dd>
-          </div>
-        ) : null}
-        {member.golf_interests.length > 0 ? (
-          <div className="portal-member-details-wide">
-            <dt>Interests</dt>
-            <dd>{member.golf_interests.join(", ")}</dd>
-          </div>
-        ) : null}
-        {member.current_request?.trim() ? (
-          <div className="portal-member-details-wide">
-            <dt>Current Request</dt>
-            <dd>{member.current_request}</dd>
           </div>
         ) : null}
       </dl>

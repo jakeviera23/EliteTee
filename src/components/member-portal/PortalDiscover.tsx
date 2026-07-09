@@ -185,6 +185,12 @@ export function PortalDiscover({
               </div>
             ) : null}
 
+            {!isLoading && !loadError && members.length > 0 ? (
+              <p className="portal-discover-count" aria-live="polite">
+                {members.length} founding member{members.length === 1 ? "" : "s"}
+              </p>
+            ) : null}
+
             {!isLoading && !loadError && members.length > 0 && filteredMembers.length === 0 ? (
               <p className="discover-no-match">{earlyStageCopy.discoverNoMatch}</p>
             ) : null}

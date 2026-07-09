@@ -5736,6 +5736,14 @@
   color: var(--portal-muted);
 }
 
+.portal-discover-count {
+  margin: 0 0 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
 .feed-composer-error {
   margin: 0;
   font-size: 0.8125rem;
