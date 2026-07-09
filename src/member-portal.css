@@ -6314,6 +6314,154 @@
   max-height: 15rem;
 }
 
+.portal-golfer-profile--premium .portal-golfer-profile-main {
+  padding: 0 var(--portal-card-pad) var(--portal-card-pad);
+}
+
+.portal-golfer-profile-hero-block {
+  padding-top: 0.75rem;
+  padding-bottom: 1.35rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.portal-golfer-profile--premium .portal-golfer-profile-header {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+  column-gap: 1.35rem;
+  row-gap: 0;
+  align-items: start;
+  margin-top: 0;
+  padding: 0;
+}
+
+.portal-golfer-profile-avatar-col {
+  grid-column: 1;
+  grid-row: 1;
+  width: 4.75rem;
+  flex-shrink: 0;
+}
+
+.portal-golfer-profile--premium .portal-golfer-avatar-wrap {
+  width: fit-content;
+  margin: -3.25rem 0 0;
+}
+
+.portal-golfer-profile--premium .portal-golfer-profile-identity {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.35rem 0 0.15rem;
+}
+
+.portal-golfer-profile--premium .portal-golfer-profile-identity h2.portal-golfer-profile-name {
+  display: block;
+  width: 100%;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+  line-height: 1.25;
+}
+
+.portal-golfer-profile-name-text {
+  display: inline;
+  line-height: 1.2;
+}
+
+.portal-golfer-profile--premium .portal-golfer-title {
+  margin: 0;
+}
+
+.portal-golfer-profile--premium .portal-golfer-location {
+  margin: 0;
+}
+
+.portal-golfer-profile-identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+}
+
+.portal-golfer-profile--premium .portal-golfer-founding-note {
+  margin: 0.1rem 0 0;
+  max-width: 36rem;
+}
+
+.portal-golfer-profile--premium .portal-golfer-member-badge,
+.portal-golfer-profile--premium .portal-golfer-status-badge {
+  margin-top: 0;
+}
+
+@media (min-width: 768px) {
+  .portal-golfer-profile--premium .portal-golfer-cover {
+    min-height: 14rem;
+    max-height: 16rem;
+  }
+
+  .portal-golfer-profile--premium .portal-golfer-profile-header {
+    grid-template-columns: 5.25rem minmax(0, 1fr);
+    column-gap: 1.5rem;
+  }
+
+  .portal-golfer-profile-avatar-col {
+    width: 5.25rem;
+  }
+
+  .portal-golfer-profile--premium .portal-golfer-avatar-wrap {
+    margin-top: -4rem;
+  }
+
+  .portal-golfer-profile--premium .portal-golfer-profile-identity {
+    padding-top: 0.65rem;
+  }
+
+  .portal-golfer-profile-hero-block {
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .portal-golfer-profile--premium .portal-golfer-profile-header {
+    grid-template-columns: 1fr;
+    row-gap: 0.85rem;
+  }
+
+  .portal-golfer-profile-avatar-col {
+    width: 100%;
+    justify-self: center;
+    display: flex;
+    justify-content: center;
+  }
+
+  .portal-golfer-profile--premium .portal-golfer-avatar-wrap {
+    margin: -2.5rem auto 0;
+  }
+
+  .portal-golfer-profile--premium .portal-golfer-profile-identity {
+    grid-column: 1;
+    grid-row: 2;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    padding-top: 0;
+  }
+
+  .portal-golfer-profile--premium .portal-golfer-profile-name-text {
+    text-align: center;
+  }
+
+  .portal-golfer-profile-identity-meta {
+    justify-content: center;
+  }
+}
+
 .portal-golfer-member-badge {
   display: inline-flex;
   align-items: center;
@@ -6757,8 +6905,12 @@
 }
 
 .portal-profile-section:first-of-type {
-  padding-top: 0;
+  padding-top: 1.25rem;
   border-top: none;
+}
+
+.portal-golfer-profile--premium .portal-profile-section:first-of-type {
+  padding-top: 0;
 }
 
 .portal-profile-section-head h3 {

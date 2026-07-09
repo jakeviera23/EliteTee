@@ -169,36 +169,42 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
         </div>
 
         <div className="portal-golfer-profile-main">
-          <ProfileSection title="Member Identity">
+          <div className="portal-golfer-profile-hero-block">
             <div className="portal-golfer-profile-header">
-              <div className="portal-golfer-avatar-wrap">
-                <MemberClubAvatar
-                  member={{ club_logo_url: display.avatarImage || null }}
-                  name={display.name}
-                  size="lg"
-                />
+              <div className="portal-golfer-profile-avatar-col">
+                <div className="portal-golfer-avatar-wrap">
+                  <MemberClubAvatar
+                    member={{ club_logo_url: display.avatarImage || null }}
+                    name={display.name}
+                    size="lg"
+                  />
+                </div>
               </div>
               <div className="portal-golfer-profile-identity">
-                <h2 id="profile-heading">
-                  {display.name}
+                <h2 id="profile-heading" className="portal-golfer-profile-name">
+                  <span className="portal-golfer-profile-name-text">{display.name}</span>
                   {display.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
                 </h2>
                 {display.title ? <p className="portal-golfer-title">{display.title}</p> : null}
                 <p className="portal-golfer-location">
                   {display.location || "Add your location in Edit Profile"}
                 </p>
-                <span className="portal-golfer-member-badge portal-golfer-founding-badge">
-                  {memberProfile?.founding_member_number ?? earlyStageCopy.foundingMember}
-                </span>
-                <p className="portal-golfer-founding-note">{earlyStageCopy.foundingMemberNote}</p>
-                {memberProfile ? (
-                  <span className="portal-golfer-status-badge">
-                    {formatMembershipLabel(memberProfile.membership_status)}
+                <div className="portal-golfer-profile-identity-meta">
+                  <span className="portal-golfer-member-badge portal-golfer-founding-badge">
+                    {memberProfile?.founding_member_number ?? earlyStageCopy.foundingMember}
                   </span>
-                ) : null}
+                  {memberProfile ? (
+                    <span className="portal-golfer-status-badge">
+                      {formatMembershipLabel(memberProfile.membership_status)}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="portal-golfer-founding-note">{earlyStageCopy.foundingMemberNote}</p>
               </div>
             </div>
+          </div>
 
+          <ProfileSection title="Bio">
             <p className="portal-profile-intro-note">{earlyStageCopy.profileOnboarding}</p>
 
             <div className="portal-profile-card portal-profile-card--inline">
