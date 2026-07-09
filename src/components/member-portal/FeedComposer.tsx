@@ -9,11 +9,12 @@ import {
   composerPostTypeOrder,
   earlyStageCopy,
 } from "../../data/portalSocial";
+import { createMemberFeedPost } from "../../lib/memberFeedPosts";
 import { FeedAvatar } from "./FeedAvatar";
 
 type FeedComposerProps = {
   author: PortalGolfer;
-  onPost: (post: FeedPost) => void;
+  onPosted?: (post: FeedPost) => void;
   id?: string;
 };
 
@@ -28,13 +29,9 @@ type ComposerField = {
 };
 
 type ComposerTypeConfig = {
-  /** Existing FeedPost.postType this maps to (keeps rendering intact). */
   internalPostType: PostType;
-  /** Field used as the card headline. */
   primaryKey?: string;
-  /** Whether this type shows a photo picker (and can carry a course image). */
   hasPhoto?: boolean;
-  /** Metadata fields shown above the message. */
   fields: ComposerField[];
 };
 
@@ -91,7 +88,6 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
   },
 };
 
-/** Field label → post detail label shown on the card. */
 const detailLabels: Record<string, string> = {
   location: "Club/Course",
   club: "Club/Course",
@@ -114,23 +110,26 @@ function defaultValuesFor(type: ComposerPostType): Record<string, string> {
   return values;
 }
 
-export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
+export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
   const [expanded, setExpanded] = useState(false);
-  const [postType, setPostType] = useState<ComposerPostType>("round-review");
+  const [postType, setPostType] = useState<ComposerPostType>("introduction");
   const [values, setValues] = useState<Record<string, string>>(() =>
-    defaultValuesFor("round-review"),
+    defaultValuesFor("introduction"),
   );
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputId = id ? `${id}-photo` : "feed-composer-photo";
 
   const config = composerConfig[postType];
 
   function reset() {
-    setPostType("round-review");
-    setValues(defaultValuesFor("round-review"));
+    setPostType("introduction");
+    setValues(defaultValuesFor("introduction"));
     setPhotoPreview(null);
     setExpanded(false);
+    setSubmitError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -153,9 +152,9 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
   const primaryMissing = config.primaryKey
     ? !values[config.primaryKey]?.trim()
     : false;
-  const canSubmit = !messageMissing && !primaryMissing;
+  const canSubmit = !messageMissing && !primaryMissing && !isSubmitting;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
 
@@ -171,29 +170,33 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
 
     const primaryValue = config.primaryKey ? values[config.primaryKey]?.trim() : "";
     const badge = composerPostTypeBadges[postType];
-    const hasPhoto = Boolean(photoPreview);
 
-    const newPost: FeedPost = {
-      id: `post-${Date.now()}`,
-      postType: config.internalPostType,
-      author,
-      courseName: primaryValue || composerPostTypeLabels[postType],
-      courseLocation: author.location || "",
-      // Only attach an image when the member actually provided one — never a
-      // mismatched placeholder. Text posts render as clean text cards.
-      images: hasPhoto ? [photoPreview as string] : [],
-      imageAlt: primaryValue ? `${badge}: ${primaryValue}` : badge,
-      caption: message,
-      likes: 0,
-      comments: 0,
-      timestamp: "Just now",
-      requestLabel: badge,
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const { data, error } = await createMemberFeedPost({
+      composerPostType: postType,
+      message,
+      headline: primaryValue || composerPostTypeLabels[postType],
+      badge,
       details: details.length ? details : undefined,
+      internalPostType: config.internalPostType,
       rating: isReview ? Number(values.rating) : undefined,
       playedWith: isReview ? values.playedWith?.trim() || undefined : undefined,
-    };
+    });
 
-    onPost(newPost);
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error("[FeedComposer] post failed", error.message);
+      setSubmitError(error.message);
+      return;
+    }
+
+    if (data) {
+      onPosted?.(data);
+    }
+
     reset();
   }
 
@@ -284,6 +287,12 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
             />
           </label>
 
+          {submitError ? (
+            <p className="feed-composer-error" role="alert">
+              {submitError}
+            </p>
+          ) : null}
+
           <div className="feed-composer-footer">
             {config.hasPhoto ? (
               <div className="feed-composer-photo">
@@ -302,6 +311,7 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
                     <span>+ Photo</span>
                   )}
                 </label>
+                <p className="feed-composer-photo-note">Photo preview is local only for now.</p>
               </div>
             ) : (
               <span className="feed-composer-footer-note">Shared with approved members only</span>
@@ -315,7 +325,7 @@ export function FeedComposer({ author, onPost, id }: FeedComposerProps) {
                 className="portal-btn portal-btn--gold portal-btn--compact"
                 disabled={!canSubmit}
               >
-                Post to Feed
+                {isSubmitting ? "Posting…" : "Post to Feed"}
               </button>
             </div>
           </div>

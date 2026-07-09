@@ -3,12 +3,22 @@ import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 
 type MemberClubAvatarProps = {
   member: Pick<MemberProfileRecord, "club_logo_url">;
+  name?: string;
   size?: "sm" | "md" | "lg";
   className?: string;
 };
 
+function initialsFromName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "•";
+  const first = parts[0][0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
+  return `${first}${last}`.toUpperCase();
+}
+
 export function MemberClubAvatar({
   member,
+  name = "",
   size = "md",
   className = "",
 }: MemberClubAvatarProps) {
@@ -18,7 +28,7 @@ export function MemberClubAvatar({
 
   return (
     <span
-      className={`portal-member-avatar portal-member-avatar--${size}${className ? ` ${className}` : ""}`}
+      className={`portal-member-avatar feed-avatar feed-avatar--${size}${className ? ` ${className}` : ""}`}
       aria-hidden="true"
     >
       {showImage ? (
@@ -29,7 +39,9 @@ export function MemberClubAvatar({
           loading="lazy"
           decoding="async"
         />
-      ) : null}
+      ) : (
+        <span className="feed-avatar-monogram">{initialsFromName(name)}</span>
+      )}
     </span>
   );
 }
@@ -51,7 +63,7 @@ export function MemberIdentity({
 
   return (
     <div className={`portal-member-identity${className ? ` ${className}` : ""}`}>
-      <MemberClubAvatar member={member} size={size} />
+      <MemberClubAvatar member={member} name={member.full_name} size={size} />
       <div className="portal-member-identity-text">
         <HeadingTag>{member.full_name}</HeadingTag>
       </div>

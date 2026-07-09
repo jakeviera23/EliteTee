@@ -3,6 +3,7 @@ import { demoCourses, earlyStageCopy, type FeedPost } from "../../data/portalSoc
 import { photos } from "../../assets/photos";
 import { SafeImage } from "../SafeImage";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
+import { fetchMemberFeedPostsForCurrentUser } from "../../lib/memberFeedPosts";
 import { getBucketListCourseIds, getPlayedCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
@@ -43,22 +44,26 @@ function ProfileSection({
 
 type GolferProfilePageProps = {
   isActive: boolean;
-  feedPosts?: FeedPost[];
 };
 
-export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePageProps) {
+export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
   const [courseStateVersion, setCourseStateVersion] = useState(0);
   const [memberProfile, setMemberProfile] = useState<Awaited<
     ReturnType<typeof fetchOwnMemberProfile>
   >["data"]>(null);
+  const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
-    const { data } = await fetchOwnMemberProfile();
+    const [{ data }, { data: posts }] = await Promise.all([
+      fetchOwnMemberProfile(),
+      fetchMemberFeedPostsForCurrentUser(),
+    ]);
     setMemberProfile(data);
+    setFeedPosts(posts);
     setIsLoading(false);
   }, []);
 
@@ -127,6 +132,20 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
     );
   }
 
+  if (!isLoading && !memberProfile) {
+    return (
+      <section className="portal-social-page portal-profile-page" aria-labelledby="profile-heading">
+        <header className="portal-section-head portal-section-head--social">
+          <h2 id="profile-heading">Profile</h2>
+        </header>
+        <ProfileEmptyState
+          title="Complete your profile"
+          hint="Your member profile is not linked to this account yet. If you just joined through an invite, refresh the page. Otherwise contact membership@elitetee.club."
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="portal-social-page portal-profile-page" aria-labelledby="profile-heading">
       {isLoading ? <p className="portal-empty">Loading your profile...</p> : null}
@@ -153,7 +172,11 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
           <ProfileSection title="Member Identity">
             <div className="portal-golfer-profile-header">
               <div className="portal-golfer-avatar-wrap">
-                <MemberClubAvatar member={{ club_logo_url: display.avatarImage ?? null }} size="lg" />
+                <MemberClubAvatar
+                  member={{ club_logo_url: display.avatarImage || null }}
+                  name={display.name}
+                  size="lg"
+                />
               </div>
               <div className="portal-golfer-profile-identity">
                 <h2 id="profile-heading">

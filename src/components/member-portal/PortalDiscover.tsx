@@ -1,6 +1,9 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { photos } from "../../assets/photos";
 import { earlyStageCopy } from "../../data/portalSocial";
+import { fetchDiscoverablePortalMembers } from "../../lib/memberProfiles";
+import type { MemberProfileRecord } from "../../types/memberProfileRecord";
+import { MemberCard } from "./MemberCard";
 
 const discoverFilters = [
   "All Members",
@@ -18,10 +21,93 @@ type PortalDiscoverProps = {
   onNavigate?: (tab: "profile" | "messages") => void;
 };
 
-export function PortalDiscover({ onViewCourse: _onViewCourse, onNavigate: _onNavigate }: PortalDiscoverProps) {
+function memberMatchesQuery(member: MemberProfileRecord, query: string) {
+  const haystack = [
+    member.full_name,
+    member.primary_club,
+    member.based_in,
+    member.traveling_to,
+    member.current_request,
+    member.industry,
+    ...member.golf_interests,
+    ...member.regions,
+    member.founding_member_number ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(query);
+}
+
+function memberMatchesFilter(member: MemberProfileRecord, filter: string) {
+  if (filter === "All Members") return true;
+  if (filter === "Traveling Soon") return Boolean(member.traveling_to?.trim());
+  if (filter === "Same Home Club") return Boolean(member.primary_club?.trim());
+
+  const interests = member.golf_interests.join(" ").toLowerCase();
+  const industry = member.industry.toLowerCase();
+  const regions = member.regions.join(" ").toLowerCase();
+
+  if (filter === "Business Golf") {
+    return interests.includes("business") || industry.includes("business");
+  }
+  if (filter === "Competitive Golf") {
+    return interests.includes("competitive") || interests.includes("tournament");
+  }
+  if (filter === "Course Architecture") {
+    return interests.includes("architecture") || interests.includes("design");
+  }
+  if (filter === "International Travel") {
+    return (
+      regions.length > 1 ||
+      interests.includes("travel") ||
+      Boolean(member.traveling_to?.trim())
+    );
+  }
+
+  return true;
+}
+
+export function PortalDiscover({
+  onViewCourse: _onViewCourse,
+  onNavigate: _onNavigate,
+}: PortalDiscoverProps) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("All Members");
-  const membersRef = useRef<HTMLDivElement>(null);
+  const [members, setMembers] = useState<MemberProfileRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadMembers = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+
+    const { data, error } = await fetchDiscoverablePortalMembers();
+
+    if (error) {
+      console.error("[PortalDiscover] failed to load members", error.message);
+      setLoadError("Member profiles could not be loaded right now.");
+      setMembers([]);
+    } else {
+      setMembers(data);
+    }
+
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void loadMembers();
+  }, [loadMembers]);
+
+  const filteredMembers = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return members.filter((member) => {
+      const matchesQuery = normalizedQuery === "" || memberMatchesQuery(member, normalizedQuery);
+      const matchesFilter = memberMatchesFilter(member, activeFilter);
+      return matchesQuery && matchesFilter;
+    });
+  }, [members, query, activeFilter]);
 
   return (
     <section className="portal-social-page portal-discover-page" aria-labelledby="discover-heading">
@@ -77,18 +163,51 @@ export function PortalDiscover({ onViewCourse: _onViewCourse, onNavigate: _onNav
           <section
             className="portal-discover-founding"
             aria-labelledby="founding-members-heading"
-            ref={membersRef}
           >
             <h3 id="founding-members-heading" className="discover-section-title">
               {earlyStageCopy.discoverFoundingTitle}
             </h3>
-            <div className="portal-discover-founding-body">
-              <p>{earlyStageCopy.discoverFoundingBody}</p>
-              <p className="portal-discover-founding-note">{earlyStageCopy.discoverFoundingNote}</p>
-              {query.trim() || activeFilter !== "All Members" ? (
-                <p className="discover-no-match">{earlyStageCopy.discoverNoMatch}</p>
-              ) : null}
-            </div>
+
+            {isLoading ? (
+              <p className="portal-discover-loading">Loading founding members…</p>
+            ) : null}
+
+            {loadError ? (
+              <p className="portal-alert portal-alert--warning" role="alert">
+                {loadError}
+              </p>
+            ) : null}
+
+            {!isLoading && !loadError && members.length === 0 ? (
+              <div className="portal-discover-founding-body">
+                <p>{earlyStageCopy.discoverFoundingBody}</p>
+                <p className="portal-discover-founding-note">{earlyStageCopy.discoverFoundingNote}</p>
+              </div>
+            ) : null}
+
+            {!isLoading && !loadError && members.length > 0 ? (
+              <p className="portal-discover-count" aria-live="polite">
+                {members.length} founding member{members.length === 1 ? "" : "s"}
+              </p>
+            ) : null}
+
+            {!isLoading && !loadError && members.length > 0 && filteredMembers.length === 0 ? (
+              <p className="discover-no-match">{earlyStageCopy.discoverNoMatch}</p>
+            ) : null}
+
+            {!isLoading && filteredMembers.length > 0 ? (
+              <ul className="portal-member-grid">
+                {filteredMembers.map((member) => (
+                  <li key={member.id}>
+                    <MemberCard
+                      member={member}
+                      onViewProfile={() => undefined}
+                      onRequest={() => undefined}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </section>
         </div>
       </div>
