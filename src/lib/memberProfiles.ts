@@ -620,52 +620,81 @@ export async function fetchMemberProfiles() {
   return { data: (data ?? []).map((row) => normalizeMemberProfileRecord(row as Record<string, unknown>)), error };
 }
 
-export async function fetchDiscoverablePortalMembers() {
+const PORTAL_APPROVED_MEMBER_SELECT = `
+  id,
+  full_name,
+  primary_club,
+  additional_clubs,
+  based_in,
+  regions,
+  industry,
+  golf_interests,
+  business_interests,
+  current_request,
+  traveling_to,
+  club_logo_url,
+  membership_status,
+  is_verified,
+  founding_member_number,
+  portal_access_enabled,
+  user_id,
+  updated_at
+`;
+
+function mapPortalApprovedMemberRows(rows: Record<string, unknown>[]): MemberProfileRecord[] {
+  return rows.map((row) =>
+    normalizeMemberProfileRecord({ ...row, email: "" } as Record<string, unknown>),
+  );
+}
+
+async function fetchPortalApprovedMemberRows() {
   if (!supabase) {
-    return { data: [] as MemberProfileRecord[], error: new Error("Supabase is not configured.") };
+    return { data: [] as Record<string, unknown>[], error: new Error("Supabase is not configured.") };
   }
 
-  const { data, error } = await supabase
+  return supabase
     .from("member_profiles")
-    .select(
-      `
-      id,
-      full_name,
-      primary_club,
-      additional_clubs,
-      based_in,
-      regions,
-      industry,
-      golf_interests,
-      business_interests,
-      current_request,
-      traveling_to,
-      club_logo_url,
-      membership_status,
-      is_verified,
-      founding_member_number,
-      portal_access_enabled,
-      user_id,
-      updated_at
-    `,
-    )
+    .select(PORTAL_APPROVED_MEMBER_SELECT)
     .eq("portal_access_enabled", true)
     .order("full_name", { ascending: true });
+}
+
+export async function fetchDiscoverablePortalMembers() {
+  const { data, error } = await fetchPortalApprovedMemberRows();
 
   if (error) {
     console.error("[fetchDiscoverablePortalMembers] Supabase error", {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
+      code: getErrorCode(error),
+      message: getErrorMessage(error),
     });
     return { data: [] as MemberProfileRecord[], error };
   }
 
   return {
-    data: (data ?? []).map((row) =>
-      normalizeMemberProfileRecord({ ...row, email: "" } as Record<string, unknown>),
-    ),
+    data: mapPortalApprovedMemberRows((data ?? []) as Record<string, unknown>[]),
     error: null,
   };
+}
+
+export async function fetchMessageablePortalMembers() {
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError) {
+    return { data: [] as MemberProfileRecord[], error: sessionError };
+  }
+
+  const { data, error } = await fetchPortalApprovedMemberRows();
+
+  if (error) {
+    console.error("[fetchMessageablePortalMembers] Supabase error", {
+      code: getErrorCode(error),
+      message: getErrorMessage(error),
+    });
+    return { data: [] as MemberProfileRecord[], error };
+  }
+
+  const members = mapPortalApprovedMemberRows((data ?? []) as Record<string, unknown>[]).filter(
+    (member) => Boolean(member.user_id?.trim()) && member.user_id !== userId,
+  );
+
+  return { data: members, error: null };
 }

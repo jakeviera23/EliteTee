@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { earlyStageCopy } from "../../data/portalSocial";
+import { NewConversationModal } from "./NewConversationModal";
 
 type PortalMessagesProps = {
   unreadCount?: number;
@@ -7,7 +8,14 @@ type PortalMessagesProps = {
 
 export function PortalMessages({ unreadCount: _unreadCount = 0 }: PortalMessagesProps) {
   const [showNewModal, setShowNewModal] = useState(false);
-  const [memberSearch, setMemberSearch] = useState("");
+
+  function handleStartConversation(receiverUserId: string, memberName: string) {
+    console.info("[PortalMessages] selected message recipient", {
+      receiverUserId,
+      memberName,
+    });
+    setShowNewModal(false);
+  }
 
   return (
     <section className="portal-social-page portal-messages-page" aria-labelledby="messages-heading">
@@ -32,56 +40,10 @@ export function PortalMessages({ unreadCount: _unreadCount = 0 }: PortalMessages
       </div>
 
       {showNewModal ? (
-        <div
-          className="portal-modal-backdrop"
-          role="presentation"
-          onClick={() => setShowNewModal(false)}
-        >
-          <div
-            className="portal-modal messages-modal"
-            role="dialog"
-            aria-labelledby="new-conversation-title"
-            aria-modal="true"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="portal-modal-head">
-              <h3 id="new-conversation-title">New Conversation</h3>
-              <button
-                type="button"
-                className="portal-modal-close"
-                onClick={() => setShowNewModal(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </header>
-
-            <label className="messages-modal-search">
-              <span className="visually-hidden">Search members</span>
-              <input
-                type="search"
-                value={memberSearch}
-                onChange={(event) => setMemberSearch(event.target.value)}
-                placeholder="Search members…"
-                disabled
-              />
-            </label>
-
-            <div className="portal-empty portal-empty--social">
-              <p>{earlyStageCopy.messagesNewEmpty}</p>
-            </div>
-
-            <footer className="messages-modal-footer">
-              <button
-                type="button"
-                className="portal-btn portal-btn--outline"
-                onClick={() => setShowNewModal(false)}
-              >
-                Close
-              </button>
-            </footer>
-          </div>
-        </div>
+        <NewConversationModal
+          onClose={() => setShowNewModal(false)}
+          onStart={handleStartConversation}
+        />
       ) : null}
     </section>
   );
