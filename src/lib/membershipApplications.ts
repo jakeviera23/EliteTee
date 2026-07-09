@@ -40,7 +40,7 @@ function normalizeApplication(row: Record<string, unknown>): MembershipApplicati
 
 export async function submitMembershipApplication(application: MembershipApplicationInsert) {
   if (!supabase) {
-    return { data: null, error: new Error("Supabase is not configured.") };
+    return { error: new Error("Supabase is not configured.") };
   }
 
   const payload = {
@@ -55,11 +55,7 @@ export async function submitMembershipApplication(application: MembershipApplica
     status: "pending_review" as const,
   };
 
-  const { data, error } = await supabase
-    .from("membership_applications")
-    .insert(payload)
-    .select("id, status")
-    .single();
+  const { error } = await supabase.from("membership_applications").insert(payload);
 
   if (error) {
     console.error("[membership_applications] insert failed", {
@@ -69,19 +65,10 @@ export async function submitMembershipApplication(application: MembershipApplica
       hint: error.hint,
       payload,
     });
-    return { data: null, error };
+    return { error };
   }
 
-  if (!data?.id) {
-    const unexpected = new Error("Application insert returned no row id.");
-    console.error("[membership_applications] insert returned empty result", {
-      payload,
-      data,
-    });
-    return { data: null, error: unexpected };
-  }
-
-  return { data, error: null };
+  return { error: null };
 }
 
 export async function fetchPendingApplications() {

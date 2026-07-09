@@ -36,13 +36,11 @@ export function RequestIntroduction() {
     setSubmitting(true);
 
     try {
-      const { data: insertedApplication, error: supabaseError } =
-        await submitMembershipApplication(application);
+      const { error: supabaseError } = await submitMembershipApplication(application);
 
-      if (supabaseError || !insertedApplication?.id) {
+      if (supabaseError) {
         console.error("[RequestMembership] Supabase application insert failed", {
           error: supabaseError,
-          insertedApplication,
           application,
         });
         setError(
