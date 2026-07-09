@@ -4,8 +4,8 @@ import { photos } from "../../assets/photos";
 import { SafeImage } from "../SafeImage";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getBucketListCourseIds } from "../../lib/portalCourseState";
-import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
+import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import { FeedCard } from "./FeedCard";
 import { MemberClubAvatar } from "./MemberClubAvatar";
@@ -137,13 +137,19 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
               <p className="portal-golfer-location">
                 {display.location || "Add your location in Edit Profile"}
               </p>
-              <span className="portal-golfer-member-badge">
-                {memberProfile
-                  ? formatMembershipLabel(memberProfile.membership_status)
-                  : earlyStageCopy.earlyCommunity}
+              <span className="portal-golfer-member-badge portal-golfer-founding-badge">
+                {memberProfile?.founding_member_number ?? earlyStageCopy.foundingMember}
               </span>
+              <p className="portal-golfer-founding-note">{earlyStageCopy.foundingMemberNote}</p>
+              {memberProfile ? (
+                <span className="portal-golfer-status-badge">
+                  {formatMembershipLabel(memberProfile.membership_status)}
+                </span>
+              ) : null}
             </div>
           </div>
+
+          <p className="portal-profile-intro-note">{earlyStageCopy.beAmongFirst}</p>
 
           <dl className="portal-profile-stats-grid">
             <div className="portal-profile-stat">
@@ -193,7 +199,7 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
                 </ul>
               ) : (
                 <ProfileEmptyState
-                  title="No favorite courses yet"
+                  title={earlyStageCopy.favoriteCoursesEmpty}
                   hint="Add the courses that define your game in Edit Profile."
                 />
               )}
@@ -210,7 +216,7 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
                 </ul>
               ) : (
                 <ProfileEmptyState
-                  title="Your list is empty"
+                  title="No saved courses yet"
                   hint="Save courses from the Courses page to build your bucket list."
                 />
               )}
@@ -221,7 +227,7 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
                 <p>{display.upcomingTravel}</p>
               ) : (
                 <ProfileEmptyState
-                  title="No trips planned"
+                  title={earlyStageCopy.tripsEmpty}
                   hint="Share where you're playing next in Edit Profile to connect with members traveling nearby."
                 />
               )}
@@ -229,8 +235,8 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
             <section className="portal-profile-card">
               <h3>Connections</h3>
               <ProfileEmptyState
-                title="No connections yet"
-                hint="Follow members and share rounds to start building your golf network."
+                title={earlyStageCopy.connectionsEmpty}
+                hint="Connections will appear as founding members join and you start playing together."
               />
             </section>
             <section className="portal-profile-card portal-profile-card--wide">
@@ -245,16 +251,16 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
                 </div>
               ) : (
                 <ProfileEmptyState
-                  title="No rounds shared yet"
-                  hint="Post a round from the Feed to showcase where you've been playing."
+                  title={earlyStageCopy.roundsEmpty}
+                  hint="Post from the Feed to share where you've been playing."
                 />
               )}
             </section>
             <section className="portal-profile-card portal-profile-card--wide">
               <h3>Achievements</h3>
               <ProfileEmptyState
-                title="No achievements yet"
-                hint="Milestones like courses played, countries visited, and rounds shared will appear here as you play."
+                title={earlyStageCopy.achievementsEmpty}
+                hint="Milestones will appear as you share rounds and participate in the community."
               />
             </section>
           </div>

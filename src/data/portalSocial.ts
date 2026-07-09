@@ -6,22 +6,42 @@ export const ratingOptions = Array.from({ length: MAX_RATING }, (_, index) => MA
 
 export const earlyStageCopy = {
   earlyCommunity: "Early community",
-  memberActivityPending: "Member activity will appear here as golfers join.",
-  beAmongFirst: "Be among the first golfers to share a round.",
+  foundingMember: "Founding Member",
+  foundingMemberNote: "One of the first members helping shape EliteTee.",
+  memberActivityPending: "No member activity yet.",
+  memberActivityGrowing:
+    "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
+  beAmongFirst: "Complete your profile to start connecting with other members.",
   noPublicDirectory: "No public member directory until the community is active.",
-  coursesGrowNote: "Courses will grow through member-posted rounds and recommendations.",
-  feedEmpty:
-    "Your feed will come alive as members begin sharing rounds, courses, and golf travel.",
-  discoverGolfersEmpty: "Suggested members will appear here after approved golfers join.",
-  popularDestinationsEmpty: "Popular destinations will grow from real member activity.",
-  messagesEmpty: "Messages will appear once you connect with other members.",
-  featuredCourseLabel: "Featured course example",
-  courseDiscoveryPreview: "Course discovery preview",
+  coursesGrowNote:
+    "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
+  feedEmptyTitle: "No member posts yet.",
+  feedEmptyHint: "The next post could be yours.",
+  feedEmptyCta: "Introduce yourself once your profile is complete.",
+  discoverFoundingTitle: "Founding Members",
+  discoverFoundingBody:
+    "As new members join EliteTee, approved profiles will appear here.",
+  discoverFoundingNote:
+    "Search by location, home club, travel plans, and interests as the community grows.",
+  discoverNoMatch:
+    "No members match that search yet. Profiles will appear here as founding members join.",
+  messagesEmptyTitle: "No conversations yet.",
+  messagesEmptyBody:
+    "As more founding members join EliteTee, you'll be able to connect directly, introduce yourself, and build relationships through the game.",
+  messagesEmptyNote: "Start your first conversation when another member joins.",
+  messagesNewEmpty: "No members available to message yet. Conversations will open as founding members join.",
+  featuredCourseLabel: "Course Library",
+  courseDiscoveryPreview: "Course discovery",
   courseMemberPhotosNote: "Member photos will appear as rounds are shared.",
   profileStatsNote: "Stats update as you share rounds and connect with members.",
-  achievementsEmpty: "Achievements will appear as you participate in the community.",
-  connectionsEmpty: "Connections will appear as you follow and play with other members.",
+  achievementsEmpty: "No achievements yet.",
+  connectionsEmpty: "No connections yet.",
+  favoriteCoursesEmpty: "No saved courses yet.",
+  tripsEmpty: "No trips planned yet.",
+  roundsEmpty: "No rounds shared yet.",
   notificationsEmpty: "Alerts will appear as member activity grows.",
+  composerCollapsedPlaceholder:
+    "Introduce yourself, share where you play, or ask for an introduction…",
 } as const;
 
 export type PostType =
@@ -231,9 +251,9 @@ export const demoCourses: CourseListing[] = [
     image: photos.courseNationalGolfLinks,
     imageAlt: "National Golf Links of America windmill fairway",
     nearbyCourseIds: ["course-pebble"],
-    membersPlayed: 42,
-    membersWantToPlay: 18,
-    recentActivity: "3 rounds shared this month",
+    membersPlayed: 0,
+    membersWantToPlay: 0,
+    recentActivity: "",
     tags: ["private", "links"],
   },
   {
@@ -246,9 +266,9 @@ export const demoCourses: CourseListing[] = [
     image: photos.coursePebbleBeach,
     imageAlt: "Pebble Beach Golf Links",
     nearbyCourseIds: ["course-bandon"],
-    membersPlayed: 57,
-    membersWantToPlay: 31,
-    recentActivity: "6 members saved this course",
+    membersPlayed: 0,
+    membersWantToPlay: 0,
+    recentActivity: "",
     tags: ["coastal", "links"],
   },
   {
@@ -261,9 +281,9 @@ export const demoCourses: CourseListing[] = [
     image: photos.courseBandonDunes,
     imageAlt: "Bandon Dunes",
     nearbyCourseIds: ["course-pebble", "course-cabot"],
-    membersPlayed: 36,
-    membersWantToPlay: 44,
-    recentActivity: "Popular for summer trips",
+    membersPlayed: 0,
+    membersWantToPlay: 0,
+    recentActivity: "",
     tags: ["coastal", "links", "bucket-list"],
   },
   {
@@ -276,9 +296,9 @@ export const demoCourses: CourseListing[] = [
     image: photos.courseStAndrews,
     imageAlt: "St Andrews Links",
     nearbyCourseIds: ["course-rcd"],
-    membersPlayed: 61,
-    membersWantToPlay: 39,
-    recentActivity: "4 members traveling soon",
+    membersPlayed: 0,
+    membersWantToPlay: 0,
+    recentActivity: "",
     tags: ["links", "traveling-soon"],
   },
   {
@@ -291,9 +311,9 @@ export const demoCourses: CourseListing[] = [
     image: photos.courseCabotCliffs,
     imageAlt: "Cabot Cliffs",
     nearbyCourseIds: ["course-bandon", "course-rcd"],
-    membersPlayed: 28,
-    membersWantToPlay: 35,
-    recentActivity: "2 rounds shared recently",
+    membersPlayed: 0,
+    membersWantToPlay: 0,
+    recentActivity: "",
     tags: ["coastal"],
   },
   {
@@ -306,9 +326,9 @@ export const demoCourses: CourseListing[] = [
     image: photos.courseRoyalCountyDown,
     imageAlt: "Royal County Down",
     nearbyCourseIds: ["course-standrews"],
-    membersPlayed: 33,
-    membersWantToPlay: 41,
-    recentActivity: "High on member wish lists",
+    membersPlayed: 0,
+    membersWantToPlay: 0,
+    recentActivity: "",
     tags: ["links", "coastal", "bucket-list"],
   },
 ];

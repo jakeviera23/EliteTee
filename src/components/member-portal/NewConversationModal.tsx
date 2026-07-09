@@ -22,8 +22,7 @@ export function NewConversationModal({ onClose }: NewConversationModalProps) {
         </header>
 
         <div className="portal-empty portal-empty--social">
-          <p>{earlyStageCopy.discoverGolfersEmpty}</p>
-          <p className="portal-empty-note">{earlyStageCopy.messagesEmpty}</p>
+          <p>{earlyStageCopy.messagesNewEmpty}</p>
         </div>
       </article>
     </div>

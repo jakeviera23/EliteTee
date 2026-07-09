@@ -14,11 +14,15 @@ export type MemberProfileInsert = {
   user_id: string;
   membership_status: string;
   is_verified: boolean;
+  founding_member_number?: string | null;
+  portal_access_enabled?: boolean;
 };
 
 export type MemberProfileRecord = Omit<MemberProfileInsert, "user_id"> & {
   id: string;
   user_id: string | null;
+  founding_member_number: string | null;
+  portal_access_enabled: boolean;
   created_at: string;
   updated_at: string;
 };

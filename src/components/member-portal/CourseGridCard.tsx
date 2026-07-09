@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { CourseListing } from "../../data/portalSocial";
+import { earlyStageCopy } from "../../data/portalSocial";
 import {
   isCourseOnBucketList,
   isCoursePlayed,
@@ -53,18 +54,9 @@ export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCar
           <strong>{course.bestMonths}</strong>
         </p>
 
-        <dl className="portal-course-card-stats">
-          <div>
-            <dt>Members played</dt>
-            <dd>{course.membersPlayed}</dd>
-          </div>
-          <div>
-            <dt>Want to play</dt>
-            <dd>{course.membersWantToPlay}</dd>
-          </div>
-        </dl>
-
-        <p className="portal-course-card-activity">{course.recentActivity}</p>
+        <p className="portal-course-card-activity portal-course-card-activity--early">
+          {earlyStageCopy.memberActivityPending}
+        </p>
 
         <div className="portal-course-card-actions">
           <button type="button" className="portal-btn portal-btn--gold" onClick={onView}>

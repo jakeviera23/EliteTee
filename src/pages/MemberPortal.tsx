@@ -6,7 +6,8 @@ import { PortalCourses } from "../components/member-portal/PortalCourses";
 import { PortalDiscover } from "../components/member-portal/PortalDiscover";
 import { PortalFeed } from "../components/member-portal/PortalFeed";
 import { PortalMessages } from "../components/member-portal/PortalMessages";
-import { ComingSoonProvider, useComingSoon } from "../components/member-portal/ComingSoonProvider";
+import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
+import { OnboardingAlertsModal } from "../components/member-portal/OnboardingAlertsModal";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
 import type { FeedPost } from "../data/portalSocial";
 import { privacyCopy } from "../data/memberPortalDirectory";
@@ -40,7 +41,6 @@ const mobileTabs: { id: PortalTab; label: string }[] = [
 
 function MemberPortalContent() {
   const navigate = useNavigate();
-  const { showComingSoon } = useComingSoon();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
@@ -49,6 +49,7 @@ function MemberPortalContent() {
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
+  const [showOnboardingAlerts, setShowOnboardingAlerts] = useState(false);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
 
   useEffect(() => {
@@ -154,7 +155,7 @@ function MemberPortalContent() {
             type="button"
             className="portal-icon-btn"
             aria-label="Notifications"
-            onClick={() => showComingSoon("Notifications")}
+            onClick={() => setShowOnboardingAlerts(true)}
           >
             <span aria-hidden="true">◦</span>
             <span className="portal-icon-btn-label">Alerts</span>
@@ -275,6 +276,10 @@ function MemberPortalContent() {
           </button>
         ))}
       </nav>
+
+      {showOnboardingAlerts ? (
+        <OnboardingAlertsModal onClose={() => setShowOnboardingAlerts(false)} />
+      ) : null}
     </div>
   );
 }

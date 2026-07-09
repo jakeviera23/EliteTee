@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { demoCourses, getCourseById } from "../../data/portalSocial";
+import { demoCourses, earlyStageCopy, getCourseById } from "../../data/portalSocial";
 import {
   getBucketListCourseIds,
   getPlayedCourseIds,
@@ -24,16 +24,6 @@ const filterTagMap: Record<string, string> = {
   Coastal: "coastal",
   "Bucket List": "bucket-list",
   "Traveling Soon": "traveling-soon",
-};
-
-const courseSignals = {
-  trending: ["St Andrews", "Bandon Dunes", "Hamptons private clubs"],
-  travelMonths: [
-    { place: "Scotland", when: "July – September" },
-    { place: "Hamptons", when: "June – August" },
-    { place: "Palm Beach", when: "December – March" },
-  ],
-  mostSaved: ["Cypress Point", "Pine Valley", "National Golf Links"],
 };
 
 type PortalCoursesProps = {
@@ -84,8 +74,8 @@ export function PortalCourses({ initialCourseId = null, onCourseOpened }: Portal
       <header className="portal-courses-header">
         <h2 id="courses-heading">Courses</h2>
         <p>
-          Discover courses through member rounds, saved lists, travel plans, and trusted
-          recommendations.
+          Explore the course library. Member rounds, recommendations, and travel notes will appear as
+          founding members share activity.
         </p>
       </header>
 
@@ -137,46 +127,12 @@ export function PortalCourses({ initialCourseId = null, onCourseOpened }: Portal
         </div>
 
         <aside className="courses-signals" aria-labelledby="course-signals-heading">
-          <div className="courses-signals-panel">
+          <div className="courses-signals-panel courses-signals-panel--early">
             <h3 id="course-signals-heading" className="courses-signals-title">
-              Course Signals
+              Member Activity
             </h3>
-
-            <section aria-labelledby="trending-heading">
-              <h4 id="trending-heading" className="courses-signals-label">
-                Trending now
-              </h4>
-              <ul className="courses-signals-list">
-                {courseSignals.trending.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section aria-labelledby="travel-months-heading">
-              <h4 id="travel-months-heading" className="courses-signals-label">
-                Popular travel months
-              </h4>
-              <ul className="courses-signals-travel">
-                {courseSignals.travelMonths.map((item) => (
-                  <li key={item.place}>
-                    <span>{item.place}</span>
-                    <span>{item.when}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section aria-labelledby="most-saved-heading">
-              <h4 id="most-saved-heading" className="courses-signals-label">
-                Most saved
-              </h4>
-              <ul className="courses-signals-list">
-                {courseSignals.mostSaved.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </section>
+            <p className="courses-signals-early-copy">{earlyStageCopy.memberActivityPending}</p>
+            <p className="courses-signals-early-note">{earlyStageCopy.memberActivityGrowing}</p>
           </div>
         </aside>
       </div>
