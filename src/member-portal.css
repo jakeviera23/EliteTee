@@ -711,6 +711,22 @@
   color: var(--portal-body);
 }
 
+.portal-member-details-wide {
+  grid-column: 1 / -1;
+}
+
+.portal-member-fm-badge {
+  flex-shrink: 0;
+  font-family: var(--sans);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inside-gold);
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+}
+
 .portal-member-multiline {
   white-space: pre-line;
 }
@@ -5713,6 +5729,25 @@
   border-radius: 12px;
 }
 
+.portal-discover-loading,
+.portal-feed-loading {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  color: var(--portal-muted);
+}
+
+.feed-composer-error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #e8a0a0;
+}
+
+.feed-composer-photo-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--portal-faint);
+}
+
 /* Travel board */
 .discover-aside {
   min-width: 0;
@@ -7051,6 +7086,29 @@
 
 .admin-application-details-wide {
   grid-column: 1 / -1;
+}
+
+.admin-application-invite-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--inside-border);
+}
+
+.admin-application-invite-panel h4 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1rem;
+  color: var(--portal-heading);
+}
+
+.admin-application-invite-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--portal-muted);
 }
 
 .admin-invitation-note {

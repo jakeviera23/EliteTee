@@ -16,7 +16,8 @@ export type PortalProfileExtras = {
 };
 
 const STORAGE_PREFIX = "elitetee_portal_profile_extras:";
-const LOCAL_PROFILE_KEY = "local-member";
+/** @deprecated Legacy shared key — cleared on invite signup to prevent profile bleed. */
+export const LEGACY_SHARED_PROFILE_EXTRAS_KEY = `${STORAGE_PREFIX}local-member`;
 
 export const defaultPortalProfileExtras: PortalProfileExtras = {
   cover_image_url: "",
@@ -35,7 +36,14 @@ export const defaultPortalProfileExtras: PortalProfileExtras = {
 };
 
 function storageKey(userId: string | null | undefined) {
-  return `${STORAGE_PREFIX}${userId?.trim() || LOCAL_PROFILE_KEY}`;
+  const normalized = userId?.trim();
+  if (!normalized) return null;
+  return `${STORAGE_PREFIX}${normalized}`;
+}
+
+export function clearLegacySharedProfileExtras() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(LEGACY_SHARED_PROFILE_EXTRAS_KEY);
 }
 
 function normalizeExtras(parsed: Partial<PortalProfileExtras>): PortalProfileExtras {
@@ -70,8 +78,13 @@ export function getPortalProfileExtras(userId: string | null | undefined): Porta
     return { ...defaultPortalProfileExtras };
   }
 
+  const key = storageKey(userId);
+  if (!key) {
+    return { ...defaultPortalProfileExtras };
+  }
+
   try {
-    const raw = window.localStorage.getItem(storageKey(userId));
+    const raw = window.localStorage.getItem(key);
     if (!raw) return { ...defaultPortalProfileExtras };
 
     const parsed = JSON.parse(raw) as Partial<PortalProfileExtras>;
@@ -87,5 +100,8 @@ export function savePortalProfileExtras(
 ) {
   if (typeof window === "undefined") return;
 
-  window.localStorage.setItem(storageKey(userId), JSON.stringify(extras));
+  const key = storageKey(userId);
+  if (!key) return;
+
+  window.localStorage.setItem(key, JSON.stringify(extras));
 }

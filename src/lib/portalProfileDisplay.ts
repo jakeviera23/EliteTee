@@ -2,7 +2,11 @@ import { photos } from "../assets/photos";
 import { emptyGolferDefaults, earlyStageCopy } from "../data/portalSocial";
 import type { PortalGolfer } from "../data/portalSocial";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
-import { getPortalProfileExtras, parseFavoriteCoursesFromExtras, type PortalProfileExtras } from "./portalProfileExtras";
+import {
+  getPortalProfileExtras,
+  parseFavoriteCoursesFromExtras,
+  type PortalProfileExtras,
+} from "./portalProfileExtras";
 
 export type GolferProfileDisplay = {
   name: string;
@@ -17,7 +21,25 @@ export type GolferProfileDisplay = {
   upcomingTravel: string;
   connectionInterests: string[];
   handicap?: number;
+  isEmpty: boolean;
 };
+
+function resolveAvatarImage(
+  photoUrl: string | null | undefined,
+  useLocal: boolean,
+  localPhotoUrl: string,
+): string {
+  if (useLocal) {
+    return localPhotoUrl.trim();
+  }
+  return photoUrl?.trim() ?? "";
+}
+
+function parseHandicap(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 export function buildGolferProfileDisplay(
   member: MemberProfileRecord | null,
@@ -26,52 +48,50 @@ export function buildGolferProfileDisplay(
   const userExtras = extras ?? getPortalProfileExtras(member?.user_id);
 
   if (!member) {
-    const useLocal = userExtras.has_local_snapshot;
+    const useLocal = Boolean(userExtras.has_local_snapshot);
     return {
       name: useLocal && userExtras.full_name.trim() ? userExtras.full_name : "Your profile",
       title: useLocal ? userExtras.headline : "",
       location: useLocal ? userExtras.based_in : "",
       homeCourse: useLocal ? userExtras.primary_club : "",
-      bio: useLocal && userExtras.bio.trim() ? userExtras.bio : earlyStageCopy.beAmongFirst,
+      bio: useLocal && userExtras.bio.trim() ? userExtras.bio : earlyStageCopy.profileOnboarding,
       isVerified: false,
-      avatarImage:
-        useLocal && userExtras.profile_photo_url.trim()
-          ? userExtras.profile_photo_url
-          : photos.founderPortrait,
+      avatarImage: resolveAvatarImage(null, useLocal, userExtras.profile_photo_url),
       coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
       favoriteCourses: useLocal
         ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
         : [],
       upcomingTravel: useLocal ? userExtras.traveling_to : "",
       connectionInterests: [],
-      handicap: userExtras.handicap.trim() ? Number(userExtras.handicap) : undefined,
+      handicap: parseHandicap(userExtras.handicap),
+      isEmpty: true,
     };
   }
 
-  const handicapText = userExtras.handicap.trim();
-  const parsedHandicap = handicapText ? Number(handicapText) : undefined;
-  const useLocal = userExtras.has_local_snapshot;
+  const useLocal = Boolean(userExtras.has_local_snapshot);
 
   return {
-    name: useLocal ? userExtras.full_name : member.full_name,
+    name: useLocal && userExtras.full_name.trim() ? userExtras.full_name : member.full_name,
     title: useLocal ? userExtras.headline : member.industry || "",
     location: useLocal ? userExtras.based_in : member.based_in,
     homeCourse: useLocal ? userExtras.primary_club : member.primary_club,
     bio: useLocal
-      ? userExtras.bio || earlyStageCopy.beAmongFirst
-      : member.current_request || earlyStageCopy.beAmongFirst,
+      ? userExtras.bio || earlyStageCopy.profileOnboarding
+      : member.current_request || earlyStageCopy.profileOnboarding,
     isVerified: member.is_verified,
-    avatarImage: useLocal
-      ? userExtras.profile_photo_url.trim() || photos.founderPortrait
-      : member.club_logo_url?.trim() || photos.founderPortrait,
+    avatarImage: resolveAvatarImage(
+      member.club_logo_url,
+      useLocal,
+      userExtras.profile_photo_url,
+    ),
     coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
     favoriteCourses: useLocal
       ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
       : member.additional_clubs,
     upcomingTravel: useLocal ? userExtras.traveling_to : member.traveling_to || "",
     connectionInterests: member.golf_interests,
-    handicap:
-      parsedHandicap !== undefined && Number.isFinite(parsedHandicap) ? parsedHandicap : undefined,
+    handicap: parseHandicap(userExtras.handicap),
+    isEmpty: false,
   };
 }
 

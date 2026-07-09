@@ -5,11 +5,17 @@ import { InvitationDraftModal } from "../components/admin/InvitationDraftModal";
 import {
   approveMembershipApplication,
   declineMembershipApplication,
+  fetchApprovedApplications,
   fetchPendingApplications,
   fetchPendingApplicationCount,
+  regenerateApplicationInviteToken,
 } from "../lib/membershipApplications";
 import type { ApproveApplicationResult } from "../lib/membershipApplications";
 import type { MembershipApplicationRecord } from "../types/membershipApplication";
+import {
+  copyInviteLinkToClipboard,
+  getApplicationInviteLink,
+} from "../lib/membershipInvites";
 import {
   createMemberProfile,
   fetchAdminDashboardCounts,
@@ -86,6 +92,9 @@ export function AdminMembers() {
   const [pendingApplications, setPendingApplications] = useState<MembershipApplicationRecord[]>(
     [],
   );
+  const [approvedApplications, setApprovedApplications] = useState<MembershipApplicationRecord[]>(
+    [],
+  );
   const [pendingCount, setPendingCount] = useState(0);
   const [viewingApplication, setViewingApplication] = useState<MembershipApplicationRecord | null>(
     null,
@@ -95,27 +104,38 @@ export function AdminMembers() {
   const [applicationMessage, setApplicationMessage] = useState<string | null>(null);
   const [applicationError, setApplicationError] = useState<string | null>(null);
   const [pendingLoadWarning, setPendingLoadWarning] = useState<string | null>(null);
+  const [approvedLoadWarning, setApprovedLoadWarning] = useState<string | null>(null);
+  const [inviteActionId, setInviteActionId] = useState<string | null>(null);
 
   const refreshAdminData = useCallback(async () => {
     setIsLoadingDashboard(true);
     setPendingLoadWarning(null);
 
-    const [counts, recent, pending, pendingTotal] = await Promise.all([
+    const [counts, recent, pending, approved, pendingTotal] = await Promise.all([
       fetchAdminDashboardCounts(),
       fetchRecentMemberProfilesForAdmin(10),
       fetchPendingApplications(),
+      fetchApprovedApplications(),
       fetchPendingApplicationCount(),
     ]);
 
     setDashboardCounts(counts);
     setRecentMembers(recent.data);
     setPendingApplications(pending.data);
+    setApprovedApplications(approved.data);
     setPendingCount(pendingTotal);
 
     if (pending.error) {
       console.error("[AdminMembers] failed to fetch pending applications", pending.error);
       setPendingLoadWarning(
         "Pending applications could not be loaded. Check Supabase permissions or console errors.",
+      );
+    }
+
+    if (approved.error) {
+      console.error("[AdminMembers] failed to fetch approved applications", approved.error);
+      setApprovedLoadWarning(
+        "Approved applications could not be loaded. Check Supabase permissions or console errors.",
       );
     }
 
@@ -226,6 +246,45 @@ export function AdminMembers() {
       setApplicationMessage(
         `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
       );
+    }
+
+    void refreshAdminData();
+  }
+
+  async function handleCopyInviteLink(application: MembershipApplicationRecord) {
+    const inviteLink = getApplicationInviteLink(application);
+    if (!inviteLink) {
+      setApplicationError("Invite link missing for this approved application.");
+      return;
+    }
+
+    const { error } = await copyInviteLinkToClipboard(inviteLink);
+    if (error) {
+      setApplicationError(error.message);
+      return;
+    }
+
+    setApplicationMessage(`Invite link copied for ${application.full_name}.`);
+    setApplicationError(null);
+  }
+
+  async function handleRegenerateInviteLink(applicationId: string) {
+    setInviteActionId(applicationId);
+    setApplicationMessage(null);
+    setApplicationError(null);
+
+    const { data, error } = await regenerateApplicationInviteToken(applicationId);
+
+    setInviteActionId(null);
+
+    if (error) {
+      setApplicationError(formatAdminError(error));
+      return;
+    }
+
+    if (data) {
+      setApplicationMessage(`Invite link regenerated for ${data.application.full_name}.`);
+      setViewingApplication(data.application);
     }
 
     void refreshAdminData();
@@ -387,6 +446,99 @@ export function AdminMembers() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="admin-section" aria-labelledby="approved-applications-heading">
+          <header className="admin-section-head">
+            <h2 id="approved-applications-heading">Approved Applications</h2>
+            <p>
+              Recover private invite links for approved founding members. Existing tokens are reused —
+              links are not regenerated unless missing.
+            </p>
+          </header>
+
+          {approvedLoadWarning ? (
+            <p className="portal-alert portal-alert--warning" role="alert">
+              {approvedLoadWarning}
+            </p>
+          ) : null}
+
+          {isLoadingDashboard ? (
+            <p className="admin-empty-state">Loading approved applications…</p>
+          ) : approvedApplications.length === 0 ? (
+            <div className="admin-empty-state">
+              <p>No approved applications yet.</p>
+            </div>
+          ) : (
+            <div className="admin-members-table-wrap">
+              <table className="admin-members-table admin-applications-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">FM #</th>
+                    <th scope="col">Invite</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvedApplications.map((application) => {
+                    const inviteLink = getApplicationInviteLink(application);
+                    const inviteRedeemed = Boolean(application.invite_redeemed_at);
+
+                    return (
+                      <tr key={application.id}>
+                        <td data-label="Name">{application.full_name}</td>
+                        <td data-label="Email">{application.email}</td>
+                        <td data-label="FM #">{application.founding_member_number || "—"}</td>
+                        <td data-label="Invite">
+                          {inviteRedeemed ? (
+                            <span className="admin-badge admin-badge--linked">Redeemed</span>
+                          ) : inviteLink ? (
+                            <span className="admin-badge admin-badge--verified">Link ready</span>
+                          ) : (
+                            <span className="admin-badge admin-badge--pending">Link missing</span>
+                          )}
+                        </td>
+                        <td data-label="Actions">
+                          <div className="admin-application-actions">
+                            {inviteLink && !inviteRedeemed ? (
+                              <button
+                                type="button"
+                                className="portal-btn portal-btn--gold portal-btn--compact"
+                                onClick={() => void handleCopyInviteLink(application)}
+                              >
+                                Copy Invite Link
+                              </button>
+                            ) : null}
+                            {!inviteLink && !inviteRedeemed ? (
+                              <button
+                                type="button"
+                                className="portal-btn portal-btn--outline portal-btn--compact"
+                                disabled={inviteActionId === application.id}
+                                onClick={() => void handleRegenerateInviteLink(application.id)}
+                              >
+                                {inviteActionId === application.id
+                                  ? "Regenerating…"
+                                  : "Regenerate Invite Link"}
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              className="portal-btn portal-btn--outline portal-btn--compact"
+                              onClick={() => setViewingApplication(application)}
+                            >
+                              View Application
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -753,6 +905,12 @@ export function AdminMembers() {
         <ApplicationViewModal
           application={viewingApplication}
           onClose={() => setViewingApplication(null)}
+          onRegenerateInvite={
+            viewingApplication.status === "approved" && !viewingApplication.invite_redeemed_at
+              ? (applicationId) => void handleRegenerateInviteLink(applicationId)
+              : undefined
+          }
+          isRegeneratingInvite={inviteActionId === viewingApplication.id}
         />
       ) : null}
 

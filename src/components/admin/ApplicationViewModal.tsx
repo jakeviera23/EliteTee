@@ -1,8 +1,14 @@
 import type { MembershipApplicationRecord } from "../../types/membershipApplication";
+import {
+  copyInviteLinkToClipboard,
+  getApplicationInviteLink,
+} from "../../lib/membershipInvites";
 
 type ApplicationViewModalProps = {
   application: MembershipApplicationRecord;
   onClose: () => void;
+  onRegenerateInvite?: (applicationId: string) => void;
+  isRegeneratingInvite?: boolean;
 };
 
 function formatDate(value: string) {
@@ -18,7 +24,21 @@ function formatDate(value: string) {
   });
 }
 
-export function ApplicationViewModal({ application, onClose }: ApplicationViewModalProps) {
+export function ApplicationViewModal({
+  application,
+  onClose,
+  onRegenerateInvite,
+  isRegeneratingInvite = false,
+}: ApplicationViewModalProps) {
+  const isApproved = application.status === "approved";
+  const inviteLink = isApproved ? getApplicationInviteLink(application) : null;
+  const inviteRedeemed = Boolean(application.invite_redeemed_at);
+
+  async function handleCopyInviteLink() {
+    if (!inviteLink) return;
+    await copyInviteLinkToClipboard(inviteLink);
+  }
+
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <div
@@ -64,10 +84,22 @@ export function ApplicationViewModal({ application, onClose }: ApplicationViewMo
               <dd>{application.instagram}</dd>
             </div>
           ) : null}
+          {application.founding_member_number ? (
+            <div>
+              <dt>Founding Member #</dt>
+              <dd>{application.founding_member_number}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Applied</dt>
             <dd>{formatDate(application.applied_at)}</dd>
           </div>
+          {application.reviewed_at ? (
+            <div>
+              <dt>Reviewed</dt>
+              <dd>{formatDate(application.reviewed_at)}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Status</dt>
             <dd className="admin-application-status">{application.status.replace("_", " ")}</dd>
@@ -81,6 +113,49 @@ export function ApplicationViewModal({ application, onClose }: ApplicationViewMo
             <dd>{application.why_join}</dd>
           </div>
         </dl>
+
+        {isApproved ? (
+          <div className="admin-application-invite-panel">
+            <h4>Private invite link</h4>
+            {inviteRedeemed ? (
+              <p className="admin-application-invite-note">
+                Invite redeemed on {formatDate(application.invite_redeemed_at ?? "")}.
+              </p>
+            ) : inviteLink ? (
+              <>
+                <p className="admin-invitation-link">
+                  <span>Invite link</span>
+                  <a href={inviteLink} target="_blank" rel="noreferrer">
+                    {inviteLink}
+                  </a>
+                </p>
+                <button
+                  type="button"
+                  className="portal-btn portal-btn--outline portal-btn--compact"
+                  onClick={() => void handleCopyInviteLink()}
+                >
+                  Copy Invite Link
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="portal-alert portal-alert--warning" role="status">
+                  Invite link missing
+                </p>
+                {onRegenerateInvite ? (
+                  <button
+                    type="button"
+                    className="portal-btn portal-btn--gold portal-btn--compact"
+                    disabled={isRegeneratingInvite}
+                    onClick={() => onRegenerateInvite(application.id)}
+                  >
+                    {isRegeneratingInvite ? "Regenerating…" : "Regenerate Invite Link"}
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

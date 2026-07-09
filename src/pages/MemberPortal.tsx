@@ -9,7 +9,6 @@ import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import { OnboardingAlertsModal } from "../components/member-portal/OnboardingAlertsModal";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
-import type { FeedPost } from "../data/portalSocial";
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import { formatNotificationCount } from "../lib/portalNotifications";
@@ -46,7 +45,6 @@ function MemberPortalContent() {
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeView, setActiveView] = useState<PortalTab>("feed");
-  const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
   const [showOnboardingAlerts, setShowOnboardingAlerts] = useState(false);
@@ -85,10 +83,6 @@ function MemberPortalContent() {
   }, [isTransitioning, activeView]);
 
   const showLoader = isInitialLoaderVisible || isTransitioning;
-
-  function handleNewPost(post: FeedPost) {
-    setFeedPosts((current) => [post, ...current]);
-  }
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -214,12 +208,7 @@ function MemberPortalContent() {
       <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
         <div className="portal-shell">
         {activeView === "feed" ? (
-          <PortalFeed
-            posts={feedPosts}
-            onPost={handleNewPost}
-            showComposer
-            composerId={FEED_COMPOSER_ID}
-          />
+          <PortalFeed showComposer composerId={FEED_COMPOSER_ID} />
         ) : null}
         {activeView === "discover" ? (
           <PortalDiscover
@@ -228,7 +217,7 @@ function MemberPortalContent() {
           />
         ) : null}
         {activeView === "compose" ? (
-          <PortalCompose onPost={handleNewPost} onPosted={() => transitionTo("feed")} />
+          <PortalCompose onPosted={() => transitionTo("feed")} />
         ) : null}
         {activeView === "courses" ? (
           <PortalCourses
@@ -238,7 +227,7 @@ function MemberPortalContent() {
         ) : null}
         {activeView === "messages" ? <PortalMessages unreadCount={unreadMessageCount} /> : null}
         {activeView === "profile" ? (
-          <GolferProfilePage isActive={activeView === "profile"} feedPosts={feedPosts} />
+          <GolferProfilePage isActive={activeView === "profile"} />
         ) : null}
 
         <section className="portal-privacy">

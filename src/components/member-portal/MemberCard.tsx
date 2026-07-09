@@ -12,15 +12,18 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
     <article className="portal-member-card">
       <header className="portal-member-head">
         <MemberIdentity member={member} size="sm" />
+        {member.founding_member_number ? (
+          <span className="portal-member-fm-badge">{member.founding_member_number}</span>
+        ) : null}
       </header>
       <dl className="portal-member-details">
         <div>
-          <dt>Primary Club</dt>
-          <dd>{member.primary_club}</dd>
+          <dt>Home Club</dt>
+          <dd>{member.primary_club || "—"}</dd>
         </div>
         <div>
           <dt>Location</dt>
-          <dd>{member.based_in}</dd>
+          <dd>{member.based_in || "—"}</dd>
         </div>
         {member.traveling_to ? (
           <div>
@@ -28,10 +31,18 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
             <dd>{member.traveling_to}</dd>
           </div>
         ) : null}
-        <div>
-          <dt>Industry</dt>
-          <dd>{member.industry}</dd>
-        </div>
+        {member.golf_interests.length > 0 ? (
+          <div className="portal-member-details-wide">
+            <dt>Interests</dt>
+            <dd>{member.golf_interests.join(", ")}</dd>
+          </div>
+        ) : null}
+        {member.current_request?.trim() ? (
+          <div className="portal-member-details-wide">
+            <dt>Current Request</dt>
+            <dd>{member.current_request}</dd>
+          </div>
+        ) : null}
       </dl>
       <div className="portal-member-actions">
         <button

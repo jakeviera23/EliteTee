@@ -280,6 +280,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           <div className="portal-profile-edit-avatar">
             <MemberClubAvatar
               member={{ club_logo_url: form.profile_photo_url || profile.club_logo_url }}
+              name={form.full_name || profile.full_name}
               size="lg"
             />
           </div>

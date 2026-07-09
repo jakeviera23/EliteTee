@@ -110,6 +110,103 @@ export async function fetchPendingApplicationCount() {
   return error ? 0 : count ?? 0;
 }
 
+export async function fetchApprovedApplications() {
+  if (!supabase) {
+    return { data: [] as MembershipApplicationRecord[], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("membership_applications")
+    .select("*")
+    .eq("status", "approved")
+    .order("reviewed_at", { ascending: false });
+
+  if (error) {
+    return { data: [] as MembershipApplicationRecord[], error };
+  }
+
+  return {
+    data: (data ?? []).map((row) => normalizeApplication(row as Record<string, unknown>)),
+    error: null,
+  };
+}
+
+export async function regenerateApplicationInviteToken(applicationId: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data: applicationRow, error: fetchError } = await supabase
+    .from("membership_applications")
+    .select("*")
+    .eq("id", applicationId)
+    .eq("status", "approved")
+    .maybeSingle();
+
+  if (fetchError) {
+    return { data: null, error: fetchError };
+  }
+
+  if (!applicationRow) {
+    return { data: null, error: new Error("Approved application not found.") };
+  }
+
+  const application = normalizeApplication(applicationRow as Record<string, unknown>);
+
+  if (application.invite_token) {
+    return {
+      data: null,
+      error: new Error("Invite token already exists. Use Copy Invite Link instead."),
+    };
+  }
+
+  if (application.invite_redeemed_at) {
+    return { data: null, error: new Error("This invitation has already been redeemed.") };
+  }
+
+  const inviteToken = generateInviteToken();
+  const inviteTokenCreatedAt = new Date().toISOString();
+  const invitationLink = buildInviteLink(inviteToken);
+
+  const invitationEmailDraft = application.invitation_email_draft
+    ? application.invitation_email_draft.replace(
+        /https?:\/\/[^\s]+\/invite\/[a-f0-9]+/i,
+        invitationLink,
+      )
+    : buildInvitationEmailDraft({
+        fullName: application.full_name,
+        email: application.email,
+        foundingMemberNumber: application.founding_member_number ?? "Founding Member",
+        invitationLink,
+      });
+
+  const { data: updatedRow, error: updateError } = await supabase
+    .from("membership_applications")
+    .update({
+      invite_token: inviteToken,
+      invite_token_created_at: inviteTokenCreatedAt,
+      invitation_link: invitationLink,
+      invitation_email_draft: invitationEmailDraft,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", applicationId)
+    .select("*")
+    .single();
+
+  if (updateError) {
+    return { data: null, error: updateError };
+  }
+
+  return {
+    data: {
+      application: normalizeApplication(updatedRow as Record<string, unknown>),
+      invitationLink,
+      inviteToken,
+    },
+    error: null,
+  };
+}
+
 async function fetchNextFoundingMemberNumber() {
   if (!supabase) {
     return "FM-001";

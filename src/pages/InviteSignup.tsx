@@ -6,6 +6,12 @@ import {
   type MembershipInvitePreview,
 } from "../lib/membershipInvites";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import {
+  clearLegacySharedProfileExtras,
+  defaultPortalProfileExtras,
+  getPortalProfileExtras,
+  savePortalProfileExtras,
+} from "../lib/portalProfileExtras";
 import "../inside-elitetee.css";
 
 export function InviteSignup() {
@@ -137,10 +143,30 @@ export function InviteSignup() {
 
       const { error: completeError } = await completeMembershipInvite(token);
       if (completeError) {
-        console.error("[InviteSignup] complete invite failed", completeError);
+        console.error("[InviteSignup] complete invite failed", completeError.message);
         setSubmitError(completeError.message);
         return;
       }
+
+      clearLegacySharedProfileExtras();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.id && invite.handicap?.trim()) {
+        const existingExtras = getPortalProfileExtras(user.id);
+        savePortalProfileExtras(user.id, {
+          ...defaultPortalProfileExtras,
+          ...existingExtras,
+          handicap: invite.handicap.trim(),
+        });
+      }
+
+      console.info("[InviteSignup] invite redeemed for member profile", {
+        email: normalizedEmail,
+        foundingMemberNumber: invite.founding_member_number,
+      });
 
       navigate("/member-portal", { replace: true });
     } catch (error) {

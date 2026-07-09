@@ -1,3 +1,4 @@
+import type { MembershipApplicationRecord } from "../types/membershipApplication";
 import { supabase } from "./supabase";
 
 export type MembershipInvitePreview = {
@@ -6,6 +7,10 @@ export type MembershipInvitePreview = {
   founding_member_number: string | null;
   member_profile_id: string | null;
   status: string;
+  location: string | null;
+  home_club: string | null;
+  handicap: string | null;
+  instagram: string | null;
 };
 
 const INVITE_TOKEN_BYTES = 32;
@@ -44,7 +49,35 @@ function normalizeInvitePreview(value: unknown): MembershipInvitePreview | null 
       : null,
     member_profile_id: row.member_profile_id ? String(row.member_profile_id) : null,
     status: String(row.status ?? ""),
+    location: row.location ? String(row.location) : null,
+    home_club: row.home_club ? String(row.home_club) : null,
+    handicap: row.handicap ? String(row.handicap) : null,
+    instagram: row.instagram ? String(row.instagram) : null,
   };
+}
+
+export function getApplicationInviteLink(
+  application: Pick<MembershipApplicationRecord, "invite_token" | "invitation_link">,
+): string | null {
+  if (application.invite_token?.trim()) {
+    return buildInviteLink(application.invite_token.trim());
+  }
+
+  const storedLink = application.invitation_link?.trim();
+  if (storedLink && storedLink.includes("/invite/")) {
+    return storedLink;
+  }
+
+  return null;
+}
+
+export async function copyInviteLinkToClipboard(link: string) {
+  try {
+    await navigator.clipboard.writeText(link);
+    return { error: null };
+  } catch {
+    return { error: new Error("Clipboard is unavailable in this browser.") };
+  }
 }
 
 export async function fetchMembershipInviteByToken(token: string) {

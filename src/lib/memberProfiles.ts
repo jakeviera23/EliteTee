@@ -619,3 +619,30 @@ export async function fetchMemberProfiles() {
 
   return { data: (data ?? []).map((row) => normalizeMemberProfileRecord(row as Record<string, unknown>)), error };
 }
+
+export async function fetchDiscoverablePortalMembers() {
+  if (!supabase) {
+    return { data: [] as MemberProfileRecord[], error: new Error("Supabase is not configured.") };
+  }
+
+  const { userId } = await getCurrentAuthUserId();
+
+  const { data, error } = await supabase
+    .from("member_profiles")
+    .select("*")
+    .eq("portal_access_enabled", true)
+    .order("full_name", { ascending: true });
+
+  if (error) {
+    return { data: [] as MemberProfileRecord[], error };
+  }
+
+  const members = (data ?? []).map((row) =>
+    normalizeMemberProfileRecord(row as Record<string, unknown>),
+  );
+
+  return {
+    data: userId ? members.filter((member) => member.user_id !== userId) : members,
+    error: null,
+  };
+}
