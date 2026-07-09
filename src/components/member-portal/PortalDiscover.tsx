@@ -85,7 +85,17 @@ export function PortalDiscover({
     const { data, error } = await fetchDiscoverablePortalMembers();
 
     if (error) {
-      console.error("[PortalDiscover] failed to load members", error.message);
+      const supabaseError = error as Error & {
+        code?: string;
+        details?: string;
+        hint?: string;
+      };
+      console.error("[PortalDiscover] failed to load members", {
+        code: supabaseError.code,
+        message: supabaseError.message,
+        details: supabaseError.details,
+        hint: supabaseError.hint,
+      });
       setLoadError("Member profiles could not be loaded right now.");
       setMembers([]);
     } else {

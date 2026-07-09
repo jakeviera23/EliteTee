@@ -627,16 +627,46 @@ export async function fetchDiscoverablePortalMembers() {
 
   const { data, error } = await supabase
     .from("member_profiles")
-    .select("*")
+    .select(
+      `
+      id,
+      full_name,
+      primary_club,
+      additional_clubs,
+      based_in,
+      regions,
+      industry,
+      golf_interests,
+      business_interests,
+      current_request,
+      traveling_to,
+      club_logo_url,
+      membership_status,
+      is_verified,
+      founding_member_number,
+      portal_access_enabled,
+      user_id,
+      created_at,
+      updated_at
+    `,
+    )
     .eq("portal_access_enabled", true)
     .order("full_name", { ascending: true });
 
   if (error) {
+    console.error("[fetchDiscoverablePortalMembers] Supabase error", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
     return { data: [] as MemberProfileRecord[], error };
   }
 
   return {
-    data: (data ?? []).map((row) => normalizeMemberProfileRecord(row as Record<string, unknown>)),
+    data: (data ?? []).map((row) =>
+      normalizeMemberProfileRecord({ ...row, email: "" } as Record<string, unknown>),
+    ),
     error: null,
   };
 }
