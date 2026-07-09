@@ -36,9 +36,15 @@ export function RequestIntroduction() {
     setSubmitting(true);
 
     try {
-      const { error: supabaseError } = await submitMembershipApplication(application);
+      const { data: insertedApplication, error: supabaseError } =
+        await submitMembershipApplication(application);
 
-      if (supabaseError) {
+      if (supabaseError || !insertedApplication?.id) {
+        console.error("[RequestMembership] Supabase application insert failed", {
+          error: supabaseError,
+          insertedApplication,
+          application,
+        });
         setError(
           "Unable to save your application right now. Please try again or email membership@elitetee.club.",
         );
@@ -58,7 +64,8 @@ export function RequestIntroduction() {
       }
 
       setSubmitted(true);
-    } catch {
+    } catch (unexpectedError) {
+      console.error("[RequestMembership] unexpected submission failure", unexpectedError);
       setError(
         "Unable to send your application. Please check your connection and try again.",
       );
