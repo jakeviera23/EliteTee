@@ -10,8 +10,19 @@ export const earlyStageCopy = {
   foundingMemberNote: "One of the first members helping shape EliteTee.",
   memberActivityPending: "No member activity yet.",
   memberActivityGrowing:
-    "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
-  beAmongFirst: "Complete your profile to start connecting with other members.",
+    "Member notes, recent rounds, and travel requests will appear here as founding members begin using EliteTee.",
+  coursesLibraryGrowth:
+    "EliteTee's course library will grow through member rounds, travel notes, and recommendations.",
+  coursesIntro:
+    "The course library starts with a curated set of standout destinations and grows as members add rounds they've played.",
+  featuredCoursesStartingPoint:
+    "These six featured courses are a starting point—not a complete database. Member rounds will expand what appears here over time.",
+  curatedLibraryLabel: "Curated Course Library",
+  featuredCourseLabel: "Featured Course",
+  profileOnboarding:
+    "Complete your profile so other founding members know where you play, where you travel, and what kind of golf connections you're looking for.",
+  beAmongFirst:
+    "Complete your profile so other founding members know where you play, where you travel, and what kind of golf connections you're looking for.",
   noPublicDirectory: "No public member directory until the community is active.",
   coursesGrowNote:
     "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
@@ -30,10 +41,12 @@ export const earlyStageCopy = {
     "As more founding members join EliteTee, you'll be able to connect directly, introduce yourself, and build relationships through the game.",
   messagesEmptyNote: "Start your first conversation when another member joins.",
   messagesNewEmpty: "No members available to message yet. Conversations will open as founding members join.",
-  featuredCourseLabel: "Course Library",
   courseDiscoveryPreview: "Course discovery",
   courseMemberPhotosNote: "Member photos will appear as rounds are shared.",
-  profileStatsNote: "Stats update as you share rounds and connect with members.",
+  profileStatsNote: "These numbers grow as you share rounds, save courses, and connect with members.",
+  connectionInterestsEmpty:
+    "Share the kinds of golf connections you're looking for in Edit Profile.",
+  connectionInterestsTitle: "No connection interests added yet.",
   achievementsEmpty: "No achievements yet.",
   connectionsEmpty: "No connections yet.",
   favoriteCoursesEmpty: "No saved courses yet.",

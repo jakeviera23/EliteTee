@@ -23,6 +23,9 @@ export type MembershipApplicationRecord = MembershipApplicationInsert & {
   invitation_user_id: string | null;
   invitation_email_draft: string | null;
   invitation_link: string | null;
+  invite_token: string | null;
+  invite_token_created_at: string | null;
+  invite_redeemed_at: string | null;
   created_at: string;
   updated_at: string;
 };

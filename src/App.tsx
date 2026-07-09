@@ -7,6 +7,7 @@ import { MemberDirectory } from "./pages/MemberDirectory";
 import { MemberPortal } from "./pages/MemberPortal";
 import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
+import { InviteSignup } from "./pages/InviteSignup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/founder" element={<Navigate to="/about" replace />} />
       <Route path="/login" element={<InsideEliteTee />} />
       <Route path="/inside" element={<InsideEliteTee />} />
+      <Route path="/invite/:token" element={<InviteSignup />} />
       <Route
         path="/member-portal"
         element={

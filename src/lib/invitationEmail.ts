@@ -2,8 +2,7 @@ type InvitationEmailInput = {
   fullName: string;
   email: string;
   foundingMemberNumber: string;
-  invitationLink: string | null;
-  loginUrl: string;
+  invitationLink: string;
 };
 
 export function buildInvitationEmailDraft({
@@ -11,13 +10,8 @@ export function buildInvitationEmailDraft({
   email,
   foundingMemberNumber,
   invitationLink,
-  loginUrl,
 }: InvitationEmailInput) {
   const firstName = fullName.trim().split(/\s+/)[0] || "there";
-
-  const setupLine = invitationLink
-    ? `Set your password and activate your account:\n${invitationLink}`
-    : `Sign in at ${loginUrl} once your admin has created your login.`;
 
   return `Subject: Welcome to EliteTee — Founding Member ${foundingMemberNumber}
 
@@ -27,7 +21,8 @@ Welcome to EliteTee. Your membership application has been approved.
 
 You are Founding Member ${foundingMemberNumber}.
 
-${setupLine}
+Your EliteTee founding member invite is ready. Use this private link to create your account:
+${invitationLink}
 
 Once your account is active:
 1. Complete your golfer profile

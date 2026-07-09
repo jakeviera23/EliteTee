@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { CourseListing } from "../../data/portalSocial";
-import { earlyStageCopy } from "../../data/portalSocial";
 import {
   isCourseOnBucketList,
   isCoursePlayed,
@@ -54,13 +53,17 @@ export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCar
           <strong>{course.bestMonths}</strong>
         </p>
 
-        <p className="portal-course-card-activity portal-course-card-activity--early">
-          {earlyStageCopy.memberActivityPending}
-        </p>
-
         <div className="portal-course-card-actions">
           <button type="button" className="portal-btn portal-btn--gold" onClick={onView}>
             View Course
+          </button>
+          <button
+            type="button"
+            className={`portal-btn portal-btn--outline${bucketListed ? " is-active" : ""}`}
+            onClick={handleBucketList}
+            aria-pressed={bucketListed}
+          >
+            {bucketListed ? "Saved ✓" : "Save"}
           </button>
           <button
             type="button"
@@ -69,14 +72,6 @@ export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCar
             aria-pressed={played}
           >
             {played ? "Played ✓" : "Played"}
-          </button>
-          <button
-            type="button"
-            className={`portal-btn portal-btn--outline${bucketListed ? " is-active" : ""}`}
-            onClick={handleBucketList}
-            aria-pressed={bucketListed}
-          >
-            {bucketListed ? "Added ✓" : "Add to List"}
           </button>
         </div>
       </div>

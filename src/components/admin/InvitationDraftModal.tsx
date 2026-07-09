@@ -1,8 +1,7 @@
 type InvitationDraftModalProps = {
   foundingMemberNumber: string;
   invitationEmailDraft: string;
-  invitationLink: string | null;
-  authNote: string | null;
+  invitationLink: string;
   onClose: () => void;
 };
 
@@ -10,7 +9,6 @@ export function InvitationDraftModal({
   foundingMemberNumber,
   invitationEmailDraft,
   invitationLink,
-  authNote,
   onClose,
 }: InvitationDraftModalProps) {
   async function copyDraft() {
@@ -38,23 +36,16 @@ export function InvitationDraftModal({
         </header>
 
         <p className="admin-invitation-note">
-          Application approved. Review the invitation below before sending manually.
+          Application approved. Copy the private invite link and email draft below before sending
+          manually.
         </p>
 
-        {authNote ? (
-          <p className="portal-alert portal-alert--error" role="status">
-            {authNote}
-          </p>
-        ) : null}
-
-        {invitationLink ? (
-          <p className="admin-invitation-link">
-            <span>Invite link</span>
-            <a href={invitationLink} target="_blank" rel="noreferrer">
-              {invitationLink}
-            </a>
-          </p>
-        ) : null}
+        <p className="admin-invitation-link">
+          <span>Invite link</span>
+          <a href={invitationLink} target="_blank" rel="noreferrer">
+            {invitationLink}
+          </a>
+        </p>
 
         <textarea
           className="admin-invitation-draft"

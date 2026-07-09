@@ -7,7 +7,6 @@ import {
   updateOwnMemberProfile,
 } from "../../lib/memberProfiles";
 import {
-  defaultPortalProfileExtras,
   getPortalProfileExtras,
   savePortalProfileExtras,
   type PortalProfileExtras,
@@ -27,13 +26,11 @@ type ProfileFormState = {
   primary_club: string;
   traveling_to: string;
   favorite_courses: string;
+  connection_interests: string;
   bio: string;
   profile_photo_url: string;
   cover_image_url: string;
   handicap: string;
-  rounds_posted: string;
-  countries_played: string;
-  courses_played_count: string;
 };
 
 const NO_LINKED_PROFILE_MESSAGE = "No profile is linked to this account yet.";
@@ -53,13 +50,11 @@ function profileToFormState(
     favorite_courses: useLocal
       ? extras.favorite_courses
       : formatListForInput(profile.additional_clubs),
+    connection_interests: formatListForInput(profile.golf_interests),
     bio: useLocal ? extras.bio : profile.current_request ?? "",
     profile_photo_url: useLocal ? extras.profile_photo_url : profile.club_logo_url ?? "",
     cover_image_url: extras.cover_image_url,
     handicap: extras.handicap,
-    rounds_posted: extras.rounds_posted,
-    countries_played: extras.countries_played,
-    courses_played_count: extras.courses_played_count,
   };
 }
 
@@ -84,7 +79,11 @@ function buildProfileUpdates(
       existingValues: profile.additional_clubs,
     }),
     regions: profile.regions,
-    golf_interests: profile.golf_interests,
+    golf_interests: buildListFieldUpdate({
+      formValue: form.connection_interests,
+      initialFormValue: initialForm.connection_interests,
+      existingValues: profile.golf_interests,
+    }),
     business_interests: profile.business_interests,
     current_request: buildTextFieldUpdate({
       formValue: form.bio,
@@ -106,9 +105,9 @@ function buildExtrasFromForm(form: ProfileFormState): PortalProfileExtras {
   return {
     cover_image_url: form.cover_image_url.trim(),
     handicap: form.handicap.trim(),
-    rounds_posted: form.rounds_posted.trim(),
-    countries_played: form.countries_played.trim(),
-    courses_played_count: form.courses_played_count.trim(),
+    rounds_posted: "",
+    countries_played: "",
+    courses_played_count: "",
     full_name: form.full_name.trim(),
     headline: form.headline.trim(),
     based_in: form.based_in.trim(),
@@ -308,7 +307,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
 
       <form className="portal-profile-form" onSubmit={handleSubmit}>
         <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Profile Photos</h3>
+          <h3 className="portal-profile-form-card-title">Member Identity</h3>
           <div className="portal-profile-form-grid">
             <label className="portal-profile-field portal-profile-field--full">
               <span>Cover photo URL</span>
@@ -329,12 +328,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
                 placeholder="https://..."
               />
             </label>
-          </div>
-        </section>
 
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">About You</h3>
-          <div className="portal-profile-form-grid">
             <label className="portal-profile-field">
               <span>Full Name</span>
               <input
@@ -351,7 +345,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
                 type="text"
                 value={form.headline}
                 onChange={(event) => updateField("headline", event.target.value)}
-                placeholder="Founder of EliteTee"
+                placeholder="Private club member, frequent traveler"
               />
             </label>
 
@@ -365,6 +359,21 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
               />
             </label>
 
+            <label className="portal-profile-field portal-profile-field--full">
+              <span>Bio</span>
+              <textarea
+                rows={3}
+                value={form.bio}
+                onChange={(event) => updateField("bio", event.target.value)}
+                placeholder="Share what you love about golf and what brought you to EliteTee"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="portal-profile-form-card">
+          <h3 className="portal-profile-form-card-title">Golf Background</h3>
+          <div className="portal-profile-form-grid">
             <label className="portal-profile-field">
               <span>Home Course</span>
               <input
@@ -375,21 +384,6 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
               />
             </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Bio</span>
-              <textarea
-                rows={3}
-                value={form.bio}
-                onChange={(event) => updateField("bio", event.target.value)}
-                placeholder="Share what you love about golf and your journey on EliteTee"
-              />
-            </label>
-          </div>
-        </section>
-
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Golf Activity</h3>
-          <div className="portal-profile-form-grid">
             <label className="portal-profile-field">
               <span>Handicap</span>
               <input
@@ -397,55 +391,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
                 inputMode="decimal"
                 value={form.handicap}
                 onChange={(event) => updateField("handicap", event.target.value)}
-                placeholder="e.g. 1"
-              />
-            </label>
-
-            <label className="portal-profile-field">
-              <span>Rounds Posted</span>
-              <input
-                type="number"
-                min="0"
-                value={form.rounds_posted}
-                onChange={(event) => updateField("rounds_posted", event.target.value)}
-                placeholder={defaultPortalProfileExtras.rounds_posted || "142"}
-              />
-            </label>
-
-            <label className="portal-profile-field">
-              <span>Countries Played</span>
-              <input
-                type="number"
-                min="0"
-                value={form.countries_played}
-                onChange={(event) => updateField("countries_played", event.target.value)}
-                placeholder="14"
-              />
-            </label>
-
-            <label className="portal-profile-field">
-              <span>Courses Played</span>
-              <input
-                type="number"
-                min="0"
-                value={form.courses_played_count}
-                onChange={(event) => updateField("courses_played_count", event.target.value)}
-                placeholder="87"
-              />
-            </label>
-          </div>
-        </section>
-
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Travel &amp; Favorites</h3>
-          <div className="portal-profile-form-grid">
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Upcoming Golf Travel</span>
-              <input
-                type="text"
-                value={form.traveling_to}
-                onChange={(event) => updateField("traveling_to", event.target.value)}
-                placeholder="Scotland — St Andrews, September"
+                placeholder="e.g. 8.4"
               />
             </label>
 
@@ -456,6 +402,36 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
                 value={form.favorite_courses}
                 onChange={(event) => updateField("favorite_courses", event.target.value)}
                 placeholder="One course per line or separated by commas"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="portal-profile-form-card">
+          <h3 className="portal-profile-form-card-title">Travel Plans</h3>
+          <div className="portal-profile-form-grid">
+            <label className="portal-profile-field portal-profile-field--full">
+              <span>Upcoming Golf Travel</span>
+              <input
+                type="text"
+                value={form.traveling_to}
+                onChange={(event) => updateField("traveling_to", event.target.value)}
+                placeholder="Scotland — St Andrews, September"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="portal-profile-form-card">
+          <h3 className="portal-profile-form-card-title">Connection Interests</h3>
+          <div className="portal-profile-form-grid">
+            <label className="portal-profile-field portal-profile-field--full">
+              <span>What connections are you looking for?</span>
+              <textarea
+                rows={4}
+                value={form.connection_interests}
+                onChange={(event) => updateField("connection_interests", event.target.value)}
+                placeholder="Weekend games, member introductions, golf travel partners, business golf"
               />
             </label>
           </div>

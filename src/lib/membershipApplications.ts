@@ -4,8 +4,8 @@ import type {
   MembershipApplicationStatus,
 } from "../types/membershipApplication";
 import { buildInvitationEmailDraft } from "./invitationEmail";
+import { buildInviteLink, generateInviteToken } from "./membershipInvites";
 import { createMemberProfileFromApproval } from "./memberProfiles";
-import { createAuthInviteForEmail } from "./supabaseAdmin";
 import { supabase } from "./supabase";
 
 function normalizeApplication(row: Record<string, unknown>): MembershipApplicationRecord {
@@ -33,6 +33,11 @@ function normalizeApplication(row: Record<string, unknown>): MembershipApplicati
       ? String(row.invitation_email_draft)
       : null,
     invitation_link: row.invitation_link ? String(row.invitation_link) : null,
+    invite_token: row.invite_token ? String(row.invite_token) : null,
+    invite_token_created_at: row.invite_token_created_at
+      ? String(row.invite_token_created_at)
+      : null,
+    invite_redeemed_at: row.invite_redeemed_at ? String(row.invite_redeemed_at) : null,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
   };
@@ -142,9 +147,8 @@ export type ApproveApplicationResult = {
   invitationEmailDraft: string;
   foundingMemberNumber: string;
   memberProfileId: string | null;
-  authUserId: string | null;
-  invitationLink: string | null;
-  authNote: string | null;
+  invitationLink: string;
+  inviteToken: string;
 };
 
 export async function approveMembershipApplication(applicationId: string) {
@@ -170,8 +174,9 @@ export async function approveMembershipApplication(applicationId: string) {
   const application = normalizeApplication(applicationRow as Record<string, unknown>);
   const foundingMemberNumber = await fetchNextFoundingMemberNumber();
   const reviewerEmail = await getReviewerEmail();
-
-  const invite = await createAuthInviteForEmail(application.email);
+  const inviteToken = generateInviteToken();
+  const inviteTokenCreatedAt = new Date().toISOString();
+  const invitationLink = buildInviteLink(inviteToken);
 
   const { data: profile, error: profileError } = await createMemberProfileFromApproval({
     full_name: application.full_name,
@@ -188,21 +193,19 @@ export async function approveMembershipApplication(applicationId: string) {
     membership_status: "Founding Member",
     is_verified: true,
     founding_member_number: foundingMemberNumber,
-    portal_access_enabled: true,
-    user_id: invite.userId,
+    portal_access_enabled: false,
+    user_id: null,
   });
 
   if (profileError) {
     return { data: null, error: profileError };
   }
 
-  const loginUrl = `${window.location.origin}/login`;
   const invitationEmailDraft = buildInvitationEmailDraft({
     fullName: application.full_name,
     email: application.email,
     foundingMemberNumber,
-    invitationLink: invite.invitationLink,
-    loginUrl,
+    invitationLink,
   });
 
   const { data: updatedRow, error: updateError } = await supabase
@@ -213,9 +216,11 @@ export async function approveMembershipApplication(applicationId: string) {
       reviewed_by_email: reviewerEmail,
       member_profile_id: profile?.id ?? null,
       founding_member_number: foundingMemberNumber,
-      invitation_user_id: invite.userId,
+      invitation_user_id: null,
       invitation_email_draft: invitationEmailDraft,
-      invitation_link: invite.invitationLink,
+      invitation_link: invitationLink,
+      invite_token: inviteToken,
+      invite_token_created_at: inviteTokenCreatedAt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", applicationId)
@@ -226,21 +231,14 @@ export async function approveMembershipApplication(applicationId: string) {
     return { data: null, error: updateError };
   }
 
-  const authNote = invite.error
-    ? invite.error.message
-    : invite.usedServiceRole
-      ? null
-      : "Auth account was not created automatically. Create the login in Supabase Dashboard, then use Link Member.";
-
   return {
     data: {
       application: normalizeApplication(updatedRow as Record<string, unknown>),
       invitationEmailDraft,
       foundingMemberNumber,
       memberProfileId: profile?.id ?? null,
-      authUserId: invite.userId,
-      invitationLink: invite.invitationLink,
-      authNote,
+      invitationLink,
+      inviteToken,
     } satisfies ApproveApplicationResult,
     error: null,
   };

@@ -85,30 +85,30 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
             <strong>{course.bestMonths}</strong>
           </p>
 
-          <p className="portal-course-card-note">{earlyStageCopy.coursesGrowNote}</p>
+          <p className="portal-course-card-note">{earlyStageCopy.memberActivityGrowing}</p>
 
           <div className="portal-course-card-actions">
-            <button
-              type="button"
-              className={`portal-btn portal-btn--outline${played ? " is-active" : ""}`}
-              onClick={handlePlayed}
-              aria-pressed={played}
-            >
-              {played ? "Added" : "Played"}
-            </button>
             <button
               type="button"
               className={`portal-btn portal-btn--outline${bucketListed ? " is-active" : ""}`}
               onClick={handleBucketList}
               aria-pressed={bucketListed}
             >
-              {bucketListed ? "Saved" : "Add Course to List"}
+              {bucketListed ? "Saved ✓" : "Save"}
+            </button>
+            <button
+              type="button"
+              className={`portal-btn portal-btn--outline${played ? " is-active" : ""}`}
+              onClick={handlePlayed}
+              aria-pressed={played}
+            >
+              {played ? "Played ✓" : "Played"}
             </button>
           </div>
         </div>
 
         <section className="portal-course-modal-posts" aria-labelledby="course-modal-posts-heading">
-          <h3 id="course-modal-posts-heading">Member Posts</h3>
+          <h3 id="course-modal-posts-heading">Member Notes &amp; Rounds</h3>
           {posts.length > 0 ? (
             <div className="portal-feed-list portal-feed-list--compact">
               {posts.map((post) => (
@@ -116,7 +116,7 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
               ))}
             </div>
           ) : (
-            <p className="portal-empty portal-empty--inline">{earlyStageCopy.memberActivityPending}</p>
+            <p className="portal-empty portal-empty--inline">{earlyStageCopy.memberActivityGrowing}</p>
           )}
         </section>
       </article>

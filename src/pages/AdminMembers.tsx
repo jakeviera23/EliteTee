@@ -729,12 +729,12 @@ export function AdminMembers() {
                 Applications submit to Supabase and appear in Pending Applications above for review.
               </li>
               <li>
-                Approving creates a Founding Member profile (FM-001, FM-002, …), enables portal
-                access, and generates an invitation email draft (not sent automatically).
+                Approving creates a Founding Member profile (FM-001, FM-002, …), generates a
+                private invite link, and prepares an invitation email draft (not sent automatically).
               </li>
               <li>
-                Add <code>VITE_SUPABASE_SERVICE_ROLE_KEY</code> to create auth accounts and invite
-                links automatically on approval.
+                The applicant uses the private invite link to create their login. Portal access is
+                enabled only after they complete invite signup.
               </li>
               <li>
                 Create a profile manually below when needed. Link Existing Member Login when a
@@ -761,7 +761,6 @@ export function AdminMembers() {
           foundingMemberNumber={invitationDraft.foundingMemberNumber}
           invitationEmailDraft={invitationDraft.invitationEmailDraft}
           invitationLink={invitationDraft.invitationLink}
-          authNote={invitationDraft.authNote}
           onClose={() => setInvitationDraft(null)}
         />
       ) : null}

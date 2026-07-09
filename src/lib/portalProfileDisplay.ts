@@ -13,20 +13,11 @@ export type GolferProfileDisplay = {
   isVerified: boolean;
   avatarImage: string;
   coverImage: string;
-  followers: number;
-  following: number;
-  coursesPlayed: number;
-  roundsPosted: number;
-  countriesPlayed: number;
   favoriteCourses: string[];
   upcomingTravel: string;
+  connectionInterests: string[];
   handicap?: number;
 };
-
-function parseOptionalNumber(value: string, fallback = 0) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
 
 export function buildGolferProfileDisplay(
   member: MemberProfileRecord | null,
@@ -48,15 +39,11 @@ export function buildGolferProfileDisplay(
           ? userExtras.profile_photo_url
           : photos.founderPortrait,
       coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
-      followers: 0,
-      following: 0,
-      coursesPlayed: parseOptionalNumber(userExtras.courses_played_count),
-      roundsPosted: parseOptionalNumber(userExtras.rounds_posted),
-      countriesPlayed: parseOptionalNumber(userExtras.countries_played),
       favoriteCourses: useLocal
         ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
         : [],
       upcomingTravel: useLocal ? userExtras.traveling_to : "",
+      connectionInterests: [],
       handicap: userExtras.handicap.trim() ? Number(userExtras.handicap) : undefined,
     };
   }
@@ -78,15 +65,11 @@ export function buildGolferProfileDisplay(
       ? userExtras.profile_photo_url.trim() || photos.founderPortrait
       : member.club_logo_url?.trim() || photos.founderPortrait,
     coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
-    followers: 0,
-    following: 0,
-    coursesPlayed: parseOptionalNumber(userExtras.courses_played_count),
-    roundsPosted: parseOptionalNumber(userExtras.rounds_posted),
-    countriesPlayed: parseOptionalNumber(userExtras.countries_played),
     favoriteCourses: useLocal
       ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
       : member.additional_clubs,
     upcomingTravel: useLocal ? userExtras.traveling_to : member.traveling_to || "",
+    connectionInterests: member.golf_interests,
     handicap:
       parsedHandicap !== undefined && Number.isFinite(parsedHandicap) ? parsedHandicap : undefined,
   };
@@ -113,8 +96,8 @@ export function buildComposerAuthor(
     coverImage: display.coverImage,
     favoriteCourses: display.favoriteCourses,
     upcomingTravel: display.upcomingTravel || undefined,
-    coursesPlayed: display.coursesPlayed,
-    roundsPosted: display.roundsPosted,
-    countriesPlayed: display.countriesPlayed,
+    coursesPlayed: 0,
+    roundsPosted: 0,
+    countriesPlayed: 0,
   };
 }

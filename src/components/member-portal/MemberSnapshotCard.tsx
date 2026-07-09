@@ -46,12 +46,12 @@ export function MemberSnapshotCard() {
           </div>
         ) : null}
         <div>
-          <dt>Saved courses</dt>
+          <dt>Courses saved</dt>
           <dd>{bucketCount}</dd>
         </div>
         <div>
-          <dt>Rounds posted</dt>
-          <dd>{display.roundsPosted}</dd>
+          <dt>Rounds shared</dt>
+          <dd>0</dd>
         </div>
         <div>
           <dt>Connections</dt>

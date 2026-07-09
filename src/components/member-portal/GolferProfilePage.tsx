@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { demoCourses, earlyStageCopy, type FeedPost } from "../../data/portalSocial";
 import { photos } from "../../assets/photos";
 import { SafeImage } from "../SafeImage";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
-import { getBucketListCourseIds } from "../../lib/portalCourseState";
+import { getBucketListCourseIds, getPlayedCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
@@ -21,6 +21,26 @@ function ProfileEmptyState({ title, hint }: { title: string; hint: string }) {
   );
 }
 
+function ProfileSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="portal-profile-section">
+      <header className="portal-profile-section-head">
+        <h3>{title}</h3>
+        {description ? <p>{description}</p> : null}
+      </header>
+      <div className="portal-profile-section-body">{children}</div>
+    </section>
+  );
+}
+
 type GolferProfilePageProps = {
   isActive: boolean;
   feedPosts?: FeedPost[];
@@ -29,7 +49,7 @@ type GolferProfilePageProps = {
 export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
-  const [bucketListVersion, setBucketListVersion] = useState(0);
+  const [courseStateVersion, setCourseStateVersion] = useState(0);
   const [memberProfile, setMemberProfile] = useState<Awaited<
     ReturnType<typeof fetchOwnMemberProfile>
   >["data"]>(null);
@@ -49,15 +69,15 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
 
   useEffect(() => {
     if (!isActive) return;
-    const refreshBucketList = () => setBucketListVersion((version) => version + 1);
-    refreshBucketList();
-    window.addEventListener("storage", refreshBucketList);
-    window.addEventListener("focus", refreshBucketList);
-    window.addEventListener("elitetee:course-state-changed", refreshBucketList);
+    const refreshCourseState = () => setCourseStateVersion((version) => version + 1);
+    refreshCourseState();
+    window.addEventListener("storage", refreshCourseState);
+    window.addEventListener("focus", refreshCourseState);
+    window.addEventListener("elitetee:course-state-changed", refreshCourseState);
     return () => {
-      window.removeEventListener("storage", refreshBucketList);
-      window.removeEventListener("focus", refreshBucketList);
-      window.removeEventListener("elitetee:course-state-changed", refreshBucketList);
+      window.removeEventListener("storage", refreshCourseState);
+      window.removeEventListener("focus", refreshCourseState);
+      window.removeEventListener("elitetee:course-state-changed", refreshCourseState);
     };
   }, [isActive]);
 
@@ -66,13 +86,19 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
     return buildGolferProfileDisplay(memberProfile, extras);
   }, [memberProfile, profileVersion]);
 
-  const bucketListCourses = useMemo(() => {
-    void bucketListVersion;
-    const ids = getBucketListCourseIds();
-    return demoCourses.filter((course) => ids.includes(course.id));
-  }, [bucketListVersion]);
+  const { savedCourses, playedCourses } = useMemo(() => {
+    void courseStateVersion;
+    const savedIds = getBucketListCourseIds();
+    const playedIds = getPlayedCourseIds();
+    return {
+      savedCourses: demoCourses.filter((course) => savedIds.includes(course.id)),
+      playedCourses: demoCourses.filter((course) => playedIds.includes(course.id)),
+    };
+  }, [courseStateVersion]);
 
-  const recentRounds = useMemo(() => feedPosts, [feedPosts]);
+  const roundsShared = feedPosts.length;
+  const coursesSaved = savedCourses.length;
+  const connections = 0;
 
   if (isEditing) {
     return (
@@ -80,7 +106,7 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
         <header className="portal-section-head portal-section-head--social portal-profile-edit-head">
           <div>
             <h2 id="profile-heading">Edit Profile</h2>
-            <p>Update your golfer profile for the EliteTee member community.</p>
+            <p>{earlyStageCopy.profileOnboarding}</p>
           </div>
           <button
             type="button"
@@ -124,146 +150,178 @@ export function GolferProfilePage({ isActive, feedPosts = [] }: GolferProfilePag
         </div>
 
         <div className="portal-golfer-profile-main">
-          <div className="portal-golfer-profile-header">
-            <div className="portal-golfer-avatar-wrap">
-              <MemberClubAvatar member={{ club_logo_url: display.avatarImage ?? null }} size="lg" />
-            </div>
-            <div className="portal-golfer-profile-identity">
-              <h2>
-                {display.name}
-                {display.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
-              </h2>
-              {display.title ? <p className="portal-golfer-title">{display.title}</p> : null}
-              <p className="portal-golfer-location">
-                {display.location || "Add your location in Edit Profile"}
-              </p>
-              <span className="portal-golfer-member-badge portal-golfer-founding-badge">
-                {memberProfile?.founding_member_number ?? earlyStageCopy.foundingMember}
-              </span>
-              <p className="portal-golfer-founding-note">{earlyStageCopy.foundingMemberNote}</p>
-              {memberProfile ? (
-                <span className="portal-golfer-status-badge">
-                  {formatMembershipLabel(memberProfile.membership_status)}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          <p className="portal-profile-intro-note">{earlyStageCopy.beAmongFirst}</p>
-
-          <dl className="portal-profile-stats-grid">
-            <div className="portal-profile-stat">
-              <dt>Followers</dt>
-              <dd>{display.followers}</dd>
-            </div>
-            <div className="portal-profile-stat">
-              <dt>Following</dt>
-              <dd>{display.following}</dd>
-            </div>
-            <div className="portal-profile-stat">
-              <dt>Rounds</dt>
-              <dd>{display.roundsPosted}</dd>
-            </div>
-            <div className="portal-profile-stat">
-              <dt>Countries Played</dt>
-              <dd>{display.countriesPlayed}</dd>
-            </div>
-            <div className="portal-profile-stat">
-              <dt>Courses Played</dt>
-              <dd>{display.coursesPlayed}</dd>
-            </div>
-            {display.handicap !== undefined ? (
-              <div className="portal-profile-stat">
-                <dt>Handicap</dt>
-                <dd>{display.handicap}</dd>
+          <ProfileSection title="Member Identity">
+            <div className="portal-golfer-profile-header">
+              <div className="portal-golfer-avatar-wrap">
+                <MemberClubAvatar member={{ club_logo_url: display.avatarImage ?? null }} size="lg" />
               </div>
-            ) : null}
+              <div className="portal-golfer-profile-identity">
+                <h2 id="profile-heading">
+                  {display.name}
+                  {display.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
+                </h2>
+                {display.title ? <p className="portal-golfer-title">{display.title}</p> : null}
+                <p className="portal-golfer-location">
+                  {display.location || "Add your location in Edit Profile"}
+                </p>
+                <span className="portal-golfer-member-badge portal-golfer-founding-badge">
+                  {memberProfile?.founding_member_number ?? earlyStageCopy.foundingMember}
+                </span>
+                <p className="portal-golfer-founding-note">{earlyStageCopy.foundingMemberNote}</p>
+                {memberProfile ? (
+                  <span className="portal-golfer-status-badge">
+                    {formatMembershipLabel(memberProfile.membership_status)}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <p className="portal-profile-intro-note">{earlyStageCopy.profileOnboarding}</p>
+
+            <div className="portal-profile-card portal-profile-card--inline">
+              <h4>Bio</h4>
+              <p>{display.bio}</p>
+            </div>
+          </ProfileSection>
+
+          <dl className="portal-profile-stats-grid portal-profile-stats-grid--early">
+            <div className="portal-profile-stat">
+              <dt>Rounds Shared</dt>
+              <dd>{roundsShared}</dd>
+            </div>
+            <div className="portal-profile-stat">
+              <dt>Courses Saved</dt>
+              <dd>{coursesSaved}</dd>
+            </div>
+            <div className="portal-profile-stat">
+              <dt>Connections</dt>
+              <dd>{connections}</dd>
+            </div>
           </dl>
 
-          <div className="portal-profile-cards">
-            <section className="portal-profile-card">
-              <h3>Bio</h3>
-              <p>{display.bio}</p>
-            </section>
-            <section className="portal-profile-card">
-              <h3>Home Course</h3>
-              <p>{display.homeCourse || "Add your home course in Edit Profile."}</p>
-            </section>
-            <section className="portal-profile-card">
-              <h3>Favorite Courses</h3>
-              {display.favoriteCourses.length > 0 ? (
-                <ul>
-                  {display.favoriteCourses.map((course) => (
-                    <li key={course}>{course}</li>
-                  ))}
-                </ul>
-              ) : (
-                <ProfileEmptyState
-                  title={earlyStageCopy.favoriteCoursesEmpty}
-                  hint="Add the courses that define your game in Edit Profile."
-                />
-              )}
-            </section>
-            <section className="portal-profile-card">
-              <h3>Course List</h3>
-              {bucketListCourses.length > 0 ? (
-                <ul>
-                  {bucketListCourses.map((course) => (
-                    <li key={course.id}>
-                      {course.name} · {course.location}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <ProfileEmptyState
-                  title="No saved courses yet"
-                  hint="Save courses from the Courses page to build your bucket list."
-                />
-              )}
-            </section>
-            <section className="portal-profile-card">
-              <h3>Upcoming Trips</h3>
-              {display.upcomingTravel ? (
-                <p>{display.upcomingTravel}</p>
-              ) : (
-                <ProfileEmptyState
-                  title={earlyStageCopy.tripsEmpty}
-                  hint="Share where you're playing next in Edit Profile to connect with members traveling nearby."
-                />
-              )}
-            </section>
-            <section className="portal-profile-card">
-              <h3>Connections</h3>
+          <ProfileSection
+            title="Golf Background"
+            description="Where you play and what defines your game."
+          >
+            <div className="portal-profile-cards portal-profile-cards--compact">
+              <div className="portal-profile-card">
+                <h4>Home Course</h4>
+                <p>{display.homeCourse || "Add your home course in Edit Profile."}</p>
+              </div>
+              <div className="portal-profile-card">
+                <h4>Handicap</h4>
+                {display.handicap !== undefined ? (
+                  <p>{display.handicap}</p>
+                ) : (
+                  <ProfileEmptyState
+                    title="Not added yet"
+                    hint="Add your handicap in Edit Profile."
+                  />
+                )}
+              </div>
+              <div className="portal-profile-card portal-profile-card--wide">
+                <h4>Favorite Courses</h4>
+                {display.favoriteCourses.length > 0 ? (
+                  <ul>
+                    {display.favoriteCourses.map((course) => (
+                      <li key={course}>{course}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ProfileEmptyState
+                    title={earlyStageCopy.favoriteCoursesEmpty}
+                    hint="List the courses that define your game in Edit Profile."
+                  />
+                )}
+              </div>
+            </div>
+          </ProfileSection>
+
+          <ProfileSection
+            title="Travel Plans"
+            description="Let members know where you're headed next."
+          >
+            {display.upcomingTravel ? (
+              <p className="portal-profile-travel-copy">{display.upcomingTravel}</p>
+            ) : (
               <ProfileEmptyState
-                title={earlyStageCopy.connectionsEmpty}
-                hint="Connections will appear as founding members join and you start playing together."
+                title={earlyStageCopy.tripsEmpty}
+                hint="Share upcoming golf travel in Edit Profile to connect with members nearby."
               />
-            </section>
-            <section className="portal-profile-card portal-profile-card--wide">
-              <h3>Recent Rounds</h3>
-              {recentRounds.length > 0 ? (
-                <div
-                  className={`portal-profile-rounds${recentRounds.length === 1 ? " portal-profile-rounds--single" : ""}`}
-                >
-                  {recentRounds.map((post, index) => (
-                    <FeedCard key={post.id} post={post} index={index} />
-                  ))}
-                </div>
-              ) : (
-                <ProfileEmptyState
-                  title={earlyStageCopy.roundsEmpty}
-                  hint="Post from the Feed to share where you've been playing."
-                />
-              )}
-            </section>
-            <section className="portal-profile-card portal-profile-card--wide">
-              <h3>Achievements</h3>
+            )}
+          </ProfileSection>
+
+          <ProfileSection
+            title="Courses Played"
+            description="Courses you've marked as played or saved from the library."
+          >
+            <div className="portal-profile-cards portal-profile-cards--compact">
+              <div className="portal-profile-card">
+                <h4>Played</h4>
+                {playedCourses.length > 0 ? (
+                  <ul>
+                    {playedCourses.map((course) => (
+                      <li key={course.id}>
+                        {course.name} · {course.location}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ProfileEmptyState
+                    title="No played courses yet"
+                    hint="Mark courses as played from the Courses page."
+                  />
+                )}
+              </div>
+              <div className="portal-profile-card">
+                <h4>Saved</h4>
+                {savedCourses.length > 0 ? (
+                  <ul>
+                    {savedCourses.map((course) => (
+                      <li key={course.id}>
+                        {course.name} · {course.location}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ProfileEmptyState
+                    title="No saved courses yet"
+                    hint="Save courses from the Courses page to build your list."
+                  />
+                )}
+              </div>
+            </div>
+          </ProfileSection>
+
+          <ProfileSection
+            title="Connection Interests"
+            description="The golf relationships and introductions you're open to."
+          >
+            {display.connectionInterests.length > 0 ? (
+              <ul className="portal-profile-interest-list">
+                {display.connectionInterests.map((interest) => (
+                  <li key={interest}>{interest}</li>
+                ))}
+              </ul>
+            ) : (
               <ProfileEmptyState
-                title={earlyStageCopy.achievementsEmpty}
-                hint="Milestones will appear as you share rounds and participate in the community."
+                title={earlyStageCopy.connectionInterestsTitle}
+                hint={earlyStageCopy.connectionInterestsEmpty}
               />
-            </section>
-          </div>
+            )}
+          </ProfileSection>
+
+          {roundsShared > 0 ? (
+            <ProfileSection title="Recent Rounds" description="Rounds you've shared in the feed.">
+              <div
+                className={`portal-profile-rounds${roundsShared === 1 ? " portal-profile-rounds--single" : ""}`}
+              >
+                {feedPosts.map((post, index) => (
+                  <FeedCard key={post.id} post={post} index={index} />
+                ))}
+              </div>
+            </ProfileSection>
+          ) : null}
         </div>
       </article>
     </section>
