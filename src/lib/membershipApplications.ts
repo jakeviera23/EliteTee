@@ -58,10 +58,30 @@ export async function submitMembershipApplication(application: MembershipApplica
   const { data, error } = await supabase
     .from("membership_applications")
     .insert(payload)
-    .select("id")
+    .select("id, status")
     .single();
 
-  return { data, error };
+  if (error) {
+    console.error("[membership_applications] insert failed", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      payload,
+    });
+    return { data: null, error };
+  }
+
+  if (!data?.id) {
+    const unexpected = new Error("Application insert returned no row id.");
+    console.error("[membership_applications] insert returned empty result", {
+      payload,
+      data,
+    });
+    return { data: null, error: unexpected };
+  }
+
+  return { data, error: null };
 }
 
 export async function fetchPendingApplications() {

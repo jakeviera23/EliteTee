@@ -94,9 +94,11 @@ export function AdminMembers() {
   const [applicationActionId, setApplicationActionId] = useState<string | null>(null);
   const [applicationMessage, setApplicationMessage] = useState<string | null>(null);
   const [applicationError, setApplicationError] = useState<string | null>(null);
+  const [pendingLoadWarning, setPendingLoadWarning] = useState<string | null>(null);
 
   const refreshAdminData = useCallback(async () => {
     setIsLoadingDashboard(true);
+    setPendingLoadWarning(null);
 
     const [counts, recent, pending, pendingTotal] = await Promise.all([
       fetchAdminDashboardCounts(),
@@ -109,6 +111,14 @@ export function AdminMembers() {
     setRecentMembers(recent.data);
     setPendingApplications(pending.data);
     setPendingCount(pendingTotal);
+
+    if (pending.error) {
+      console.error("[AdminMembers] failed to fetch pending applications", pending.error);
+      setPendingLoadWarning(
+        "Pending applications could not be loaded. Check Supabase permissions or console errors.",
+      );
+    }
+
     setIsLoadingDashboard(false);
   }, []);
 
@@ -309,6 +319,12 @@ export function AdminMembers() {
           {applicationError ? (
             <p className="portal-alert portal-alert--error" role="alert">
               {applicationError}
+            </p>
+          ) : null}
+
+          {pendingLoadWarning ? (
+            <p className="portal-alert portal-alert--warning" role="alert">
+              {pendingLoadWarning}
             </p>
           ) : null}
 
