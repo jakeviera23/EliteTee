@@ -1,7 +1,9 @@
 import { useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
+import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { FeedAvatar } from "./FeedAvatar";
+import { RoundPhotoGallery } from "./RoundPhotoGallery";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 type FeedCardProps = {
@@ -80,6 +82,10 @@ export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
 
   const roundLabel = post.requestLabel ?? post.roundType ?? postTypeLabels[post.postType];
   const hasImage = Boolean(post.images?.[0]);
+  const hasGallery = (post.images?.length ?? 0) > 1;
+  const galleryPhotos = hasGallery
+    ? signedUrlsToPhotoRecords(post.images, post.memberCourseRoundId ?? "")
+    : [];
   const entranceStyle = { animationDelay: `${Math.min(index, 9) * 70}ms` };
 
   // Like count is derived from a single boolean so it can only ever move by 1
@@ -165,7 +171,16 @@ export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
         ) : null}
       </header>
 
-      {hasImage ? (
+      {hasGallery ? (
+        <div className="feed-card-media feed-card-media--gallery">
+          <RoundPhotoGallery photos={galleryPhotos} />
+          {roundLabel ? <span className="feed-card-chip">{roundLabel}</span> : null}
+          <div className="feed-card-media-caption">
+            <p className="feed-card-course">{post.courseName}</p>
+            <p className="feed-card-location">{post.courseLocation}</p>
+          </div>
+        </div>
+      ) : hasImage ? (
         <div className="feed-card-media">
           <img src={post.images[0]} alt={post.imageAlt} loading="lazy" decoding="async" />
           <div className="feed-card-media-scrim" aria-hidden="true" />

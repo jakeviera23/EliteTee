@@ -3,6 +3,7 @@ import type {
   MemberCourseRoundRecord,
 } from "../types/memberCourseRound";
 import { getCurrentAuthUserId } from "./authUserLinking";
+import { fetchPhotosForRoundIds, groupPhotosByRoundId } from "./memberCourseRoundPhotos";
 import { supabase } from "./supabase";
 
 const MEMBER_COURSE_ROUND_RLS_ERROR =
@@ -49,6 +50,24 @@ async function attachMemberNames(
   }));
 }
 
+async function attachPhotosToRounds(
+  rounds: MemberCourseRoundRecord[],
+): Promise<MemberCourseRoundRecord[]> {
+  if (rounds.length === 0) return rounds;
+
+  const roundIds = rounds.map((round) => round.id);
+  const { data: photos } = await fetchPhotosForRoundIds(roundIds);
+  if (!photos || photos.length === 0) {
+    return rounds.map((round) => ({ ...round, photos: [] }));
+  }
+
+  const photosByRoundId = groupPhotosByRoundId(photos);
+  return rounds.map((round) => ({
+    ...round,
+    photos: photosByRoundId.get(round.id) ?? [],
+  }));
+}
+
 function buildInsertError(error: Error) {
   const isRlsError =
     error.message.toLowerCase().includes("row-level security") ||
@@ -79,7 +98,8 @@ export async function fetchMemberCourseRounds(limit = 20) {
 
   const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
   const withNames = await attachMemberNames(rounds);
-  return { data: withNames, error: null };
+  const withPhotos = await attachPhotosToRounds(withNames);
+  return { data: withPhotos, error: null };
 }
 
 export async function fetchMemberCourseRoundsForCourse({
@@ -106,21 +126,56 @@ export async function fetchMemberCourseRoundsForCourse({
 
   const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
   const withNames = await attachMemberNames(rounds);
-  return { data: withNames, error: null };
+  const withPhotos = await attachPhotosToRounds(withNames);
+  return { data: withPhotos, error: null };
 }
 
 export async function fetchRecentlyPlayedRounds(limit = 8) {
   return fetchMemberCourseRounds(limit);
 }
 
+export async function fetchMemberCourseRoundsForUser(userId: string, limit = 12) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase
+    .from("member_course_rounds")
+    .select(ROUND_SELECT)
+    .eq("member_user_id", userId)
+    .order("played_on", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
+  const withNames = await attachMemberNames(rounds);
+  const withPhotos = await attachPhotosToRounds(withNames);
+  return { data: withPhotos, error: null };
+}
+
+export async function fetchMemberCourseRoundsForCurrentUser(limit = 12) {
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError || !userId) {
+    return {
+      data: null,
+      error: sessionError ?? new Error("You must be signed in to view your rounds."),
+    };
+  }
+
+  return fetchMemberCourseRoundsForUser(userId, limit);
+}
+
 export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
   if (!supabase) {
-    return { error: new Error("Supabase is not configured.") };
+    return { data: null, error: new Error("Supabase is not configured.") };
   }
 
   const { userId, error: sessionError } = await getCurrentAuthUserId();
   if (sessionError || !userId) {
-    return { error: sessionError ?? new Error("You must be signed in to add a course.") };
+    return { data: null, error: sessionError ?? new Error("You must be signed in to add a course.") };
   }
 
   const payload: Record<string, unknown> = {
@@ -136,13 +191,17 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     payload.golf_course_id = round.golf_course_id;
   }
 
-  const { error } = await supabase.from("member_course_rounds").insert(payload);
+  const { data, error } = await supabase
+    .from("member_course_rounds")
+    .insert(payload)
+    .select("id")
+    .single();
 
   if (error) {
-    return { error: buildInsertError(error) };
+    return { data: null, error: buildInsertError(error) };
   }
 
-  return { error: null };
+  return { data: { id: String(data.id) }, error: null };
 }
 
 export function formatPlayedOnDate(playedOn: string) {

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   formatGolfCourseLocation,
   getGolfCourseInitials,
   resolveGolfCourseDisplayImage,
   type GolfCourseImageVariant,
 } from "../../types/golfCourse";
+import { fetchFeaturedCommunityPhotoUrl } from "../../lib/memberCourseRoundPhotos";
 
 type CourseImageProps = {
   name: string;
@@ -13,6 +14,7 @@ type CourseImageProps = {
   country?: string | null;
   imageUrl?: string | null;
   thumbnailUrl?: string | null;
+  golfCourseId?: string | null;
   variant?: GolfCourseImageVariant;
   className?: string;
   overlay?: boolean;
@@ -82,6 +84,7 @@ export function CourseImage({
   country,
   imageUrl,
   thumbnailUrl,
+  golfCourseId,
   variant = "card",
   className = "",
   overlay = false,
@@ -89,11 +92,38 @@ export function CourseImage({
   alt = "",
 }: CourseImageProps) {
   const location = formatGolfCourseLocation({ city, region, country });
-  const resolvedUrl = resolveGolfCourseDisplayImage(
+  const officialUrl = resolveGolfCourseDisplayImage(
     { image_url: imageUrl, thumbnail_url: thumbnailUrl },
     variant,
   );
+  const [communityUrl, setCommunityUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setCommunityUrl(null);
+    setFailed(false);
+
+    if (officialUrl || !golfCourseId) {
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadCommunityPhoto() {
+      const { url } = await fetchFeaturedCommunityPhotoUrl(golfCourseId!);
+      if (!active) return;
+      setCommunityUrl(url);
+    }
+
+    void loadCommunityPhoto();
+
+    return () => {
+      active = false;
+    };
+  }, [officialUrl, golfCourseId]);
+
+  const resolvedUrl = officialUrl ?? communityUrl;
   const showPhoto = Boolean(resolvedUrl) && !failed;
 
   return (

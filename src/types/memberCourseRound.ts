@@ -1,3 +1,5 @@
+import type { MemberCourseRoundPhotoRecord } from "./memberCourseRoundPhoto";
+
 export type MemberCourseRoundRecord = {
   id: string;
   member_user_id: string;
@@ -10,6 +12,7 @@ export type MemberCourseRoundRecord = {
   created_at: string;
   member_name?: string;
   member_slug?: string;
+  photos?: MemberCourseRoundPhotoRecord[];
 };
 
 export type MemberCourseRoundInsert = {

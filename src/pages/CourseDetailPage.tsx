@@ -10,6 +10,7 @@ import type { GolfCourseRecord } from "../types/golfCourse";
 import { formatGolfCourseLocation } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
 import { AddCoursePlayedModal } from "../components/member-portal/AddCoursePlayedModal";
+import { CourseMemberPhotosSection } from "../components/member-portal/CourseMemberPhotosSection";
 import { CourseImage } from "../components/member-portal/CourseImage";
 import { MemberActivityList } from "../components/member-portal/MemberActivityList";
 import "../inside-elitetee.css";
@@ -123,6 +124,7 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                 country={course.country}
                 imageUrl={course.image_url}
                 thumbnailUrl={course.thumbnail_url}
+                golfCourseId={course.id}
                 variant="hero"
                 overlay
                 loading="eager"
@@ -245,6 +247,13 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
               </section>
             </div>
 
+            <section className="golf-course-detail-panel" aria-labelledby="course-member-photos-heading">
+              <h2 id="course-member-photos-heading" className="golf-course-detail-section-title">
+                Member Photos
+              </h2>
+              <CourseMemberPhotosSection rounds={rounds} isLoading={isLoading} />
+            </section>
+
             <section className="golf-course-detail-panel" aria-labelledby="course-reviews-heading">
               <h2 id="course-reviews-heading" className="golf-course-detail-section-title">
                 Member Notes
@@ -253,6 +262,8 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                 <MemberActivityList
                   rounds={rounds}
                   emptyMessage="No EliteTee member has shared a round here yet."
+                  allowPhotoDelete
+                  onRoundsChanged={() => void loadCourse()}
                 />
               ) : (
                 <CourseDetailEmptyState onAdd={() => setShowAddModal(true)} />

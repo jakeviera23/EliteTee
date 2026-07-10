@@ -1,10 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { searchGolfCourses } from "../../lib/golfCourses";
+import { createCourseRoundFeedPost } from "../../lib/memberFeedPosts";
+import { uploadCourseRoundPhotos } from "../../lib/memberCourseRoundPhotos";
 import { submitMemberCourseRound } from "../../lib/memberCourseRounds";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { formatGolfCourseLocation } from "../../types/golfCourse";
 import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
+import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
+import { RoundPhotoPicker } from "./RoundPhotoPicker";
 
 type AddCoursePlayedModalProps = {
   onClose: () => void;
@@ -44,9 +48,19 @@ export function AddCoursePlayedModal({
   const [suggestions, setSuggestions] = useState<GolfCourseSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debouncedCourseName = useDebouncedValue(form.course_name, 250);
+  const [photoDrafts, setPhotoDrafts] = useState<CourseRoundPhotoDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoWarning, setPhotoWarning] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      for (const draft of photoDrafts) {
+        URL.revokeObjectURL(draft.previewUrl);
+      }
+    };
+  }, [photoDrafts]);
 
   useEffect(() => {
     if (manualEntry || debouncedCourseName.trim().length < 2) {
@@ -102,16 +116,78 @@ export function AddCoursePlayedModal({
 
     setSubmitting(true);
     setError(null);
+    setPhotoWarning(null);
 
-    const { error: submitError } = await submitMemberCourseRound(form);
+    const { data: roundData, error: submitError } = await submitMemberCourseRound(form);
 
-    setSubmitting(false);
-
-    if (submitError) {
-      setError(submitError.message);
+    if (submitError || !roundData?.id) {
+      setSubmitting(false);
+      setError(submitError?.message ?? "Your round could not be saved.");
       return;
     }
 
+    const { error: feedError } = await createCourseRoundFeedPost({
+      roundId: roundData.id,
+      courseName: form.course_name,
+      location: form.location,
+      note: form.note,
+      wouldPlayAgain: form.would_play_again,
+      playedOn: form.played_on,
+    });
+
+    let feedWarning: string | null = null;
+    if (feedError) {
+      feedWarning = "Your round was saved, but it could not be added to the member feed yet.";
+    }
+
+    if (photoDrafts.length > 0) {
+      const { data: uploadResult, error: uploadError } = await uploadCourseRoundPhotos(
+        roundData.id,
+        photoDrafts.map((draft) => ({
+          file: draft.file,
+          caption: draft.caption,
+          sortOrder: draft.sortOrder,
+        })),
+      );
+
+      setSubmitting(false);
+
+      if (uploadError) {
+        setPhotoWarning(
+          feedWarning ??
+            "Your round was saved, but photos could not be uploaded. You can try adding photos again later.",
+        );
+        setSubmitted(true);
+        onSubmitted?.();
+        return;
+      }
+
+      const uploadedCount = uploadResult?.uploaded.length ?? 0;
+      const failedCount = uploadResult?.failed.length ?? 0;
+
+      if (failedCount > 0 && uploadedCount > 0) {
+        const failedNames = uploadResult?.failed.map((item) => item.fileName).join(", ") ?? "";
+        setPhotoWarning(
+          `${feedWarning ? `${feedWarning} ` : ""}Your round was saved. ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"} uploaded, but ${failedCount} failed (${failedNames}).`,
+        );
+      } else if (failedCount > 0 && uploadedCount === 0) {
+        const firstFailure = uploadResult?.failed[0]?.message ?? "Photo upload failed.";
+        setPhotoWarning(
+          `${feedWarning ? `${feedWarning} ` : ""}Your round was saved, but photos could not be uploaded: ${firstFailure}`,
+        );
+      } else if (feedWarning) {
+        setPhotoWarning(feedWarning);
+      }
+
+      setSubmitted(true);
+      onSubmitted?.();
+      return;
+    }
+
+    setSubmitting(false);
+    if (feedWarning) {
+      setPhotoWarning(feedWarning);
+    }
     setSubmitted(true);
     onSubmitted?.();
   }
@@ -135,6 +211,7 @@ export function AddCoursePlayedModal({
           <div className="portal-course-played-sent" role="status">
             <p className="portal-course-played-sent-title">Round added.</p>
             <p>Thanks for sharing where you played. Member rounds help the EliteTee course library grow.</p>
+            {photoWarning ? <p className="portal-course-played-warning">{photoWarning}</p> : null}
             <button type="button" className="portal-btn portal-btn--gold portal-btn--full" onClick={onClose}>
               Done
             </button>
@@ -259,6 +336,8 @@ export function AddCoursePlayedModal({
                 </label>
               </div>
             </fieldset>
+
+            <RoundPhotoPicker drafts={photoDrafts} onChange={setPhotoDrafts} disabled={submitting} />
 
             {error ? (
               <p className="portal-course-played-error" role="alert">

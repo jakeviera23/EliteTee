@@ -169,6 +169,8 @@ export type FeedPost = {
   requestLabel?: string;
   /** Optional structured metadata rows (Destination, Dates, etc.). Front-end only. */
   details?: { label: string; value: string }[];
+  /** Linked member course round — photos resolved from member_course_round_photos */
+  memberCourseRoundId?: string;
 };
 
 export type CourseListing = {

@@ -7926,3 +7926,356 @@
   }
 }
 
+/* —— Course round member photos —— */
+
+.round-photo-gallery {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.round-photo-gallery--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 18rem;
+}
+
+.round-photo-lightbox-head-copy {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.round-photo-lightbox-member {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--portal-heading);
+}
+
+.round-photo-lightbox-date {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--portal-muted);
+}
+
+.round-photo-lightbox-delete {
+  border: 1px solid rgba(220, 120, 120, 0.45);
+  background: rgba(120, 20, 20, 0.2);
+  color: #f0b0b0;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.round-photo-lightbox-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #e8a0a0;
+  text-align: center;
+}
+
+.feed-card-media--gallery {
+  position: relative;
+  padding: 0.65rem;
+}
+
+.feed-card-media--gallery .round-photo-gallery {
+  margin-top: 0;
+}
+
+.golf-course-member-photos-by-round {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.golf-course-member-photos-round {
+  padding: 0.75rem;
+  border: 1px solid var(--inside-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.golf-course-member-photos-round-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  margin-bottom: 0.45rem;
+}
+
+.golf-course-member-photos-round-member {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--portal-heading);
+}
+
+.golf-course-member-photos-round-meta {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--portal-muted);
+}
+
+.golf-course-member-photos-round-note {
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--portal-body);
+}
+
+.round-photo-gallery--compact .round-photo-gallery-tile {
+  min-height: 4.5rem;
+}
+
+
+.round-photo-gallery-tile {
+  position: relative;
+  padding: 0;
+  border: 1px solid var(--inside-border);
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.round-photo-gallery-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.round-photo-gallery-overflow {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--portal-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.round-photo-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.round-photo-lightbox {
+  width: min(960px, 100%);
+  max-height: min(92vh, 900px);
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 0.75rem;
+  background: rgba(18, 18, 18, 0.96);
+  border: 1px solid var(--inside-border);
+  padding: 0.85rem;
+}
+
+.round-photo-lightbox-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.round-photo-lightbox-counter {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.round-photo-lightbox-close {
+  border: 0;
+  background: transparent;
+  color: var(--portal-heading);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.round-photo-lightbox-stage {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  touch-action: pan-y;
+}
+
+.round-photo-lightbox-image {
+  max-width: 100%;
+  max-height: min(68vh, 720px);
+  object-fit: contain;
+}
+
+.round-photo-lightbox-missing,
+.round-photo-lightbox-caption {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--portal-muted);
+  text-align: center;
+}
+
+.round-photo-lightbox-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.round-photo-lightbox-nav-btn {
+  border: 1px solid var(--inside-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--portal-heading);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.round-photo-picker {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.round-photo-picker-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--portal-heading);
+}
+
+.round-photo-picker-count {
+  font-size: 0.75rem;
+  color: var(--portal-muted);
+}
+
+.round-photo-picker-help {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--portal-muted);
+}
+
+.round-photo-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.round-photo-picker-item {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.round-photo-picker-thumb {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border: 1px solid var(--inside-border);
+}
+
+.round-photo-picker-item-body {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.round-photo-picker-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.round-photo-picker-move,
+.round-photo-picker-remove {
+  border: 1px solid var(--inside-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--portal-body);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.round-photo-picker-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.85rem;
+  border: 1px dashed var(--inside-border);
+  color: var(--portal-body);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.round-photo-picker-add input {
+  display: none;
+}
+
+.portal-course-played-warning {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #e8c27a;
+}
+
+.golf-course-member-photos-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.65rem;
+}
+
+.golf-course-member-photo-card {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--inside-border);
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+}
+
+.golf-course-member-photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.golf-course-member-photo-meta {
+  padding: 0.55rem 0.6rem 0.65rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.golf-course-member-photo-meta p {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--portal-muted);
+}
+
+.golf-course-member-photo-meta p:first-child {
+  color: var(--portal-heading);
+  font-size: 0.75rem;
+}
+
+.golf-course-member-photos-empty,
+.golf-course-member-photos-loading {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--portal-muted);
+}
+

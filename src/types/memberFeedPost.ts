@@ -4,6 +4,7 @@ export type MemberFeedPostRecord = {
   id: string;
   user_id: string;
   member_profile_id: string | null;
+  member_course_round_id?: string | null;
   content: string;
   post_type: string;
   created_at: string;

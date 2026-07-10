@@ -4,11 +4,14 @@ import { photos } from "../../assets/photos";
 import { SafeImage } from "../SafeImage";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { fetchMemberFeedPostsForCurrentUser } from "../../lib/memberFeedPosts";
+import { fetchMemberCourseRoundsForCurrentUser } from "../../lib/memberCourseRounds";
 import { getBucketListCourseIds, getPlayedCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
+import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import { FeedCard } from "./FeedCard";
+import { MemberActivityList } from "./MemberActivityList";
 import { MemberClubAvatar } from "./MemberClubAvatar";
 import { ProfileDossier } from "./ProfileDossier";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -54,16 +57,19 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
     ReturnType<typeof fetchOwnMemberProfile>
   >["data"]>(null);
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
+  const [courseRounds, setCourseRounds] = useState<MemberCourseRoundRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
-    const [{ data }, { data: posts }] = await Promise.all([
+    const [{ data }, { data: posts }, { data: rounds }] = await Promise.all([
       fetchOwnMemberProfile(),
       fetchMemberFeedPostsForCurrentUser(),
+      fetchMemberCourseRoundsForCurrentUser(12),
     ]);
     setMemberProfile(data);
     setFeedPosts(posts);
+    setCourseRounds(rounds ?? []);
     setIsLoading(false);
   }, []);
 
@@ -101,7 +107,7 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
     };
   }, [courseStateVersion]);
 
-  const roundsShared = feedPosts.length;
+  const roundsShared = Math.max(feedPosts.length, courseRounds.length);
   const coursesSaved = savedCourses.length;
   const connections = 0;
 
@@ -340,8 +346,23 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
             )}
           </ProfileSection>
 
-          {roundsShared > 0 ? (
-            <ProfileSection title="Recent Rounds" description="Rounds you've shared in the feed.">
+          {courseRounds.length > 0 ? (
+            <ProfileSection
+              title="Course Rounds"
+              description="Courses you've played and shared with EliteTee members."
+            >
+              <MemberActivityList
+                rounds={courseRounds}
+                allowPhotoDelete
+                onRoundsChanged={() => {
+                  void loadProfile();
+                }}
+              />
+            </ProfileSection>
+          ) : null}
+
+          {feedPosts.length > 0 ? (
+            <ProfileSection title="Recent Feed Activity" description="Posts you've shared in the member feed.">
               <div
                 className={`portal-profile-rounds${roundsShared === 1 ? " portal-profile-rounds--single" : ""}`}
               >

@@ -215,6 +215,8 @@ export function PortalCourses() {
               <MemberActivityList
                 rounds={memberRounds.slice(0, 6)}
                 emptyMessage={earlyStageCopy.memberActivityPending}
+                allowPhotoDelete
+                onRoundsChanged={() => void loadMemberRounds()}
               />
             )}
           </section>
@@ -231,6 +233,8 @@ export function PortalCourses() {
               <MemberActivityList
                 rounds={memberRounds}
                 emptyMessage={earlyStageCopy.coursesLibraryGrowth}
+                allowPhotoDelete
+                onRoundsChanged={() => void loadMemberRounds()}
               />
             )}
           </div>

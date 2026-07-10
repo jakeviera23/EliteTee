@@ -40,6 +40,7 @@ export function CourseSearchCard({ course, onOpen }: CourseSearchCardProps) {
           country={course.country}
           imageUrl={course.image_url}
           thumbnailUrl={course.thumbnail_url}
+          golfCourseId={course.id}
           variant="card"
           overlay
         />
