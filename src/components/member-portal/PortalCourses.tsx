@@ -27,6 +27,7 @@ export function PortalCourses() {
   const [memberRounds, setMemberRounds] = useState<MemberCourseRoundRecord[]>([]);
   const [roundsLoading, setRoundsLoading] = useState(true);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
+  const [directoryRefreshKey, setDirectoryRefreshKey] = useState(0);
 
   const loadMemberRounds = useCallback(async () => {
     setRoundsLoading(true);
@@ -44,47 +45,44 @@ export function PortalCourses() {
     setPopularCourses(data ?? []);
   }, []);
 
+  const loadDirectory = useCallback(async (searchQuery: string, searchOffset: number) => {
+    setIsSearching(true);
+    setSearchError(null);
+
+    const { data, error } = await searchGolfCourses({
+      query: searchQuery,
+      limit: SEARCH_PAGE_SIZE,
+      offset: searchOffset,
+    });
+
+    if (error) {
+      console.error("[PortalCourses] directory load failed", error.message);
+      setSearchError("Course search is unavailable right now.");
+      setResults([]);
+      setHasMore(false);
+      setIsSearching(false);
+      return;
+    }
+
+    const rows = data ?? [];
+    if (searchOffset === 0) {
+      setResults(rows);
+    } else {
+      setResults((current) => [...current, ...rows]);
+    }
+    setOffset(searchOffset);
+    setHasMore(rows.length === SEARCH_PAGE_SIZE);
+    setIsSearching(false);
+  }, []);
+
   useEffect(() => {
     void loadMemberRounds();
     void loadPopular();
   }, [loadMemberRounds, loadPopular]);
 
   useEffect(() => {
-    let active = true;
-
-    async function runSearch() {
-      setIsSearching(true);
-      setSearchError(null);
-      setOffset(0);
-
-      const { data, error } = await searchGolfCourses({
-        query: debouncedQuery,
-        limit: SEARCH_PAGE_SIZE,
-        offset: 0,
-      });
-
-      if (!active) return;
-
-      if (error) {
-        console.error("[PortalCourses] search failed", error.message);
-        setSearchError("Course search is unavailable right now.");
-        setResults([]);
-        setHasMore(false);
-      } else {
-        const rows = data ?? [];
-        setResults(rows);
-        setHasMore(rows.length === SEARCH_PAGE_SIZE);
-      }
-
-      setIsSearching(false);
-    }
-
-    void runSearch();
-
-    return () => {
-      active = false;
-    };
-  }, [debouncedQuery]);
+    void loadDirectory(debouncedQuery, 0);
+  }, [debouncedQuery, directoryRefreshKey, loadDirectory]);
 
   async function loadMore() {
     const nextOffset = offset + SEARCH_PAGE_SIZE;
@@ -106,7 +104,8 @@ export function PortalCourses() {
   }
 
   const showPopular = debouncedQuery.trim() === "" && popularCourses.length > 0;
-  const showInitialState = debouncedQuery.trim() === "" && results.length === 0 && !isSearching;
+  const showEmptyDirectory =
+    debouncedQuery.trim() === "" && results.length === 0 && !isSearching && !searchError;
 
   return (
     <section className="portal-courses-page portal-courses-page--library" aria-labelledby="courses-heading">
@@ -148,7 +147,7 @@ export function PortalCourses() {
           ) : null}
 
           {isSearching ? (
-            <p className="portal-discover-loading">Searching courses…</p>
+            <p className="portal-discover-loading">Loading courses…</p>
           ) : null}
 
           {!isSearching && results.length > 0 ? (
@@ -181,10 +180,8 @@ export function PortalCourses() {
             </p>
           ) : null}
 
-          {showInitialState ? (
-            <p className="courses-no-match">
-              Start typing to search the course library, or browse popular courses below.
-            </p>
+          {showEmptyDirectory ? (
+            <p className="courses-no-match">No courses are in the library yet.</p>
           ) : null}
 
           {showPopular ? (
@@ -245,6 +242,7 @@ export function PortalCourses() {
         <AddCoursePlayedModal
           onClose={() => setShowAddCourseModal(false)}
           onSubmitted={() => {
+            setDirectoryRefreshKey((current) => current + 1);
             void loadMemberRounds();
             void loadPopular();
           }}
