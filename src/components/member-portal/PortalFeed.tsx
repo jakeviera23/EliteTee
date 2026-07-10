@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FeedPost } from "../../data/portalSocial";
 import { earlyStageCopy } from "../../data/portalSocial";
 import { getFounderWelcomePost } from "../../data/feedMockData";
-import { fetchMemberFeedPosts } from "../../lib/memberFeedPosts";
+import {
+  dedupeFeedPosts,
+  fetchMemberFeedPage,
+  type MemberFeedCursor,
+} from "../../lib/memberFeedPosts";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
@@ -14,14 +19,24 @@ import { usePortalToast } from "./PortalToastProvider";
 type PortalFeedProps = {
   showComposer?: boolean;
   composerId?: string;
+  isActive?: boolean;
 };
 
-export function PortalFeed({ showComposer = true, composerId = "feed-composer" }: PortalFeedProps) {
+export function PortalFeed({
+  showComposer = true,
+  composerId = "feed-composer",
+  isActive = true,
+}: PortalFeedProps) {
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
-  const [memberPosts, setMemberPosts] = useState<Awaited<ReturnType<typeof fetchMemberFeedPosts>>["data"]>([]);
+  const [memberPosts, setMemberPosts] = useState<FeedPost[]>([]);
+  const [nextCursor, setNextCursor] = useState<MemberFeedCursor | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [postsError, setPostsError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const hasLoadedInitialRef = useRef(false);
 
   const loadAuthor = useCallback(async () => {
     const [{ data }, { userId }] = await Promise.all([
@@ -32,20 +47,27 @@ export function PortalFeed({ showComposer = true, composerId = "feed-composer" }
     setComposerAuthor(buildComposerAuthor(data, extras));
   }, []);
 
-  const loadPosts = useCallback(async () => {
+  const loadInitialPage = useCallback(async () => {
     setIsLoadingPosts(true);
     setPostsError(null);
+    setLoadMoreError(null);
 
-    const { data, error } = await fetchMemberFeedPosts();
+    const { data, nextCursor: cursor, hasMore: moreAvailable, error } =
+      await fetchMemberFeedPage();
 
     if (error) {
       console.error("[PortalFeed] failed to load posts", error.message);
       setPostsError("Member posts could not be loaded right now.");
       setMemberPosts([]);
-    } else {
-      setMemberPosts(data);
+      setNextCursor(null);
+      setHasMore(false);
+      setIsLoadingPosts(false);
+      return;
     }
 
+    setMemberPosts(data);
+    setNextCursor(cursor);
+    setHasMore(moreAvailable);
     setIsLoadingPosts(false);
   }, []);
 
@@ -54,16 +76,48 @@ export function PortalFeed({ showComposer = true, composerId = "feed-composer" }
   }, [loadAuthor]);
 
   useEffect(() => {
-    void loadPosts();
-  }, [loadPosts]);
+    if (!isActive) return;
+    if (hasLoadedInitialRef.current) return;
+
+    hasLoadedInitialRef.current = true;
+    void loadInitialPage();
+  }, [isActive, loadInitialPage]);
+
+  async function loadMorePosts() {
+    if (!hasMore || isLoadingMore || !nextCursor) return;
+
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+
+    const { data, nextCursor: cursor, hasMore: moreAvailable, error } =
+      await fetchMemberFeedPage({ cursor: nextCursor });
+
+    if (error) {
+      console.error("[PortalFeed] failed to load more posts", error.message);
+      setLoadMoreError("Older posts could not be loaded. Try again.");
+      setIsLoadingMore(false);
+      return;
+    }
+
+    setMemberPosts((current) => dedupeFeedPosts([...current, ...data]));
+    setNextCursor(cursor);
+    setHasMore(moreAvailable);
+    setIsLoadingMore(false);
+  }
+
+  function handlePosted(newPost?: FeedPost) {
+    showToast("Post shared");
+
+    if (newPost) {
+      setMemberPosts((current) => dedupeFeedPosts([newPost, ...current]));
+      return;
+    }
+
+    void loadInitialPage();
+  }
 
   const founderWelcome = useMemo(() => getFounderWelcomePost(), []);
   const hasMemberPosts = memberPosts.length > 0;
-
-  function handlePosted() {
-    showToast("Post shared");
-    void loadPosts();
-  }
 
   return (
     <section className="portal-social-page portal-feed-page" aria-labelledby="feed-heading">
@@ -101,9 +155,18 @@ export function PortalFeed({ showComposer = true, composerId = "feed-composer" }
         ) : null}
 
         {postsError ? (
-          <p className="portal-alert portal-alert--warning" role="alert">
-            {postsError}
-          </p>
+          <div className="portal-feed-error">
+            <p className="portal-alert portal-alert--warning" role="alert">
+              {postsError}
+            </p>
+            <button
+              type="button"
+              className="portal-btn portal-btn--outline portal-btn--compact"
+              onClick={() => void loadInitialPage()}
+            >
+              Retry
+            </button>
+          </div>
         ) : null}
 
         {!isLoadingPosts && hasMemberPosts ? (
@@ -120,6 +183,32 @@ export function PortalFeed({ showComposer = true, composerId = "feed-composer" }
             <p className="portal-feed-empty-lead">{earlyStageCopy.feedEmptyHint}</p>
             <p className="portal-feed-empty-note">{earlyStageCopy.feedEmptyCta}</p>
           </div>
+        ) : null}
+
+        {loadMoreError ? (
+          <div className="portal-feed-error portal-feed-error--inline">
+            <p className="portal-alert portal-alert--warning" role="alert">
+              {loadMoreError}
+            </p>
+            <button
+              type="button"
+              className="portal-btn portal-btn--outline portal-btn--compact"
+              onClick={() => void loadMorePosts()}
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
+
+        {!isLoadingPosts && hasMore ? (
+          <button
+            type="button"
+            className="portal-btn portal-btn--outline portal-feed-load-more"
+            onClick={() => void loadMorePosts()}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? "Loading older posts…" : "Load more posts"}
+          </button>
         ) : null}
       </section>
     </section>

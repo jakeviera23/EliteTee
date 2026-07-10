@@ -281,9 +281,13 @@ function MemberPortalContent() {
 
       <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
         <div className="portal-shell">
-          {activeView === "feed" ? (
-            <PortalFeed showComposer composerId={FEED_COMPOSER_ID} />
-          ) : null}
+          <div hidden={activeView !== "feed"}>
+            <PortalFeed
+              showComposer
+              composerId={FEED_COMPOSER_ID}
+              isActive={activeView === "feed"}
+            />
+          </div>
           {activeView === "discover" ? (
             <PortalDiscover
               onViewCourse={handleViewCourse}

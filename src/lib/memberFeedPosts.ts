@@ -12,6 +12,13 @@ import { fetchPhotosForRoundIds } from "./memberCourseRoundPhotos";
 import { formatPlayedOnDate } from "./memberCourseRounds";
 import { supabase } from "./supabase";
 
+const FEED_PAGE_SIZE = 20;
+
+export type MemberFeedCursor = {
+  createdAt: string;
+  id: string;
+};
+
 const POST_TYPE_TO_DB: Record<ComposerPostType, string> = {
   introduction: "intro",
   "round-review": "round-review",
@@ -194,6 +201,58 @@ export function memberFeedPostToFeedPost(
   };
 }
 
+function rpcRowToFeedPostWithProfile(row: Record<string, unknown>): MemberFeedPostWithProfile {
+  const profile =
+    row.full_name || row.primary_club || row.based_in
+      ? {
+          full_name: String(row.full_name ?? ""),
+          primary_club: String(row.primary_club ?? ""),
+          based_in: String(row.based_in ?? ""),
+          club_logo_url: row.club_logo_url ? String(row.club_logo_url) : null,
+          is_verified: Boolean(row.is_verified),
+          user_id: row.profile_user_id ? String(row.profile_user_id) : null,
+          founding_member_number: row.founding_member_number
+            ? String(row.founding_member_number)
+            : null,
+          industry: String(row.industry ?? ""),
+        }
+      : null;
+
+  return {
+    id: String(row.id ?? ""),
+    user_id: String(row.user_id ?? ""),
+    member_profile_id: row.member_profile_id ? String(row.member_profile_id) : null,
+    member_course_round_id: row.member_course_round_id
+      ? String(row.member_course_round_id)
+      : null,
+    content: String(row.content ?? ""),
+    post_type: String(row.post_type ?? "intro"),
+    created_at: String(row.created_at ?? ""),
+    updated_at: String(row.updated_at ?? ""),
+    member_profiles: profile,
+  };
+}
+
+export function dedupeFeedPosts(posts: FeedPost[]): FeedPost[] {
+  const seenIds = new Set<string>();
+  const seenRoundIds = new Set<string>();
+  const result: FeedPost[] = [];
+
+  for (const post of posts) {
+    if (seenIds.has(post.id)) continue;
+
+    if (post.memberCourseRoundId) {
+      if (seenRoundIds.has(post.memberCourseRoundId)) continue;
+      seenRoundIds.add(post.memberCourseRoundId);
+    }
+
+    seenIds.add(post.id);
+    result.push(post);
+  }
+
+  return result;
+}
+
 async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<FeedPost[]> {
   const records = rows.map((row) => normalizeFeedPostRow(row as unknown as Record<string, unknown>));
   const roundIds = [
@@ -226,24 +285,63 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
   });
 }
 
-export async function fetchMemberFeedPosts() {
+export async function fetchMemberFeedPage({
+  limit = FEED_PAGE_SIZE,
+  cursor = null,
+}: {
+  limit?: number;
+  cursor?: MemberFeedCursor | null;
+} = {}) {
   if (!supabase) {
-    return { data: [] as FeedPost[], error: new Error("Supabase is not configured.") };
+    return {
+      data: [] as FeedPost[],
+      nextCursor: null as MemberFeedCursor | null,
+      hasMore: false,
+      error: new Error("Supabase is not configured."),
+    };
   }
 
-  const { data, error } = await supabase
-    .from("member_feed_posts")
-    .select(FEED_POST_SELECT)
-    .order("created_at", { ascending: false });
+  const requestLimit = limit + 1;
+  const { data, error } = await supabase.rpc("fetch_member_feed_page", {
+    p_cursor_created_at: cursor?.createdAt ?? null,
+    p_cursor_id: cursor?.id ?? null,
+    p_limit: requestLimit,
+  });
 
   if (error) {
-    return { data: [] as FeedPost[], error };
+    return {
+      data: [] as FeedPost[],
+      nextCursor: null,
+      hasMore: false,
+      error,
+    };
   }
 
+  const rows = (data ?? []) as Record<string, unknown>[];
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const feedRows = pageRows.map((row) => rpcRowToFeedPostWithProfile(row));
+  const posts = await mapRowsToFeedPosts(feedRows);
+  const lastRow = pageRows[pageRows.length - 1];
+  const nextCursor =
+    hasMore && lastRow
+      ? {
+          createdAt: String(lastRow.created_at ?? ""),
+          id: String(lastRow.id ?? ""),
+        }
+      : null;
+
   return {
-    data: await mapRowsToFeedPosts((data ?? []) as MemberFeedPostWithProfile[]),
+    data: posts,
+    nextCursor,
+    hasMore,
     error: null,
   };
+}
+
+export async function fetchMemberFeedPosts() {
+  const { data, error } = await fetchMemberFeedPage({ limit: FEED_PAGE_SIZE });
+  return { data, error };
 }
 
 export async function fetchMemberFeedPostsForCurrentUser() {
@@ -369,3 +467,5 @@ export async function createCourseRoundFeedPost({
     roundId,
   );
 }
+
+export { FEED_PAGE_SIZE };

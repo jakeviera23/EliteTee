@@ -7775,6 +7775,21 @@
   margin-top: 0.85rem;
 }
 
+.portal-feed-load-more {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.portal-feed-error {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.portal-feed-error--inline {
+  margin-top: 0.85rem;
+}
+
 .golf-course-popular,
 .golf-course-recent,
 .portal-requests-section {
