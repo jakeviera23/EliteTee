@@ -2,6 +2,7 @@ import type {
   MemberCourseRoundInsert,
   MemberCourseRoundRecord,
 } from "../types/memberCourseRound";
+import { findOrCreateMemberGolfCourse } from "./golfCourses";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchPhotosForRoundIds, groupPhotosByRoundId } from "./memberCourseRoundPhotos";
 import { supabase } from "./supabase";
@@ -178,6 +179,24 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     return { data: null, error: sessionError ?? new Error("You must be signed in to add a course.") };
   }
 
+  let golfCourseId = round.golf_course_id ?? null;
+
+  if (!golfCourseId) {
+    const { data: linkedCourse, error: linkError } = await findOrCreateMemberGolfCourse(
+      round.course_name,
+      round.location,
+    );
+
+    if (linkError || !linkedCourse?.id) {
+      return {
+        data: null,
+        error: linkError ?? new Error("This course could not be added to the EliteTee directory."),
+      };
+    }
+
+    golfCourseId = linkedCourse.id;
+  }
+
   const payload: Record<string, unknown> = {
     member_user_id: userId,
     course_name: round.course_name.trim(),
@@ -185,11 +204,8 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     played_on: round.played_on,
     note: round.note.trim(),
     would_play_again: round.would_play_again,
+    golf_course_id: golfCourseId,
   };
-
-  if (round.golf_course_id) {
-    payload.golf_course_id = round.golf_course_id;
-  }
 
   const { data, error } = await supabase
     .from("member_course_rounds")
@@ -201,7 +217,7 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     return { data: null, error: buildInsertError(error) };
   }
 
-  return { data: { id: String(data.id) }, error: null };
+  return { data: { id: String(data.id), golf_course_id: golfCourseId }, error: null };
 }
 
 export function formatPlayedOnDate(playedOn: string) {

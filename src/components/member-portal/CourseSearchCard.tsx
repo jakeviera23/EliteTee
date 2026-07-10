@@ -1,4 +1,4 @@
-import { formatGolfCourseLocation, type GolfCourseSearchResult } from "../../types/golfCourse";
+import { formatGolfCourseLocation, isMemberSubmittedCourse, type GolfCourseSearchResult } from "../../types/golfCourse";
 import { CourseImage } from "./CourseImage";
 
 type CourseSearchCardProps = {
@@ -29,6 +29,7 @@ export function CourseSearchCard({ course, onOpen }: CourseSearchCardProps) {
   const latestDate = formatLatestActivity(course.latest_activity_at ?? null);
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
+  const isMemberSubmitted = isMemberSubmittedCourse(course);
 
   return (
     <article className="golf-course-search-card">
@@ -61,6 +62,11 @@ export function CourseSearchCard({ course, onOpen }: CourseSearchCardProps) {
           </div>
 
           <div className="golf-course-search-card-meta">
+            {isMemberSubmitted ? (
+              <span className="golf-course-search-card-pill golf-course-search-card-pill--member">
+                Member submitted
+              </span>
+            ) : null}
             {formatAccessType(course.access_type) ? (
               <span className="golf-course-search-card-pill">{course.access_type}</span>
             ) : null}

@@ -7721,6 +7721,11 @@
   border-radius: 999px;
 }
 
+.golf-course-search-card-pill--member {
+  color: var(--portal-heading);
+  background: rgba(196, 169, 98, 0.1);
+}
+
 .golf-course-search-card-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

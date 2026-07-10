@@ -26,6 +26,8 @@ function normalizeCourseRow(row: Record<string, unknown>): GolfCourseSearchResul
     image_attribution: row.image_attribution ? String(row.image_attribution) : null,
     image_license: row.image_license ? String(row.image_license) : null,
     image_updated_at: row.image_updated_at ? String(row.image_updated_at) : null,
+    source_name: row.source_name ? String(row.source_name) : null,
+    submitted_by_member: Boolean(row.submitted_by_member),
     round_count: row.round_count === undefined ? undefined : Number(row.round_count ?? 0),
     member_count: row.member_count === undefined ? undefined : Number(row.member_count ?? 0),
     recommend_pct:
@@ -80,6 +82,35 @@ export async function fetchPopularGolfCourses(limit = 6) {
 
   return {
     data: (data ?? []).map((row: Record<string, unknown>) => normalizeCourseRow(row)),
+    error: null,
+  };
+}
+
+export async function findOrCreateMemberGolfCourse(courseName: string, location: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("find_or_create_member_golf_course", {
+    p_course_name: courseName.trim(),
+    p_location: location.trim(),
+  });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { data: null, error: new Error("Could not link this course to the directory.") };
+  }
+
+  return {
+    data: {
+      id: String((row as { golf_course_id: string }).golf_course_id),
+      slug: String((row as { slug: string }).slug),
+      createdNew: Boolean((row as { created_new?: boolean }).created_new),
+    },
     error: null,
   };
 }

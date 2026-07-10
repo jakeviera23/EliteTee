@@ -19,6 +19,8 @@ export type GolfCourseRecord = {
   image_attribution?: string | null;
   image_license?: string | null;
   image_updated_at?: string | null;
+  source_name?: string | null;
+  submitted_by_member?: boolean;
   round_count?: number;
   member_count?: number;
   recommend_pct?: number | null;
@@ -28,6 +30,12 @@ export type GolfCourseRecord = {
 export type GolfCourseSearchResult = GolfCourseRecord;
 
 export type GolfCourseImageVariant = "card" | "hero";
+
+export function isMemberSubmittedCourse(
+  course: Pick<GolfCourseRecord, "source_name" | "submitted_by_member">,
+) {
+  return Boolean(course.submitted_by_member) || course.source_name === "member_submitted";
+}
 
 export function formatGolfCourseLocation(course: Pick<GolfCourseRecord, "city" | "region" | "country">) {
   return [course.city, course.region, course.country].filter(Boolean).join(", ");

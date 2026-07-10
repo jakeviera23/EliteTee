@@ -7,7 +7,7 @@ import {
   getMemberInitials,
 } from "../lib/memberCourseRounds";
 import type { GolfCourseRecord } from "../types/golfCourse";
-import { formatGolfCourseLocation } from "../types/golfCourse";
+import { formatGolfCourseLocation, isMemberSubmittedCourse } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
 import { AddCoursePlayedModal } from "../components/member-portal/AddCoursePlayedModal";
 import { CourseMemberPhotosSection } from "../components/member-portal/CourseMemberPhotosSection";
@@ -110,6 +110,7 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
   const hasActivity = rounds.length > 0;
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
+  const isMemberSubmitted = isMemberSubmittedCourse(course);
 
   return (
     <div className="inside-page portal-page portal-page--social">
@@ -149,6 +150,12 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                   Course Profile
                 </h2>
                 <dl className="golf-course-detail-fact-grid">
+                  {isMemberSubmitted ? (
+                    <div>
+                      <dt>Source</dt>
+                      <dd>Member submitted</dd>
+                    </div>
+                  ) : null}
                   {course.access_type ? (
                     <div>
                       <dt>Access</dt>
