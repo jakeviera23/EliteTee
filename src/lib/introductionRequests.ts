@@ -50,6 +50,27 @@ export async function createIntroductionRequest({
     return { data: null, error: new Error("You cannot request an introduction to yourself.") };
   }
 
+  const { data: existingPending, error: existingError } = await supabase
+    .from("introduction_requests")
+    .select("id")
+    .eq("sender_id", senderId)
+    .eq("receiver_id", receiverId)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (existingError) {
+    return { data: null, error: existingError };
+  }
+
+  if (existingPending) {
+    return {
+      data: null,
+      error: new Error(
+        "You already have a pending introduction request with this member. Check Introduction Requests for status.",
+      ),
+    };
+  }
+
   const { data, error } = await supabase
     .from("introduction_requests")
     .insert({
@@ -105,8 +126,9 @@ export async function fetchIntroductionRequests() {
 
   const { data, error } = await supabase
     .from("introduction_requests")
-    .select("id, sender_id, receiver_id, status, request_type, message, created_at")
-    .in("status", ["pending", "accepted"])
+    .select(
+      "id, sender_id, receiver_id, status, request_type, message, created_at, accepted_at, response_message",
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -182,4 +204,28 @@ export async function updateIntroductionRequestStatus(
   }
 
   return { data, error: null };
+}
+
+export async function fetchPendingIncomingIntroductionCount() {
+  if (!supabase) {
+    return { count: 0, error: new Error("Supabase is not configured.") };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+
+  if (sessionError) {
+    return { count: 0, error: sessionError };
+  }
+
+  if (!userId) {
+    return { count: 0, error: null };
+  }
+
+  const { count, error } = await supabase
+    .from("introduction_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("receiver_id", userId)
+    .eq("status", "pending");
+
+  return { count: count ?? 0, error };
 }

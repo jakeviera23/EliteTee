@@ -1,15 +1,30 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { InsideEliteTee } from "./pages/InsideEliteTee";
 import { MemberDirectory } from "./pages/MemberDirectory";
 import { MemberPortal } from "./pages/MemberPortal";
+import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
 import { InviteSignup } from "./pages/InviteSignup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+
+function CourseDetailRoute() {
+  const navigate = useNavigate();
+
+  return (
+    <CourseDetailPage
+      onMessageMember={(userId, memberName) => {
+        navigate("/member-portal", {
+          state: { openMessagesWith: { userId, memberName } },
+        });
+      }}
+    />
+  );
+}
 
 export default function App() {
   return (
@@ -27,6 +42,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <MemberPortal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/courses/:slug"
+        element={
+          <ProtectedRoute>
+            <CourseDetailRoute />
           </ProtectedRoute>
         }
       />

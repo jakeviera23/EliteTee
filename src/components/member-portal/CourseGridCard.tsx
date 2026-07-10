@@ -6,7 +6,6 @@ import {
   toggleBucketListCourse,
   togglePlayedCourse,
 } from "../../lib/portalCourseState";
-import { CourseImage } from "./CourseImage";
 import { usePortalToast } from "./PortalToastProvider";
 
 type CourseGridCardProps = {
@@ -37,7 +36,13 @@ export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCar
   return (
     <article className="portal-course-card">
       <div className="portal-course-card-hero">
-        <CourseImage src={course.image} alt={course.imageAlt} objectPosition="center" fill />
+        <img
+          src={course.image}
+          alt={course.imageAlt}
+          loading="lazy"
+          decoding="async"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
       </div>
 
       <div className="portal-course-card-content">

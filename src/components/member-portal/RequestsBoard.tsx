@@ -10,8 +10,10 @@ type RequestsBoardProps = {
 };
 
 function formatRequestStatus(status: string) {
-  if (!status.trim()) return "Pending";
-  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  const normalized = status.trim().toLowerCase();
+  if (normalized === "accepted") return "Accepted";
+  if (normalized === "declined") return "Declined";
+  return "Pending";
 }
 
 function formatRequestDate(createdAt: string) {
@@ -53,6 +55,8 @@ export function RequestsBoard({
           normalizedStatus === "pending";
         const canMessage = isParticipant && normalizedStatus === "accepted";
         const isUpdating = updatingRequestId === request.id;
+        const isIncoming =
+          currentUserId !== null && request.receiver_id === currentUserId;
 
         return (
           <li key={request.id}>
@@ -63,6 +67,9 @@ export function RequestsBoard({
                 <span>From {request.sender_name ?? "Private Member"}</span>
                 <span>To {request.receiver_name ?? "Private Member"}</span>
               </p>
+              {normalizedStatus === "accepted" ? (
+                <p className="portal-request-complete-note">Introduction completed</p>
+              ) : null}
               <div className="portal-request-footer">
                 <p className={`portal-request-badge ${getStatusBadgeClass(request.status)}`}>
                   {formatRequestStatus(request.status)}
@@ -77,7 +84,7 @@ export function RequestsBoard({
                     onClick={() => onAccept(request.id)}
                     disabled={isUpdating}
                   >
-                    {isUpdating ? "Updating..." : "Accept"}
+                    {isUpdating ? "Updating…" : "Accept"}
                   </button>
                   <button
                     type="button"
@@ -96,7 +103,7 @@ export function RequestsBoard({
                     className="portal-btn portal-btn--gold"
                     onClick={() => onMessageMember(request)}
                   >
-                    Open Private Conversation
+                    {isIncoming ? "Message Sender" : "Message Member"}
                   </button>
                 </div>
               ) : null}

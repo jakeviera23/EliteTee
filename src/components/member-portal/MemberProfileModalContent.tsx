@@ -77,7 +77,7 @@ function MemberProfileModalBody({ member, onRequest }: MemberProfileModalContent
         <TextBlock label="Bio" value={displayProfileText(safeMember.current_request)} />
       </div>
       <button type="button" className="portal-btn portal-btn--gold" onClick={() => onRequest(safeMember)}>
-        Send Message
+        Request Private Introduction
       </button>
     </div>
   );

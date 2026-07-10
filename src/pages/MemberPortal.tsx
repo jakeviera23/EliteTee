@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
 import { PortalCompose } from "../components/member-portal/PortalCompose";
 import { PortalCourses } from "../components/member-portal/PortalCourses";
 import { PortalDiscover } from "../components/member-portal/PortalDiscover";
 import { PortalFeed } from "../components/member-portal/PortalFeed";
+import { PortalIntroductionRequests } from "../components/member-portal/PortalIntroductionRequests";
 import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
-import { OnboardingAlertsModal } from "../components/member-portal/OnboardingAlertsModal";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
+import { fetchPendingIncomingIntroductionCount } from "../lib/introductionRequests";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import { formatNotificationCount } from "../lib/portalNotifications";
 import { supabase } from "../lib/supabase";
@@ -20,12 +21,25 @@ const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;
 const FEED_COMPOSER_ID = "feed-composer";
 
-type PortalTab = "feed" | "discover" | "compose" | "courses" | "messages" | "profile";
+type PortalTab =
+  | "feed"
+  | "discover"
+  | "compose"
+  | "courses"
+  | "messages"
+  | "introductions"
+  | "profile";
+
+type PendingConversation = {
+  otherUserId: string;
+  otherUserName: string;
+};
 
 const desktopTabs: { id: PortalTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
   { id: "courses", label: "Courses" },
+  { id: "introductions", label: "Introductions" },
   { id: "messages", label: "Messages" },
   { id: "profile", label: "Profile" },
 ];
@@ -34,20 +48,22 @@ const mobileTabs: { id: PortalTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
   { id: "courses", label: "Courses" },
+  { id: "introductions", label: "Introductions" },
   { id: "messages", label: "Messages" },
   { id: "profile", label: "Profile" },
 ];
 
 function MemberPortalContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeView, setActiveView] = useState<PortalTab>("feed");
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
-  const [showOnboardingAlerts, setShowOnboardingAlerts] = useState(false);
+  const [pendingIntroductionCount, setPendingIntroductionCount] = useState(0);
+  const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
 
   useEffect(() => {
@@ -68,9 +84,34 @@ function MemberPortalContent() {
     setUnreadMessageCount(count);
   }, []);
 
+  const refreshPendingIntroductionCount = useCallback(async () => {
+    const { count } = await fetchPendingIncomingIntroductionCount();
+    setPendingIntroductionCount(count);
+  }, []);
+
+  const refreshNotificationCounts = useCallback(async () => {
+    await Promise.all([refreshUnreadMessageCount(), refreshPendingIntroductionCount()]);
+  }, [refreshPendingIntroductionCount, refreshUnreadMessageCount]);
+
   useEffect(() => {
-    void refreshUnreadMessageCount();
-  }, [refreshUnreadMessageCount]);
+    void refreshNotificationCounts();
+  }, [refreshNotificationCounts]);
+
+  useEffect(() => {
+    const state = location.state as
+      | { openMessagesWith?: { userId: string; memberName: string } }
+      | null
+      | undefined;
+
+    if (!state?.openMessagesWith) return;
+
+    setPendingConversation({
+      otherUserId: state.openMessagesWith.userId,
+      otherUserName: state.openMessagesWith.memberName,
+    });
+    setActiveView("messages");
+    navigate("/member-portal", { replace: true, state: null });
+  }, [location.state, navigate]);
 
   useEffect(() => {
     if (isTransitioning || scrollAfterTransition.current !== "feed") return;
@@ -102,15 +143,14 @@ function MemberPortalContent() {
     setIsTransitioning(true);
     window.setTimeout(() => {
       setActiveView(view === "compose" && options?.scrollToComposer ? "feed" : view);
-      if (view === "messages") {
-        void refreshUnreadMessageCount();
+      if (view === "messages" || view === "introductions") {
+        void refreshNotificationCounts();
       }
       window.setTimeout(() => setIsTransitioning(false), TAB_TRANSITION_MS);
     }, TAB_TRANSITION_MS * 0.45);
   }
 
-  function handleViewCourse(courseId: string) {
-    setPendingCourseId(courseId);
+  function handleViewCourse(_courseId: string) {
     transitionTo("courses");
   }
 
@@ -120,6 +160,15 @@ function MemberPortalContent() {
       return;
     }
     transitionTo(tab);
+  }
+
+  function handleMessageMember(userId: string, memberName: string) {
+    setPendingConversation({ otherUserId: userId, otherUserName: memberName });
+    transitionTo("messages");
+  }
+
+  function handlePendingIntroductionCountChange(count: number) {
+    setPendingIntroductionCount(count);
   }
 
   return (
@@ -145,94 +194,116 @@ function MemberPortalContent() {
           </button>
 
           <div className="portal-top-actions">
-          <button
-            type="button"
-            className="portal-icon-btn"
-            aria-label="Notifications"
-            onClick={() => setShowOnboardingAlerts(true)}
-          >
-            <span aria-hidden="true">◦</span>
-            <span className="portal-icon-btn-label">Alerts</span>
-          </button>
-          <button
-            type="button"
-            className="portal-icon-btn portal-icon-btn--messages"
-            aria-label={
-              unreadMessageCount > 0
-                ? `${unreadMessageCount} unread messages`
-                : "Open messages"
-            }
-            onClick={() => transitionTo("messages")}
-          >
-            <span aria-hidden="true">✉</span>
-            <span className="portal-icon-btn-label">Messages</span>
-            {unreadMessageCount > 0 ? (
-              <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
-            ) : null}
-          </button>
-          <button
-            type="button"
-            className="portal-btn portal-btn--gold portal-signout"
-            onClick={handleSignOut}
-            disabled={isSigningOut}
-          >
-            {isSigningOut ? "Signing out..." : "Sign Out"}
-          </button>
-        </div>
+            <button
+              type="button"
+              className="portal-icon-btn"
+              aria-label={
+                pendingIntroductionCount > 0
+                  ? `${pendingIntroductionCount} pending introduction requests`
+                  : "Open introduction requests"
+              }
+              onClick={() => transitionTo("introductions")}
+            >
+              <span aria-hidden="true">◇</span>
+              <span className="portal-icon-btn-label">Introductions</span>
+              {pendingIntroductionCount > 0 ? (
+                <span className="portal-icon-badge">
+                  {formatNotificationCount(pendingIntroductionCount)}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="portal-icon-btn portal-icon-btn--messages"
+              aria-label={
+                unreadMessageCount > 0
+                  ? `${unreadMessageCount} unread messages`
+                  : "Open messages"
+              }
+              onClick={() => transitionTo("messages")}
+            >
+              <span aria-hidden="true">✉</span>
+              <span className="portal-icon-btn-label">Messages</span>
+              {unreadMessageCount > 0 ? (
+                <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="portal-btn portal-btn--gold portal-signout"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? "Signing out..." : "Sign Out"}
+            </button>
+          </div>
         </div>
       </header>
 
       <nav className="portal-tabs portal-tabs--desktop" aria-label="EliteTee member portal">
         <div className="portal-shell portal-shell--bar">
-        {desktopTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`portal-tab${activeView === tab.id ? " is-active" : ""}`}
-            onClick={() => transitionTo(tab.id)}
-            aria-current={activeView === tab.id ? "page" : undefined}
-          >
-            <span className="portal-tab-label">
-              {tab.label}
-              {tab.id === "messages" && unreadMessageCount > 0 ? (
-                <span className="portal-tab-badge" aria-hidden="true">
-                  {formatNotificationCount(unreadMessageCount)}
-                </span>
-              ) : null}
-            </span>
-          </button>
-        ))}
+          {desktopTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`portal-tab${activeView === tab.id ? " is-active" : ""}`}
+              onClick={() => transitionTo(tab.id)}
+              aria-current={activeView === tab.id ? "page" : undefined}
+            >
+              <span className="portal-tab-label">
+                {tab.label}
+                {tab.id === "messages" && unreadMessageCount > 0 ? (
+                  <span className="portal-tab-badge" aria-hidden="true">
+                    {formatNotificationCount(unreadMessageCount)}
+                  </span>
+                ) : null}
+                {tab.id === "introductions" && pendingIntroductionCount > 0 ? (
+                  <span className="portal-tab-badge" aria-hidden="true">
+                    {formatNotificationCount(pendingIntroductionCount)}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+          ))}
         </div>
       </nav>
 
       <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
         <div className="portal-shell">
-        {activeView === "feed" ? (
-          <PortalFeed showComposer composerId={FEED_COMPOSER_ID} />
-        ) : null}
-        {activeView === "discover" ? (
-          <PortalDiscover
-            onViewCourse={handleViewCourse}
-            onNavigate={(tab) => transitionTo(tab)}
-          />
-        ) : null}
-        {activeView === "compose" ? (
-          <PortalCompose onPosted={() => transitionTo("feed")} />
-        ) : null}
-        {activeView === "courses" ? (
-          <PortalCourses
-            initialCourseId={pendingCourseId}
-            onCourseOpened={() => setPendingCourseId(null)}
-          />
-        ) : null}
-        {activeView === "messages" ? <PortalMessages unreadCount={unreadMessageCount} /> : null}
-        {activeView === "profile" ? (
-          <GolferProfilePage isActive={activeView === "profile"} />
-        ) : null}
+          {activeView === "feed" ? (
+            <PortalFeed showComposer composerId={FEED_COMPOSER_ID} />
+          ) : null}
+          {activeView === "discover" ? (
+            <PortalDiscover
+              onViewCourse={handleViewCourse}
+              onNavigate={(tab) => transitionTo(tab)}
+            />
+          ) : null}
+          {activeView === "compose" ? (
+            <PortalCompose onPosted={() => transitionTo("feed")} />
+          ) : null}
+          {activeView === "courses" ? <PortalCourses /> : null}
+          {activeView === "introductions" ? (
+            <PortalIntroductionRequests
+              isActive={activeView === "introductions"}
+              onMessageMember={handleMessageMember}
+              onPendingCountChange={handlePendingIntroductionCountChange}
+            />
+          ) : null}
+          {activeView === "messages" ? (
+            <PortalMessages
+              unreadCount={unreadMessageCount}
+              initialConversation={pendingConversation}
+              onInitialConversationOpened={() => setPendingConversation(null)}
+            />
+          ) : null}
+          {activeView === "profile" ? (
+            <GolferProfilePage isActive={activeView === "profile"} />
+          ) : null}
 
-        <section className="portal-privacy">
-          <p>{privacyCopy}</p>
-        </section>
+          <section className="portal-privacy">
+            <p>{privacyCopy}</p>
+          </section>
         </div>
       </main>
 
@@ -252,12 +323,19 @@ function MemberPortalContent() {
                   ? "◎"
                   : tab.id === "courses"
                     ? "⛳"
-                    : tab.id === "messages"
-                      ? "✉"
-                      : "◉"}
+                    : tab.id === "introductions"
+                      ? "◇"
+                      : tab.id === "messages"
+                        ? "✉"
+                        : "◉"}
               {tab.id === "messages" && unreadMessageCount > 0 ? (
                 <span className="portal-bottom-nav-badge">
                   {formatNotificationCount(unreadMessageCount)}
+                </span>
+              ) : null}
+              {tab.id === "introductions" && pendingIntroductionCount > 0 ? (
+                <span className="portal-bottom-nav-badge">
+                  {formatNotificationCount(pendingIntroductionCount)}
                 </span>
               ) : null}
             </span>
@@ -265,10 +343,6 @@ function MemberPortalContent() {
           </button>
         ))}
       </nav>
-
-      {showOnboardingAlerts ? (
-        <OnboardingAlertsModal onClose={() => setShowOnboardingAlerts(false)} />
-      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import {
   INTRODUCTION_REQUEST_TYPES,
+  INTRODUCTION_REQUEST_TYPE_HINTS,
   type IntroductionRequestType,
 } from "../../types/introductionRequest";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
@@ -32,10 +33,9 @@ export function IntroductionRequestForm({
 
   return (
     <form className="portal-intro-form" onSubmit={handleSubmit}>
-      <p className="portal-eyebrow">Private Introduction</p>
-      <h3 id="portal-modal-title">Request Private Introduction</h3>
-      <p className="portal-modal-text">
-        Submit a discreet introduction request to <strong>{member.full_name}</strong>.
+      <p className="portal-intro-form-lead">
+        Request a private introduction to <strong>{member.full_name}</strong>. Your request is
+        reviewed by the member before any connection is made.
       </p>
 
       {errorMessage ? (
@@ -44,35 +44,47 @@ export function IntroductionRequestForm({
         </p>
       ) : null}
 
-      <label className="portal-profile-field">
-        <span>Request Type</span>
-        <select
-          value={requestType}
-          onChange={(event) => setRequestType(event.target.value as IntroductionRequestType)}
-          required
-        >
-          {INTRODUCTION_REQUEST_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-      </label>
+      <fieldset className="portal-intro-reasons">
+        <legend>Why would you like to connect?</legend>
+        <div className="portal-intro-reason-grid" role="radiogroup" aria-label="Connection reason">
+          {INTRODUCTION_REQUEST_TYPES.map((type) => {
+            const isSelected = requestType === type;
+            return (
+              <label
+                key={type}
+                className={`portal-intro-reason${isSelected ? " is-selected" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="introduction-reason"
+                  value={type}
+                  checked={isSelected}
+                  onChange={() => setRequestType(type)}
+                />
+                <span className="portal-intro-reason-label">{type}</span>
+                <span className="portal-intro-reason-hint">
+                  {INTRODUCTION_REQUEST_TYPE_HINTS[type]}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <label className="portal-profile-field">
-        <span>Message</span>
+        <span>Personal message</span>
         <textarea
-          rows={4}
+          rows={5}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Share context for your private introduction request..."
+          placeholder="Share context for your introduction — where you play, when you travel, or what you hope to connect on…"
           required
         />
       </label>
 
       <div className="portal-intro-form-actions">
         <button type="submit" className="portal-btn portal-btn--gold" disabled={isSubmitting}>
-          {isSubmitting ? "Sending..." : "Send Request"}
+          {isSubmitting ? "Submitting request…" : "Submit Introduction Request"}
         </button>
         <button
           type="button"

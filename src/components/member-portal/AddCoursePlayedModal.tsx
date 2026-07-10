@@ -1,10 +1,19 @@
-import { FormEvent, useState } from "react";
-import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
+import { FormEvent, useEffect, useState } from "react";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { searchGolfCourses } from "../../lib/golfCourses";
 import { submitMemberCourseRound } from "../../lib/memberCourseRounds";
+import type { GolfCourseSearchResult } from "../../types/golfCourse";
+import { formatGolfCourseLocation } from "../../types/golfCourse";
+import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
 
 type AddCoursePlayedModalProps = {
   onClose: () => void;
   onSubmitted?: () => void;
+  initialCourse?: {
+    golf_course_id: string;
+    course_name: string;
+    location: string;
+  };
 };
 
 const emptyForm: MemberCourseRoundInsert = {
@@ -13,13 +22,77 @@ const emptyForm: MemberCourseRoundInsert = {
   played_on: "",
   note: "",
   would_play_again: true,
+  golf_course_id: null,
 };
 
-export function AddCoursePlayedModal({ onClose, onSubmitted }: AddCoursePlayedModalProps) {
-  const [form, setForm] = useState<MemberCourseRoundInsert>(emptyForm);
+export function AddCoursePlayedModal({
+  onClose,
+  onSubmitted,
+  initialCourse,
+}: AddCoursePlayedModalProps) {
+  const [form, setForm] = useState<MemberCourseRoundInsert>(() =>
+    initialCourse
+      ? {
+          ...emptyForm,
+          golf_course_id: initialCourse.golf_course_id,
+          course_name: initialCourse.course_name,
+          location: initialCourse.location,
+        }
+      : emptyForm,
+  );
+  const [manualEntry, setManualEntry] = useState(!initialCourse);
+  const [suggestions, setSuggestions] = useState<GolfCourseSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedCourseName = useDebouncedValue(form.course_name, 250);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (manualEntry || debouncedCourseName.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    let active = true;
+
+    async function loadSuggestions() {
+      setIsSearching(true);
+      const { data } = await searchGolfCourses({
+        query: debouncedCourseName,
+        limit: 8,
+        offset: 0,
+      });
+
+      if (!active) return;
+      setSuggestions(data ?? []);
+      setIsSearching(false);
+    }
+
+    void loadSuggestions();
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedCourseName, manualEntry]);
+
+  function selectSuggestion(course: GolfCourseSearchResult) {
+    const location = formatGolfCourseLocation(course);
+    setForm((current) => ({
+      ...current,
+      golf_course_id: course.id,
+      course_name: course.name,
+      location: location || current.location,
+    }));
+    setManualEntry(false);
+    setSuggestions([]);
+  }
+
+  function enableManualEntry() {
+    setManualEntry(true);
+    setForm((current) => ({ ...current, golf_course_id: null }));
+    setSuggestions([]);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,10 +134,7 @@ export function AddCoursePlayedModal({ onClose, onSubmitted }: AddCoursePlayedMo
         {submitted ? (
           <div className="portal-course-played-sent" role="status">
             <p className="portal-course-played-sent-title">Round added.</p>
-            <p>
-              Thanks for sharing where you played. Member rounds help EliteTee&apos;s course library
-              grow over time.
-            </p>
+            <p>Thanks for sharing where you played. Member rounds help the EliteTee course library grow.</p>
             <button type="button" className="portal-btn portal-btn--gold portal-btn--full" onClick={onClose}>
               Done
             </button>
@@ -72,8 +142,8 @@ export function AddCoursePlayedModal({ onClose, onSubmitted }: AddCoursePlayedMo
         ) : (
           <form className="portal-course-played-form" onSubmit={handleSubmit}>
             <p className="portal-course-played-lead">
-              Share a course you&apos;ve played. No scores or photos needed—just where, when, and how
-              it felt.
+              Share a course you&apos;ve played. Search the library or enter a course manually if it is
+              not listed yet.
             </p>
 
             <label className="portal-profile-field portal-profile-field--full">
@@ -81,11 +151,57 @@ export function AddCoursePlayedModal({ onClose, onSubmitted }: AddCoursePlayedMo
               <input
                 type="text"
                 value={form.course_name}
-                onChange={(event) => setForm((current) => ({ ...current, course_name: event.target.value }))}
+                onChange={(event) => {
+                  setForm((current) => ({
+                    ...current,
+                    course_name: event.target.value,
+                    golf_course_id: manualEntry ? null : current.golf_course_id,
+                  }));
+                  if (!manualEntry && event.target.value !== form.course_name) {
+                    setManualEntry(true);
+                    setForm((current) => ({ ...current, golf_course_id: null }));
+                  }
+                }}
                 required
                 autoComplete="off"
               />
             </label>
+
+            {!manualEntry && form.golf_course_id ? (
+              <p className="portal-course-played-match" role="status">
+                Linked to EliteTee course library.
+              </p>
+            ) : null}
+
+            {isSearching ? <p className="portal-course-played-searching">Searching courses…</p> : null}
+
+            {suggestions.length > 0 ? (
+              <ul className="portal-course-played-suggestions" role="listbox" aria-label="Course matches">
+                {suggestions.map((course) => {
+                  const location = formatGolfCourseLocation(course);
+                  return (
+                    <li key={course.id}>
+                      <button
+                        type="button"
+                        className="portal-course-played-suggestion"
+                        onClick={() => selectSuggestion(course)}
+                      >
+                        <span>{course.name}</span>
+                        {location ? <span>{location}</span> : null}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+
+            <button
+              type="button"
+              className="portal-course-played-manual"
+              onClick={enableManualEntry}
+            >
+              Course not listed — enter manually
+            </button>
 
             <label className="portal-profile-field portal-profile-field--full">
               <span>Location</span>

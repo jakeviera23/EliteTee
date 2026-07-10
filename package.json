@@ -10,7 +10,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:supabase": "node scripts/test-supabase-connection.mjs"
+    "test:supabase": "node scripts/test-supabase-connection.mjs",
+    "import:golf-courses": "node scripts/import-golf-courses.mjs",
+    "update:golf-course-image": "node scripts/update-golf-course-image.mjs"
   },
   "engines": {
     "node": ">=20"

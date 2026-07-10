@@ -7,7 +7,6 @@ import {
   toggleBucketListCourse,
   togglePlayedCourse,
 } from "../../lib/portalCourseState";
-import { CourseImage } from "./CourseImage";
 import { FeedPostCard } from "./FeedPostCard";
 import { usePortalToast } from "./PortalToastProvider";
 
@@ -71,7 +70,13 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
         </header>
 
         <div className="portal-course-modal-hero">
-          <CourseImage src={course.image} alt={course.imageAlt} objectPosition="center" fill />
+          <img
+            src={course.image}
+            alt={course.imageAlt}
+            loading="lazy"
+            decoding="async"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
           <span className="portal-course-card-badge">{earlyStageCopy.featuredCourseLabel}</span>
         </div>
 

@@ -14,6 +14,11 @@ import { NewConversationModal } from "./NewConversationModal";
 
 type PortalMessagesProps = {
   unreadCount?: number;
+  initialConversation?: {
+    otherUserId: string;
+    otherUserName: string;
+  } | null;
+  onInitialConversationOpened?: () => void;
 };
 
 type ActiveConversation = {
@@ -33,7 +38,11 @@ function formatMessageTime(value: string) {
   });
 }
 
-export function PortalMessages({ unreadCount: _unreadCount = 0 }: PortalMessagesProps) {
+export function PortalMessages({
+  unreadCount: _unreadCount = 0,
+  initialConversation = null,
+  onInitialConversationOpened,
+}: PortalMessagesProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<DirectConversationSummary[]>([]);
@@ -119,6 +128,17 @@ export function PortalMessages({ unreadCount: _unreadCount = 0 }: PortalMessages
   useEffect(() => {
     void loadInbox();
   }, [loadInbox]);
+
+  useEffect(() => {
+    if (!initialConversation) return;
+    setSendError(null);
+    setComposeText("");
+    setActiveConversation({
+      otherUserId: initialConversation.otherUserId,
+      otherUserName: initialConversation.otherUserName,
+    });
+    onInitialConversationOpened?.();
+  }, [initialConversation, onInitialConversationOpened]);
 
   useEffect(() => {
     if (!activeConversation) return;
