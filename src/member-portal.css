@@ -6331,6 +6331,11 @@
   gap: 0.65rem;
 }
 
+.messages-panel-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .messages-panel-head h3 {
   margin: 0;
 }
@@ -6367,6 +6372,19 @@
   line-height: 1.6;
   color: var(--portal-muted);
   list-style: none;
+}
+
+.messages-thread-end {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.messages-thread-error {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
 }
 
 .messages-compose {
@@ -6497,6 +6515,14 @@
 
   .messages-conversation {
     width: 100%;
+    min-height: 44px;
+  }
+
+  .messages-back-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   /* Tapping a conversation opens a full-screen chat above the bottom nav */

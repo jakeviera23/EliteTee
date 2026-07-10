@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { earlyStageCopy } from "../../data/portalSocial";
 import { fetchMessageablePortalMembers } from "../../lib/memberProfiles";
 import {
@@ -56,6 +56,8 @@ export function PortalMessages({
   const [inboxError, setInboxError] = useState<string | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const composeInputRef = useRef<HTMLInputElement>(null);
+  const threadEndRef = useRef<HTMLLIElement>(null);
 
   const loadMemberDirectory = useCallback(async () => {
     const [{ userId }, { data: members }] = await Promise.all([
@@ -146,7 +148,28 @@ export function PortalMessages({
     void loadThread(activeConversation.otherUserId);
   }, [activeConversation, loadThread]);
 
+  useEffect(() => {
+    if (!activeConversation || isLoadingThread || threadError) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      threadEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [activeConversation, isLoadingThread, threadError, threadMessages]);
+
+  useEffect(() => {
+    if (!activeConversation || isLoadingThread) return;
+
+    const timerId = window.setTimeout(() => {
+      composeInputRef.current?.focus({ preventScroll: true });
+    }, 120);
+
+    return () => window.clearTimeout(timerId);
+  }, [activeConversation?.otherUserId, isLoadingThread]);
+
   const hasConversations = conversations.length > 0;
+  const showMobileThread = Boolean(activeConversation);
 
   const activeSummary = useMemo(
     () =>
@@ -160,6 +183,12 @@ export function PortalMessages({
     setSendError(null);
     setComposeText("");
     setActiveConversation({ otherUserId, otherUserName });
+  }
+
+  function closeConversation() {
+    setSendError(null);
+    setComposeText("");
+    setActiveConversation(null);
   }
 
   function handleStartConversation(receiverUserId: string, memberName: string) {
@@ -237,7 +266,9 @@ export function PortalMessages({
       ) : null}
 
       <div className="portal-messages-layout messages-layout">
-        <aside className="messages-sidebar">
+        <aside
+          className={`messages-sidebar${showMobileThread ? " is-hidden-mobile" : ""}`}
+        >
           {isLoadingInbox ? <p className="portal-discover-loading">Loading conversations…</p> : null}
 
           {!isLoadingInbox && !hasConversations ? (
@@ -288,7 +319,11 @@ export function PortalMessages({
           ) : null}
         </aside>
 
-        <div className="portal-messages-panel messages-panel">
+        <div
+          className={`portal-messages-panel messages-panel${
+            showMobileThread ? " is-visible-mobile" : ""
+          }`}
+        >
           {!activeConversation ? (
             <p className="messages-thread-empty">
               Select a conversation or start a new one with a founding member.
@@ -296,12 +331,22 @@ export function PortalMessages({
           ) : (
             <>
               <header className="portal-messages-panel-head messages-panel-head">
-                <h3>{activeConversation.otherUserName}</h3>
-                {activeSummary?.lastMessageAt ? (
-                  <p className="messages-panel-club">
-                    Last message {formatMessageTime(activeSummary.lastMessageAt)}
-                  </p>
-                ) : null}
+                <button
+                  type="button"
+                  className="messages-back-btn"
+                  onClick={closeConversation}
+                  aria-label="Back to messages"
+                >
+                  ‹
+                </button>
+                <div className="messages-panel-head-main">
+                  <h3>{activeConversation.otherUserName}</h3>
+                  {activeSummary?.lastMessageAt ? (
+                    <p className="messages-panel-club">
+                      Last message {formatMessageTime(activeSummary.lastMessageAt)}
+                    </p>
+                  ) : null}
+                </div>
               </header>
 
               {isLoadingThread ? (
@@ -309,9 +354,18 @@ export function PortalMessages({
               ) : null}
 
               {threadError ? (
-                <p className="portal-alert portal-alert--warning" role="alert">
-                  {threadError}
-                </p>
+                <div className="messages-thread-error">
+                  <p className="portal-alert portal-alert--warning" role="alert">
+                    {threadError}
+                  </p>
+                  <button
+                    type="button"
+                    className="portal-btn portal-btn--outline portal-btn--compact"
+                    onClick={() => void loadThread(activeConversation.otherUserId)}
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : null}
 
               <ul className="portal-messages-thread messages-thread">
@@ -340,15 +394,17 @@ export function PortalMessages({
                     </li>
                   );
                 })}
+                <li ref={threadEndRef} className="messages-thread-end" aria-hidden="true" />
               </ul>
 
               <form className="portal-messages-compose messages-compose" onSubmit={handleSendMessage}>
                 <input
+                  ref={composeInputRef}
                   type="text"
                   value={composeText}
                   onChange={(event) => setComposeText(event.target.value)}
                   placeholder={`Message ${activeConversation.otherUserName}…`}
-                  disabled={isSending}
+                  disabled={isSending || isLoadingThread}
                   aria-label="Message"
                 />
                 <button
