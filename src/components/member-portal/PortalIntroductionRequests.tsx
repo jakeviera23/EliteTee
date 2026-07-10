@@ -25,6 +25,10 @@ function countPendingIncoming(
   ).length;
 }
 
+function filterByStatus(requests: IntroductionRequestRecord[], status: string) {
+  return requests.filter((request) => request.status.toLowerCase() === status);
+}
+
 export function PortalIntroductionRequests({
   isActive,
   onMessageMember,
@@ -68,16 +72,11 @@ export function PortalIntroductionRequests({
     void loadRequests();
   }, [isActive, loadRequests]);
 
-  const { incoming, outgoing } = useMemo(() => {
-    if (!currentUserId) {
-      return { incoming: [], outgoing: [] as IntroductionRequestRecord[] };
-    }
+  const pending = useMemo(() => filterByStatus(requests, "pending"), [requests]);
+  const accepted = useMemo(() => filterByStatus(requests, "accepted"), [requests]);
+  const declined = useMemo(() => filterByStatus(requests, "declined"), [requests]);
 
-    return {
-      incoming: requests.filter((request) => request.receiver_id === currentUserId),
-      outgoing: requests.filter((request) => request.sender_id === currentUserId),
-    };
-  }, [currentUserId, requests]);
+  const hasAnyRequests = requests.length > 0;
 
   async function handleAccept(requestId: string) {
     setUpdatingRequestId(requestId);
@@ -124,8 +123,6 @@ export function PortalIntroductionRequests({
     onMessageMember(otherUserId, otherUserName);
   }
 
-  const hasAnyRequests = requests.length > 0;
-
   return (
     <section
       className="portal-social-page portal-requests-page"
@@ -133,7 +130,7 @@ export function PortalIntroductionRequests({
     >
       <header className="portal-section-head portal-section-head--social portal-section-head--compact">
         <h2 id="introduction-requests-heading">Introduction Requests</h2>
-        <p>
+        <p className="portal-requests-lead">
           Private introductions between members. Requests remain discreet until accepted.
         </p>
       </header>
@@ -153,22 +150,19 @@ export function PortalIntroductionRequests({
       {isLoading ? <p className="portal-discover-loading">Loading introduction requests…</p> : null}
 
       {!isLoading && !hasAnyRequests && !loadError ? (
-        <div className="portal-empty portal-empty--social">
+        <div className="portal-empty portal-empty--introductions">
           <p className="portal-empty-title">No introduction requests yet.</p>
-          <p className="portal-empty-hint">
-            When you request a private introduction from Discover, it will appear here for the
-            member to review.
-          </p>
+          <p className="portal-empty-hint">Requests you send or receive will appear here.</p>
         </div>
       ) : null}
 
-      {!isLoading && incoming.length > 0 ? (
-        <section className="portal-requests-section" aria-labelledby="incoming-requests-heading">
-          <h3 id="incoming-requests-heading" className="discover-section-title">
-            Received
+      {!isLoading && pending.length > 0 ? (
+        <section className="portal-requests-section" aria-labelledby="pending-requests-heading">
+          <h3 id="pending-requests-heading" className="discover-section-title">
+            Pending
           </h3>
           <RequestsBoard
-            requests={incoming}
+            requests={pending}
             currentUserId={currentUserId}
             updatingRequestId={updatingRequestId}
             onAccept={handleAccept}
@@ -178,13 +172,29 @@ export function PortalIntroductionRequests({
         </section>
       ) : null}
 
-      {!isLoading && outgoing.length > 0 ? (
-        <section className="portal-requests-section" aria-labelledby="sent-requests-heading">
-          <h3 id="sent-requests-heading" className="discover-section-title">
-            Sent
+      {!isLoading && accepted.length > 0 ? (
+        <section className="portal-requests-section" aria-labelledby="accepted-requests-heading">
+          <h3 id="accepted-requests-heading" className="discover-section-title">
+            Accepted
           </h3>
           <RequestsBoard
-            requests={outgoing}
+            requests={accepted}
+            currentUserId={currentUserId}
+            updatingRequestId={updatingRequestId}
+            onAccept={handleAccept}
+            onDecline={handleDecline}
+            onMessageMember={handleMessageMember}
+          />
+        </section>
+      ) : null}
+
+      {!isLoading && declined.length > 0 ? (
+        <section className="portal-requests-section" aria-labelledby="declined-requests-heading">
+          <h3 id="declined-requests-heading" className="discover-section-title">
+            Declined
+          </h3>
+          <RequestsBoard
+            requests={declined}
             currentUserId={currentUserId}
             updatingRequestId={updatingRequestId}
             onAccept={handleAccept}

@@ -48,7 +48,6 @@ const mobileTabs: { id: PortalTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
   { id: "courses", label: "Courses" },
-  { id: "introductions", label: "Introductions" },
   { id: "messages", label: "Messages" },
   { id: "profile", label: "Profile" },
 ];
@@ -156,10 +155,22 @@ function MemberPortalContent() {
 
   function handleMobileNav(tab: PortalTab) {
     if (tab === "compose") {
-      transitionTo("feed", { scrollToComposer: true });
+      setActiveView("feed");
+      window.scrollTo({ top: 0, behavior: "auto" });
+      requestAnimationFrame(() => {
+        document.getElementById(FEED_COMPOSER_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       return;
     }
-    transitionTo(tab);
+
+    if (tab === activeView) return;
+
+    setActiveView(tab);
+    window.scrollTo({ top: 0, behavior: "auto" });
+
+    if (tab === "messages" || tab === "introductions") {
+      void refreshNotificationCounts();
+    }
   }
 
   function handleMessageMember(userId: string, memberName: string) {
@@ -301,9 +312,11 @@ function MemberPortalContent() {
             <GolferProfilePage isActive={activeView === "profile"} />
           ) : null}
 
-          <section className="portal-privacy">
-            <p>{privacyCopy}</p>
-          </section>
+          {activeView !== "introductions" ? (
+            <section className="portal-privacy">
+              <p>{privacyCopy}</p>
+            </section>
+          ) : null}
         </div>
       </main>
 
@@ -323,19 +336,12 @@ function MemberPortalContent() {
                   ? "◎"
                   : tab.id === "courses"
                     ? "⛳"
-                    : tab.id === "introductions"
-                      ? "◇"
-                      : tab.id === "messages"
-                        ? "✉"
-                        : "◉"}
+                    : tab.id === "messages"
+                      ? "✉"
+                      : "◉"}
               {tab.id === "messages" && unreadMessageCount > 0 ? (
                 <span className="portal-bottom-nav-badge">
                   {formatNotificationCount(unreadMessageCount)}
-                </span>
-              ) : null}
-              {tab.id === "introductions" && pendingIntroductionCount > 0 ? (
-                <span className="portal-bottom-nav-badge">
-                  {formatNotificationCount(pendingIntroductionCount)}
                 </span>
               ) : null}
             </span>
