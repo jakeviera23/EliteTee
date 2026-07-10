@@ -12,8 +12,34 @@ type PrivateMessageInsertPayload = {
 const PRIVATE_MESSAGE_RLS_ERROR =
   "Message could not be sent because database permissions blocked the insert.";
 
+export const PRIVATE_MESSAGE_MAX_LENGTH = 2000;
+export const PRIVATE_MESSAGE_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 const DIRECT_MESSAGE_SELECT =
-  "id, introduction_request_id, sender_id, receiver_id, body, created_at, read_at";
+  "id, introduction_request_id, sender_id, receiver_id, body, created_at, read_at, edited_at";
+
+function validateMessageBody(body: string) {
+  const trimmedBody = body.trim();
+
+  if (!trimmedBody) {
+    return { trimmedBody: "", error: new Error("Message cannot be empty.") };
+  }
+
+  if (trimmedBody.length > PRIVATE_MESSAGE_MAX_LENGTH) {
+    return {
+      trimmedBody: "",
+      error: new Error(`Message cannot exceed ${PRIVATE_MESSAGE_MAX_LENGTH} characters.`),
+    };
+  }
+
+  return { trimmedBody, error: null };
+}
+
+export function isPrivateMessageEditable(message: Pick<PrivateMessageRecord, "created_at">) {
+  const createdAt = new Date(message.created_at).getTime();
+  if (Number.isNaN(createdAt)) return false;
+  return Date.now() - createdAt <= PRIVATE_MESSAGE_EDIT_WINDOW_MS;
+}
 
 function formatInsertPayloadForDebug(payload: PrivateMessageInsertPayload) {
   return [
@@ -162,9 +188,9 @@ export async function sendDirectPrivateMessage({
   receiverUserId: string;
   body: string;
 }) {
-  const trimmedBody = body.trim();
-  if (!trimmedBody) {
-    return { data: null, error: new Error("Message cannot be empty.") };
+  const { trimmedBody, error: validationError } = validateMessageBody(body);
+  if (validationError) {
+    return { data: null, error: validationError };
   }
 
   const { userId, error: sessionError } = await getSessionUserId();
@@ -261,9 +287,9 @@ export async function sendPrivateMessage({
   introductionRequestId: string;
   body: string;
 }) {
-  const trimmedBody = body.trim();
-  if (!trimmedBody) {
-    return { data: null, error: new Error("Message cannot be empty.") };
+  const { trimmedBody, error: validationError } = validateMessageBody(body);
+  if (validationError) {
+    return { data: null, error: validationError };
   }
 
   const { userId, error: sessionError } = await getSessionUserId();
@@ -366,4 +392,67 @@ export async function markIntroductionMessagesAsRead(introductionRequestId: stri
     .is("read_at", null);
 
   return { error };
+}
+
+export async function editPrivateMessage({
+  messageId,
+  body,
+}: {
+  messageId: string;
+  body: string;
+}) {
+  const { trimmedBody, error: validationError } = validateMessageBody(body);
+  if (validationError) {
+    return { data: null, error: validationError };
+  }
+
+  const { userId, error: sessionError } = await getSessionUserId();
+  if (sessionError || !userId) {
+    return {
+      data: null,
+      error: sessionError ?? new Error("You must be signed in to edit a message."),
+    };
+  }
+
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("edit_private_message", {
+    p_message_id: messageId,
+    p_new_body: trimmedBody,
+  });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { data: null, error: new Error("Message could not be updated.") };
+  }
+
+  return {
+    data: {
+      id: String((row as { id: string }).id),
+      body: String((row as { body: string }).body),
+      edited_at: (row as { edited_at: string | null }).edited_at
+        ? String((row as { edited_at: string }).edited_at)
+        : new Date().toISOString(),
+      created_at: String((row as { created_at: string }).created_at),
+    },
+    error: null,
+  };
+}
+
+export function mergeEditedPrivateMessage(
+  existing: PrivateMessageRecord,
+  update: Pick<PrivateMessageRecord, "id" | "body" | "edited_at" | "created_at">,
+): PrivateMessageRecord {
+  if (existing.id !== update.id) return existing;
+  return {
+    ...existing,
+    body: update.body,
+    edited_at: update.edited_at,
+  };
 }

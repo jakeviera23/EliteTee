@@ -6,6 +6,7 @@ export type PrivateMessageRecord = {
   body: string;
   created_at: string;
   read_at?: string | null;
+  edited_at?: string | null;
 };
 
 export type DirectConversationSummary = {

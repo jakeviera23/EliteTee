@@ -10,6 +10,7 @@ import {
 } from "../../lib/privateMessages";
 import type { DirectConversationSummary, PrivateMessageRecord } from "../../types/privateMessage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import { EditablePrivateMessage } from "./EditablePrivateMessage";
 import { NewConversationModal } from "./NewConversationModal";
 
 type PortalMessagesProps = {
@@ -166,6 +167,29 @@ export function PortalMessages({
     openConversation(receiverUserId, memberName);
   }
 
+  function handleMessageEdited(updated: PrivateMessageRecord) {
+    setThreadMessages((current) =>
+      current.map((message) => (message.id === updated.id ? updated : message)),
+    );
+
+    setConversations((current) =>
+      current.map((conversation) => {
+        if (conversation.otherUserId !== activeConversation?.otherUserId) {
+          return conversation;
+        }
+
+        if (conversation.lastMessageAt !== updated.created_at) {
+          return conversation;
+        }
+
+        return {
+          ...conversation,
+          lastMessageBody: updated.body,
+        };
+      }),
+    );
+  }
+
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!activeConversation || !composeText.trim() || isSending) return;
@@ -306,10 +330,13 @@ export function PortalMessages({
                         isOwn ? "me" : "them"
                       }`}
                     >
-                      <p>{message.body}</p>
-                      <time dateTime={message.created_at}>
-                        {formatMessageTime(message.created_at)}
-                      </time>
+                      <EditablePrivateMessage
+                        message={message}
+                        isOwn={isOwn}
+                        formatTime={formatMessageTime}
+                        bubbleClassName="portal-message-bubble-inner"
+                        onEdited={handleMessageEdited}
+                      />
                     </li>
                   );
                 })}

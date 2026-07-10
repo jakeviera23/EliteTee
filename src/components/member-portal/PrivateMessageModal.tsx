@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { fetchPrivateMessages, markIntroductionMessagesAsRead, sendPrivateMessage } from "../../lib/privateMessages";
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";
 import type { PrivateMessageRecord } from "../../types/privateMessage";
+import { EditablePrivateMessage } from "./EditablePrivateMessage";
 
 type PrivateMessageModalProps = {
   request: IntroductionRequestRecord;
@@ -86,6 +87,12 @@ export function PrivateMessageModal({
     await loadMessages();
   }
 
+  function handleMessageEdited(updated: PrivateMessageRecord) {
+    setMessages((current) =>
+      current.map((message) => (message.id === updated.id ? updated : message)),
+    );
+  }
+
   return (
     <div className="portal-modal" role="dialog" aria-modal="true" aria-labelledby="private-message-title">
       <button
@@ -121,10 +128,12 @@ export function PrivateMessageModal({
                     key={message.id}
                     className={`portal-message-item${isOwn ? " is-own" : ""}`}
                   >
-                    <article className="portal-message-bubble">
-                      <p>{message.body}</p>
-                      <time dateTime={message.created_at}>{formatMessageTime(message.created_at)}</time>
-                    </article>
+                    <EditablePrivateMessage
+                      message={message}
+                      isOwn={isOwn}
+                      formatTime={formatMessageTime}
+                      onEdited={handleMessageEdited}
+                    />
                   </li>
                 );
               })}
