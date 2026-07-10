@@ -11,7 +11,7 @@ const MEMBER_COURSE_ROUND_RLS_ERROR =
   "Your round could not be saved because database permissions blocked the insert.";
 
 const ROUND_SELECT =
-  "id, member_user_id, golf_course_id, course_name, location, played_on, note, would_play_again, created_at";
+  "id, member_user_id, golf_course_id, course_name, location, played_on, note, would_play_again, course_rating, created_at";
 
 function normalizeRound(row: Record<string, unknown>): MemberCourseRoundRecord {
   return {
@@ -23,6 +23,7 @@ function normalizeRound(row: Record<string, unknown>): MemberCourseRoundRecord {
     played_on: String(row.played_on ?? ""),
     note: String(row.note ?? ""),
     would_play_again: Boolean(row.would_play_again),
+    course_rating: Number(row.course_rating ?? 10),
     created_at: String(row.created_at ?? ""),
     member_name: row.member_name ? String(row.member_name) : undefined,
   };
@@ -135,17 +136,22 @@ export async function fetchRecentlyPlayedRounds(limit = 8) {
   return fetchMemberCourseRounds(limit);
 }
 
-export async function fetchMemberCourseRoundsForUser(userId: string, limit = 12) {
+export async function fetchMemberCourseRoundsForUser(userId: string, limit?: number) {
   if (!supabase) {
     return { data: null, error: new Error("Supabase is not configured.") };
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("member_course_rounds")
     .select(ROUND_SELECT)
     .eq("member_user_id", userId)
-    .order("played_on", { ascending: false })
-    .limit(limit);
+    .order("played_on", { ascending: false });
+
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return { data: null, error };
@@ -157,7 +163,7 @@ export async function fetchMemberCourseRoundsForUser(userId: string, limit = 12)
   return { data: withPhotos, error: null };
 }
 
-export async function fetchMemberCourseRoundsForCurrentUser(limit = 12) {
+export async function fetchMemberCourseRoundsForCurrentUser(limit?: number) {
   const { userId, error: sessionError } = await getCurrentAuthUserId();
   if (sessionError || !userId) {
     return {
@@ -204,6 +210,7 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     played_on: round.played_on,
     note: round.note.trim(),
     would_play_again: round.would_play_again,
+    course_rating: round.course_rating,
     golf_course_id: golfCourseId,
   };
 

@@ -34,6 +34,8 @@ function normalizeCourseRow(row: Record<string, unknown>): GolfCourseSearchResul
       row.recommend_pct === null || row.recommend_pct === undefined
         ? null
         : Number(row.recommend_pct),
+    avg_rating:
+      row.avg_rating === null || row.avg_rating === undefined ? null : Number(row.avg_rating),
     latest_activity_at: row.latest_activity_at ? String(row.latest_activity_at) : null,
   };
 }

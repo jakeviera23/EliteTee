@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { formatMemberRatingSummary } from "../lib/courseRating";
 import { fetchGolfCourseBySlug } from "../lib/golfCourses";
 import {
   fetchMemberCourseRoundsForCourse,
@@ -111,6 +112,10 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
   const isMemberSubmitted = isMemberSubmittedCourse(course);
+  const memberRating =
+    course.avg_rating !== null && course.avg_rating !== undefined && roundCount > 0
+      ? formatMemberRatingSummary(course.avg_rating, roundCount)
+      : null;
 
   return (
     <div className="inside-page portal-page portal-page--social">
@@ -189,6 +194,14 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                     </div>
                   ) : null}
                 </dl>
+
+                {memberRating ? (
+                  <div className="golf-course-detail-member-rating">
+                    <p className="golf-course-detail-member-rating-label">Overall Member Rating</p>
+                    <p className="golf-course-detail-member-rating-score">{memberRating.score}</p>
+                    <p className="golf-course-detail-member-rating-detail">{memberRating.detail}</p>
+                  </div>
+                ) : null}
 
                 {course.website_url ? (
                   <p className="golf-course-detail-website">

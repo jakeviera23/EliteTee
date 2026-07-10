@@ -441,6 +441,7 @@ export async function createCourseRoundFeedPost({
   note,
   wouldPlayAgain,
   playedOn,
+  courseRating,
 }: {
   roundId: string;
   courseName: string;
@@ -448,6 +449,7 @@ export async function createCourseRoundFeedPost({
   note: string;
   wouldPlayAgain: boolean;
   playedOn: string;
+  courseRating: number;
 }) {
   const message = note.trim() || `Played ${courseName.trim()}`;
 
@@ -460,9 +462,11 @@ export async function createCourseRoundFeedPost({
       details: [
         { label: "Location", value: location.trim() },
         { label: "Played", value: formatPlayedOnDate(playedOn) },
+        { label: "Course Rating", value: `${courseRating}/10` },
         { label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" },
       ],
       internalPostType: "course-review",
+      rating: courseRating,
     },
     roundId,
   );

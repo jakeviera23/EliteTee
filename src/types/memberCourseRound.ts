@@ -9,6 +9,7 @@ export type MemberCourseRoundRecord = {
   played_on: string;
   note: string;
   would_play_again: boolean;
+  course_rating: number;
   created_at: string;
   member_name?: string;
   member_slug?: string;
@@ -21,5 +22,6 @@ export type MemberCourseRoundInsert = {
   played_on: string;
   note: string;
   would_play_again: boolean;
+  course_rating: number;
   golf_course_id?: string | null;
 };

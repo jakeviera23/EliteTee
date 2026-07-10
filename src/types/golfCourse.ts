@@ -24,6 +24,7 @@ export type GolfCourseRecord = {
   round_count?: number;
   member_count?: number;
   recommend_pct?: number | null;
+  avg_rating?: number | null;
   latest_activity_at?: string | null;
 };
 

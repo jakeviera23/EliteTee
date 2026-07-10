@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { demoCourses, earlyStageCopy, type FeedPost } from "../../data/portalSocial";
+import { earlyStageCopy, type FeedPost } from "../../data/portalSocial";
 import { photos } from "../../assets/photos";
 import { SafeImage } from "../SafeImage";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { fetchMemberFeedPostsForCurrentUser } from "../../lib/memberFeedPosts";
 import { fetchMemberCourseRoundsForCurrentUser } from "../../lib/memberCourseRounds";
-import { getBucketListCourseIds, getPlayedCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
@@ -52,7 +51,6 @@ type GolferProfilePageProps = {
 export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
-  const [courseStateVersion, setCourseStateVersion] = useState(0);
   const [memberProfile, setMemberProfile] = useState<Awaited<
     ReturnType<typeof fetchOwnMemberProfile>
   >["data"]>(null);
@@ -65,7 +63,7 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
     const [{ data }, { data: posts }, { data: rounds }] = await Promise.all([
       fetchOwnMemberProfile(),
       fetchMemberFeedPostsForCurrentUser(),
-      fetchMemberCourseRoundsForCurrentUser(12),
+      fetchMemberCourseRoundsForCurrentUser(),
     ]);
     setMemberProfile(data);
     setFeedPosts(posts);
@@ -78,37 +76,12 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
     void loadProfile();
   }, [isActive, profileVersion, loadProfile]);
 
-  useEffect(() => {
-    if (!isActive) return;
-    const refreshCourseState = () => setCourseStateVersion((version) => version + 1);
-    refreshCourseState();
-    window.addEventListener("storage", refreshCourseState);
-    window.addEventListener("focus", refreshCourseState);
-    window.addEventListener("elitetee:course-state-changed", refreshCourseState);
-    return () => {
-      window.removeEventListener("storage", refreshCourseState);
-      window.removeEventListener("focus", refreshCourseState);
-      window.removeEventListener("elitetee:course-state-changed", refreshCourseState);
-    };
-  }, [isActive]);
-
   const display = useMemo(() => {
     const extras = getPortalProfileExtras(memberProfile?.user_id);
     return buildGolferProfileDisplay(memberProfile, extras);
   }, [memberProfile, profileVersion]);
 
-  const { savedCourses, playedCourses } = useMemo(() => {
-    void courseStateVersion;
-    const savedIds = getBucketListCourseIds();
-    const playedIds = getPlayedCourseIds();
-    return {
-      savedCourses: demoCourses.filter((course) => savedIds.includes(course.id)),
-      playedCourses: demoCourses.filter((course) => playedIds.includes(course.id)),
-    };
-  }, [courseStateVersion]);
-
-  const roundsShared = Math.max(feedPosts.length, courseRounds.length);
-  const coursesSaved = savedCourses.length;
+  const roundsShared = courseRounds.length;
   const connections = 0;
 
   if (isEditing) {
@@ -221,12 +194,8 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
 
           <dl className="portal-profile-stats-grid portal-profile-stats-grid--early">
             <div className="portal-profile-stat">
-              <dt>Rounds Shared</dt>
+              <dt>Course Rounds</dt>
               <dd>{roundsShared}</dd>
-            </div>
-            <div className="portal-profile-stat">
-              <dt>Courses Saved</dt>
-              <dd>{coursesSaved}</dd>
             </div>
             <div className="portal-profile-stat">
               <dt>Connections</dt>
@@ -287,48 +256,6 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
           </ProfileSection>
 
           <ProfileSection
-            title="Courses Played"
-            description="Courses you've marked as played or saved from the library."
-          >
-            <div className="portal-profile-cards portal-profile-cards--compact">
-              <div className="portal-profile-card">
-                <h4>Played</h4>
-                {playedCourses.length > 0 ? (
-                  <ul>
-                    {playedCourses.map((course) => (
-                      <li key={course.id}>
-                        {course.name} · {course.location}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <ProfileEmptyState
-                    title="No played courses yet"
-                    hint="Mark courses as played from the Courses page."
-                  />
-                )}
-              </div>
-              <div className="portal-profile-card">
-                <h4>Saved</h4>
-                {savedCourses.length > 0 ? (
-                  <ul>
-                    {savedCourses.map((course) => (
-                      <li key={course.id}>
-                        {course.name} · {course.location}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <ProfileEmptyState
-                    title="No saved courses yet"
-                    hint="Save courses from the Courses page to build your list."
-                  />
-                )}
-              </div>
-            </div>
-          </ProfileSection>
-
-          <ProfileSection
             title="Connection Interests"
             description="The golf relationships and introductions you're open to."
           >
@@ -346,11 +273,11 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
             )}
           </ProfileSection>
 
-          {courseRounds.length > 0 ? (
-            <ProfileSection
-              title="Course Rounds"
-              description="Courses you've played and shared with EliteTee members."
-            >
+          <ProfileSection
+            title="Course Rounds"
+            description="Every course you've played and shared with EliteTee members."
+          >
+            {courseRounds.length > 0 ? (
               <MemberActivityList
                 rounds={courseRounds}
                 allowPhotoDelete
@@ -358,13 +285,18 @@ export function GolferProfilePage({ isActive }: GolferProfilePageProps) {
                   void loadProfile();
                 }}
               />
-            </ProfileSection>
-          ) : null}
+            ) : (
+              <ProfileEmptyState
+                title={earlyStageCopy.roundsEmpty}
+                hint="Add a course round from Courses to build your golf history."
+              />
+            )}
+          </ProfileSection>
 
           {feedPosts.length > 0 ? (
             <ProfileSection title="Recent Feed Activity" description="Posts you've shared in the member feed.">
               <div
-                className={`portal-profile-rounds${roundsShared === 1 ? " portal-profile-rounds--single" : ""}`}
+                className={`portal-profile-rounds${feedPosts.length === 1 ? " portal-profile-rounds--single" : ""}`}
               >
                 {feedPosts.map((post, index) => (
                   <FeedCard key={post.id} post={post} index={index} />

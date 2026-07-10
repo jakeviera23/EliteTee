@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatCourseRatingStars, formatCourseRatingValue } from "../../lib/courseRating";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import {
   formatPlayedOnDate,
@@ -52,6 +53,18 @@ export function MemberActivityList({
             <p className="courses-activity-meta">
               {round.location} · {formatPlayedOnDate(round.played_on)}
             </p>
+            <div className="courses-activity-rating">
+              <span className="courses-activity-rating-label">Course Rating</span>
+              <span
+                className="courses-activity-rating-stars"
+                aria-hidden="true"
+              >
+                {formatCourseRatingStars(round.course_rating)}
+              </span>
+              <span className="courses-activity-rating-value">
+                {formatCourseRatingValue(round.course_rating)}
+              </span>
+            </div>
             {round.note.trim() ? <p className="courses-activity-note">{round.note}</p> : null}
             <p className="courses-activity-again">
               Would play again: {round.would_play_again ? "Yes" : "No"}

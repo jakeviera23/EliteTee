@@ -7216,6 +7216,32 @@
   color: var(--inside-gold);
 }
 
+.courses-activity-rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin: 0.55rem 0 0;
+}
+
+.courses-activity-rating-label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.courses-activity-rating-stars {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--inside-gold);
+}
+
+.courses-activity-rating-value {
+  font-size: 0.75rem;
+  color: var(--portal-heading);
+}
+
 .portal-modal--course-played {
   width: min(28rem, 100%);
   max-height: min(92vh, 44rem);
@@ -7280,6 +7306,81 @@
 
 .portal-course-played-choice-option input {
   accent-color: var(--inside-gold);
+}
+
+.portal-course-rating {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.portal-course-rating legend {
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-course-rating-required {
+  color: var(--inside-gold);
+}
+
+.portal-course-rating-help {
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--portal-muted);
+}
+
+.portal-course-rating-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (min-width: 480px) {
+  .portal-course-rating-options {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+}
+
+.portal-course-rating-option {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--portal-body);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--inside-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+
+.portal-course-rating-option.is-active,
+.portal-course-rating-option:hover {
+  color: var(--inside-bg);
+  background: var(--inside-gold);
+  border-color: var(--inside-gold);
+}
+
+.portal-course-rating-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.portal-course-rating-selected {
+  margin: 0.55rem 0 0;
+  font-size: 0.75rem;
+  color: var(--inside-gold);
+}
+
+.portal-course-rating-selected--empty {
+  color: var(--portal-muted);
 }
 
 .portal-course-played-error {
@@ -8079,6 +8180,36 @@
   margin: 0.1rem 0 0;
   font-size: 0.8125rem;
   color: var(--portal-heading);
+}
+
+.golf-course-detail-member-rating {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(196, 169, 98, 0.08);
+  border: 1px solid rgba(196, 169, 98, 0.22);
+  border-radius: 10px;
+}
+
+.golf-course-detail-member-rating-label {
+  margin: 0;
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.golf-course-detail-member-rating-score {
+  margin: 0.25rem 0 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 300;
+  color: var(--portal-heading);
+}
+
+.golf-course-detail-member-rating-detail {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--portal-muted);
 }
 
 .golf-course-detail-website a {

@@ -8,6 +8,7 @@ import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { formatGolfCourseLocation } from "../../types/golfCourse";
 import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
 import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
+import { CourseRatingPicker } from "./CourseRatingPicker";
 import { RoundPhotoPicker } from "./RoundPhotoPicker";
 
 type AddCoursePlayedModalProps = {
@@ -20,13 +21,14 @@ type AddCoursePlayedModalProps = {
   };
 };
 
-const emptyForm: MemberCourseRoundInsert = {
+const emptyForm: Omit<MemberCourseRoundInsert, "course_rating"> & { course_rating: number | null } = {
   course_name: "",
   location: "",
   played_on: "",
   note: "",
   would_play_again: true,
   golf_course_id: null,
+  course_rating: null,
 };
 
 export function AddCoursePlayedModal({
@@ -34,7 +36,7 @@ export function AddCoursePlayedModal({
   onSubmitted,
   initialCourse,
 }: AddCoursePlayedModalProps) {
-  const [form, setForm] = useState<MemberCourseRoundInsert>(() =>
+  const [form, setForm] = useState(() =>
     initialCourse
       ? {
           ...emptyForm,
@@ -114,11 +116,19 @@ export function AddCoursePlayedModal({
       return;
     }
 
+    if (!form.course_rating || form.course_rating < 1 || form.course_rating > 10) {
+      setError("Please rate this course from 1 to 10.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     setPhotoWarning(null);
 
-    const { data: roundData, error: submitError } = await submitMemberCourseRound(form);
+    const { data: roundData, error: submitError } = await submitMemberCourseRound({
+      ...form,
+      course_rating: form.course_rating,
+    });
 
     if (submitError || !roundData?.id) {
       setSubmitting(false);
@@ -133,6 +143,7 @@ export function AddCoursePlayedModal({
       note: form.note,
       wouldPlayAgain: form.would_play_again,
       playedOn: form.played_on,
+      courseRating: form.course_rating,
     });
 
     let feedWarning: string | null = null;
@@ -303,6 +314,12 @@ export function AddCoursePlayedModal({
               />
             </label>
 
+            <CourseRatingPicker
+              value={form.course_rating}
+              onChange={(course_rating) => setForm((current) => ({ ...current, course_rating }))}
+              disabled={submitting}
+            />
+
             <label className="portal-profile-field portal-profile-field--full">
               <span>Short note about the experience</span>
               <textarea
@@ -348,7 +365,7 @@ export function AddCoursePlayedModal({
             <button
               type="submit"
               className="portal-btn portal-btn--gold portal-btn--full"
-              disabled={submitting}
+              disabled={submitting || !form.course_rating}
             >
               {submitting ? "Saving…" : "Save Course Played"}
             </button>
