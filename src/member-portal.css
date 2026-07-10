@@ -7538,6 +7538,12 @@
   font-size: 1rem;
 }
 
+.courses-directory {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
 .courses-layout--library .courses-main {
   display: grid;
   gap: 1.5rem;
@@ -7552,9 +7558,19 @@
   grid-template-columns: 1fr;
 }
 
-@media (min-width: 900px) {
-  .golf-course-search-list {
+.golf-course-search-list--directory > li {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .golf-course-search-list--directory {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .golf-course-search-list--directory {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -7764,6 +7780,117 @@
 .portal-requests-section {
   display: grid;
   gap: 0.65rem;
+}
+
+.golf-course-popular-empty {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--portal-muted);
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+  border-radius: 10px;
+}
+
+.portal-discover-loading--compact {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.golf-course-compact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .golf-course-compact-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .golf-course-compact-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.golf-course-compact-card {
+  height: 100%;
+  background: var(--inside-surface);
+  border: 1px solid var(--inside-border);
+  border-radius: 10px;
+  transition: border-color 0.3s var(--ease);
+}
+
+.golf-course-compact-card:hover {
+  border-color: var(--inside-border-gold);
+}
+
+.golf-course-compact-card-body {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem 0.95rem;
+}
+
+.golf-course-compact-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.golf-course-compact-card-copy {
+  min-width: 0;
+}
+
+.golf-course-compact-card-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  font-weight: 300;
+  line-height: 1.25;
+  color: var(--portal-heading);
+}
+
+.golf-course-compact-card-location {
+  margin: 0.2rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--portal-muted);
+}
+
+.golf-course-compact-card-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.golf-course-compact-card-stats div {
+  min-width: 0;
+}
+
+.golf-course-compact-card-stats dt {
+  margin: 0;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.golf-course-compact-card-stats dd {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--portal-body);
+}
+
+.golf-course-compact-card-cta {
+  flex-shrink: 0;
 }
 
 .courses-activity-head {
