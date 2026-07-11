@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
+import { AskEliteTee } from "../components/member-portal/AskEliteTee";
 import { PortalCompose } from "../components/member-portal/PortalCompose";
 import { PortalCourses } from "../components/member-portal/PortalCourses";
 import { PortalDiscover } from "../components/member-portal/PortalDiscover";
@@ -18,6 +19,7 @@ import { supabase } from "../lib/supabase";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
 import "../inside-elitetee.css";
 import "../member-portal.css";
+import "../member-portal-ask.css";
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;
@@ -26,6 +28,7 @@ const FEED_COMPOSER_ID = "feed-composer";
 type PortalTab =
   | "feed"
   | "discover"
+  | "ask"
   | "compose"
   | "courses"
   | "messages"
@@ -40,6 +43,7 @@ type PendingConversation = {
 const desktopTabs: { id: PortalTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
+  { id: "ask", label: "Ask EliteTee" },
   { id: "courses", label: "Courses" },
   { id: "introductions", label: "Introductions" },
   { id: "messages", label: "Messages" },
@@ -49,6 +53,7 @@ const desktopTabs: { id: PortalTab; label: string }[] = [
 const mobileTabs: { id: PortalTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
+  { id: "ask", label: "Ask" },
   { id: "courses", label: "Courses" },
   { id: "messages", label: "Messages" },
   { id: "profile", label: "Profile" },
@@ -152,6 +157,8 @@ function MemberPortalContent() {
     switch (activeView) {
       case "discover":
         return { type: "portal", tab: "discover", label: "Back to Discover" };
+      case "ask":
+        return { type: "portal", tab: "ask", label: "Back to Ask EliteTee" };
       case "courses":
         return { type: "portal", tab: "courses", label: "Back to Courses" };
       case "messages":
@@ -350,6 +357,12 @@ function MemberPortalContent() {
               onViewMemberProfile={handleViewMemberProfile}
             />
           ) : null}
+          {activeView === "ask" ? (
+            <AskEliteTee
+              isActive={activeView === "ask"}
+              onViewMemberProfile={handleViewMemberProfile}
+            />
+          ) : null}
           {activeView === "compose" ? (
             <PortalCompose onPosted={() => transitionTo("feed")} />
           ) : null}
@@ -399,11 +412,13 @@ function MemberPortalContent() {
                 ? "⌂"
                 : tab.id === "discover"
                   ? "◎"
-                  : tab.id === "courses"
-                    ? "⛳"
-                    : tab.id === "messages"
-                      ? "✉"
-                      : "◉"}
+                  : tab.id === "ask"
+                    ? "✦"
+                    : tab.id === "courses"
+                      ? "⛳"
+                      : tab.id === "messages"
+                        ? "✉"
+                        : "◉"}
               {tab.id === "messages" && unreadMessageCount > 0 ? (
                 <span className="portal-bottom-nav-badge">
                   {formatNotificationCount(unreadMessageCount)}

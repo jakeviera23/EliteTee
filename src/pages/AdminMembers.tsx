@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApplicationViewModal } from "../components/admin/ApplicationViewModal";
+import { AiOperationsPanel } from "../components/admin/AiOperationsPanel";
 import { InvitationDraftModal } from "../components/admin/InvitationDraftModal";
 import {
   approveMembershipApplication,
@@ -29,6 +30,7 @@ import {
 import { supabase } from "../lib/supabase";
 import "../inside-elitetee.css";
 import "../member-portal.css";
+import "../member-portal-ask.css";
 
 type FormState = {
   auth_user_id: string;
@@ -359,6 +361,8 @@ export function AdminMembers() {
             <p className="admin-stat-note">Profiles in member_profiles</p>
           </article>
         </section>
+
+        <AiOperationsPanel />
 
         <section className="admin-section" aria-labelledby="pending-applications-heading">
           <header className="admin-section-head">

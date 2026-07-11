@@ -1,0 +1,183 @@
+.portal-ask-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.portal-ask-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.portal-ask-example-chip {
+  border: 1px solid var(--inside-border-gold);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--portal-body);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.portal-ask-example-chip:hover {
+  border-color: var(--inside-gold);
+  color: var(--inside-gold);
+}
+
+.portal-ask-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-ask-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.portal-ask-field span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-ask-field textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.portal-ask-results {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.portal-ask-answer-card {
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 8px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.portal-ask-answer {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.portal-ask-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.portal-ask-source-badge {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(196, 164, 98, 0.35);
+  color: var(--inside-gold);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.portal-ask-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  color: var(--portal-faint);
+}
+
+.portal-ask-result-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.portal-ask-member-wrap {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.portal-ask-reason-list {
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--portal-muted);
+  font-size: 0.78rem;
+}
+
+.portal-ask-course-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-ask-feedback {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--portal-muted);
+}
+
+.portal-ask-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.portal-admin-ai-ops {
+  margin: 1.5rem 0 2rem;
+  padding: 1.25rem;
+  border: 1px solid var(--inside-border-gold);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.portal-admin-ai-controls {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.portal-admin-ai-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+}
+
+.portal-admin-ai-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.portal-admin-ai-stats dt {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-admin-ai-stats dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+}
+
+.portal-admin-ai-intents ul,
+.portal-admin-ai-errors ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.82rem;
+}
+
+.portal-admin-ai-note {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  color: var(--portal-faint);
+}
+
+@media (min-width: 768px) {
+  .portal-ask-course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
