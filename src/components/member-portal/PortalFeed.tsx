@@ -11,6 +11,7 @@ import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
+import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { FeedCard } from "./FeedCard";
 import { FeedComposer } from "./FeedComposer";
 import { FoundingWelcomeBanner } from "./FoundingWelcomeBanner";
@@ -20,12 +21,14 @@ type PortalFeedProps = {
   showComposer?: boolean;
   composerId?: string;
   isActive?: boolean;
+  onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
 export function PortalFeed({
   showComposer = true,
   composerId = "feed-composer",
   isActive = true,
+  onViewMemberProfile,
 }: PortalFeedProps) {
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
@@ -172,7 +175,13 @@ export function PortalFeed({
         {!isLoadingPosts && hasMemberPosts ? (
           <div className="portal-feed-list portal-feed-grid">
             {memberPosts.map((post, index) => (
-              <FeedCard key={post.id} post={post} index={index + 1} onToast={showToast} />
+              <FeedCard
+                key={post.id}
+                post={post}
+                index={index + 1}
+                onToast={showToast}
+                onViewAuthor={onViewMemberProfile}
+              />
             ))}
           </div>
         ) : null}

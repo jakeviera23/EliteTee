@@ -344,23 +344,20 @@ export async function fetchMemberFeedPosts() {
   return { data, error };
 }
 
-export async function fetchMemberFeedPostsForCurrentUser() {
+export async function fetchMemberFeedPostsForUser(userId: string) {
   if (!supabase) {
     return { data: [] as FeedPost[], error: new Error("Supabase is not configured.") };
   }
 
-  const { userId, error: sessionError } = await getCurrentAuthUserId();
-  if (sessionError || !userId) {
-    return {
-      data: [] as FeedPost[],
-      error: sessionError ?? new Error("You must be signed in to view your posts."),
-    };
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) {
+    return { data: [] as FeedPost[], error: new Error("Member posts are unavailable.") };
   }
 
   const { data, error } = await supabase
     .from("member_feed_posts")
     .select(FEED_POST_SELECT)
-    .eq("user_id", userId)
+    .eq("user_id", normalizedUserId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -371,6 +368,18 @@ export async function fetchMemberFeedPostsForCurrentUser() {
     data: await mapRowsToFeedPosts((data ?? []) as MemberFeedPostWithProfile[]),
     error: null,
   };
+}
+
+export async function fetchMemberFeedPostsForCurrentUser() {
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError || !userId) {
+    return {
+      data: [] as FeedPost[],
+      error: sessionError ?? new Error("You must be signed in to view your posts."),
+    };
+  }
+
+  return fetchMemberFeedPostsForUser(userId);
 }
 
 export async function createMemberFeedPost(

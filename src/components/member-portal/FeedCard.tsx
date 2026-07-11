@@ -10,6 +10,7 @@ type FeedCardProps = {
   post: FeedPost;
   index?: number;
   onToast?: (message: string) => void;
+  onViewAuthor?: (userId: string, memberName: string) => void;
 };
 
 function HeartIcon({ filled }: { filled?: boolean }) {
@@ -68,7 +69,7 @@ function ShareIcon() {
   );
 }
 
-export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
+export function FeedCard({ post, index = 0, onToast, onViewAuthor }: FeedCardProps) {
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [saved, setSaved] = useState(Boolean(post.isSaved));
   const [commentCount, setCommentCount] = useState(post.comments);
@@ -134,35 +135,77 @@ export function FeedCard({ post, index = 0, onToast }: FeedCardProps) {
     onToast?.("Comment added");
   }
 
+  const authorUserId = post.author.id?.trim();
+  const canViewAuthor = Boolean(onViewAuthor && authorUserId);
+
+  function handleViewAuthor() {
+    if (!onViewAuthor || !authorUserId) return;
+    onViewAuthor(authorUserId, post.author.name);
+  }
+
   return (
     <article className="feed-card" style={entranceStyle}>
       <header className="feed-card-head">
-        <div className="feed-card-identity">
-          <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
-          <div className="feed-card-identity-text">
-            <p className="feed-card-name">
-              {post.author.name}
-              {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
-            </p>
-            <p className="feed-card-meta">
-              {post.author.title ? (
-                <span className="feed-card-club">{post.author.title}</span>
-              ) : post.author.homeCourse ? (
-                <>
-                  <span className="feed-card-club">{post.author.homeCourse}</span>
-                  {post.timestamp ? (
-                    <span className="feed-card-dot" aria-hidden="true">
-                      ·
-                    </span>
-                  ) : null}
-                </>
-              ) : null}
-              {post.timestamp ? (
-                <time className="feed-card-time">{post.timestamp}</time>
-              ) : null}
-            </p>
+        {canViewAuthor ? (
+          <button
+            type="button"
+            className="feed-card-identity feed-card-identity--link"
+            onClick={handleViewAuthor}
+            aria-label={`View ${post.author.name}'s profile`}
+          >
+            <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
+            <div className="feed-card-identity-text">
+              <p className="feed-card-name">
+                {post.author.name}
+                {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
+              </p>
+              <p className="feed-card-meta">
+                {post.author.title ? (
+                  <span className="feed-card-club">{post.author.title}</span>
+                ) : post.author.homeCourse ? (
+                  <>
+                    <span className="feed-card-club">{post.author.homeCourse}</span>
+                    {post.timestamp ? (
+                      <span className="feed-card-dot" aria-hidden="true">
+                        ·
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
+                {post.timestamp ? (
+                  <time className="feed-card-time">{post.timestamp}</time>
+                ) : null}
+              </p>
+            </div>
+          </button>
+        ) : (
+          <div className="feed-card-identity">
+            <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
+            <div className="feed-card-identity-text">
+              <p className="feed-card-name">
+                {post.author.name}
+                {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
+              </p>
+              <p className="feed-card-meta">
+                {post.author.title ? (
+                  <span className="feed-card-club">{post.author.title}</span>
+                ) : post.author.homeCourse ? (
+                  <>
+                    <span className="feed-card-club">{post.author.homeCourse}</span>
+                    {post.timestamp ? (
+                      <span className="feed-card-dot" aria-hidden="true">
+                        ·
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
+                {post.timestamp ? (
+                  <time className="feed-card-time">{post.timestamp}</time>
+                ) : null}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
         {post.rating ? (
           <div className="feed-card-rating" title={`Rated ${post.rating} out of ${MAX_RATING}`}>
             <span className="feed-card-rating-value">{post.rating.toFixed(1)}</span>

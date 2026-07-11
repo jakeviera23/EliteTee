@@ -23,7 +23,14 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
   return (
     <article className="portal-member-card">
       <header className="portal-member-head">
-        <MemberIdentity member={member} size="sm" />
+        <button
+          type="button"
+          className="portal-member-head-link"
+          onClick={() => onViewProfile(member)}
+          aria-label={`View ${member.full_name}'s profile`}
+        >
+          <MemberIdentity member={member} size="sm" />
+        </button>
         <span className="portal-member-fm-badge">
           {displayValue(member.founding_member_number)}
         </span>
@@ -58,7 +65,7 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
           className="portal-btn portal-btn--outline"
           onClick={() => onViewProfile(member)}
         >
-          View Dossier
+          View Profile
         </button>
         <button
           type="button"

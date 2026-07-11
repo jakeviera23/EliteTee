@@ -5,11 +5,13 @@ import {
 } from "../../lib/introductionRequests";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";
+import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { RequestsBoard } from "./RequestsBoard";
 
 type PortalIntroductionRequestsProps = {
   isActive: boolean;
   onMessageMember: (userId: string, memberName: string) => void;
+  onViewMemberProfile?: ViewMemberProfileHandler;
   onPendingCountChange?: (count: number) => void;
 };
 
@@ -32,6 +34,7 @@ function filterByStatus(requests: IntroductionRequestRecord[], status: string) {
 export function PortalIntroductionRequests({
   isActive,
   onMessageMember,
+  onViewMemberProfile,
   onPendingCountChange,
 }: PortalIntroductionRequestsProps) {
   const [requests, setRequests] = useState<IntroductionRequestRecord[]>([]);
@@ -168,6 +171,7 @@ export function PortalIntroductionRequests({
             onAccept={handleAccept}
             onDecline={handleDecline}
             onMessageMember={handleMessageMember}
+            onViewMemberProfile={onViewMemberProfile}
           />
         </section>
       ) : null}
@@ -184,6 +188,7 @@ export function PortalIntroductionRequests({
             onAccept={handleAccept}
             onDecline={handleDecline}
             onMessageMember={handleMessageMember}
+            onViewMemberProfile={onViewMemberProfile}
           />
         </section>
       ) : null}
@@ -200,6 +205,7 @@ export function PortalIntroductionRequests({
             onAccept={handleAccept}
             onDecline={handleDecline}
             onMessageMember={handleMessageMember}
+            onViewMemberProfile={onViewMemberProfile}
           />
         </section>
       ) : null}

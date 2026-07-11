@@ -13,6 +13,7 @@ export type MemberCourseRoundRecord = {
   created_at: string;
   member_name?: string;
   member_slug?: string;
+  course_slug?: string;
   photos?: MemberCourseRoundPhotoRecord[];
 };
 

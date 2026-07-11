@@ -6564,6 +6564,121 @@
   }
 }
 
+/* Member profile navigation */
+.portal-profile-back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  color: var(--portal-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.portal-profile-back:hover {
+  color: var(--inside-gold);
+}
+
+.portal-golfer-cover-actions {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.portal-golfer-joined-badge {
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--portal-muted);
+}
+
+.feed-card-identity--link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.feed-card-identity--link:hover .feed-card-name {
+  color: var(--inside-gold);
+}
+
+.portal-member-link,
+.messages-panel-profile-link,
+.courses-activity-member-link,
+.golf-course-detail-member-link,
+.golf-course-member-photos-round-member--link,
+.portal-member-head-link {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.portal-member-link:hover,
+.messages-panel-profile-link:hover h3,
+.courses-activity-member-link:hover .courses-activity-member,
+.golf-course-detail-member-link:hover p:first-child,
+.golf-course-member-photos-round-member--link:hover,
+.portal-member-head-link:hover .portal-member-name {
+  color: var(--inside-gold);
+}
+
+.messages-panel-profile-link {
+  display: block;
+  min-height: 44px;
+}
+
+.messages-panel-profile-link h3 {
+  margin: 0;
+}
+
+.golf-course-detail-member-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.courses-activity-member-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+}
+
+.courses-activity-name--link {
+  color: var(--portal-heading);
+  text-decoration: none;
+}
+
+.courses-activity-name--link:hover {
+  color: var(--inside-gold);
+}
+
+.portal-member-head-link {
+  display: block;
+  min-width: 0;
+  text-align: left;
+}
+
 /* —— Profile: premium golfer card —— */
 
 .portal-golfer-profile--premium .portal-golfer-cover {

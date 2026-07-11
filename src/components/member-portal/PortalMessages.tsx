@@ -10,6 +10,7 @@ import {
 } from "../../lib/privateMessages";
 import type { DirectConversationSummary, PrivateMessageRecord } from "../../types/privateMessage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { EditablePrivateMessage } from "./EditablePrivateMessage";
 import { NewConversationModal } from "./NewConversationModal";
 
@@ -20,6 +21,7 @@ type PortalMessagesProps = {
     otherUserName: string;
   } | null;
   onInitialConversationOpened?: () => void;
+  onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
 type ActiveConversation = {
@@ -43,6 +45,7 @@ export function PortalMessages({
   unreadCount: _unreadCount = 0,
   initialConversation = null,
   onInitialConversationOpened,
+  onViewMemberProfile,
 }: PortalMessagesProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -340,7 +343,22 @@ export function PortalMessages({
                   ‹
                 </button>
                 <div className="messages-panel-head-main">
-                  <h3>{activeConversation.otherUserName}</h3>
+                  {onViewMemberProfile ? (
+                    <button
+                      type="button"
+                      className="messages-panel-profile-link"
+                      onClick={() =>
+                        onViewMemberProfile(
+                          activeConversation.otherUserId,
+                          activeConversation.otherUserName,
+                        )
+                      }
+                    >
+                      <h3>{activeConversation.otherUserName}</h3>
+                    </button>
+                  ) : (
+                    <h3>{activeConversation.otherUserName}</h3>
+                  )}
                   {activeSummary?.lastMessageAt ? (
                     <p className="messages-panel-club">
                       Last message {formatMessageTime(activeSummary.lastMessageAt)}

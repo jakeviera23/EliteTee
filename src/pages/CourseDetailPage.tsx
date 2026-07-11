@@ -10,6 +10,7 @@ import {
 import type { GolfCourseRecord } from "../types/golfCourse";
 import { formatGolfCourseLocation, isMemberSubmittedCourse } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
+import type { ViewMemberProfileHandler } from "../types/memberProfileNavigation";
 import { AddCoursePlayedModal } from "../components/member-portal/AddCoursePlayedModal";
 import { CourseMemberPhotosSection } from "../components/member-portal/CourseMemberPhotosSection";
 import { CourseImage } from "../components/member-portal/CourseImage";
@@ -19,6 +20,7 @@ import "../member-portal.css";
 
 type CourseDetailPageProps = {
   onMessageMember?: (userId: string, memberName: string) => void;
+  onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
 function CourseDetailEmptyState({ onAdd }: { onAdd: () => void }) {
@@ -34,7 +36,7 @@ function CourseDetailEmptyState({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
+export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: CourseDetailPageProps) {
   const navigate = useNavigate();
   const { slug = "" } = useParams();
   const [course, setCourse] = useState<GolfCourseRecord | null>(null);
@@ -237,15 +239,40 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                     {uniqueMembers.map((round) => (
                       <li key={round.member_user_id}>
                         <div className="golf-course-detail-member">
-                          <span className="courses-activity-avatar" aria-hidden="true">
-                            {getMemberInitials(round.member_name ?? "Member")}
-                          </span>
-                          <div>
-                            <p>{round.member_name ?? "Member"}</p>
-                            <p className="golf-course-detail-member-meta">
-                              Played {formatPlayedOnDate(round.played_on)}
-                            </p>
-                          </div>
+                          {onViewMemberProfile ? (
+                            <button
+                              type="button"
+                              className="golf-course-detail-member-link"
+                              onClick={() =>
+                                onViewMemberProfile(
+                                  round.member_user_id,
+                                  round.member_name ?? "Member",
+                                )
+                              }
+                            >
+                              <span className="courses-activity-avatar" aria-hidden="true">
+                                {getMemberInitials(round.member_name ?? "Member")}
+                              </span>
+                              <div>
+                                <p>{round.member_name ?? "Member"}</p>
+                                <p className="golf-course-detail-member-meta">
+                                  Played {formatPlayedOnDate(round.played_on)}
+                                </p>
+                              </div>
+                            </button>
+                          ) : (
+                            <>
+                              <span className="courses-activity-avatar" aria-hidden="true">
+                                {getMemberInitials(round.member_name ?? "Member")}
+                              </span>
+                              <div>
+                                <p>{round.member_name ?? "Member"}</p>
+                                <p className="golf-course-detail-member-meta">
+                                  Played {formatPlayedOnDate(round.played_on)}
+                                </p>
+                              </div>
+                            </>
+                          )}
                           {onMessageMember ? (
                             <button
                               type="button"
@@ -271,7 +298,11 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
               <h2 id="course-member-photos-heading" className="golf-course-detail-section-title">
                 Member Photos
               </h2>
-              <CourseMemberPhotosSection rounds={rounds} isLoading={isLoading} />
+              <CourseMemberPhotosSection
+                rounds={rounds}
+                isLoading={isLoading}
+                onViewMemberProfile={onViewMemberProfile}
+              />
             </section>
 
             <section className="golf-course-detail-panel" aria-labelledby="course-reviews-heading">
@@ -284,6 +315,7 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                   emptyMessage="No EliteTee member has shared a round here yet."
                   allowPhotoDelete
                   onRoundsChanged={() => void loadCourse()}
+                  onViewMemberProfile={onViewMemberProfile}
                 />
               ) : (
                 <CourseDetailEmptyState onAdd={() => setShowAddModal(true)} />
@@ -295,7 +327,10 @@ export function CourseDetailPage({ onMessageMember }: CourseDetailPageProps) {
                 Recent Activity
               </h2>
               {hasActivity ? (
-                <MemberActivityList rounds={rounds.slice(0, 4)} />
+                <MemberActivityList
+                  rounds={rounds.slice(0, 4)}
+                  onViewMemberProfile={onViewMemberProfile}
+                />
               ) : (
                 <CourseDetailEmptyState onAdd={() => setShowAddModal(true)} />
               )}

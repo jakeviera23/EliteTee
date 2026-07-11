@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
+import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
 import { PortalCompose } from "../components/member-portal/PortalCompose";
 import { PortalCourses } from "../components/member-portal/PortalCourses";
 import { PortalDiscover } from "../components/member-portal/PortalDiscover";
@@ -9,11 +10,18 @@ import { PortalIntroductionRequests } from "../components/member-portal/PortalIn
 import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
+import { usePortalToast } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
+import { getCurrentAuthUserId } from "../lib/authUserLinking";
 import { fetchPendingIncomingIntroductionCount } from "../lib/introductionRequests";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import { formatNotificationCount } from "../lib/portalNotifications";
 import { supabase } from "../lib/supabase";
+import type { MemberProfileRecord } from "../types/memberProfileRecord";
+import type {
+  ProfileReturnContext,
+  ViewMemberProfileOptions,
+} from "../types/memberProfileNavigation";
 import "../inside-elitetee.css";
 import "../member-portal.css";
 
@@ -55,14 +63,19 @@ const mobileTabs: { id: PortalTab; label: string }[] = [
 function MemberPortalContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = usePortalToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeView, setActiveView] = useState<PortalTab>("feed");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [pendingIntroductionCount, setPendingIntroductionCount] = useState(0);
   const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
+  const [viewingMemberProfile, setViewingMemberProfile] =
+    useState<ViewMemberProfileOptions | null>(null);
+  const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
 
   useEffect(() => {
@@ -97,18 +110,34 @@ function MemberPortalContent() {
   }, [refreshNotificationCounts]);
 
   useEffect(() => {
+    void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
+  }, []);
+
+  useEffect(() => {
     const state = location.state as
-      | { openMessagesWith?: { userId: string; memberName: string } }
+      | {
+          openMessagesWith?: { userId: string; memberName: string };
+          viewProfileWith?: ViewMemberProfileOptions;
+        }
       | null
       | undefined;
 
-    if (!state?.openMessagesWith) return;
+    if (state?.openMessagesWith) {
+      setPendingConversation({
+        otherUserId: state.openMessagesWith.userId,
+        otherUserName: state.openMessagesWith.memberName,
+      });
+      setActiveView("messages");
+      navigate("/member-portal", { replace: true, state: null });
+      return;
+    }
 
-    setPendingConversation({
-      otherUserId: state.openMessagesWith.userId,
-      otherUserName: state.openMessagesWith.memberName,
-    });
-    setActiveView("messages");
+    if (!state?.viewProfileWith) return;
+
+    setViewingMemberProfile(state.viewProfileWith);
+    if (state.viewProfileWith.returnTo.type === "portal") {
+      setActiveView(state.viewProfileWith.returnTo.tab);
+    }
     navigate("/member-portal", { replace: true, state: null });
   }, [location.state, navigate]);
 
@@ -132,7 +161,73 @@ function MemberPortalContent() {
     navigate("/login", { replace: true });
   }
 
+  function getProfileReturnContext(): ProfileReturnContext {
+    switch (activeView) {
+      case "discover":
+        return { type: "portal", tab: "discover", label: "Back to Discover" };
+      case "courses":
+        return { type: "portal", tab: "courses", label: "Back to Courses" };
+      case "messages":
+        return { type: "portal", tab: "messages", label: "Back to Messages" };
+      case "introductions":
+        return { type: "portal", tab: "introductions", label: "Back to Introductions" };
+      case "profile":
+        return { type: "portal", tab: "profile", label: "Back to Profile" };
+      default:
+        return { type: "portal", tab: "feed", label: "Back to Feed" };
+    }
+  }
+
+  function closeMemberProfile() {
+    const returnTo = viewingMemberProfile?.returnTo;
+    setViewingMemberProfile(null);
+
+    if (!returnTo) return;
+
+    if (returnTo.type === "route") {
+      navigate(returnTo.path);
+      return;
+    }
+
+    setActiveView(returnTo.tab);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function handleViewMemberProfile(
+    userId: string,
+    memberName: string,
+    returnTo?: ProfileReturnContext,
+  ) {
+    const normalizedUserId = userId.trim();
+    if (!normalizedUserId) return;
+
+    if (currentUserId && normalizedUserId === currentUserId) {
+      setViewingMemberProfile(null);
+      transitionTo("profile");
+      return;
+    }
+
+    setViewingMemberProfile({
+      userId: normalizedUserId,
+      memberName,
+      returnTo: returnTo ?? getProfileReturnContext(),
+    });
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function handleRequestIntroduction(member: MemberProfileRecord) {
+    setIntroRequestMember(member);
+  }
+
+  function handleMessageMember(userId: string, memberName: string) {
+    setViewingMemberProfile(null);
+    setPendingConversation({ otherUserId: userId, otherUserName: memberName });
+    transitionTo("messages");
+  }
+
   function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
+    setViewingMemberProfile(null);
+
     if (view === activeView && !options?.scrollToComposer) return;
 
     if (options?.scrollToComposer) {
@@ -156,6 +251,7 @@ function MemberPortalContent() {
   function handleMobileNav(tab: PortalTab) {
     if (tab === "compose") {
       setActiveView("feed");
+      setViewingMemberProfile(null);
       window.scrollTo({ top: 0, behavior: "auto" });
       requestAnimationFrame(() => {
         document.getElementById(FEED_COMPOSER_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -163,8 +259,9 @@ function MemberPortalContent() {
       return;
     }
 
-    if (tab === activeView) return;
+    if (tab === activeView && !viewingMemberProfile) return;
 
+    setViewingMemberProfile(null);
     setActiveView(tab);
     window.scrollTo({ top: 0, behavior: "auto" });
 
@@ -173,14 +270,11 @@ function MemberPortalContent() {
     }
   }
 
-  function handleMessageMember(userId: string, memberName: string) {
-    setPendingConversation({ otherUserId: userId, otherUserName: memberName });
-    transitionTo("messages");
-  }
-
   function handlePendingIntroductionCountChange(count: number) {
     setPendingIntroductionCount(count);
   }
+
+  const profileBackLabel = viewingMemberProfile?.returnTo.label ?? "Back";
 
   return (
     <div className="inside-page portal-page portal-page--social">
@@ -281,46 +375,67 @@ function MemberPortalContent() {
 
       <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
         <div className="portal-shell">
-          <div hidden={activeView !== "feed"}>
-            <PortalFeed
-              showComposer
-              composerId={FEED_COMPOSER_ID}
-              isActive={activeView === "feed"}
-            />
-          </div>
-          {activeView === "discover" ? (
-            <PortalDiscover
-              onViewCourse={handleViewCourse}
-              onNavigate={(tab) => transitionTo(tab)}
-            />
-          ) : null}
-          {activeView === "compose" ? (
-            <PortalCompose onPosted={() => transitionTo("feed")} />
-          ) : null}
-          {activeView === "courses" ? <PortalCourses /> : null}
-          {activeView === "introductions" ? (
-            <PortalIntroductionRequests
-              isActive={activeView === "introductions"}
+          {viewingMemberProfile ? (
+            <GolferProfilePage
+              isActive
+              viewUserId={viewingMemberProfile.userId}
+              onBack={closeMemberProfile}
+              backLabel={profileBackLabel}
               onMessageMember={handleMessageMember}
-              onPendingCountChange={handlePendingIntroductionCountChange}
+              onRequestIntroduction={handleRequestIntroduction}
+              onViewMemberProfile={handleViewMemberProfile}
             />
-          ) : null}
-          {activeView === "messages" ? (
-            <PortalMessages
-              unreadCount={unreadMessageCount}
-              initialConversation={pendingConversation}
-              onInitialConversationOpened={() => setPendingConversation(null)}
-            />
-          ) : null}
-          {activeView === "profile" ? (
-            <GolferProfilePage isActive={activeView === "profile"} />
-          ) : null}
+          ) : (
+            <>
+              <div hidden={activeView !== "feed"}>
+                <PortalFeed
+                  showComposer
+                  composerId={FEED_COMPOSER_ID}
+                  isActive={activeView === "feed"}
+                  onViewMemberProfile={handleViewMemberProfile}
+                />
+              </div>
+              {activeView === "discover" ? (
+                <PortalDiscover
+                  onViewCourse={handleViewCourse}
+                  onNavigate={(tab) => transitionTo(tab)}
+                  onViewMemberProfile={handleViewMemberProfile}
+                />
+              ) : null}
+              {activeView === "compose" ? (
+                <PortalCompose onPosted={() => transitionTo("feed")} />
+              ) : null}
+              {activeView === "courses" ? <PortalCourses /> : null}
+              {activeView === "introductions" ? (
+                <PortalIntroductionRequests
+                  isActive={activeView === "introductions"}
+                  onMessageMember={handleMessageMember}
+                  onViewMemberProfile={handleViewMemberProfile}
+                  onPendingCountChange={handlePendingIntroductionCountChange}
+                />
+              ) : null}
+              {activeView === "messages" ? (
+                <PortalMessages
+                  unreadCount={unreadMessageCount}
+                  initialConversation={pendingConversation}
+                  onInitialConversationOpened={() => setPendingConversation(null)}
+                  onViewMemberProfile={handleViewMemberProfile}
+                />
+              ) : null}
+              {activeView === "profile" ? (
+                <GolferProfilePage
+                  isActive={activeView === "profile"}
+                  onViewMemberProfile={handleViewMemberProfile}
+                />
+              ) : null}
 
-          {activeView !== "introductions" ? (
-            <section className="portal-privacy">
-              <p>{privacyCopy}</p>
-            </section>
-          ) : null}
+              {activeView !== "introductions" ? (
+                <section className="portal-privacy">
+                  <p>{privacyCopy}</p>
+                </section>
+              ) : null}
+            </>
+          )}
         </div>
       </main>
 
@@ -353,6 +468,18 @@ function MemberPortalContent() {
           </button>
         ))}
       </nav>
+
+      {introRequestMember ? (
+        <IntroductionRequestModal
+          member={introRequestMember}
+          onClose={() => setIntroRequestMember(null)}
+          onSubmitted={() => {
+            showToast("Introduction request submitted");
+            setIntroRequestMember(null);
+            transitionTo("introductions");
+          }}
+        />
+      ) : null}
     </div>
   );
 }

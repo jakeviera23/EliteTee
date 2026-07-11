@@ -1,4 +1,5 @@
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";
+import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 
 type RequestsBoardProps = {
   requests: IntroductionRequestRecord[];
@@ -7,6 +8,7 @@ type RequestsBoardProps = {
   onAccept: (requestId: string) => void;
   onDecline: (requestId: string) => void;
   onMessageMember: (request: IntroductionRequestRecord) => void;
+  onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
 function formatRequestStatus(status: string) {
@@ -41,6 +43,7 @@ export function RequestsBoard({
   onAccept,
   onDecline,
   onMessageMember,
+  onViewMemberProfile,
 }: RequestsBoardProps) {
   return (
     <ul className="portal-requests-list">
@@ -64,8 +67,44 @@ export function RequestsBoard({
               <p className="portal-request-type">{request.request_type}</p>
               <p className="portal-request-text">{request.message}</p>
               <p className="portal-request-meta">
-                <span>From {request.sender_name ?? "Private Member"}</span>
-                <span>To {request.receiver_name ?? "Private Member"}</span>
+                <span>
+                  From{" "}
+                  {onViewMemberProfile ? (
+                    <button
+                      type="button"
+                      className="portal-member-link"
+                      onClick={() =>
+                        onViewMemberProfile(
+                          request.sender_id,
+                          request.sender_name ?? "Member",
+                        )
+                      }
+                    >
+                      {request.sender_name ?? "Private Member"}
+                    </button>
+                  ) : (
+                    request.sender_name ?? "Private Member"
+                  )}
+                </span>
+                <span>
+                  To{" "}
+                  {onViewMemberProfile ? (
+                    <button
+                      type="button"
+                      className="portal-member-link"
+                      onClick={() =>
+                        onViewMemberProfile(
+                          request.receiver_id,
+                          request.receiver_name ?? "Member",
+                        )
+                      }
+                    >
+                      {request.receiver_name ?? "Private Member"}
+                    </button>
+                  ) : (
+                    request.receiver_name ?? "Private Member"
+                  )}
+                </span>
               </p>
               {normalizedStatus === "accepted" ? (
                 <p className="portal-request-complete-note">Introduction completed</p>

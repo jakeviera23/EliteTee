@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { formatCourseRatingStars, formatCourseRatingValue } from "../../lib/courseRating";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import {
@@ -6,20 +7,25 @@ import {
   getMemberInitials,
 } from "../../lib/memberCourseRounds";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
+import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { RoundPhotoGallery } from "./RoundPhotoGallery";
 
 type MemberActivityListProps = {
   rounds: MemberCourseRoundRecord[];
   emptyMessage?: string;
+  showMemberIdentity?: boolean;
   allowPhotoDelete?: boolean;
   onRoundsChanged?: () => void;
+  onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
 export function MemberActivityList({
   rounds,
   emptyMessage,
+  showMemberIdentity = true,
   allowPhotoDelete = false,
   onRoundsChanged,
+  onViewMemberProfile,
 }: MemberActivityListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -38,27 +44,68 @@ export function MemberActivityList({
         const memberName = round.member_name ?? "Member";
         const photos = round.photos ?? [];
         const canDeletePhotos = allowPhotoDelete && currentUserId === round.member_user_id;
+        const courseLabel = round.course_name.trim() || "Course";
 
         return (
           <li key={round.id} className="courses-activity-item">
-            <div className="courses-activity-head">
-              <span className="courses-activity-avatar" aria-hidden="true">
-                {getMemberInitials(memberName)}
-              </span>
-              <div>
-                <p className="courses-activity-member">{memberName}</p>
-                <p className="courses-activity-name">{round.course_name}</p>
+            {showMemberIdentity ? (
+              <div className="courses-activity-head">
+                {onViewMemberProfile ? (
+                  <button
+                    type="button"
+                    className="courses-activity-member-link"
+                    onClick={() =>
+                      onViewMemberProfile(round.member_user_id, memberName)
+                    }
+                  >
+                    <span className="courses-activity-avatar" aria-hidden="true">
+                      {getMemberInitials(memberName)}
+                    </span>
+                    <p className="courses-activity-member">{memberName}</p>
+                  </button>
+                ) : (
+                  <>
+                    <span className="courses-activity-avatar" aria-hidden="true">
+                      {getMemberInitials(memberName)}
+                    </span>
+                    <div>
+                      <p className="courses-activity-member">{memberName}</p>
+                    </div>
+                  </>
+                )}
+                <div>
+                  {round.course_slug ? (
+                    <Link
+                      to={`/courses/${round.course_slug}`}
+                      className="courses-activity-name courses-activity-name--link"
+                    >
+                      {courseLabel}
+                    </Link>
+                  ) : (
+                    <p className="courses-activity-name">{courseLabel}</p>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="courses-activity-head">
+                {round.course_slug ? (
+                  <Link
+                    to={`/courses/${round.course_slug}`}
+                    className="courses-activity-name courses-activity-name--link"
+                  >
+                    {courseLabel}
+                  </Link>
+                ) : (
+                  <p className="courses-activity-name">{courseLabel}</p>
+                )}
+              </div>
+            )}
             <p className="courses-activity-meta">
               {round.location} · {formatPlayedOnDate(round.played_on)}
             </p>
             <div className="courses-activity-rating">
               <span className="courses-activity-rating-label">Course Rating</span>
-              <span
-                className="courses-activity-rating-stars"
-                aria-hidden="true"
-              >
+              <span className="courses-activity-rating-stars" aria-hidden="true">
                 {formatCourseRatingStars(round.course_rating)}
               </span>
               <span className="courses-activity-rating-value">

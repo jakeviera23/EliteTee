@@ -70,6 +70,34 @@ async function attachPhotosToRounds(
   }));
 }
 
+async function attachCourseSlugs(
+  rounds: MemberCourseRoundRecord[],
+): Promise<MemberCourseRoundRecord[]> {
+  if (!supabase || rounds.length === 0) return rounds;
+
+  const courseIds = [
+    ...new Set(
+      rounds
+        .map((round) => round.golf_course_id)
+        .filter((courseId): courseId is string => Boolean(courseId?.trim())),
+    ),
+  ];
+
+  if (courseIds.length === 0) return rounds;
+
+  const { data } = await supabase.from("golf_courses").select("id, slug").in("id", courseIds);
+  const slugById = new Map(
+    (data ?? [])
+      .filter((course) => course.id && course.slug)
+      .map((course) => [String(course.id), String(course.slug)]),
+  );
+
+  return rounds.map((round) => ({
+    ...round,
+    course_slug: round.golf_course_id ? slugById.get(round.golf_course_id) : undefined,
+  }));
+}
+
 function buildInsertError(error: Error) {
   const isRlsError =
     error.message.toLowerCase().includes("row-level security") ||
@@ -101,7 +129,8 @@ export async function fetchMemberCourseRounds(limit = 20) {
   const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
   const withNames = await attachMemberNames(rounds);
   const withPhotos = await attachPhotosToRounds(withNames);
-  return { data: withPhotos, error: null };
+  const withSlugs = await attachCourseSlugs(withPhotos);
+  return { data: withSlugs, error: null };
 }
 
 export async function fetchMemberCourseRoundsForCourse({
@@ -129,7 +158,8 @@ export async function fetchMemberCourseRoundsForCourse({
   const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
   const withNames = await attachMemberNames(rounds);
   const withPhotos = await attachPhotosToRounds(withNames);
-  return { data: withPhotos, error: null };
+  const withSlugs = await attachCourseSlugs(withPhotos);
+  return { data: withSlugs, error: null };
 }
 
 export async function fetchRecentlyPlayedRounds(limit = 8) {
@@ -160,7 +190,8 @@ export async function fetchMemberCourseRoundsForUser(userId: string, limit?: num
   const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
   const withNames = await attachMemberNames(rounds);
   const withPhotos = await attachPhotosToRounds(withNames);
-  return { data: withPhotos, error: null };
+  const withSlugs = await attachCourseSlugs(withPhotos);
+  return { data: withSlugs, error: null };
 }
 
 export async function fetchMemberCourseRoundsForCurrentUser(limit?: number) {

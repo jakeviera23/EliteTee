@@ -3,9 +3,9 @@ import { photos } from "../../assets/photos";
 import { earlyStageCopy } from "../../data/portalSocial";
 import { fetchDiscoverablePortalMembers } from "../../lib/memberProfiles";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
+import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { IntroductionRequestModal } from "./IntroductionRequestModal";
 import { MemberCard } from "./MemberCard";
-import { MemberProfileModalContent } from "./MemberProfileModalContent";
 import { usePortalToast } from "./PortalToastProvider";
 
 const discoverFilters = [
@@ -22,6 +22,7 @@ const discoverFilters = [
 type PortalDiscoverProps = {
   onViewCourse?: (courseId: string) => void;
   onNavigate?: (tab: "profile" | "messages" | "introductions") => void;
+  onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
 function memberMatchesQuery(member: MemberProfileRecord, query: string) {
@@ -74,6 +75,7 @@ function memberMatchesFilter(member: MemberProfileRecord, filter: string) {
 export function PortalDiscover({
   onViewCourse: _onViewCourse,
   onNavigate,
+  onViewMemberProfile,
 }: PortalDiscoverProps) {
   const { showToast } = usePortalToast();
   const [query, setQuery] = useState("");
@@ -81,7 +83,6 @@ export function PortalDiscover({
   const [members, setMembers] = useState<MemberProfileRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [selectedMember, setSelectedMember] = useState<MemberProfileRecord | null>(null);
   const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
 
   const loadMembers = useCallback(async () => {
@@ -126,8 +127,13 @@ export function PortalDiscover({
   }, [members, query, activeFilter]);
 
   function openIntroductionRequest(member: MemberProfileRecord) {
-    setSelectedMember(null);
     setIntroRequestMember(member);
+  }
+
+  function handleViewProfile(member: MemberProfileRecord) {
+    const userId = member.user_id?.trim();
+    if (!userId || !onViewMemberProfile) return;
+    onViewMemberProfile(userId, member.full_name);
   }
 
   function handleIntroductionSubmitted() {
@@ -227,7 +233,7 @@ export function PortalDiscover({
                   <li key={member.id}>
                     <MemberCard
                       member={member}
-                      onViewProfile={setSelectedMember}
+                      onViewProfile={handleViewProfile}
                       onRequest={openIntroductionRequest}
                     />
                   </li>
@@ -237,38 +243,6 @@ export function PortalDiscover({
           </section>
         </div>
       </div>
-
-      {selectedMember ? (
-        <div
-          className="portal-modal-backdrop"
-          role="presentation"
-          onClick={() => setSelectedMember(null)}
-        >
-          <div
-            className="portal-modal"
-            role="dialog"
-            aria-labelledby="member-dossier-heading"
-            aria-modal="true"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="portal-modal-head">
-              <h3 id="member-dossier-heading">{selectedMember.full_name}</h3>
-              <button
-                type="button"
-                className="portal-modal-close"
-                onClick={() => setSelectedMember(null)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </header>
-            <MemberProfileModalContent
-              member={selectedMember}
-              onRequest={openIntroductionRequest}
-            />
-          </div>
-        </div>
-      ) : null}
 
       {introRequestMember ? (
         <IntroductionRequestModal

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
@@ -12,14 +12,34 @@ import { InviteSignup } from "./pages/InviteSignup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
+import type { ProfileReturnContext } from "./types/memberProfileNavigation";
+
 function CourseDetailRoute() {
   const navigate = useNavigate();
+  const { slug = "" } = useParams();
 
   return (
     <CourseDetailPage
       onMessageMember={(userId, memberName) => {
         navigate("/member-portal", {
           state: { openMessagesWith: { userId, memberName } },
+        });
+      }}
+      onViewMemberProfile={(userId, memberName) => {
+        const returnTo: ProfileReturnContext = {
+          type: "route",
+          path: `/courses/${slug}`,
+          label: "Back to Course",
+        };
+
+        navigate("/member-portal", {
+          state: {
+            viewProfileWith: {
+              userId,
+              memberName,
+              returnTo,
+            },
+          },
         });
       }}
     />

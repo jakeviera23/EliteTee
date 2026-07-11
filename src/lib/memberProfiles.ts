@@ -638,6 +638,7 @@ const PORTAL_APPROVED_MEMBER_SELECT = `
   founding_member_number,
   portal_access_enabled,
   user_id,
+  created_at,
   updated_at
 `;
 
@@ -697,4 +698,35 @@ export async function fetchMessageablePortalMembers() {
   );
 
   return { data: members, error: null };
+}
+
+export async function fetchPortalMemberByUserId(userId: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) {
+    return { data: null, error: new Error("Member profile is unavailable.") };
+  }
+
+  const { data, error } = await supabase
+    .from("member_profiles")
+    .select(PORTAL_APPROVED_MEMBER_SELECT)
+    .eq("user_id", normalizedUserId)
+    .eq("portal_access_enabled", true)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (!data) {
+    return { data: null, error: null };
+  }
+
+  return {
+    data: normalizeMemberProfileRecord({ ...data, email: "" } as Record<string, unknown>),
+    error: null,
+  };
 }
