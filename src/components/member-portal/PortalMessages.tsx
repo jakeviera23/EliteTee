@@ -1,8 +1,12 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { earlyStageCopy } from "../../data/portalSocial";
-import { fetchMessageablePortalMembers } from "../../lib/memberProfiles";
+import {
+  buildApprovedMemberIdentityMap,
+  fetchApprovedMemberProfilesByUserIds,
+} from "../../lib/memberProfiles";
 import {
   buildDirectConversationSummaries,
+  extractDirectMessageParticipantUserIds,
   fetchDirectMessageThread,
   fetchDirectPrivateMessages,
   markDirectMessagesAsRead,
@@ -12,6 +16,7 @@ import type { DirectConversationSummary, PrivateMessageRecord } from "../../type
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { EditablePrivateMessage } from "./EditablePrivateMessage";
+import { MemberClubAvatar } from "./MemberClubAvatar";
 import { NewConversationModal } from "./NewConversationModal";
 
 type PortalMessagesProps = {
@@ -62,29 +67,19 @@ export function PortalMessages({
   const composeInputRef = useRef<HTMLInputElement>(null);
   const threadEndRef = useRef<HTMLLIElement>(null);
 
-  const loadMemberDirectory = useCallback(async () => {
-    const [{ userId }, { data: members }] = await Promise.all([
-      getCurrentAuthUserId(),
-      fetchMessageablePortalMembers(),
-    ]);
-
-    setCurrentUserId(userId ?? null);
-
-    const names: Record<string, string> = {};
-    for (const member of members) {
-      if (member.user_id) {
-        names[member.user_id] = member.full_name;
-      }
-    }
-
-    return { userId, names };
-  }, []);
-
   const loadInbox = useCallback(async () => {
     setIsLoadingInbox(true);
     setInboxError(null);
 
-    const { userId, names } = await loadMemberDirectory();
+    const { userId } = await getCurrentAuthUserId();
+    setCurrentUserId(userId ?? null);
+
+    if (!userId) {
+      setConversations([]);
+      setIsLoadingInbox(false);
+      return;
+    }
+
     const { data, error } = await fetchDirectPrivateMessages();
 
     if (error) {
@@ -95,18 +90,30 @@ export function PortalMessages({
       return;
     }
 
-    if (userId) {
-      setConversations(
-        buildDirectConversationSummaries({
-          messages: data,
-          currentUserId: userId,
-          memberNamesByUserId: names,
-        }),
-      );
+    const messages = data ?? [];
+    const participantIds = extractDirectMessageParticipantUserIds(messages, userId);
+    const { data: profiles, error: profileError } =
+      await fetchApprovedMemberProfilesByUserIds(participantIds);
+
+    if (profileError) {
+      console.error("[PortalMessages] failed to hydrate conversation identities", {
+        message: profileError.message,
+        participantIds,
+      });
     }
 
+    const memberIdentitiesByUserId = buildApprovedMemberIdentityMap(profiles ?? []);
+
+    setConversations(
+      buildDirectConversationSummaries({
+        messages,
+        currentUserId: userId,
+        memberIdentitiesByUserId,
+      }),
+    );
+
     setIsLoadingInbox(false);
-  }, [loadMemberDirectory]);
+  }, []);
 
   const loadThread = useCallback(
     async (otherUserId: string) => {
@@ -186,6 +193,10 @@ export function PortalMessages({
     setSendError(null);
     setComposeText("");
     setActiveConversation({ otherUserId, otherUserName });
+  }
+
+  function openConversationFromSummary(conversation: DirectConversationSummary) {
+    openConversation(conversation.otherUserId, conversation.otherUserName);
   }
 
   function closeConversation() {
@@ -291,15 +302,22 @@ export function PortalMessages({
                   className={`portal-message-card messages-conversation${
                     activeConversation?.otherUserId === conversation.otherUserId ? " is-selected" : ""
                   }`}
-                  onClick={() =>
-                    openConversation(conversation.otherUserId, conversation.otherUserName)
-                  }
+                  onClick={() => openConversationFromSummary(conversation)}
                 >
-                  <span className="portal-message-avatar" aria-hidden="true" />
+                  <MemberClubAvatar
+                    member={{ club_logo_url: conversation.otherUserPhotoUrl ?? null }}
+                    name={conversation.otherUserName}
+                    size="sm"
+                  />
                   <span className="portal-message-copy">
                     <span className="portal-message-top">
                       <span className="portal-message-name">
                         {conversation.otherUserName}
+                        {conversation.otherUserFoundingNumber ? (
+                          <span className="portal-message-fm-badge">
+                            {conversation.otherUserFoundingNumber}
+                          </span>
+                        ) : null}
                         {conversation.unreadCount > 0 ? (
                           <span className="messages-unread-badge">{conversation.unreadCount}</span>
                         ) : null}
@@ -354,13 +372,39 @@ export function PortalMessages({
                         )
                       }
                     >
-                      <h3>{activeConversation.otherUserName}</h3>
+                      <span className="messages-panel-profile-identity">
+                        <MemberClubAvatar
+                          member={{
+                            club_logo_url:
+                              activeSummary?.otherUserPhotoUrl ??
+                              conversations.find(
+                                (item) => item.otherUserId === activeConversation.otherUserId,
+                              )?.otherUserPhotoUrl ??
+                              null,
+                          }}
+                          name={activeConversation.otherUserName}
+                          size="sm"
+                        />
+                        <span>
+                          <h3>{activeConversation.otherUserName}</h3>
+                          {activeSummary?.otherUserFoundingNumber ? (
+                            <p className="messages-panel-club">
+                              {activeSummary.otherUserFoundingNumber}
+                            </p>
+                          ) : null}
+                        </span>
+                      </span>
                     </button>
                   ) : (
                     <h3>{activeConversation.otherUserName}</h3>
                   )}
-                  {activeSummary?.lastMessageAt ? (
+                  {activeSummary?.lastMessageAt && !onViewMemberProfile ? (
                     <p className="messages-panel-club">
+                      Last message {formatMessageTime(activeSummary.lastMessageAt)}
+                    </p>
+                  ) : null}
+                  {activeSummary?.lastMessageAt && onViewMemberProfile ? (
+                    <p className="messages-panel-club messages-panel-club--sub">
                       Last message {formatMessageTime(activeSummary.lastMessageAt)}
                     </p>
                   ) : null}

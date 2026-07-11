@@ -1,4 +1,4 @@
-import type { DirectConversationSummary, PrivateMessageRecord } from "../types/privateMessage";
+import type { DirectConversationSummary, ConversationParticipantIdentity, PrivateMessageRecord } from "../types/privateMessage";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { supabase } from "./supabase";
 
@@ -73,25 +73,52 @@ function getOtherParticipantId(message: PrivateMessageRecord, currentUserId: str
   return message.sender_id === currentUserId ? message.receiver_id : message.sender_id;
 }
 
+export function extractDirectMessageParticipantUserIds(
+  messages: PrivateMessageRecord[],
+  currentUserId: string,
+) {
+  const participantIds = new Set<string>();
+
+  for (const message of messages) {
+    const otherUserId = getOtherParticipantId(message, currentUserId).trim();
+    if (otherUserId) {
+      participantIds.add(otherUserId);
+    }
+  }
+
+  return [...participantIds];
+}
+
 export function buildDirectConversationSummaries({
   messages,
   currentUserId,
   memberNamesByUserId,
+  memberIdentitiesByUserId,
 }: {
   messages: PrivateMessageRecord[];
   currentUserId: string;
-  memberNamesByUserId: Record<string, string>;
+  memberNamesByUserId?: Record<string, string>;
+  memberIdentitiesByUserId?: Record<string, ConversationParticipantIdentity>;
 }): DirectConversationSummary[] {
   const summaries = new Map<string, DirectConversationSummary>();
 
   for (const message of messages) {
     const otherUserId = getOtherParticipantId(message, currentUserId);
+    const identity = memberIdentitiesByUserId?.[otherUserId];
+    const resolvedName =
+      identity?.full_name?.trim() ||
+      memberNamesByUserId?.[otherUserId]?.trim() ||
+      "";
+    const otherUserName = resolvedName || "Member";
     const existing = summaries.get(otherUserId);
 
     if (!existing) {
       summaries.set(otherUserId, {
         otherUserId,
-        otherUserName: memberNamesByUserId[otherUserId] ?? "Member",
+        otherUserName,
+        otherUserPhotoUrl: identity?.club_logo_url ?? null,
+        otherUserFoundingNumber: identity?.founding_member_number ?? null,
+        otherUserPrimaryClub: identity?.primary_club ?? "",
         lastMessageBody: message.body,
         lastMessageAt: message.created_at,
         unreadCount:
@@ -102,6 +129,18 @@ export function buildDirectConversationSummaries({
 
     existing.lastMessageBody = message.body;
     existing.lastMessageAt = message.created_at;
+    if (!existing.otherUserName || existing.otherUserName === "Member") {
+      existing.otherUserName = otherUserName;
+    }
+    if (identity?.club_logo_url && !existing.otherUserPhotoUrl) {
+      existing.otherUserPhotoUrl = identity.club_logo_url;
+    }
+    if (identity?.founding_member_number && !existing.otherUserFoundingNumber) {
+      existing.otherUserFoundingNumber = identity.founding_member_number;
+    }
+    if (identity?.primary_club && !existing.otherUserPrimaryClub) {
+      existing.otherUserPrimaryClub = identity.primary_club;
+    }
     if (message.receiver_id === currentUserId && !message.read_at) {
       existing.unreadCount += 1;
     }

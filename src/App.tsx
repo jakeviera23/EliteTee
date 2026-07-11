@@ -5,6 +5,7 @@ import { About } from "./pages/About";
 import { InsideEliteTee } from "./pages/InsideEliteTee";
 import { MemberDirectory } from "./pages/MemberDirectory";
 import { MemberPortal } from "./pages/MemberPortal";
+import { MemberPublicProfilePage } from "./pages/MemberPublicProfilePage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
@@ -32,13 +33,10 @@ function CourseDetailRoute() {
           label: "Back to Course",
         };
 
-        navigate("/member-portal", {
+        navigate(`/members/${userId}`, {
           state: {
-            viewProfileWith: {
-              userId,
-              memberName,
-              returnTo,
-            },
+            returnTo,
+            memberName,
           },
         });
       }}
@@ -57,6 +55,14 @@ export default function App() {
       <Route path="/login" element={<InsideEliteTee />} />
       <Route path="/inside" element={<InsideEliteTee />} />
       <Route path="/invite/:token" element={<InviteSignup />} />
+      <Route
+        path="/members/:userId"
+        element={
+          <ProtectedRoute>
+            <MemberPublicProfilePage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/member-portal"
         element={

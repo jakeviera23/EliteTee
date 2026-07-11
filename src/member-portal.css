@@ -6679,6 +6679,34 @@
   text-align: left;
 }
 
+.portal-message-card .portal-member-avatar-wrap,
+.portal-message-card .member-club-avatar {
+  flex-shrink: 0;
+}
+
+.portal-message-fm-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  color: var(--inside-gold);
+}
+
+.messages-panel-profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.messages-panel-profile-identity h3 {
+  margin: 0;
+}
+
+.messages-panel-club--sub {
+  margin-top: 0.15rem;
+}
+
 /* —— Profile: premium golfer card —— */
 
 .portal-golfer-profile--premium .portal-golfer-cover {

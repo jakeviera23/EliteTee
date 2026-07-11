@@ -12,7 +12,17 @@ export type PrivateMessageRecord = {
 export type DirectConversationSummary = {
   otherUserId: string;
   otherUserName: string;
+  otherUserPhotoUrl?: string | null;
+  otherUserFoundingNumber?: string | null;
+  otherUserPrimaryClub?: string;
   lastMessageBody: string;
   lastMessageAt: string;
   unreadCount: number;
+};
+
+export type ConversationParticipantIdentity = {
+  full_name: string;
+  club_logo_url: string | null;
+  founding_member_number: string | null;
+  primary_club: string;
 };

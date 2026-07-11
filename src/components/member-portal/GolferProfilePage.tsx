@@ -9,8 +9,8 @@ import {
   fetchMemberCourseRoundsForUser,
 } from "../../lib/memberCourseRounds";
 import {
+  fetchApprovedMemberProfileByUserId,
   fetchOwnMemberProfile,
-  fetchPortalMemberByUserId,
 } from "../../lib/memberProfiles";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
@@ -121,7 +121,7 @@ export function GolferProfilePage({
     }
 
     const profilePromise = viewingOther
-      ? fetchPortalMemberByUserId(targetUserId)
+      ? fetchApprovedMemberProfileByUserId(targetUserId)
       : fetchOwnMemberProfile();
     const postsPromise = viewingOther
       ? fetchMemberFeedPostsForUser(targetUserId)
@@ -134,6 +134,13 @@ export function GolferProfilePage({
       await Promise.all([profilePromise, postsPromise, roundsPromise]);
 
     if (profileError) {
+      if (import.meta.env.DEV) {
+        console.error("[GolferProfilePage] failed to load profile", {
+          targetUserId,
+          viewingOther,
+          message: profileError.message,
+        });
+      }
       setLoadError("This profile could not be loaded right now.");
       setMemberProfile(null);
       setFeedPosts([]);
@@ -151,7 +158,9 @@ export function GolferProfilePage({
       return;
     }
 
-    setMemberProfile(profile);
+    setMemberProfile(
+      profile ? ({ ...profile, email: "" } as MemberProfileRecord) : null,
+    );
     setFeedPosts(posts ?? []);
     setCourseRounds(rounds ?? []);
     setIsLoading(false);
@@ -214,6 +223,15 @@ export function GolferProfilePage({
           <h2 id="profile-heading">Profile</h2>
         </header>
         <ProfileEmptyState title="Profile unavailable" hint={loadError} />
+        <button
+          type="button"
+          className="portal-btn portal-btn--outline portal-btn--compact"
+          onClick={() => {
+            setProfileVersion((version) => version + 1);
+          }}
+        >
+          Retry
+        </button>
       </section>
     );
   }

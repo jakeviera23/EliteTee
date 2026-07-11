@@ -642,6 +642,184 @@ const PORTAL_APPROVED_MEMBER_SELECT = `
   updated_at
 `;
 
+export type ApprovedMemberDirectoryProfile = Pick<
+  MemberProfileRecord,
+  | "id"
+  | "full_name"
+  | "primary_club"
+  | "additional_clubs"
+  | "based_in"
+  | "regions"
+  | "industry"
+  | "golf_interests"
+  | "business_interests"
+  | "current_request"
+  | "traveling_to"
+  | "club_logo_url"
+  | "membership_status"
+  | "is_verified"
+  | "founding_member_number"
+  | "portal_access_enabled"
+  | "user_id"
+  | "created_at"
+  | "updated_at"
+>;
+
+function normalizeApprovedDirectoryRow(row: Record<string, unknown>): ApprovedMemberDirectoryProfile {
+  return normalizeMemberProfileRecord({ ...row, email: "" } as Record<string, unknown>);
+}
+
+function logApprovedMemberFetchError(context: string, error: unknown, details?: Record<string, unknown>) {
+  const payload = {
+    context,
+    code: getErrorCode(error),
+    message: getErrorMessage(error),
+    ...details,
+  };
+
+  if (import.meta.env.DEV) {
+    console.error("[memberProfiles]", payload);
+  } else {
+    console.error(`[memberProfiles] ${context}`, payload.message);
+  }
+}
+
+async function fetchApprovedMemberRowsViaRpc(userIds: string[]) {
+  if (!supabase) {
+    return { data: [] as ApprovedMemberDirectoryProfile[], error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedIds = [...new Set(userIds.map((id) => id.trim()).filter(Boolean))];
+  if (normalizedIds.length === 0) {
+    return { data: [] as ApprovedMemberDirectoryProfile[], error: null };
+  }
+
+  if (normalizedIds.length === 1) {
+    const { data, error } = await supabase.rpc("get_portal_member_profile", {
+      p_user_id: normalizedIds[0],
+    });
+
+    if (error) {
+      return { data: [] as ApprovedMemberDirectoryProfile[], error };
+    }
+
+    const rows = (Array.isArray(data) ? data : data ? [data] : []) as Record<string, unknown>[];
+    return {
+      data: rows.map((row) => normalizeApprovedDirectoryRow(row)),
+      error: null,
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_portal_member_profiles_by_user_ids", {
+    p_user_ids: normalizedIds,
+  });
+
+  if (error) {
+    return { data: [] as ApprovedMemberDirectoryProfile[], error };
+  }
+
+  return {
+    data: ((data ?? []) as Record<string, unknown>[]).map((row) => normalizeApprovedDirectoryRow(row)),
+    error: null,
+  };
+}
+
+async function fetchApprovedMemberRowsViaTable(userIds: string[]) {
+  if (!supabase) {
+    return { data: [] as ApprovedMemberDirectoryProfile[], error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedIds = [...new Set(userIds.map((id) => id.trim()).filter(Boolean))];
+  if (normalizedIds.length === 0) {
+    return { data: [] as ApprovedMemberDirectoryProfile[], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("member_profiles")
+    .select(PORTAL_APPROVED_MEMBER_SELECT)
+    .in("user_id", normalizedIds)
+    .eq("portal_access_enabled", true);
+
+  if (error) {
+    return { data: [] as ApprovedMemberDirectoryProfile[], error };
+  }
+
+  return {
+    data: ((data ?? []) as Record<string, unknown>[]).map((row) => normalizeApprovedDirectoryRow(row)),
+    error: null,
+  };
+}
+
+export async function fetchApprovedMemberProfileByUserId(userId: string) {
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) {
+    return { data: null, error: new Error("Member profile is unavailable.") };
+  }
+
+  const rpcResult = await fetchApprovedMemberRowsViaRpc([normalizedUserId]);
+  if (!rpcResult.error && rpcResult.data.length > 0) {
+    return { data: rpcResult.data[0], error: null };
+  }
+
+  if (rpcResult.error) {
+    logApprovedMemberFetchError("fetchApprovedMemberProfileByUserId.rpc", rpcResult.error, {
+      userId: normalizedUserId,
+    });
+  }
+
+  const tableResult = await fetchApprovedMemberRowsViaTable([normalizedUserId]);
+  if (tableResult.error) {
+    logApprovedMemberFetchError("fetchApprovedMemberProfileByUserId.table", tableResult.error, {
+      userId: normalizedUserId,
+    });
+    return { data: null, error: tableResult.error };
+  }
+
+  return {
+    data: tableResult.data[0] ?? null,
+    error: null,
+  };
+}
+
+export async function fetchApprovedMemberProfilesByUserIds(userIds: string[]) {
+  const rpcResult = await fetchApprovedMemberRowsViaRpc(userIds);
+  if (!rpcResult.error) {
+    return rpcResult;
+  }
+
+  logApprovedMemberFetchError("fetchApprovedMemberProfilesByUserIds.rpc", rpcResult.error, {
+    userIds,
+  });
+
+  return fetchApprovedMemberRowsViaTable(userIds);
+}
+
+export function buildApprovedMemberIdentityMap(profiles: ApprovedMemberDirectoryProfile[]) {
+  const map: Record<
+    string,
+    {
+      full_name: string;
+      club_logo_url: string | null;
+      founding_member_number: string | null;
+      primary_club: string;
+    }
+  > = {};
+
+  for (const profile of profiles) {
+    const userId = profile.user_id?.trim();
+    if (!userId) continue;
+
+    map[userId] = {
+      full_name: profile.full_name,
+      club_logo_url: profile.club_logo_url ?? null,
+      founding_member_number: profile.founding_member_number,
+      primary_club: profile.primary_club,
+    };
+  }
+
+  return map;
+}
+
 function mapPortalApprovedMemberRows(rows: Record<string, unknown>[]): MemberProfileRecord[] {
   return rows.map((row) =>
     normalizeMemberProfileRecord({ ...row, email: "" } as Record<string, unknown>),
@@ -701,32 +879,5 @@ export async function fetchMessageablePortalMembers() {
 }
 
 export async function fetchPortalMemberByUserId(userId: string) {
-  if (!supabase) {
-    return { data: null, error: new Error("Supabase is not configured.") };
-  }
-
-  const normalizedUserId = userId.trim();
-  if (!normalizedUserId) {
-    return { data: null, error: new Error("Member profile is unavailable.") };
-  }
-
-  const { data, error } = await supabase
-    .from("member_profiles")
-    .select(PORTAL_APPROVED_MEMBER_SELECT)
-    .eq("user_id", normalizedUserId)
-    .eq("portal_access_enabled", true)
-    .maybeSingle();
-
-  if (error) {
-    return { data: null, error };
-  }
-
-  if (!data) {
-    return { data: null, error: null };
-  }
-
-  return {
-    data: normalizeMemberProfileRecord({ ...data, email: "" } as Record<string, unknown>),
-    error: null,
-  };
+  return fetchApprovedMemberProfileByUserId(userId);
 }
