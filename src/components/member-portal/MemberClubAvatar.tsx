@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
+import { resolveMemberMediaUrl } from "../../lib/memberProfileMedia";
 
 type MemberClubAvatarProps = {
   member: Pick<MemberProfileRecord, "club_logo_url">;
@@ -23,8 +24,32 @@ export function MemberClubAvatar({
   className = "",
 }: MemberClubAvatarProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const logoUrl = member.club_logo_url?.trim();
-  const showImage = Boolean(logoUrl) && !imageFailed;
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const storedLogo = member.club_logo_url?.trim() ?? "";
+
+  useEffect(() => {
+    let active = true;
+    setImageFailed(false);
+
+    if (!storedLogo) {
+      setResolvedUrl(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    void resolveMemberMediaUrl(storedLogo).then((url) => {
+      if (active) {
+        setResolvedUrl(url);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [storedLogo]);
+
+  const showImage = Boolean(resolvedUrl) && !imageFailed;
 
   return (
     <span
@@ -33,7 +58,7 @@ export function MemberClubAvatar({
     >
       {showImage ? (
         <img
-          src={logoUrl}
+          src={resolvedUrl ?? undefined}
           alt=""
           onError={() => setImageFailed(true)}
           loading="lazy"

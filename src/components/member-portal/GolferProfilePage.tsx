@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { earlyStageCopy, type FeedPost } from "../../data/portalSocial";
-import { photos } from "../../assets/photos";
-import { SafeImage } from "../SafeImage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { fetchMemberFeedPostsForCurrentUser, fetchMemberFeedPostsForUser } from "../../lib/memberFeedPosts";
 import {
@@ -15,11 +13,13 @@ import {
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
+import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { FeedCard } from "./FeedCard";
 import { MemberActivityList } from "./MemberActivityList";
 import { MemberClubAvatar } from "./MemberClubAvatar";
+import { ProfileCover } from "./ProfileCover";
 import { ProfileDossier } from "./ProfileDossier";
 import { VerifiedBadge } from "./VerifiedBadge";
 
@@ -93,6 +93,7 @@ export function GolferProfilePage({
 
   const resolvedViewUserId = viewUserId?.trim() || null;
   const isViewingOther = Boolean(resolvedViewUserId && resolvedViewUserId !== currentUserId);
+  const { coverImageUrl, avatarImageUrl } = useResolvedMemberProfileMedia(memberProfile);
 
   useEffect(() => {
     if (!isActive) return;
@@ -174,10 +175,13 @@ export function GolferProfilePage({
 
   const display = useMemo(() => {
     const extras = isViewingOther ? undefined : getPortalProfileExtras(memberProfile?.user_id);
-    return buildGolferProfileDisplay(memberProfile, extras);
-  }, [isViewingOther, memberProfile, profileVersion]);
+    return buildGolferProfileDisplay(memberProfile, extras, {
+      coverImageUrl,
+      avatarImageUrl,
+    });
+  }, [avatarImageUrl, coverImageUrl, isViewingOther, memberProfile, profileVersion]);
 
-  const joinedLabel = formatJoinedDate(memberProfile?.created_at);
+  const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
   const roundsShared = courseRounds.length;
   const connections = 0;
   const canMessage = isViewingOther && Boolean(onMessageMember && memberProfile?.user_id);
@@ -266,14 +270,7 @@ export function GolferProfilePage({
       {isLoading ? <p className="portal-empty">Loading profile…</p> : null}
 
       <article className="portal-golfer-profile portal-golfer-profile--premium">
-        <div className="portal-golfer-cover">
-          <SafeImage
-            src={display.coverImage || photos.heroSunset}
-            alt={`${display.name} cover`}
-            objectPosition="center"
-            fill
-            fallbackClassName="portal-golfer-cover-fallback"
-          />
+        <ProfileCover src={display.coverImage} alt={`${display.name} cover`}>
           {!isViewingOther ? (
             <button
               type="button"
@@ -306,7 +303,7 @@ export function GolferProfilePage({
               ) : null}
             </div>
           )}
-        </div>
+        </ProfileCover>
 
         <div className="portal-golfer-profile-main">
           <div className="portal-golfer-profile-hero-block">

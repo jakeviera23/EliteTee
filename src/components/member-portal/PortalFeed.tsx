@@ -10,6 +10,7 @@ import {
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
+import { resolveMemberProfileMedia } from "../../lib/memberProfileMedia";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { FeedCard } from "./FeedCard";
@@ -47,7 +48,8 @@ export function PortalFeed({
       getCurrentAuthUserId(),
     ]);
     const extras = getPortalProfileExtras(data?.user_id ?? userId);
-    setComposerAuthor(buildComposerAuthor(data, extras));
+    const media = await resolveMemberProfileMedia(data);
+    setComposerAuthor(buildComposerAuthor(data, extras, media));
   }, []);
 
   const loadInitialPage = useCallback(async () => {

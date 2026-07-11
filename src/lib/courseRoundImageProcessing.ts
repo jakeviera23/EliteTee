@@ -92,7 +92,10 @@ function canvasToBlob(
   });
 }
 
-export async function processCourseRoundImage(file: File): Promise<ProcessedCourseRoundImage> {
+export async function processCourseRoundImage(
+  file: File,
+  maxLongEdge = TARGET_LONG_EDGE_PX,
+): Promise<ProcessedCourseRoundImage> {
   if (file.size > MAX_ROUND_PHOTO_BYTES) {
     throw new Error(getOversizedRoundPhotoMessage(file));
   }
@@ -102,7 +105,7 @@ export async function processCourseRoundImage(file: File): Promise<ProcessedCour
   }
 
   const image = await loadImageFromFile(file);
-  const { width, height } = scaleDimensions(image.naturalWidth, image.naturalHeight, TARGET_LONG_EDGE_PX);
+  const { width, height } = scaleDimensions(image.naturalWidth, image.naturalHeight, maxLongEdge);
 
   const canvas = document.createElement("canvas");
   canvas.width = width;

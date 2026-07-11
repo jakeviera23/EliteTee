@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
+import { resolveMemberProfileMedia } from "../../lib/memberProfileMedia";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import { FeedComposer } from "./FeedComposer";
 import { usePortalToast } from "./PortalToastProvider";
@@ -16,7 +17,8 @@ export function PortalCompose({ onPosted }: PortalComposeProps) {
   const loadAuthor = useCallback(async () => {
     const { data } = await fetchOwnMemberProfile();
     const extras = getPortalProfileExtras(data?.user_id);
-    setComposerAuthor(buildComposerAuthor(data, extras));
+    const media = await resolveMemberProfileMedia(data);
+    setComposerAuthor(buildComposerAuthor(data, extras, media));
   }, []);
 
   useEffect(() => {

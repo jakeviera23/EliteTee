@@ -11,6 +11,7 @@ export type MemberProfileInsert = {
   current_request: string;
   traveling_to: string;
   club_logo_url?: string | null;
+  cover_photo_url?: string | null;
   user_id: string;
   membership_status: string;
   is_verified: boolean;

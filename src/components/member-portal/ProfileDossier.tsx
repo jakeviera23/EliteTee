@@ -7,15 +7,22 @@ import {
   updateOwnMemberProfile,
 } from "../../lib/memberProfiles";
 import {
+  deleteMemberMediaPath,
+  invalidateMemberMediaCache,
+  resolveMemberMediaUrl,
+  uploadMemberAvatarPhoto,
+  uploadMemberCoverPhoto,
+} from "../../lib/memberProfileMedia";
+import {
   getPortalProfileExtras,
   savePortalProfileExtras,
   type PortalProfileExtras,
 } from "../../lib/portalProfileExtras";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { earlyStageCopy } from "../../data/portalSocial";
-import { photos } from "../../assets/photos";
-import { SafeImage } from "../SafeImage";
 import { MemberClubAvatar } from "./MemberClubAvatar";
+import { ProfileCover } from "./ProfileCover";
+import { ProfileMediaUploadField } from "./ProfileMediaUploadField";
 import { usePortalToast } from "./PortalToastProvider";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 
@@ -28,9 +35,16 @@ type ProfileFormState = {
   favorite_courses: string;
   connection_interests: string;
   bio: string;
-  profile_photo_url: string;
-  cover_image_url: string;
   handicap: string;
+};
+
+type PendingMediaState = {
+  coverFile: File | null;
+  coverPreviewUrl: string | null;
+  coverRemoved: boolean;
+  avatarFile: File | null;
+  avatarPreviewUrl: string | null;
+  avatarRemoved: boolean;
 };
 
 const NO_LINKED_PROFILE_MESSAGE = "No profile is linked to this account yet.";
@@ -52,8 +66,6 @@ function profileToFormState(
       : formatListForInput(profile.additional_clubs),
     connection_interests: formatListForInput(profile.golf_interests),
     bio: useLocal ? extras.bio : profile.current_request ?? "",
-    profile_photo_url: useLocal ? extras.profile_photo_url : profile.club_logo_url ?? "",
-    cover_image_url: extras.cover_image_url,
     handicap: extras.handicap,
   };
 }
@@ -62,6 +74,10 @@ function buildProfileUpdates(
   profile: MemberProfileRecord,
   form: ProfileFormState,
   initialForm: ProfileFormState,
+  media: {
+    coverPhotoUrl: string | null;
+    clubLogoUrl: string | null;
+  },
 ) {
   return {
     full_name: form.full_name.trim(),
@@ -90,20 +106,14 @@ function buildProfileUpdates(
       initialFormValue: initialForm.bio,
       existingValue: profile.current_request,
     }),
-    club_logo_url: (() => {
-      const value = buildTextFieldUpdate({
-        formValue: form.profile_photo_url,
-        initialFormValue: initialForm.profile_photo_url,
-        existingValue: profile.club_logo_url ?? "",
-      });
-      return value.trim() || null;
-    })(),
+    club_logo_url: media.clubLogoUrl,
+    cover_photo_url: media.coverPhotoUrl,
   };
 }
 
 function buildExtrasFromForm(form: ProfileFormState): PortalProfileExtras {
   return {
-    cover_image_url: form.cover_image_url.trim(),
+    cover_image_url: "",
     handicap: form.handicap.trim(),
     rounds_posted: "",
     countries_played: "",
@@ -115,7 +125,7 @@ function buildExtrasFromForm(form: ProfileFormState): PortalProfileExtras {
     bio: form.bio.trim(),
     traveling_to: form.traveling_to.trim(),
     favorite_courses: form.favorite_courses.trim(),
-    profile_photo_url: form.profile_photo_url.trim(),
+    profile_photo_url: "",
     has_local_snapshot: true,
   };
 }
@@ -130,6 +140,14 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
   const [profile, setProfile] = useState<MemberProfileRecord | null>(null);
   const [form, setForm] = useState<ProfileFormState | null>(null);
   const [initialForm, setInitialForm] = useState<ProfileFormState | null>(null);
+  const [media, setMedia] = useState<PendingMediaState>({
+    coverFile: null,
+    coverPreviewUrl: null,
+    coverRemoved: false,
+    avatarFile: null,
+    avatarPreviewUrl: null,
+    avatarRemoved: false,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -168,9 +186,24 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
 
         const extras = getPortalProfileExtras(data.user_id);
         const nextForm = profileToFormState(data, extras);
+        const [coverPreviewUrl, avatarPreviewUrl] = await Promise.all([
+          resolveMemberMediaUrl(data.cover_photo_url),
+          resolveMemberMediaUrl(data.club_logo_url),
+        ]);
+
+        if (!active) return;
+
         setProfile(data);
         setForm(nextForm);
         setInitialForm(nextForm);
+        setMedia({
+          coverFile: null,
+          coverPreviewUrl,
+          coverRemoved: false,
+          avatarFile: null,
+          avatarPreviewUrl,
+          avatarRemoved: false,
+        });
       } catch (unexpectedError) {
         if (!active) return;
 
@@ -196,8 +229,79 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
     };
   }, [isActive]);
 
+  useEffect(() => {
+    return () => {
+      if (media.coverFile && media.coverPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(media.coverPreviewUrl);
+      }
+      if (media.avatarFile && media.avatarPreviewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(media.avatarPreviewUrl);
+      }
+    };
+  }, [media.avatarFile, media.avatarPreviewUrl, media.coverFile, media.coverPreviewUrl]);
+
   function updateField<K extends keyof ProfileFormState>(key: K, value: ProfileFormState[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  }
+
+  function handleCoverPick(file: File) {
+    if (media.coverPreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(media.coverPreviewUrl);
+    }
+
+    setMedia((current) => ({
+      ...current,
+      coverFile: file,
+      coverPreviewUrl: URL.createObjectURL(file),
+      coverRemoved: false,
+    }));
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  }
+
+  function handleCoverRemove() {
+    if (media.coverPreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(media.coverPreviewUrl);
+    }
+
+    setMedia((current) => ({
+      ...current,
+      coverFile: null,
+      coverPreviewUrl: null,
+      coverRemoved: true,
+    }));
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  }
+
+  function handleAvatarPick(file: File) {
+    if (media.avatarPreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(media.avatarPreviewUrl);
+    }
+
+    setMedia((current) => ({
+      ...current,
+      avatarFile: file,
+      avatarPreviewUrl: URL.createObjectURL(file),
+      avatarRemoved: false,
+    }));
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  }
+
+  function handleAvatarRemove() {
+    if (media.avatarPreviewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(media.avatarPreviewUrl);
+    }
+
+    setMedia((current) => ({
+      ...current,
+      avatarFile: null,
+      avatarPreviewUrl: null,
+      avatarRemoved: true,
+    }));
     setSuccessMessage(null);
     setErrorMessage(null);
   }
@@ -211,10 +315,55 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
     setSuccessMessage(null);
 
     try {
-      const updates = buildProfileUpdates(profile, form, initialForm);
+      let nextCoverPhotoUrl: string | null = profile.cover_photo_url ?? null;
+      let nextClubLogoUrl: string | null = profile.club_logo_url ?? null;
+
+      if (media.coverRemoved && profile.cover_photo_url) {
+        await deleteMemberMediaPath(profile.cover_photo_url);
+        invalidateMemberMediaCache(profile.cover_photo_url);
+        nextCoverPhotoUrl = null;
+      }
+
+      if (media.coverFile) {
+        const { path, error: coverUploadError } = await uploadMemberCoverPhoto(media.coverFile);
+        if (coverUploadError || !path) {
+          throw coverUploadError ?? new Error("Cover photo upload failed.");
+        }
+
+        if (profile.cover_photo_url && profile.cover_photo_url !== path) {
+          await deleteMemberMediaPath(profile.cover_photo_url);
+          invalidateMemberMediaCache(profile.cover_photo_url);
+        }
+
+        nextCoverPhotoUrl = path;
+      }
+
+      if (media.avatarRemoved && profile.club_logo_url) {
+        await deleteMemberMediaPath(profile.club_logo_url);
+        invalidateMemberMediaCache(profile.club_logo_url);
+        nextClubLogoUrl = null;
+      }
+
+      if (media.avatarFile) {
+        const { path, error: avatarUploadError } = await uploadMemberAvatarPhoto(media.avatarFile);
+        if (avatarUploadError || !path) {
+          throw avatarUploadError ?? new Error("Profile photo upload failed.");
+        }
+
+        if (profile.club_logo_url && profile.club_logo_url !== path) {
+          await deleteMemberMediaPath(profile.club_logo_url);
+          invalidateMemberMediaCache(profile.club_logo_url);
+        }
+
+        nextClubLogoUrl = path;
+      }
+
+      const updates = buildProfileUpdates(profile, form, initialForm, {
+        coverPhotoUrl: nextCoverPhotoUrl,
+        clubLogoUrl: nextClubLogoUrl,
+      });
       const extras = buildExtrasFromForm(form);
 
-      // Always persist locally first so the profile view updates immediately.
       savePortalProfileExtras(profile.user_id, extras);
 
       const { error } = await updateOwnMemberProfile(updates);
@@ -228,9 +377,21 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         } else {
           const refreshedExtras = getPortalProfileExtras(refreshed.data.user_id);
           const nextForm = profileToFormState(refreshed.data, refreshedExtras);
+          const [coverPreviewUrl, avatarPreviewUrl] = await Promise.all([
+            resolveMemberMediaUrl(refreshed.data.cover_photo_url),
+            resolveMemberMediaUrl(refreshed.data.club_logo_url),
+          ]);
           setProfile(refreshed.data);
           setForm(nextForm);
           setInitialForm(nextForm);
+          setMedia({
+            coverFile: null,
+            coverPreviewUrl,
+            coverRemoved: false,
+            avatarFile: null,
+            avatarPreviewUrl,
+            avatarRemoved: false,
+          });
         }
       } else {
         setErrorMessage(`Saved on this device. Remote sync failed: ${error.message}`);
@@ -264,22 +425,21 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
     );
   }
 
+  const coverPreview = media.coverRemoved ? null : media.coverPreviewUrl;
+  const avatarPreview = media.avatarRemoved ? null : media.avatarPreviewUrl;
+
   return (
     <article className="portal-dossier portal-dossier--editable portal-profile-edit">
       <div className="portal-profile-edit-preview">
-        <div className="portal-profile-edit-cover">
-          <SafeImage
-            src={form.cover_image_url || photos.courseNationalGolfLinks}
-            alt="Cover preview"
-            objectPosition="center"
-            fill
-            fallbackClassName="portal-golfer-cover-fallback"
-          />
-        </div>
+        <ProfileCover
+          src={coverPreview}
+          alt="Cover preview"
+          className="portal-profile-edit-cover"
+        />
         <div className="portal-profile-edit-preview-body">
           <div className="portal-profile-edit-avatar">
             <MemberClubAvatar
-              member={{ club_logo_url: form.profile_photo_url || profile.club_logo_url }}
+              member={{ club_logo_url: avatarPreview ?? profile.club_logo_url }}
               name={form.full_name || profile.full_name}
               size="lg"
             />
@@ -308,28 +468,35 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
 
       <form className="portal-profile-form" onSubmit={handleSubmit}>
         <section className="portal-profile-form-card">
+          <h3 className="portal-profile-form-card-title">Profile Media</h3>
+          <div className="portal-profile-form-grid">
+            <ProfileMediaUploadField
+              label="Cover photo"
+              hint="JPEG, PNG, or WebP up to 12 MB. Shown on your public profile."
+              previewUrl={coverPreview}
+              previewAlt="Cover photo preview"
+              disabled={isSaving}
+              variant="cover"
+              onPickFile={handleCoverPick}
+              onRemove={handleCoverRemove}
+            />
+
+            <ProfileMediaUploadField
+              label="Profile photo"
+              hint="Square photos work best. Initials are shown when no photo is set."
+              previewUrl={avatarPreview}
+              previewAlt="Profile photo preview"
+              disabled={isSaving}
+              variant="avatar"
+              onPickFile={handleAvatarPick}
+              onRemove={handleAvatarRemove}
+            />
+          </div>
+        </section>
+
+        <section className="portal-profile-form-card">
           <h3 className="portal-profile-form-card-title">Member Identity</h3>
           <div className="portal-profile-form-grid">
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Cover photo URL</span>
-              <input
-                type="url"
-                value={form.cover_image_url}
-                onChange={(event) => updateField("cover_image_url", event.target.value)}
-                placeholder="https://..."
-              />
-            </label>
-
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Profile photo URL</span>
-              <input
-                type="url"
-                value={form.profile_photo_url}
-                onChange={(event) => updateField("profile_photo_url", event.target.value)}
-                placeholder="https://..."
-              />
-            </label>
-
             <label className="portal-profile-field">
               <span>Full Name</span>
               <input

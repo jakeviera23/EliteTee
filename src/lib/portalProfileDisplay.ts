@@ -1,6 +1,4 @@
-import { photos } from "../assets/photos";
-import { emptyGolferDefaults, earlyStageCopy } from "../data/portalSocial";
-import type { PortalGolfer } from "../data/portalSocial";
+import { earlyStageCopy, emptyGolferDefaults, type PortalGolfer } from "../data/portalSocial";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import {
   getPortalProfileExtras,
@@ -24,16 +22,10 @@ export type GolferProfileDisplay = {
   isEmpty: boolean;
 };
 
-function resolveAvatarImage(
-  photoUrl: string | null | undefined,
-  useLocal: boolean,
-  localPhotoUrl: string,
-): string {
-  if (useLocal) {
-    return localPhotoUrl.trim();
-  }
-  return photoUrl?.trim() ?? "";
-}
+export type GolferProfileMediaUrls = {
+  coverImageUrl?: string | null;
+  avatarImageUrl?: string | null;
+};
 
 function parseHandicap(value: string): number | undefined {
   if (!value.trim()) return undefined;
@@ -44,8 +36,11 @@ function parseHandicap(value: string): number | undefined {
 export function buildGolferProfileDisplay(
   member: MemberProfileRecord | null,
   extras?: PortalProfileExtras,
+  mediaUrls?: GolferProfileMediaUrls,
 ): GolferProfileDisplay {
   const userExtras = extras ?? getPortalProfileExtras(member?.user_id);
+  const coverImage = mediaUrls?.coverImageUrl?.trim() ?? "";
+  const avatarImage = mediaUrls?.avatarImageUrl?.trim() ?? "";
 
   if (!member) {
     const useLocal = Boolean(userExtras.has_local_snapshot);
@@ -56,8 +51,8 @@ export function buildGolferProfileDisplay(
       homeCourse: useLocal ? userExtras.primary_club : "",
       bio: useLocal && userExtras.bio.trim() ? userExtras.bio : earlyStageCopy.profileOnboarding,
       isVerified: false,
-      avatarImage: resolveAvatarImage(null, useLocal, userExtras.profile_photo_url),
-      coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
+      avatarImage,
+      coverImage,
       favoriteCourses: useLocal
         ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
         : [],
@@ -79,12 +74,8 @@ export function buildGolferProfileDisplay(
       ? userExtras.bio || earlyStageCopy.profileOnboarding
       : member.current_request || earlyStageCopy.profileOnboarding,
     isVerified: member.is_verified,
-    avatarImage: resolveAvatarImage(
-      member.club_logo_url,
-      useLocal,
-      userExtras.profile_photo_url,
-    ),
-    coverImage: userExtras.cover_image_url || photos.courseNationalGolfLinks,
+    avatarImage,
+    coverImage,
     favoriteCourses: useLocal
       ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
       : member.additional_clubs,
@@ -98,8 +89,9 @@ export function buildGolferProfileDisplay(
 export function buildComposerAuthor(
   member: MemberProfileRecord | null,
   extras?: PortalProfileExtras,
+  mediaUrls?: GolferProfileMediaUrls,
 ): PortalGolfer {
-  const display = buildGolferProfileDisplay(member, extras);
+  const display = buildGolferProfileDisplay(member, extras, mediaUrls);
 
   return {
     ...emptyGolferDefaults,

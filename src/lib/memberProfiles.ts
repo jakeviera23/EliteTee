@@ -19,6 +19,7 @@ export type MemberProfileSelfUpdate = {
   current_request: string;
   traveling_to: string;
   club_logo_url: string | null;
+  cover_photo_url: string | null;
 };
 
 function parsePostgresArrayString(value: string): string[] {
@@ -106,6 +107,7 @@ export function normalizeMemberProfileRecord(row: Record<string, unknown>): Memb
     current_request: String(row.current_request ?? ""),
     traveling_to: String(row.traveling_to ?? ""),
     club_logo_url: row.club_logo_url ? String(row.club_logo_url) : null,
+    cover_photo_url: row.cover_photo_url ? String(row.cover_photo_url) : null,
     membership_status: String(row.membership_status ?? ""),
     is_verified: Boolean(row.is_verified),
     founding_member_number: row.founding_member_number
@@ -113,7 +115,7 @@ export function normalizeMemberProfileRecord(row: Record<string, unknown>): Memb
       : null,
     portal_access_enabled: Boolean(row.portal_access_enabled),
     user_id: row.user_id ? String(row.user_id) : null,
-    created_at: String(row.created_at ?? ""),
+    created_at: String(row.created_at ?? row.updated_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
   };
 }
@@ -633,12 +635,12 @@ const PORTAL_APPROVED_MEMBER_SELECT = `
   current_request,
   traveling_to,
   club_logo_url,
+  cover_photo_url,
   membership_status,
   is_verified,
   founding_member_number,
   portal_access_enabled,
   user_id,
-  created_at,
   updated_at
 `;
 
@@ -656,12 +658,12 @@ export type ApprovedMemberDirectoryProfile = Pick<
   | "current_request"
   | "traveling_to"
   | "club_logo_url"
+  | "cover_photo_url"
   | "membership_status"
   | "is_verified"
   | "founding_member_number"
   | "portal_access_enabled"
   | "user_id"
-  | "created_at"
   | "updated_at"
 >;
 

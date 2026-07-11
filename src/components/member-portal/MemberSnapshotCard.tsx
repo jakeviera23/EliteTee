@@ -2,19 +2,24 @@ import { useCallback, useEffect, useState } from "react";
 import { earlyStageCopy } from "../../data/portalSocial";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
+import { resolveMemberProfileMedia } from "../../lib/memberProfileMedia";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import { getBucketListCourseIds } from "../../lib/portalCourseState";
+import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { MemberClubAvatar } from "./MemberClubAvatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 export function MemberSnapshotCard() {
   const [display, setDisplay] = useState(() => buildGolferProfileDisplay(null));
+  const [profile, setProfile] = useState<MemberProfileRecord | null>(null);
   const bucketCount = getBucketListCourseIds().length;
 
   const loadSnapshot = useCallback(async () => {
     const { data } = await fetchOwnMemberProfile();
     const extras = getPortalProfileExtras(data?.user_id);
-    setDisplay(buildGolferProfileDisplay(data, extras));
+    const media = await resolveMemberProfileMedia(data);
+    setProfile(data);
+    setDisplay(buildGolferProfileDisplay(data, extras, media));
   }, []);
 
   useEffect(() => {
@@ -26,7 +31,11 @@ export function MemberSnapshotCard() {
       <p className="portal-early-badge">{earlyStageCopy.earlyCommunity}</p>
 
       <div className="portal-snapshot-head">
-        <MemberClubAvatar member={{ club_logo_url: display.avatarImage ?? null }} size="md" />
+        <MemberClubAvatar
+          member={{ club_logo_url: profile?.club_logo_url ?? null }}
+          name={display.name}
+          size="md"
+        />
         <div>
           <h3 className="portal-snapshot-name">
             {display.name}
