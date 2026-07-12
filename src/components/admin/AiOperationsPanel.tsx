@@ -1,54 +1,53 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { adminCopy } from "../../data/adminCopy";
 import type { AiAdminDashboard, AiSettingsUpdate } from "../../types/askEliteTee";
-import { fetchAiAdminDashboard, updateAiSettings } from "../../lib/askEliteTee";
+import { updateAiSettings } from "../../lib/askEliteTee";
 
-export function AiOperationsPanel() {
-  const [dashboard, setDashboard] = useState<AiAdminDashboard | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+type AiOperationsPanelProps = {
+  dashboard: AiAdminDashboard | null;
+  isLoading: boolean;
+  errorMessage: string | null;
+  onRefresh: () => void;
+};
+
+export function AiOperationsPanel({
+  dashboard,
+  isLoading,
+  errorMessage,
+  onRefresh,
+}: AiOperationsPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const loadDashboard = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    const { data, error } = await fetchAiAdminDashboard();
-    setIsLoading(false);
-    if (error) {
-      setErrorMessage(error.message);
-      setDashboard(null);
-      return;
-    }
-    setDashboard(data);
-  }, []);
-
-  useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   async function handleToggle(field: keyof AiSettingsUpdate, value: boolean | number) {
     if (!dashboard) return;
     setIsSaving(true);
     setSuccessMessage(null);
+    setToggleError(null);
     const { error } = await updateAiSettings({ [field]: value });
     setIsSaving(false);
     if (error) {
-      setErrorMessage(error.message);
+      console.error("[AiOperationsPanel]", error);
+      setToggleError("AI settings could not be updated. Please try again.");
       return;
     }
-    setSuccessMessage("AI settings updated.");
-    void loadDashboard();
+    setSuccessMessage(adminCopy.ai.settingsUpdated);
+    onRefresh();
   }
 
   if (isLoading) {
-    return <p className="portal-empty">Loading AI operations…</p>;
+    return <p className="et-admin-empty">{adminCopy.ai.loading}</p>;
   }
 
   if (errorMessage && !dashboard) {
     return (
-      <p className="portal-alert portal-alert--error" role="alert">
-        {errorMessage}
-      </p>
+      <div className="et-admin-alert et-admin-alert--error" role="alert">
+        <p>{adminCopy.ai.loadError}</p>
+        <button type="button" className="et-btn et-btn--secondary" onClick={onRefresh}>
+          {adminCopy.actions.retry}
+        </button>
+      </div>
     );
   }
 
@@ -60,53 +59,59 @@ export function AiOperationsPanel() {
   const intentEntries = Object.entries(dashboard.intent_breakdown_7d ?? {});
 
   return (
-    <section className="portal-admin-ai-ops" aria-labelledby="admin-ai-ops-heading">
-      <header className="portal-section-head portal-section-head--compact">
-        <h2 id="admin-ai-ops-heading">AI Operations</h2>
-        <p>Usage, failures, and capability controls for Ask EliteTee.</p>
+    <section className="et-admin-ai" aria-labelledby="admin-ai-ops-heading">
+      <header className="et-admin-section-head">
+        <h2 id="admin-ai-ops-heading">{adminCopy.ai.title}</h2>
+        <p>{adminCopy.ai.lead}</p>
       </header>
 
       {successMessage ? (
-        <p className="portal-alert portal-alert--success" role="status">
+        <p className="et-admin-alert et-admin-alert--success" role="status">
           {successMessage}
         </p>
       ) : null}
 
+      {toggleError ? (
+        <p className="et-admin-alert et-admin-alert--error" role="alert">
+          {toggleError}
+        </p>
+      ) : null}
+
       {errorMessage ? (
-        <p className="portal-alert portal-alert--error" role="alert">
+        <p className="et-admin-alert et-admin-alert--warning" role="status">
           {errorMessage}
         </p>
       ) : null}
 
-      <div className="portal-admin-ai-controls">
-        <label className="portal-admin-ai-toggle">
+      <div className="et-admin-ai-controls">
+        <label className="et-admin-toggle">
           <input
             type="checkbox"
             checked={settings.enabled}
             disabled={isSaving}
             onChange={(event) => void handleToggle("enabled", event.target.checked)}
           />
-          <span>Ask EliteTee enabled</span>
+          <span>{adminCopy.ai.enabled}</span>
         </label>
-        <label className="portal-admin-ai-toggle">
+        <label className="et-admin-toggle">
           <input
             type="checkbox"
             checked={settings.enable_find_members}
             disabled={isSaving || !settings.enabled}
             onChange={(event) => void handleToggle("enable_find_members", event.target.checked)}
           />
-          <span>Find members</span>
+          <span>{adminCopy.ai.findMembers}</span>
         </label>
-        <label className="portal-admin-ai-toggle">
+        <label className="et-admin-toggle">
           <input
             type="checkbox"
             checked={settings.enable_find_courses}
             disabled={isSaving || !settings.enabled}
             onChange={(event) => void handleToggle("enable_find_courses", event.target.checked)}
           />
-          <span>Find courses</span>
+          <span>{adminCopy.ai.findCourses}</span>
         </label>
-        <label className="portal-admin-ai-toggle">
+        <label className="et-admin-toggle">
           <input
             type="checkbox"
             checked={settings.enable_recommend_introductions}
@@ -115,71 +120,78 @@ export function AiOperationsPanel() {
               void handleToggle("enable_recommend_introductions", event.target.checked)
             }
           />
-          <span>Recommend introductions</span>
+          <span>{adminCopy.ai.recommendIntros}</span>
         </label>
       </div>
 
-      <dl className="portal-admin-ai-stats">
-        <div>
-          <dt>Queries today</dt>
-          <dd>{dashboard.queries_today}</dd>
-        </div>
-        <div>
-          <dt>Queries (7d)</dt>
-          <dd>{dashboard.queries_7d}</dd>
-        </div>
-        <div>
-          <dt>Failures (7d)</dt>
-          <dd>{dashboard.failures_7d}</dd>
-        </div>
-        <div>
-          <dt>Feedback avg (7d)</dt>
-          <dd>{dashboard.feedback_average_7d ?? "—"}</dd>
-        </div>
-        <div>
-          <dt>Input tokens (7d)</dt>
-          <dd>{dashboard.token_usage_7d.input_tokens}</dd>
-        </div>
-        <div>
-          <dt>Output tokens (7d)</dt>
-          <dd>{dashboard.token_usage_7d.output_tokens}</dd>
-        </div>
-        <div>
-          <dt>Daily member limit</dt>
-          <dd>{settings.daily_member_limit}</dd>
-        </div>
-      </dl>
+      <div className="et-admin-metrics-grid et-admin-metrics-grid--compact">
+        <article className="et-admin-metric">
+          <p className="et-admin-metric-label">{adminCopy.ai.queriesToday}</p>
+          <p className="et-admin-metric-value">{dashboard.queries_today}</p>
+        </article>
+        <article className="et-admin-metric">
+          <p className="et-admin-metric-label">{adminCopy.ai.queries7d}</p>
+          <p className="et-admin-metric-value">{dashboard.queries_7d}</p>
+        </article>
+        <article className="et-admin-metric et-admin-metric--burgundy">
+          <p className="et-admin-metric-label">{adminCopy.ai.failures7d}</p>
+          <p className="et-admin-metric-value">{dashboard.failures_7d}</p>
+        </article>
+        <article className="et-admin-metric et-admin-metric--gold">
+          <p className="et-admin-metric-label">{adminCopy.ai.feedbackAvg}</p>
+          <p className="et-admin-metric-value">{dashboard.feedback_average_7d ?? "—"}</p>
+        </article>
+        <article className="et-admin-metric">
+          <p className="et-admin-metric-label">{adminCopy.ai.feedbackCount}</p>
+          <p className="et-admin-metric-value">{dashboard.feedback_count_7d}</p>
+        </article>
+        <article className="et-admin-metric">
+          <p className="et-admin-metric-label">{adminCopy.ai.inputTokens}</p>
+          <p className="et-admin-metric-value">{dashboard.token_usage_7d.input_tokens}</p>
+        </article>
+        <article className="et-admin-metric">
+          <p className="et-admin-metric-label">{adminCopy.ai.outputTokens}</p>
+          <p className="et-admin-metric-value">{dashboard.token_usage_7d.output_tokens}</p>
+        </article>
+        <article className="et-admin-metric">
+          <p className="et-admin-metric-label">{adminCopy.ai.dailyLimit}</p>
+          <p className="et-admin-metric-value">{settings.daily_member_limit}</p>
+        </article>
+      </div>
 
-      {intentEntries.length > 0 ? (
-        <div className="portal-admin-ai-intents">
-          <h3>Intent breakdown (7d)</h3>
-          <ul>
+      <section className="et-admin-subsection" aria-labelledby="admin-ai-intents-heading">
+        <h3 id="admin-ai-intents-heading">{adminCopy.ai.intentTitle}</h3>
+        {intentEntries.length > 0 ? (
+          <ul className="et-admin-ai-list">
             {intentEntries.map(([intent, count]) => (
               <li key={intent}>
-                {intent}: {count}
+                <span>{intent}</span>
+                <strong>{count}</strong>
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
+        ) : (
+          <p className="et-admin-empty-inline">{adminCopy.ai.noIntents}</p>
+        )}
+      </section>
 
-      {dashboard.recent_error_codes.length > 0 ? (
-        <div className="portal-admin-ai-errors">
-          <h3>Recent error codes</h3>
-          <ul>
+      <section className="et-admin-subsection" aria-labelledby="admin-ai-errors-heading">
+        <h3 id="admin-ai-errors-heading">{adminCopy.ai.errorsTitle}</h3>
+        {dashboard.recent_error_codes.length > 0 ? (
+          <ul className="et-admin-ai-list">
             {dashboard.recent_error_codes.map((entry) => (
               <li key={`${entry.error_code}-${entry.created_at}`}>
-                {entry.error_code} — {new Date(entry.created_at).toLocaleString()}
+                <span>{entry.error_code}</span>
+                <strong>{new Date(entry.created_at).toLocaleString()}</strong>
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
+        ) : (
+          <p className="et-admin-empty-inline">{adminCopy.ai.noErrors}</p>
+        )}
+      </section>
 
-      <p className="portal-admin-ai-note">
-        Live golf news and weather connectors are designed but disabled until licensed providers are
-        configured. Meta Llama provider is deferred to Phase 2.
-      </p>
+      <p className="et-admin-note">{adminCopy.ai.note}</p>
     </section>
   );
 }
