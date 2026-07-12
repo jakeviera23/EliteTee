@@ -131,11 +131,11 @@ export function PortalFeed({
     >
       <header className="et-feed-hero et-animate-fade-up">
         <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Member Society</p>
-        <h2 id="feed-heading" className="et-h1">
+        <h2 id="feed-heading" className="et-h2 et-feed-title">
           Feed
         </h2>
-        <p className="et-body-lg et-feed-lead">
-          Rounds, introductions, and member updates — shared privately within EliteTee.
+        <p className="et-body et-feed-lead">
+          Rounds, introductions, and member updates within EliteTee.
         </p>
       </header>
 

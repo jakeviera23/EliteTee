@@ -220,9 +220,13 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
           </button>
         )}
         {!expanded ? (
-          <span className="feed-composer-bar-hint" aria-hidden="true">
+          <button
+            type="button"
+            className="feed-composer-new"
+            onClick={() => setExpanded(true)}
+          >
             New Post
-          </span>
+          </button>
         ) : null}
       </div>
 

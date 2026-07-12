@@ -3,8 +3,14 @@ import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
+import {
+  badgeToneForPost,
+  buildFeedMetaChips,
+  isCourseRoundPost,
+  type FeedMetaChipTone,
+} from "../../lib/feedCardMeta";
 import { FeedAvatar } from "./FeedAvatar";
-import { RoundPhotoGallery } from "./RoundPhotoGallery";
+import { FeedCardHeroMedia } from "./FeedCardHeroMedia";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 type FeedCardProps = {
@@ -71,6 +77,91 @@ function ShareIcon() {
   );
 }
 
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="feed-card-chip-icon">
+      <path
+        d="M8 1.5 5.5 4H3.5v2.2L6 9.2V14l2-1 2 1V9.2l2.5-2.9V4h-2L8 1.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="feed-card-chip-icon">
+      <rect x="2.5" y="3.5" width="11" height="10" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.1" />
+      <path d="M5 2v2.5M11 2v2.5M2.5 6.5h11" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  );
+}
+
+function chipToneClass(tone: FeedMetaChipTone): string {
+  return `feed-card-meta-chip feed-card-meta-chip--${tone}`;
+}
+
+function badgeToneClass(tone: FeedMetaChipTone): string {
+  return `feed-card-type-badge feed-card-type-badge--${tone}`;
+}
+
+function AuthorIdentity({
+  post,
+  canViewAuthor,
+  onViewAuthor,
+}: {
+  post: FeedPost;
+  canViewAuthor: boolean;
+  onViewAuthor?: () => void;
+}) {
+  const inner = (
+    <>
+      <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
+      <div className="feed-card-identity-text">
+        <p className="feed-card-name">
+          {post.author.name}
+          {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
+        </p>
+        <p className="feed-card-meta">
+          {post.author.title ? (
+            <span className="feed-card-role">{post.author.title}</span>
+          ) : post.author.homeCourse ? (
+            <span className="feed-card-role">{post.author.homeCourse}</span>
+          ) : null}
+          {post.timestamp ? (
+            <>
+              {post.author.title || post.author.homeCourse ? (
+                <span className="feed-card-dot" aria-hidden="true">
+                  ·
+                </span>
+              ) : null}
+              <time className="feed-card-time">{post.timestamp}</time>
+            </>
+          ) : null}
+        </p>
+      </div>
+    </>
+  );
+
+  if (canViewAuthor && onViewAuthor) {
+    return (
+      <button
+        type="button"
+        className="feed-card-identity feed-card-identity--link"
+        onClick={onViewAuthor}
+        aria-label={`View ${post.author.name}'s profile`}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return <div className="feed-card-identity">{inner}</div>;
+}
+
 export function FeedCard({
   post,
   index = 0,
@@ -89,18 +180,30 @@ export function FeedCard({
       : [],
   );
 
+  const isFounder = variant === "founder";
+  const isCourseRound = !isFounder && isCourseRoundPost(post);
   const roundLabel = post.requestLabel ?? post.roundType ?? postTypeLabels[post.postType];
-  const hasImage = Boolean(post.images?.[0]);
-  const hasGallery = (post.images?.length ?? 0) > 1;
-  const galleryPhotos = hasGallery
+  const hasImages = (post.images?.length ?? 0) > 0;
+  const photoRecords = hasImages
     ? signedUrlsToPhotoRecords(post.images, post.memberCourseRoundId ?? "")
     : [];
-  const entranceStyle = { animationDelay: `${Math.min(index, 9) * 70}ms` };
+  const metaChips = buildFeedMetaChips(post);
+  const badgeTone = badgeToneForPost(post);
+  const entranceStyle = { animationDelay: `${Math.min(index, 9) * 55}ms` };
 
-  // Like count is derived from a single boolean so it can only ever move by 1
-  // and always stays in sync with the button state.
   const baseLikeCount = post.likes - (post.isLiked ? 1 : 0);
   const likeCount = baseLikeCount + (liked ? 1 : 0);
+
+  const authorUserId = post.author.id?.trim();
+  const canViewAuthor = Boolean(onViewAuthor && authorUserId);
+  const contentFlags = isFounder ? [] : getFeedContentFlags(post);
+
+  const cardKind = isFounder ? "founder" : isCourseRound ? "round" : "social";
+
+  function handleViewAuthor() {
+    if (!onViewAuthor || !authorUserId) return;
+    onViewAuthor(authorUserId, post.author.name);
+  }
 
   function toggleLike() {
     setLiked((current) => !current);
@@ -113,7 +216,10 @@ export function FeedCard({
   }
 
   async function handleShare() {
-    const shareText = `${post.author.name} played ${post.courseName} on EliteTee`;
+    const shareText = post.courseName
+      ? `${post.author.name} played ${post.courseName} on EliteTee`
+      : `${post.author.name} shared an update on EliteTee`;
+
     try {
       if (navigator.share) {
         await navigator.share({ title: "EliteTee", text: shareText });
@@ -125,7 +231,6 @@ export function FeedCard({
         return;
       }
     } catch {
-      /* user dismissed share sheet — no-op */
       return;
     }
     onToast?.("Sharing coming soon");
@@ -143,118 +248,69 @@ export function FeedCard({
     onToast?.("Comment added");
   }
 
-  const authorUserId = post.author.id?.trim();
-  const canViewAuthor = Boolean(onViewAuthor && authorUserId);
-
-  function handleViewAuthor() {
-    if (!onViewAuthor || !authorUserId) return;
-    onViewAuthor(authorUserId, post.author.name);
-  }
-
-  const contentFlags = variant === "founder" ? [] : getFeedContentFlags(post);
+  const showCourseBlock =
+    isCourseRound && (roundLabel || post.courseName || post.courseLocation || post.rating);
+  const showSocialHeadline = !isCourseRound && !isFounder && (roundLabel || post.courseName);
 
   return (
     <article
-      className={`feed-card${variant === "founder" ? " feed-card--founder" : ""}`}
+      className={`feed-card feed-card--${cardKind}`}
       style={entranceStyle}
     >
       <header className="feed-card-head">
-        {canViewAuthor ? (
-          <button
-            type="button"
-            className="feed-card-identity feed-card-identity--link"
-            onClick={handleViewAuthor}
-            aria-label={`View ${post.author.name}'s profile`}
-          >
-            <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
-            <div className="feed-card-identity-text">
-              <p className="feed-card-name">
-                {post.author.name}
-                {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
-              </p>
-              <p className="feed-card-meta">
-                {post.author.title ? (
-                  <span className="feed-card-club">{post.author.title}</span>
-                ) : post.author.homeCourse ? (
-                  <>
-                    <span className="feed-card-club">{post.author.homeCourse}</span>
-                    {post.timestamp ? (
-                      <span className="feed-card-dot" aria-hidden="true">
-                        ·
-                      </span>
-                    ) : null}
-                  </>
-                ) : null}
-                {post.timestamp ? (
-                  <time className="feed-card-time">{post.timestamp}</time>
-                ) : null}
-              </p>
-            </div>
-          </button>
-        ) : (
-          <div className="feed-card-identity">
-            <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
-            <div className="feed-card-identity-text">
-              <p className="feed-card-name">
-                {post.author.name}
-                {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
-              </p>
-              <p className="feed-card-meta">
-                {post.author.title ? (
-                  <span className="feed-card-club">{post.author.title}</span>
-                ) : post.author.homeCourse ? (
-                  <>
-                    <span className="feed-card-club">{post.author.homeCourse}</span>
-                    {post.timestamp ? (
-                      <span className="feed-card-dot" aria-hidden="true">
-                        ·
-                      </span>
-                    ) : null}
-                  </>
-                ) : null}
-                {post.timestamp ? (
-                  <time className="feed-card-time">{post.timestamp}</time>
-                ) : null}
-              </p>
-            </div>
-          </div>
-        )}
-        {post.rating ? (
-          <div className="feed-card-rating" title={`Rated ${post.rating} out of ${MAX_RATING}`}>
-            <span className="feed-card-rating-value">{post.rating.toFixed(1)}</span>
-            <span className="feed-card-rating-label">Rated</span>
-          </div>
-        ) : null}
+        <AuthorIdentity
+          post={post}
+          canViewAuthor={canViewAuthor}
+          onViewAuthor={handleViewAuthor}
+        />
       </header>
 
-      {hasGallery ? (
-        <div className="feed-card-media feed-card-media--gallery">
-          <RoundPhotoGallery photos={galleryPhotos} />
-          {roundLabel ? <span className="feed-card-chip">{roundLabel}</span> : null}
-          <div className="feed-card-media-caption">
-            <p className="feed-card-course">{post.courseName}</p>
-            <p className="feed-card-location">{post.courseLocation}</p>
-          </div>
+      {hasImages ? (
+        <FeedCardHeroMedia
+          photos={photoRecords}
+          imageAlt={post.imageAlt}
+          rating={isCourseRound ? post.rating : undefined}
+          maxRating={MAX_RATING}
+          variant={isCourseRound ? "hero" : "editorial"}
+        />
+      ) : isCourseRound ? (
+        <div className="feed-card-photo-placeholder" role="img" aria-label="No course photo available">
+          <span className="feed-card-photo-placeholder-label">Course photo unavailable</span>
         </div>
-      ) : hasImage ? (
-        <div className="feed-card-media">
-          <img src={post.images[0]} alt={post.imageAlt} loading="lazy" decoding="async" />
-          <div className="feed-card-media-scrim" aria-hidden="true" />
-          {roundLabel ? <span className="feed-card-chip">{roundLabel}</span> : null}
-          <div className="feed-card-media-caption">
-            <p className="feed-card-course">{post.courseName}</p>
-            <p className="feed-card-location">{post.courseLocation}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="feed-card-topline">
-          {roundLabel ? <span className="feed-card-badge">{roundLabel}</span> : null}
-          {post.courseName ? <p className="feed-card-topline-title">{post.courseName}</p> : null}
+      ) : null}
+
+      {showCourseBlock ? (
+        <div className="feed-card-course-block">
+          {roundLabel ? (
+            <span className={badgeToneClass("positive")}>{roundLabel}</span>
+          ) : null}
+          {post.courseName ? (
+            <h3 className="feed-card-course-title">{post.courseName}</h3>
+          ) : null}
           {post.courseLocation ? (
-            <p className="feed-card-topline-location">{post.courseLocation}</p>
+            <p className="feed-card-course-location">{post.courseLocation}</p>
+          ) : null}
+          {post.rating != null && !hasImages ? (
+            <div
+              className="feed-card-rating feed-card-rating--inline"
+              title={`Rated ${post.rating} out of ${MAX_RATING}`}
+            >
+              <span className="feed-card-rating-value">{post.rating.toFixed(1)}</span>
+              <span className="feed-card-rating-label">Member rating</span>
+            </div>
           ) : null}
         </div>
-      )}
+      ) : null}
+
+      {showSocialHeadline ? (
+        <div className="feed-card-social-head">
+          {roundLabel ? <span className={badgeToneClass(badgeTone)}>{roundLabel}</span> : null}
+          {post.courseName ? <p className="feed-card-social-title">{post.courseName}</p> : null}
+          {post.courseLocation ? (
+            <p className="feed-card-social-location">{post.courseLocation}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="feed-card-body">
         {contentFlags.length > 0 ? (
@@ -263,29 +319,29 @@ export function FeedCard({
           </div>
         ) : null}
 
-        <p className="feed-card-caption">{post.caption}</p>
-
-        {post.details?.length ? (
-          <dl className="feed-card-details">
-            {post.details.map((detail) => (
-              <div key={detail.label} className="feed-card-detail">
-                <dt>{detail.label}</dt>
-                <dd>{detail.value}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : null}
-
-        {post.playedWith ? (
-          <p className="feed-card-played-with">
-            <span className="feed-card-played-with-label">Played with</span> {post.playedWith}
+        {post.caption ? (
+          <p className={`feed-card-caption${isFounder ? " feed-card-caption--founder" : ""}`}>
+            {post.caption}
           </p>
         ) : null}
 
-        <div className="feed-card-actions" role="group" aria-label="Round actions">
+        {metaChips.length > 0 ? (
+          <ul className="feed-card-meta-chips" aria-label="Post details">
+            {metaChips.map((chip) => (
+              <li key={chip.key} className={chipToneClass(chip.tone)}>
+                {chip.tone === "location" ? <PinIcon /> : null}
+                {chip.tone === "date" ? <CalendarIcon /> : null}
+                <span className="feed-card-meta-chip-label">{chip.label}</span>
+                <span className="feed-card-meta-chip-value">{chip.value}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div className="feed-card-actions" role="group" aria-label="Post actions">
           <button
             type="button"
-            className={`feed-card-action${liked ? " is-active" : ""}`}
+            className={`feed-card-action${liked ? " is-active is-liked" : ""}`}
             onClick={toggleLike}
             aria-pressed={liked}
           >
@@ -305,7 +361,7 @@ export function FeedCard({
           </button>
           <button
             type="button"
-            className={`feed-card-action${saved ? " is-active" : ""}`}
+            className={`feed-card-action${saved ? " is-active is-saved" : ""}`}
             onClick={toggleSave}
             aria-pressed={saved}
           >
@@ -359,7 +415,7 @@ export function FeedCard({
               onChange={(event) => setCommentDraft(event.target.value)}
               placeholder="Add a comment…"
             />
-            <button type="submit" className="portal-btn portal-btn--gold portal-btn--compact">
+            <button type="submit" className="feed-card-comment-submit">
               Post
             </button>
           </form>

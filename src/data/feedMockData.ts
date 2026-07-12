@@ -22,9 +22,9 @@ const founderAuthor: PortalGolfer = {
   favoriteCourses: [],
 };
 
-const founderWelcomeCaption = `Welcome to EliteTee — a private golf society built around meaningful connections.
+const founderWelcomeCaption = `Welcome to EliteTee.
 
-Share rounds, request introductions, and discover courses through members you trust. Thank you for helping shape what we become.`;
+Share memorable rounds. Meet exceptional people. Help shape what this community becomes.`;
 
 export function getFounderWelcomePost(): FeedPost {
   return {
