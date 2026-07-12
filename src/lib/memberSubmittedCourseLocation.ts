@@ -2,7 +2,9 @@ import type { GolfCourseRecord } from "../types/golfCourse";
 import { isMemberSubmittedCourse } from "../types/golfCourse";
 import {
   buildCourseLocationSnapshot,
+  hasCorrectMemberSubmittedStructuredLocation,
   mergeStructuredCourseLocation,
+  resolveMemberSubmittedLocationCleanup,
   type ParsedCourseLocation,
 } from "./courseLocationParse";
 
@@ -72,3 +74,14 @@ export function validateStructuredCourseLocationInput(
     snapshot: buildCourseLocationSnapshot({ city, region, country }),
   };
 }
+
+export function isEligibleForMemberSubmittedLocationCleanup(
+  course: Pick<GolfCourseRecord, "source_name" | "submitted_by_member">,
+): boolean {
+  return isMemberSubmittedGolfCourseRecord(course);
+}
+
+export {
+  hasCorrectMemberSubmittedStructuredLocation,
+  resolveMemberSubmittedLocationCleanup,
+};
