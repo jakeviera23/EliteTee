@@ -22,6 +22,7 @@ import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfil
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { FeedCard } from "./FeedCard";
+import { FEED_CARD_SCOPE_CLASS } from "../../lib/feedCardScope";
 import { MemberActivityList } from "./MemberActivityList";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileDossier } from "./ProfileDossier";
@@ -441,7 +442,7 @@ export function GolferProfilePage({
                       : "Posts you've shared in the member feed."
                   }
                 >
-                  <div className="et-profile-feed-grid">
+                  <div className={`et-profile-feed-grid ${FEED_CARD_SCOPE_CLASS}`}>
                     {feedPosts.map((post, index) => (
                       <FeedCard
                         key={post.id}

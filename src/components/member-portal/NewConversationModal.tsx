@@ -37,7 +37,7 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
     if (error) {
       console.error("[NewConversationModal] failed to load members", {
         code: (error as { code?: string }).code,
-        message: error.message,
+        message: error instanceof Error ? error.message : String(error),
       });
       setLoadError("Member profiles could not be loaded right now.");
       setMembers([]);

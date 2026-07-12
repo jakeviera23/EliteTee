@@ -622,7 +622,7 @@ export async function fetchMemberProfiles() {
   return { data: (data ?? []).map((row) => normalizeMemberProfileRecord(row as Record<string, unknown>)), error };
 }
 
-const PORTAL_APPROVED_MEMBER_SELECT = `
+const PORTAL_APPROVED_MEMBER_SELECT_CORE = `
   id,
   full_name,
   primary_club,
@@ -635,15 +635,35 @@ const PORTAL_APPROVED_MEMBER_SELECT = `
   current_request,
   traveling_to,
   club_logo_url,
-  cover_photo_url,
   membership_status,
   is_verified,
   founding_member_number,
   portal_access_enabled,
   user_id,
-  created_at,
   updated_at
 `;
+
+function buildPortalApprovedMemberSelect(options: { includeCoverPhoto: boolean; includeCreatedAt: boolean }) {
+  const columns = PORTAL_APPROVED_MEMBER_SELECT_CORE.replace(/\s+/g, " ")
+    .split(",")
+    .map((column) => column.trim())
+    .filter(Boolean);
+
+  if (options.includeCreatedAt) {
+    columns.push("created_at");
+  }
+
+  if (options.includeCoverPhoto) {
+    columns.push("cover_photo_url");
+  }
+
+  return columns.join(", ");
+}
+
+const PORTAL_APPROVED_MEMBER_SELECT = buildPortalApprovedMemberSelect({
+  includeCoverPhoto: true,
+  includeCreatedAt: true,
+});
 
 export type ApprovedMemberDirectoryProfile = Pick<
   MemberProfileRecord,
@@ -748,7 +768,7 @@ async function fetchApprovedMemberRowsViaTable(userIds: string[]) {
   }
 
   return {
-    data: ((data ?? []) as Record<string, unknown>[]).map((row) => normalizeApprovedDirectoryRow(row)),
+    data: ((data ?? []) as unknown as Record<string, unknown>[]).map((row) => normalizeApprovedDirectoryRow(row)),
     error: null,
   };
 }
@@ -831,31 +851,77 @@ function mapPortalApprovedMemberRows(rows: Record<string, unknown>[]): MemberPro
   );
 }
 
+function isMissingCoverPhotoColumnError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return isMissingColumnError(error) && message.includes("cover_photo");
+}
+
+function isMissingCreatedAtColumnError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return isMissingColumnError(error) && message.includes("created_at");
+}
+
 async function fetchPortalApprovedMemberRows() {
   if (!supabase) {
     return { data: [] as Record<string, unknown>[], error: new Error("Supabase is not configured.") };
   }
 
-  return supabase
-    .from("member_profiles")
-    .select(PORTAL_APPROVED_MEMBER_SELECT)
-    .eq("portal_access_enabled", true)
-    .order("full_name", { ascending: true });
+  const selectAttempts = [
+    { includeCoverPhoto: true, includeCreatedAt: true },
+    { includeCoverPhoto: false, includeCreatedAt: true },
+    { includeCoverPhoto: false, includeCreatedAt: false },
+  ];
+
+  let lastError: unknown = null;
+
+  for (const attempt of selectAttempts) {
+    const select = buildPortalApprovedMemberSelect(attempt);
+    const result = await supabase
+      .from("member_profiles")
+      .select(select)
+      .eq("portal_access_enabled", true)
+      .order("full_name", { ascending: true });
+
+    if (!result.error) {
+      if (import.meta.env.DEV && attempt !== selectAttempts[0]) {
+        console.warn("[memberProfiles] fetchPortalApprovedMemberRows used fallback select", attempt);
+      }
+      return result;
+    }
+
+    lastError = result.error;
+
+    const missingCoverPhoto = isMissingCoverPhotoColumnError(result.error);
+    const missingCreatedAt = isMissingCreatedAtColumnError(result.error);
+
+    if (!missingCoverPhoto && !missingCreatedAt) {
+      return result;
+    }
+  }
+
+  return {
+    data: [] as Record<string, unknown>[],
+    error: lastError ?? new Error("Unable to load approved member profiles."),
+  };
 }
 
 export async function fetchDiscoverablePortalMembers() {
   const { data, error } = await fetchPortalApprovedMemberRows();
 
   if (error) {
-    console.error("[fetchDiscoverablePortalMembers] Supabase error", {
-      code: getErrorCode(error),
-      message: getErrorMessage(error),
-    });
+    if (import.meta.env.DEV) {
+      console.error("[fetchDiscoverablePortalMembers] Supabase error", {
+        code: getErrorCode(error),
+        message: getErrorMessage(error),
+      });
+    } else {
+      console.error("[fetchDiscoverablePortalMembers] Supabase error", getErrorMessage(error));
+    }
     return { data: [] as MemberProfileRecord[], error };
   }
 
   return {
-    data: mapPortalApprovedMemberRows((data ?? []) as Record<string, unknown>[]),
+    data: mapPortalApprovedMemberRows(((data ?? []) as unknown as Record<string, unknown>[])),
     error: null,
   };
 }

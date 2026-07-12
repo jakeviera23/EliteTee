@@ -15,6 +15,10 @@ import {
   fetchDiscoverablePortalMembers,
   fetchOwnMemberProfile,
 } from "../../lib/memberProfiles";
+import {
+  formatDiscoverMemberLoadError,
+  logDiscoverMemberLoadError,
+} from "../../lib/portalDiscoverErrors";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { DiscoverDirectoryCard } from "./discover/DiscoverDirectoryCard";
@@ -59,8 +63,8 @@ export function PortalDiscover({
     ]);
 
     if (error) {
-      console.error("[PortalDiscover] failed to load members", error);
-      setLoadError("Member profiles could not be loaded right now.");
+      logDiscoverMemberLoadError(error);
+      setLoadError(formatDiscoverMemberLoadError(error));
       setMembers([]);
     } else {
       setMembers(data);

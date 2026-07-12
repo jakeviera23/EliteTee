@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
+import { FEED_CARD_ICON_CLASSES } from "../../lib/feedCardScope";
+import { resolveFeedCardBadgeLabel } from "../../lib/feedPostDisplay";
 import { canMemberEditFeedPost, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
@@ -29,7 +31,7 @@ type FeedCardProps = {
 
 function HeartIcon({ filled }: { filled?: boolean }) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="feed-card-action-icon">
+    <svg viewBox="0 0 20 20" aria-hidden="true" className={FEED_CARD_ICON_CLASSES.action}>
       <path
         d="M10 16.5 3.6 10.4a3.6 3.6 0 0 1 5.1-5.1l1.3 1.3 1.3-1.3a3.6 3.6 0 1 1 5.1 5.1L10 16.5Z"
         fill={filled ? "currentColor" : "none"}
@@ -43,7 +45,7 @@ function HeartIcon({ filled }: { filled?: boolean }) {
 
 function CommentIcon() {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="feed-card-action-icon">
+    <svg viewBox="0 0 20 20" aria-hidden="true" className={FEED_CARD_ICON_CLASSES.action}>
       <path
         d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 16 13.5H8.5L5 16.5v-3H4A1.5 1.5 0 0 1 2.5 12V6A1.5 1.5 0 0 1 4 4.5Z"
         fill="none"
@@ -57,7 +59,7 @@ function CommentIcon() {
 
 function SaveIcon({ filled }: { filled?: boolean }) {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="feed-card-action-icon">
+    <svg viewBox="0 0 20 20" aria-hidden="true" className={FEED_CARD_ICON_CLASSES.action}>
       <path
         d="M5.5 3.5h9v13l-4.5-3.2-4.5 3.2v-13Z"
         fill={filled ? "currentColor" : "none"}
@@ -71,7 +73,7 @@ function SaveIcon({ filled }: { filled?: boolean }) {
 
 function ShareIcon() {
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="feed-card-action-icon">
+    <svg viewBox="0 0 20 20" aria-hidden="true" className={FEED_CARD_ICON_CLASSES.action}>
       <path
         d="M14.5 6.5a2 2 0 1 0-1.9-2.6L7.4 6.6a2 2 0 1 0 0 2.8l5.2 2.7a2 2 0 1 0 .6-1.2L8 8.2a2 2 0 0 0 0-.4l5.1-2.6a2 2 0 0 0 1.4.9Z"
         fill="none"
@@ -85,7 +87,7 @@ function ShareIcon() {
 
 function PinIcon() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" className="feed-card-chip-icon">
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={FEED_CARD_ICON_CLASSES.chip}>
       <path
         d="M8 1.5 5.5 4H3.5v2.2L6 9.2V14l2-1 2 1V9.2l2.5-2.9V4h-2L8 1.5Z"
         fill="none"
@@ -99,7 +101,7 @@ function PinIcon() {
 
 function CalendarIcon() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" className="feed-card-chip-icon">
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={FEED_CARD_ICON_CLASSES.chip}>
       <rect x="2.5" y="3.5" width="11" height="10" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.1" />
       <path d="M5 2v2.5M11 2v2.5M2.5 6.5h11" stroke="currentColor" strokeWidth="1.1" />
     </svg>
@@ -205,7 +207,7 @@ export function FeedCard({
   const isCourseRound = !isFounder && isCourseRoundPost(post);
   const canEdit = !isFounder && canMemberEditFeedPost(post, currentUserId);
   const showEditedLabel = isFeedPostEdited(post.createdAt, post.updatedAt);
-  const roundLabel = post.requestLabel ?? post.roundType ?? postTypeLabels[post.postType];
+  const roundLabel = resolveFeedCardBadgeLabel(post) || postTypeLabels[post.postType];
   const hasImages = (post.images?.length ?? 0) > 0;
   const photoRecords = hasImages
     ? signedUrlsToPhotoRecords(post.images, post.memberCourseRoundId ?? "")
