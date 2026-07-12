@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyIntent, extractCourseNameFromQuestion } from "./intent.ts";
+import { classifyIntent, extractCourseNameFromQuestion, buildRetrievalFilters } from "./intent.ts";
 
 describe("classifyIntent", () => {
   it("classifies course rating questions as find_courses", () => {
@@ -18,6 +18,16 @@ describe("classifyIntent", () => {
 
   it("returns unsupported for empty questions", () => {
     expect(classifyIntent("   ")).toBe("unsupported");
+  });
+});
+
+describe("buildRetrievalFilters", () => {
+  it("extracts Florida for flagship meet-in-location questions", () => {
+    const filters = buildRetrievalFilters(
+      "Who should I meet in Florida?",
+      "recommend_introductions",
+    );
+    expect(filters.memberFilters.location?.toLowerCase()).toBe("florida");
   });
 });
 
