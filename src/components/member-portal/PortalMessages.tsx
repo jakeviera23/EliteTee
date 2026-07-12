@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { earlyStageCopy } from "../../data/portalSocial";
+import { earlyStageCopy, messagesCopy } from "../../data/portalSocial";
 import {
   buildApprovedMemberIdentityMap,
   fetchApprovedMemberProfilesByUserIds,
@@ -18,6 +18,7 @@ import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigati
 import { EditablePrivateMessage } from "./EditablePrivateMessage";
 import { MemberClubAvatar } from "./MemberClubAvatar";
 import { NewConversationModal } from "./NewConversationModal";
+import "../../member-portal-messages.css";
 
 type PortalMessagesProps = {
   unreadCount?: number;
@@ -46,6 +47,14 @@ function formatMessageTime(value: string) {
   });
 }
 
+function formatThreadMemberMeta(summary: DirectConversationSummary | null | undefined) {
+  if (!summary) return "";
+  const parts = [summary.otherUserPrimaryClub?.trim(), summary.otherUserBasedIn?.trim()].filter(
+    Boolean,
+  );
+  return parts.join(" · ");
+}
+
 export function PortalMessages({
   unreadCount: _unreadCount = 0,
   initialConversation = null,
@@ -64,7 +73,7 @@ export function PortalMessages({
   const [inboxError, setInboxError] = useState<string | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
-  const composeInputRef = useRef<HTMLInputElement>(null);
+  const composeInputRef = useRef<HTMLTextAreaElement>(null);
   const threadEndRef = useRef<HTMLLIElement>(null);
 
   const loadInbox = useCallback(async () => {
@@ -178,6 +187,13 @@ export function PortalMessages({
     return () => window.clearTimeout(timerId);
   }, [activeConversation?.otherUserId, isLoadingThread]);
 
+  useEffect(() => {
+    const textarea = composeInputRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 136)}px`;
+  }, [composeText, activeConversation?.otherUserId]);
+
   const hasConversations = conversations.length > 0;
   const showMobileThread = Boolean(activeConversation);
 
@@ -188,6 +204,8 @@ export function PortalMessages({
         : null,
     [activeConversation, conversations],
   );
+
+  const threadMemberMeta = formatThreadMemberMeta(activeSummary);
 
   function openConversation(otherUserId: string, otherUserName: string) {
     setSendError(null);
@@ -228,6 +246,7 @@ export function PortalMessages({
         return {
           ...conversation,
           lastMessageBody: updated.body,
+          lastMessageWasEdited: Boolean(updated.edited_at),
         };
       }),
     );
@@ -257,114 +276,159 @@ export function PortalMessages({
     await loadThread(activeConversation.otherUserId);
   }
 
+  function handleComposeKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
   return (
-    <section className="portal-social-page portal-messages-page" aria-labelledby="messages-heading">
-      <header className="portal-section-head portal-section-head--social portal-messages-head portal-section-head--compact">
-        <div>
-          <h2 id="messages-heading">Messages</h2>
-          <p>Connect through golf with founding members as the community grows.</p>
+    <section className="et-messages" aria-labelledby="messages-heading">
+      <header className="et-messages-header">
+        <div className="et-messages-header-copy">
+          <p className="et-messages-eyebrow">{messagesCopy.eyebrow}</p>
+          <h2 id="messages-heading" className="et-messages-title">
+            {messagesCopy.title}
+          </h2>
+          <p className="et-messages-lead">{messagesCopy.lead}</p>
         </div>
         <button
           type="button"
-          className="portal-btn portal-btn--gold portal-btn--compact"
+          className="et-btn et-btn--forest"
           onClick={() => setShowNewModal(true)}
         >
-          New Conversation
+          {messagesCopy.newConversation}
         </button>
       </header>
 
       {inboxError ? (
-        <p className="portal-alert portal-alert--warning" role="alert">
+        <p className="et-messages-alert" role="alert">
           {inboxError}
         </p>
       ) : null}
 
-      <div className="portal-messages-layout messages-layout">
+      <div className="et-messages-layout">
         <aside
-          className={`messages-sidebar${showMobileThread ? " is-hidden-mobile" : ""}`}
+          className={`et-messages-sidebar${showMobileThread ? " is-hidden-mobile" : ""}`}
+          aria-label="Conversations"
         >
-          {isLoadingInbox ? <p className="portal-discover-loading">Loading conversations…</p> : null}
+          {isLoadingInbox ? (
+            <p className="et-messages-loading">{messagesCopy.loadingInbox}</p>
+          ) : null}
 
           {!isLoadingInbox && !hasConversations ? (
-            <div className="portal-messages-empty">
-              <p className="portal-messages-empty-title">{earlyStageCopy.messagesEmptyTitle}</p>
-              <p className="portal-messages-empty-body">{earlyStageCopy.messagesEmptyBody}</p>
-              <p className="portal-messages-empty-note">{earlyStageCopy.messagesEmptyNote}</p>
+            <div className="et-messages-empty">
+              <p className="et-messages-empty-title">{earlyStageCopy.messagesEmptyTitle}</p>
+              <p className="et-messages-empty-copy">{earlyStageCopy.messagesEmptyBody}</p>
+              <p className="et-messages-empty-copy">{earlyStageCopy.messagesEmptyNote}</p>
             </div>
           ) : null}
 
           {!isLoadingInbox && hasConversations ? (
-            <div className="portal-message-list">
-              {conversations.map((conversation) => (
-                <button
-                  key={conversation.otherUserId}
-                  type="button"
-                  className={`portal-message-card messages-conversation${
-                    activeConversation?.otherUserId === conversation.otherUserId ? " is-selected" : ""
-                  }`}
-                  onClick={() => openConversationFromSummary(conversation)}
-                >
-                  <MemberClubAvatar
-                    member={{ club_logo_url: conversation.otherUserPhotoUrl ?? null }}
-                    name={conversation.otherUserName}
-                    size="sm"
-                  />
-                  <span className="portal-message-copy">
-                    <span className="portal-message-top">
-                      <span className="portal-message-name">
-                        {conversation.otherUserName}
-                        {conversation.otherUserFoundingNumber ? (
-                          <span className="portal-message-fm-badge">
-                            {conversation.otherUserFoundingNumber}
-                          </span>
-                        ) : null}
-                        {conversation.unreadCount > 0 ? (
-                          <span className="messages-unread-badge">{conversation.unreadCount}</span>
-                        ) : null}
+            <div className="et-messages-list">
+              {conversations.map((conversation) => {
+                const isSelected =
+                  activeConversation?.otherUserId === conversation.otherUserId;
+                const previewPrefix = conversation.lastMessageWasEdited ? "Edited · " : "";
+
+                return (
+                  <button
+                    key={conversation.otherUserId}
+                    type="button"
+                    className={`et-messages-conversation${isSelected ? " is-selected" : ""}`}
+                    onClick={() => openConversationFromSummary(conversation)}
+                    aria-current={isSelected ? "true" : undefined}
+                  >
+                    <MemberClubAvatar
+                      member={{ club_logo_url: conversation.otherUserPhotoUrl ?? null }}
+                      name={conversation.otherUserName}
+                      size="sm"
+                    />
+                    <span className="et-messages-conversation-copy">
+                      <span className="et-messages-conversation-top">
+                        <span className="et-messages-conversation-name">
+                          {conversation.otherUserName}
+                          {conversation.otherUserFoundingNumber ? (
+                            <span className="et-messages-founding-badge">
+                              {conversation.otherUserFoundingNumber}
+                            </span>
+                          ) : null}
+                          {conversation.unreadCount > 0 ? (
+                            conversation.unreadCount > 1 ? (
+                              <span className="et-messages-unread-count" aria-label={`${conversation.unreadCount} unread`}>
+                                {conversation.unreadCount}
+                              </span>
+                            ) : (
+                              <span className="et-messages-unread-dot" aria-label="Unread" />
+                            )
+                          ) : null}
+                        </span>
+                        <time dateTime={conversation.lastMessageAt}>
+                          {formatMessageTime(conversation.lastMessageAt)}
+                        </time>
                       </span>
-                      <time dateTime={conversation.lastMessageAt}>
-                        {formatMessageTime(conversation.lastMessageAt)}
-                      </time>
+                      <p
+                        className={`et-messages-preview${
+                          conversation.unreadCount > 0 ? " is-unread" : ""
+                        }`}
+                      >
+                        {conversation.lastMessageWasEdited ? (
+                          <span className="et-messages-preview-edited">{previewPrefix}</span>
+                        ) : null}
+                        {conversation.lastMessageBody}
+                      </p>
                     </span>
-                    <span
-                      className={`portal-message-preview${
-                        conversation.unreadCount > 0 ? " is-unread" : ""
-                      }`}
-                    >
-                      {conversation.lastMessageBody}
-                    </span>
-                  </span>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
         </aside>
 
         <div
-          className={`portal-messages-panel messages-panel${
-            showMobileThread ? " is-visible-mobile" : ""
-          }`}
+          className={`et-messages-panel${showMobileThread ? " is-visible-mobile" : ""}`}
         >
           {!activeConversation ? (
-            <p className="messages-thread-empty">
-              Select a conversation or start a new one with a founding member.
-            </p>
+            <div className="et-messages-panel-placeholder">
+              <p className="et-messages-panel-placeholder-title">{messagesCopy.selectThread}</p>
+              <p className="et-messages-panel-placeholder-copy">{messagesCopy.selectThreadHint}</p>
+            </div>
           ) : (
             <>
-              <header className="portal-messages-panel-head messages-panel-head">
+              <header className="et-messages-thread-head">
                 <button
                   type="button"
-                  className="messages-back-btn"
+                  className="et-messages-back"
                   onClick={closeConversation}
-                  aria-label="Back to messages"
+                  aria-label={messagesCopy.backToList}
                 >
                   ‹
                 </button>
-                <div className="messages-panel-head-main">
-                  {onViewMemberProfile ? (
+                <div className="et-messages-thread-identity">
+                  <MemberClubAvatar
+                    member={{
+                      club_logo_url: activeSummary?.otherUserPhotoUrl ?? null,
+                    }}
+                    name={activeConversation.otherUserName}
+                    size="sm"
+                  />
+                  <div className="et-messages-thread-identity-copy">
+                    <h3 className="et-messages-thread-name">{activeConversation.otherUserName}</h3>
+                    {threadMemberMeta ? (
+                      <p className="et-messages-thread-meta">{threadMemberMeta}</p>
+                    ) : activeSummary?.otherUserFoundingNumber ? (
+                      <p className="et-messages-thread-meta">
+                        {activeSummary.otherUserFoundingNumber}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                {onViewMemberProfile ? (
+                  <div className="et-messages-thread-actions">
                     <button
                       type="button"
-                      className="messages-panel-profile-link"
+                      className="et-btn et-btn--secondary et-btn--sm"
                       onClick={() =>
                         onViewMemberProfile(
                           activeConversation.otherUserId,
@@ -372,117 +436,95 @@ export function PortalMessages({
                         )
                       }
                     >
-                      <span className="messages-panel-profile-identity">
-                        <MemberClubAvatar
-                          member={{
-                            club_logo_url:
-                              activeSummary?.otherUserPhotoUrl ??
-                              conversations.find(
-                                (item) => item.otherUserId === activeConversation.otherUserId,
-                              )?.otherUserPhotoUrl ??
-                              null,
-                          }}
-                          name={activeConversation.otherUserName}
-                          size="sm"
-                        />
-                        <span>
-                          <h3>{activeConversation.otherUserName}</h3>
-                          {activeSummary?.otherUserFoundingNumber ? (
-                            <p className="messages-panel-club">
-                              {activeSummary.otherUserFoundingNumber}
-                            </p>
-                          ) : null}
-                        </span>
-                      </span>
+                      {messagesCopy.viewProfile}
                     </button>
-                  ) : (
-                    <h3>{activeConversation.otherUserName}</h3>
-                  )}
-                  {activeSummary?.lastMessageAt && !onViewMemberProfile ? (
-                    <p className="messages-panel-club">
-                      Last message {formatMessageTime(activeSummary.lastMessageAt)}
-                    </p>
-                  ) : null}
-                  {activeSummary?.lastMessageAt && onViewMemberProfile ? (
-                    <p className="messages-panel-club messages-panel-club--sub">
-                      Last message {formatMessageTime(activeSummary.lastMessageAt)}
-                    </p>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </header>
 
-              {isLoadingThread ? (
-                <p className="portal-discover-loading">Loading conversation…</p>
-              ) : null}
-
-              {threadError ? (
-                <div className="messages-thread-error">
-                  <p className="portal-alert portal-alert--warning" role="alert">
-                    {threadError}
-                  </p>
-                  <button
-                    type="button"
-                    className="portal-btn portal-btn--outline portal-btn--compact"
-                    onClick={() => void loadThread(activeConversation.otherUserId)}
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : null}
-
-              <ul className="portal-messages-thread messages-thread">
-                {!isLoadingThread && threadMessages.length === 0 ? (
-                  <li className="messages-thread-empty">
-                    No messages yet. Send the first note to {activeConversation.otherUserName}.
-                  </li>
+              <div className="et-messages-thread-scroll">
+                {isLoadingThread ? (
+                  <p className="et-messages-loading">{messagesCopy.loadingThread}</p>
                 ) : null}
 
-                {threadMessages.map((message) => {
-                  const isOwn = message.sender_id === currentUserId;
-                  return (
-                    <li
-                      key={message.id}
-                      className={`portal-message-bubble portal-message-bubble--${
-                        isOwn ? "me" : "them"
-                      }`}
+                {threadError ? (
+                  <div className="et-messages-thread-error">
+                    <p className="et-messages-alert" role="alert">
+                      {threadError}
+                    </p>
+                    <button
+                      type="button"
+                      className="et-btn et-btn--secondary et-btn--sm"
+                      onClick={() => void loadThread(activeConversation.otherUserId)}
                     >
-                      <EditablePrivateMessage
-                        message={message}
-                        isOwn={isOwn}
-                        formatTime={formatMessageTime}
-                        bubbleClassName="portal-message-bubble-inner"
-                        onEdited={handleMessageEdited}
-                      />
-                    </li>
-                  );
-                })}
-                <li ref={threadEndRef} className="messages-thread-end" aria-hidden="true" />
-              </ul>
+                      {messagesCopy.retryThread}
+                    </button>
+                  </div>
+                ) : null}
 
-              <form className="portal-messages-compose messages-compose" onSubmit={handleSendMessage}>
-                <input
+                {!isLoadingThread && !threadError && threadMessages.length === 0 ? (
+                  <div className="et-messages-thread-empty">
+                    <p className="et-messages-thread-empty-title">{messagesCopy.threadEmptyTitle}</p>
+                    <p className="et-messages-thread-empty-copy">
+                      Send the first note to {activeConversation.otherUserName}.
+                    </p>
+                  </div>
+                ) : null}
+
+                <ul className="et-messages-thread" aria-live="polite">
+                  {threadMessages.map((message) => {
+                    const isOwn = message.sender_id === currentUserId;
+                    return (
+                      <li
+                        key={message.id}
+                        className={`et-messages-bubble et-messages-bubble--${
+                          isOwn ? "me" : "them"
+                        }`}
+                      >
+                        <EditablePrivateMessage
+                          message={message}
+                          isOwn={isOwn}
+                          formatTime={formatMessageTime}
+                          bubbleClassName="et-messages-bubble-inner"
+                          onEdited={handleMessageEdited}
+                        />
+                      </li>
+                    );
+                  })}
+                  <li ref={threadEndRef} className="et-messages-thread-end" aria-hidden="true" />
+                </ul>
+              </div>
+
+              <form className="et-messages-compose" onSubmit={handleSendMessage}>
+                <label className="visually-hidden" htmlFor="messages-compose-input">
+                  {messagesCopy.composeLabel}
+                </label>
+                <textarea
+                  id="messages-compose-input"
                   ref={composeInputRef}
-                  type="text"
+                  className="et-messages-compose-input"
+                  rows={1}
                   value={composeText}
                   onChange={(event) => setComposeText(event.target.value)}
-                  placeholder={`Message ${activeConversation.otherUserName}…`}
+                  onKeyDown={handleComposeKeyDown}
+                  placeholder={messagesCopy.composePlaceholder(activeConversation.otherUserName)}
                   disabled={isSending || isLoadingThread}
-                  aria-label="Message"
+                  aria-label={messagesCopy.composeLabel}
                 />
                 <button
                   type="submit"
-                  className="portal-btn portal-btn--gold portal-btn--compact"
-                  disabled={isSending || !composeText.trim()}
+                  className="et-btn et-btn--forest"
+                  disabled={isSending || !composeText.trim() || isLoadingThread}
+                  aria-label={messagesCopy.send}
                 >
-                  {isSending ? "Sending…" : "Send"}
+                  {isSending ? messagesCopy.sending : messagesCopy.send}
                 </button>
+                {sendError ? (
+                  <p className="et-messages-send-error" role="alert">
+                    {sendError}
+                  </p>
+                ) : null}
               </form>
-
-              {sendError ? (
-                <p className="portal-alert portal-alert--warning" role="alert">
-                  {sendError}
-                </p>
-              ) : null}
             </>
           )}
         </div>

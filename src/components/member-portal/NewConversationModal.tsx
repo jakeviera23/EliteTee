@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { earlyStageCopy } from "../../data/portalSocial";
+import { earlyStageCopy, messagesCopy } from "../../data/portalSocial";
 import { fetchMessageablePortalMembers } from "../../lib/memberProfiles";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { MemberClubAvatar } from "./MemberClubAvatar";
@@ -67,20 +67,20 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
-        className="portal-modal portal-modal--conversation messages-modal"
+        className="portal-modal et-messages-modal"
         role="dialog"
         aria-labelledby="new-conversation-heading"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="portal-modal-head">
-          <h2 id="new-conversation-heading">New Conversation</h2>
+          <h2 id="new-conversation-heading">{messagesCopy.newConversation}</h2>
           <button type="button" className="portal-modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
 
-        <label className="messages-modal-search">
+        <label className="et-messages-modal-search">
           <span className="visually-hidden">Search members</span>
           <input
             type="search"
@@ -92,38 +92,38 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
         </label>
 
         {isLoading ? (
-          <p className="portal-discover-loading">Loading members…</p>
+          <p className="et-messages-loading">Loading members…</p>
         ) : null}
 
         {loadError ? (
-          <p className="portal-alert portal-alert--warning" role="alert">
+          <p className="et-messages-alert" role="alert">
             {loadError}
           </p>
         ) : null}
 
         {!isLoading && !loadError && members.length === 0 ? (
-          <div className="portal-empty portal-empty--social">
-            <p>{earlyStageCopy.messagesNewEmpty}</p>
+          <div className="et-messages-empty">
+            <p className="et-messages-empty-copy">{earlyStageCopy.messagesNewEmpty}</p>
           </div>
         ) : null}
 
         {!isLoading && !loadError && members.length > 0 && filteredMembers.length === 0 ? (
-          <p className="discover-no-match">{earlyStageCopy.discoverNoMatch}</p>
+          <p className="et-messages-empty-copy">{earlyStageCopy.discoverNoMatch}</p>
         ) : null}
 
         {!isLoading && filteredMembers.length > 0 ? (
-          <ul className="messages-modal-list">
+          <ul className="et-messages-modal-list">
             {filteredMembers.map((member) => (
               <li key={member.id}>
                 <button
                   type="button"
-                  className="messages-modal-member"
+                  className="et-messages-modal-member"
                   onClick={() => handleSelect(member)}
                 >
                   <MemberClubAvatar member={member} name={member.full_name} size="sm" />
                   <span>
-                    <p className="messages-modal-member-name">{member.full_name}</p>
-                    <p className="messages-modal-member-meta">
+                    <p className="et-messages-modal-member-name">{member.full_name}</p>
+                    <p className="et-messages-modal-member-meta">
                       {[member.founding_member_number, member.primary_club, member.based_in]
                         .filter(Boolean)
                         .join(" · ") || "Founding member"}
@@ -135,8 +135,8 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
           </ul>
         ) : null}
 
-        <footer className="messages-modal-footer">
-          <button type="button" className="portal-btn portal-btn--outline" onClick={onClose}>
+        <footer className="et-messages-modal-footer">
+          <button type="button" className="et-btn et-btn--secondary" onClick={onClose}>
             Close
           </button>
         </footer>

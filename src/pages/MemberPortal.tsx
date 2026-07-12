@@ -25,6 +25,7 @@ import "../member-portal-feed.css";
 import "../member-portal-courses.css";
 import "../member-portal-discover.css";
 import "../member-portal-profile.css";
+import "../member-portal-messages.css";
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;

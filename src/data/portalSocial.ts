@@ -92,6 +92,26 @@ export const experienceCopy = {
   futureFieldsNote: "These fields are coming soon. Your experience still saves with the details above.",
 } as const;
 
+/** Messages — member correspondence copy */
+export const messagesCopy = {
+  eyebrow: "Member Messages",
+  title: "Messages",
+  lead: "Private correspondence with founding members — calm, direct, and golf-connected.",
+  newConversation: "New Conversation",
+  backToList: "Back to conversations",
+  viewProfile: "View Profile",
+  selectThread: "Select a conversation",
+  selectThreadHint: "Choose a member from the list or start a new conversation.",
+  threadEmptyTitle: "Start the conversation",
+  loadingInbox: "Loading conversations…",
+  loadingThread: "Loading conversation…",
+  send: "Send",
+  sending: "Sending…",
+  composeLabel: "Write a message",
+  composePlaceholder: (name: string) => `Message ${name}…`,
+  retryThread: "Retry",
+} as const;
+
 export type PostType =
   | "photo"
   | "carousel"

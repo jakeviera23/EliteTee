@@ -805,6 +805,7 @@ export function buildApprovedMemberIdentityMap(profiles: ApprovedMemberDirectory
       club_logo_url: string | null;
       founding_member_number: string | null;
       primary_club: string;
+      based_in: string;
     }
   > = {};
 
@@ -817,6 +818,7 @@ export function buildApprovedMemberIdentityMap(profiles: ApprovedMemberDirectory
       club_logo_url: profile.club_logo_url ?? null,
       founding_member_number: profile.founding_member_number,
       primary_club: profile.primary_club,
+      based_in: profile.based_in,
     };
   }
 
