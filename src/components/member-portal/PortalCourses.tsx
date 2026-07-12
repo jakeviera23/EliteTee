@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import {
+  buildFeaturedSections,
+  countActiveFilters,
+  DEFAULT_COURSE_FILTERS,
+  extractFilterOptions,
+  filterCourses,
+  groupCoursesGeographically,
+  sortCourses,
+  type CourseDirectoryFilters,
+  type CourseSortOption,
+} from "../../lib/courseDirectory";
 import {
   fetchPopularGolfCourses,
   searchGolfCourses,
@@ -8,8 +19,11 @@ import {
 } from "../../lib/golfCourses";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { AddCoursePlayedModal } from "./AddCoursePlayedModal";
-import { CourseCompactCard } from "./CourseCompactCard";
-import { CourseSearchCard } from "./CourseSearchCard";
+import { CourseDirectoryCard } from "./CourseDirectoryCard";
+import { CourseFeaturedSections } from "./CourseFeaturedSections";
+import { CourseFilterDrawer } from "./CourseFilterDrawer";
+import { CourseFiltersBar } from "./CourseFiltersBar";
+import { CourseGeoDirectory } from "./CourseGeoDirectory";
 
 const POPULAR_COURSE_LIMIT = 5;
 
@@ -17,15 +31,22 @@ export function PortalCourses() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 300);
-  const [results, setResults] = useState<GolfCourseSearchResult[]>([]);
+  const [directoryPool, setDirectoryPool] = useState<GolfCourseSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<GolfCourseSearchResult[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
-  const [isSearching, setIsSearching] = useState(true);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [popularCourses, setPopularCourses] = useState<GolfCourseSearchResult[]>([]);
   const [popularLoading, setPopularLoading] = useState(true);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [directoryRefreshKey, setDirectoryRefreshKey] = useState(0);
+  const [filters, setFilters] = useState<CourseDirectoryFilters>(DEFAULT_COURSE_FILTERS);
+  const [sortBy, setSortBy] = useState<CourseSortOption>("most-played");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const isSearchMode = debouncedQuery.trim().length > 0;
+  const hasClientFilters = countActiveFilters(filters) > 0;
 
   const loadPopular = useCallback(async () => {
     setPopularLoading(true);
@@ -34,9 +55,9 @@ export function PortalCourses() {
     setPopularLoading(false);
   }, []);
 
-  const loadDirectory = useCallback(async (searchQuery: string, searchOffset: number) => {
-    setIsSearching(true);
-    setSearchError(null);
+  const loadDirectoryPage = useCallback(async (searchQuery: string, searchOffset: number) => {
+    setIsLoading(true);
+    setLoadError(null);
 
     const { data, error } = await searchGolfCourses({
       query: searchQuery,
@@ -46,22 +67,34 @@ export function PortalCourses() {
 
     if (error) {
       console.error("[PortalCourses] directory load failed", error.message);
-      setSearchError("Course search is unavailable right now.");
-      setResults([]);
+      setLoadError("Course search is unavailable right now.");
+      if (searchOffset === 0) {
+        setDirectoryPool([]);
+        setSearchResults([]);
+      }
       setHasMore(false);
-      setIsSearching(false);
+      setIsLoading(false);
       return;
     }
 
     const rows = data ?? [];
-    if (searchOffset === 0) {
-      setResults(rows);
+    const searching = searchQuery.trim().length > 0;
+
+    if (searching) {
+      if (searchOffset === 0) {
+        setSearchResults(rows);
+      } else {
+        setSearchResults((current) => [...current, ...rows]);
+      }
+    } else if (searchOffset === 0) {
+      setDirectoryPool(rows);
     } else {
-      setResults((current) => [...current, ...rows]);
+      setDirectoryPool((current) => [...current, ...rows]);
     }
+
     setOffset(searchOffset);
     setHasMore(rows.length === SEARCH_PAGE_SIZE);
-    setIsSearching(false);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -69,132 +102,197 @@ export function PortalCourses() {
   }, [loadPopular]);
 
   useEffect(() => {
-    void loadDirectory(debouncedQuery, 0);
-  }, [debouncedQuery, directoryRefreshKey, loadDirectory]);
+    void loadDirectoryPage(debouncedQuery, 0);
+  }, [debouncedQuery, directoryRefreshKey, loadDirectoryPage]);
 
   async function loadMore() {
     const nextOffset = offset + SEARCH_PAGE_SIZE;
-    const { data, error } = await searchGolfCourses({
-      query: debouncedQuery,
-      limit: SEARCH_PAGE_SIZE,
-      offset: nextOffset,
-    });
-
-    if (error || !data) return;
-
-    setResults((current) => [...current, ...data]);
-    setOffset(nextOffset);
-    setHasMore(data.length === SEARCH_PAGE_SIZE);
+    await loadDirectoryPage(debouncedQuery, nextOffset);
   }
 
   function openCourse(slug: string) {
     navigate(`/courses/${slug}`);
   }
 
-  const showPopularSection = debouncedQuery.trim() === "";
+  const workingSet = useMemo(() => {
+    const base = isSearchMode ? searchResults : directoryPool;
+    const filtered = hasClientFilters ? filterCourses(base, filters) : base;
+    return sortCourses(filtered, sortBy);
+  }, [directoryPool, filters, hasClientFilters, isSearchMode, searchResults, sortBy]);
+
+  const filterOptions = useMemo(
+    () => extractFilterOptions(isSearchMode ? searchResults : directoryPool, filters),
+    [directoryPool, filters, isSearchMode, searchResults],
+  );
+
+  const geoGroups = useMemo(
+    () => (isSearchMode || hasClientFilters ? [] : groupCoursesGeographically(workingSet)),
+    [hasClientFilters, isSearchMode, workingSet],
+  );
+
+  const featuredSections = useMemo(() => {
+    if (isSearchMode || hasClientFilters) return [];
+
+    const featured = buildFeaturedSections({
+      popular: popularCourses,
+      pool: directoryPool,
+      limit: POPULAR_COURSE_LIMIT,
+    });
+
+    return [
+      {
+        id: "popular",
+        title: "Popular in EliteTee",
+        description: "Courses with the most member rounds and activity.",
+        courses: featured.popular,
+      },
+      {
+        id: "highest-rated",
+        title: "Highest Rated",
+        description: "Top-rated destinations based on member reviews.",
+        courses: featured.highestRated,
+      },
+      {
+        id: "recently-reviewed",
+        title: "Recently Reviewed",
+        description: "Courses with the latest member round activity.",
+        courses: featured.recentlyReviewed,
+      },
+    ];
+  }, [directoryPool, hasClientFilters, isSearchMode, popularCourses]);
+
+  const showFeatured = !isSearchMode && !hasClientFilters && !popularLoading;
+  const showGeoDirectory = !isSearchMode && !hasClientFilters && workingSet.length > 0;
+  const showFlatResults = (isSearchMode || hasClientFilters) && workingSet.length > 0;
+  const showEmptyState =
+    !isLoading && !loadError && workingSet.length === 0 && (isSearchMode || hasClientFilters);
   const showEmptyDirectory =
-    debouncedQuery.trim() === "" && results.length === 0 && !isSearching && !searchError;
+    !isLoading && !loadError && directoryPool.length === 0 && !isSearchMode && !hasClientFilters;
 
   return (
-    <section className="portal-courses-page portal-courses-page--library" aria-labelledby="courses-heading">
-      <header className="portal-courses-header portal-courses-header--search">
-        <div className="portal-courses-header-row">
-          <div>
-            <p className="portal-courses-eyebrow">Course Library</p>
-            <h2 id="courses-heading">Courses</h2>
-            <p>Search private clubs, destinations, and member-played courses across EliteTee.</p>
+    <section className="et-courses" aria-labelledby="courses-heading">
+      <header className="et-courses-header">
+        <div className="et-courses-header-row">
+          <div className="et-courses-header-copy">
+            <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Course Library</p>
+            <h2 id="courses-heading" className="et-h2">
+              Courses
+            </h2>
+            <p className="et-body et-courses-lead">
+              Browse private clubs, destinations, and member-played courses across EliteTee.
+            </p>
           </div>
           <button
             type="button"
-            className="portal-btn portal-btn--gold portal-courses-add-btn"
+            className="et-btn et-btn--primary et-courses-add-btn"
             onClick={() => setShowAddCourseModal(true)}
           >
             Add Course Played
           </button>
         </div>
-
-        <label className="portal-courses-search portal-courses-search--hero">
-          <span className="visually-hidden">Search courses</span>
-          <input
-            type="search"
-            className="portal-courses-search-input portal-courses-search-input--hero"
-            placeholder="Search by course name, city, region, or country…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            autoComplete="off"
-          />
-        </label>
       </header>
 
-      <div className="courses-directory">
-        {searchError ? (
-          <p className="portal-alert portal-alert--warning" role="alert">
-            {searchError}
-          </p>
+      <CourseFiltersBar
+        query={query}
+        onQueryChange={setQuery}
+        filters={filters}
+        onFiltersChange={setFilters}
+        filterOptions={filterOptions}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        onOpenMobileFilters={() => setFiltersOpen(true)}
+      />
+
+      <CourseFilterDrawer
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        onFiltersChange={setFilters}
+        filterOptions={filterOptions}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
+
+      <div className="et-courses-body">
+        {loadError ? (
+          <div className="et-alert et-alert--error" role="alert">
+            <div>
+              <p className="et-alert__title">Courses unavailable</p>
+              <p className="et-alert__body">{loadError}</p>
+            </div>
+          </div>
         ) : null}
 
-        {isSearching ? (
-          <p className="portal-discover-loading">Loading courses…</p>
+        {isLoading && workingSet.length === 0 ? (
+          <div className="et-loading et-courses-loading" aria-live="polite" aria-busy="true">
+            <div className="et-loading__mark" aria-hidden="true" />
+            <p className="et-loading__text">Loading course library</p>
+          </div>
         ) : null}
 
-        {!isSearching && results.length > 0 ? (
+        {showFeatured ? (
+          <CourseFeaturedSections sections={featuredSections} onOpen={openCourse} />
+        ) : null}
+
+        {showGeoDirectory ? (
+          <section className="et-courses-directory" aria-labelledby="course-directory-heading">
+            <div className="et-courses-directory-head">
+              <h3 id="course-directory-heading" className="et-h3">
+                Browse by destination
+              </h3>
+              <p className="et-body-sm et-courses-directory-copy">
+                Courses grouped by country and region from member and library data.
+              </p>
+            </div>
+            <CourseGeoDirectory groups={geoGroups} onOpen={openCourse} />
+          </section>
+        ) : null}
+
+        {showFlatResults ? (
           <section aria-labelledby="course-search-results-heading">
-            <h3 id="course-search-results-heading" className="portal-courses-section-label">
-              {debouncedQuery.trim() ? "Search Results" : "Course Directory"}
-            </h3>
-            <ul className="golf-course-search-list golf-course-search-list--directory">
-              {results.map((course) => (
+            <div className="et-courses-directory-head">
+              <h3 id="course-search-results-heading" className="et-h3">
+                {isSearchMode ? "Search results" : "Filtered courses"}
+              </h3>
+              <p className="et-body-sm et-courses-directory-copy">
+                {workingSet.length} {workingSet.length === 1 ? "course" : "courses"} found
+              </p>
+            </div>
+            <ul className="et-courses-grid">
+              {workingSet.map((course) => (
                 <li key={course.id}>
-                  <CourseSearchCard course={course} onOpen={openCourse} />
+                  <CourseDirectoryCard course={course} onOpen={openCourse} />
                 </li>
               ))}
             </ul>
-            {hasMore ? (
-              <button
-                type="button"
-                className="portal-btn portal-btn--outline golf-course-load-more"
-                onClick={() => void loadMore()}
-              >
-                Load more courses
-              </button>
-            ) : null}
           </section>
         ) : null}
 
-        {!isSearching && !searchError && results.length === 0 && debouncedQuery.trim() ? (
-          <p className="courses-no-match">
-            No courses match that search. Try a different name or location, or add a round manually.
-          </p>
+        {showEmptyState ? (
+          <div className="et-courses-empty">
+            <p className="et-courses-empty-title">No courses match your search or filters</p>
+            <p className="et-body-sm">
+              Try a different name or location, or add a round manually.
+            </p>
+          </div>
         ) : null}
 
         {showEmptyDirectory ? (
-          <p className="courses-no-match">No courses are in the library yet.</p>
+          <div className="et-courses-empty">
+            <p className="et-courses-empty-title">No courses are in the library yet</p>
+            <p className="et-body-sm">Member rounds will begin populating the directory soon.</p>
+          </div>
         ) : null}
 
-        {showPopularSection ? (
-          <section className="golf-course-popular" aria-labelledby="popular-courses-heading">
-            <h3 id="popular-courses-heading" className="portal-courses-section-label">
-              Popular in EliteTee
-            </h3>
-            <p className="portal-courses-featured-note">
-              Top courses ranked by real member rounds and recommendations.
-            </p>
-            {popularLoading ? (
-              <p className="portal-discover-loading portal-discover-loading--compact">Loading popular courses…</p>
-            ) : popularCourses.length > 0 ? (
-              <ul className="golf-course-compact-list">
-                {popularCourses.map((course) => (
-                  <li key={`popular-${course.id}`}>
-                    <CourseCompactCard course={course} onOpen={openCourse} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="golf-course-popular-empty">
-                Member rounds will appear here as more courses are played and shared.
-              </p>
-            )}
-          </section>
+        {hasMore ? (
+          <button
+            type="button"
+            className="et-btn et-btn--secondary et-courses-load-more"
+            onClick={() => void loadMore()}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading more courses…" : "Load more courses"}
+          </button>
         ) : null}
       </div>
 
