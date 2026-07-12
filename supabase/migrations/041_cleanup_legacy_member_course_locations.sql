@@ -65,10 +65,33 @@ as $$
       or (
         n.city_key <> n.name_key
         and (n.city_key like n.name_key || '%' or n.name_key like n.city_key || '%')
-        and (n.city_key like '%golf%' or n.name_key like '%golf%')
+        and (
+          n.city_key like '%golf%'
+          or n.name_key like '%golf%'
+          or n.city_key like '%country club%'
+          or n.name_key like '%country club%'
+        )
       )
     )
   from normalized n;
+$$;
+
+create or replace function public.is_course_name_used_as_city(
+  p_name text,
+  p_city text
+)
+returns boolean
+language sql
+immutable
+as $$
+  select public.is_course_city_equal_or_similar_to_name(p_name, p_city)
+    and not exists (
+      select 1
+      from public.parse_legacy_us_course_location(p_city) pl
+      where pl.confidence = 'high'
+        and coalesce(pl.region, '') <> ''
+        and coalesce(pl.country, '') <> ''
+    );
 $$;
 
 create or replace function public.parse_legacy_us_course_location(p_input text)
@@ -293,7 +316,7 @@ as $$
 declare
   v_city_parse record;
   v_round_parse record;
-  v_city_like_name boolean;
+  v_city_is_course_name boolean;
   v_round_location text;
 begin
   new_city := null;
@@ -310,12 +333,12 @@ begin
     return;
   end if;
 
-  v_city_like_name := public.is_course_city_equal_or_similar_to_name(p_name, p_city);
   select * into v_city_parse from public.parse_legacy_us_course_location(p_city);
+  v_city_is_course_name := public.is_course_name_used_as_city(p_name, p_city);
   v_round_location := public.best_parseable_round_location(p_golf_course_id);
   select * into v_round_parse from public.parse_legacy_us_course_location(v_round_location);
 
-  if v_city_like_name then
+  if v_city_is_course_name then
     if v_round_parse.confidence = 'high'
       and coalesce(v_round_parse.region, '') <> ''
       and coalesce(v_round_parse.country, '') <> '' then
@@ -370,6 +393,7 @@ revoke all on function public.normalize_location_whitespace(text) from public;
 revoke all on function public.normalize_us_country_label(text) from public;
 revoke all on function public.is_legacy_member_submitted_golf_course(boolean, text) from public;
 revoke all on function public.is_course_city_equal_or_similar_to_name(text, text) from public;
+revoke all on function public.is_course_name_used_as_city(text, text) from public;
 revoke all on function public.parse_legacy_us_course_location(text) from public;
 revoke all on function public.has_correct_member_submitted_location(text, text, text, text) from public;
 revoke all on function public.best_parseable_round_location(uuid) from public;

@@ -298,7 +298,12 @@ flags as (
         pi.city_key like pi.name_key || '%'
         or pi.name_key like pi.city_key || '%'
       )
-      and (pi.city_key like '%golf%' or pi.name_key like '%golf%')
+      and (
+        pi.city_key like '%golf%'
+        or pi.name_key like '%golf%'
+        or pi.city_key like '%country club%'
+        or pi.name_key like '%country club%'
+      )
     ) as city_similar_to_name,
     exists (
       select 1
@@ -320,7 +325,12 @@ flags as (
           pi.city_key like pi.name_key || '%'
           or pi.name_key like pi.city_key || '%'
         )
-        and (pi.city_key like '%golf%' or pi.name_key like '%golf%')
+        and (
+          pi.city_key like '%golf%'
+          or pi.name_key like '%golf%'
+          or pi.city_key like '%country club%'
+          or pi.name_key like '%country club%'
+        )
       )
       and not exists (
         select 1
@@ -507,7 +517,7 @@ where mc.name ilike any (array[
   '%Sebonack Golf Club%',
   '%Seminole Golf Club%',
   '%Southampton Golf Club%',
-  '%Westhampton Golf Club%',
+  '%Westhampton%',
   '%Shinnecock Hills Golf Club%'
 ])
 order by mc.name asc;

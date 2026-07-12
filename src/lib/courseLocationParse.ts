@@ -234,9 +234,26 @@ export function isCityEqualOrSimilarToCourseName(courseName: string, city: strin
   if (!normalizedName || !normalizedCity) return false;
   if (normalizedCity === normalizedName) return true;
   if (normalizedCity.startsWith(normalizedName) || normalizedName.startsWith(normalizedCity)) {
-    return normalizedCity.includes("golf") || normalizedName.includes("golf");
+    return (
+      normalizedCity.includes("golf") ||
+      normalizedName.includes("golf") ||
+      normalizedCity.includes("country club") ||
+      normalizedName.includes("country club")
+    );
   }
   return false;
+}
+
+export function isCourseNameUsedAsCity(courseName: string, city: string): boolean {
+  if (!isCityEqualOrSimilarToCourseName(courseName, city)) {
+    return false;
+  }
+  const cityParse = parseLegacyCourseLocation(city);
+  return !(
+    cityParse.confidence === "high" &&
+    Boolean(cityParse.region?.trim()) &&
+    Boolean(cityParse.country?.trim())
+  );
 }
 
 export function cityFieldContainsEmbeddedUsLocation(city: string): boolean {
@@ -312,7 +329,7 @@ export function resolveMemberSubmittedLocationCleanup(input: {
     return emptyResult("skip");
   }
 
-  const cityLooksLikeCourseName = isCityEqualOrSimilarToCourseName(
+  const cityLooksLikeCourseName = isCourseNameUsedAsCity(
     input.name,
     input.city?.trim() ?? "",
   );

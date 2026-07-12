@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   hasCorrectMemberSubmittedStructuredLocation,
   isCityEqualOrSimilarToCourseName,
+  isCourseNameUsedAsCity,
   resolveMemberSubmittedLocationCleanup,
 } from "./courseLocationParse";
 import {
@@ -63,7 +64,7 @@ describe("resolveMemberSubmittedLocationCleanup", () => {
   it("auto-corrects Westhampton Beach NY embedded in city", () => {
     expect(
       resolveMemberSubmittedLocationCleanup({
-        name: "Westhampton Golf Club",
+        name: "Westhampton Country Club",
         city: "Westhampton Beach NY",
         region: null,
         country: null,
@@ -71,6 +72,59 @@ describe("resolveMemberSubmittedLocationCleanup", () => {
     ).toMatchObject({
       action: "auto_update",
       suggestedCity: "Westhampton Beach",
+      suggestedRegion: "NY",
+      suggestedCountry: "United States",
+      parseSource: "golf_courses.city",
+    });
+  });
+
+  it("uses experience location when Westhampton Country Club is stored as city", () => {
+    expect(
+      resolveMemberSubmittedLocationCleanup({
+        name: "Westhampton Country Club",
+        city: "Westhampton Country Club",
+        region: null,
+        country: null,
+        latestRoundLocation: "Westhampton Beach NY",
+      }),
+    ).toMatchObject({
+      action: "auto_update",
+      suggestedCity: "Westhampton Beach",
+      suggestedRegion: "NY",
+      suggestedCountry: "United States",
+      parseSource: "round_location",
+    });
+  });
+
+  it("uses experience location when Shinnecock Hills Golf Club is stored as city", () => {
+    expect(
+      resolveMemberSubmittedLocationCleanup({
+        name: "Shinnecock Hills Golf Club",
+        city: "Shinnecock Hills Golf Club",
+        region: null,
+        country: null,
+        latestRoundLocation: "Southampton NY",
+      }),
+    ).toMatchObject({
+      action: "auto_update",
+      suggestedCity: "Southampton",
+      suggestedRegion: "NY",
+      suggestedCountry: "United States",
+      parseSource: "round_location",
+    });
+  });
+
+  it("auto-corrects Shinnecock Hills NY embedded in city", () => {
+    expect(
+      resolveMemberSubmittedLocationCleanup({
+        name: "Shinnecock Hills Golf Club",
+        city: "Shinnecock Hills NY",
+        region: null,
+        country: null,
+      }),
+    ).toMatchObject({
+      action: "auto_update",
+      suggestedCity: "Shinnecock Hills",
       suggestedRegion: "NY",
       suggestedCountry: "United States",
       parseSource: "golf_courses.city",
@@ -179,5 +233,10 @@ describe("isCityEqualOrSimilarToCourseName", () => {
     expect(isCityEqualOrSimilarToCourseName("Seminole Golf Club", "Juno Beach Florida")).toBe(
       false,
     );
+  });
+
+  it("does not treat embedded locations as course-name-as-city", () => {
+    expect(isCourseNameUsedAsCity("Westhampton Country Club", "Westhampton Beach NY")).toBe(false);
+    expect(isCourseNameUsedAsCity("Southampton Golf Club", "Southampton Golf Club")).toBe(true);
   });
 });
