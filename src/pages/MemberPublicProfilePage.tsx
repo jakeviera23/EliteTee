@@ -8,6 +8,8 @@ import type { ProfileReturnContext } from "../types/memberProfileNavigation";
 import { useState } from "react";
 import "../inside-elitetee.css";
 import "../member-portal.css";
+import "../member-portal-theme.css";
+import "../member-portal-profile.css";
 
 type MemberProfileLocationState = {
   returnTo?: ProfileReturnContext;
@@ -52,7 +54,7 @@ function MemberPublicProfileContent() {
   }
 
   return (
-    <div className="inside-page portal-page portal-page--social">
+    <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
       <main className="portal-main portal-main--social">
         <div className="portal-shell">
           <GolferProfilePage

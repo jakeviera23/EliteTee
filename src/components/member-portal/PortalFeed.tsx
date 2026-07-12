@@ -7,6 +7,7 @@ import {
   fetchMemberFeedPage,
   type MemberFeedCursor,
 } from "../../lib/memberFeedPosts";
+import { mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
@@ -15,7 +16,6 @@ import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { FeedCard } from "./FeedCard";
 import { FeedComposer } from "./FeedComposer";
-import { FoundingWelcomeBanner } from "./FoundingWelcomeBanner";
 import { usePortalToast } from "./PortalToastProvider";
 
 type PortalFeedProps = {
@@ -33,6 +33,7 @@ export function PortalFeed({
 }: PortalFeedProps) {
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [memberPosts, setMemberPosts] = useState<FeedPost[]>([]);
   const [nextCursor, setNextCursor] = useState<MemberFeedCursor | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -47,6 +48,7 @@ export function PortalFeed({
       fetchOwnMemberProfile(),
       getCurrentAuthUserId(),
     ]);
+    setCurrentUserId(userId ?? null);
     const extras = getPortalProfileExtras(data?.user_id ?? userId);
     const media = await resolveMemberProfileMedia(data);
     setComposerAuthor(buildComposerAuthor(data, extras, media));
@@ -121,52 +123,70 @@ export function PortalFeed({
     void loadInitialPage();
   }
 
+  function handlePostUpdated(updatedPost: FeedPost) {
+    setMemberPosts((current) =>
+      current.map((post) =>
+        post.id === updatedPost.id ? mergeFeedPostAfterEdit(post, updatedPost) : post,
+      ),
+    );
+  }
+
   const founderWelcome = useMemo(() => getFounderWelcomePost(), []);
   const hasMemberPosts = memberPosts.length > 0;
 
   return (
-    <section className="portal-social-page portal-feed-page" aria-labelledby="feed-heading">
-      <FoundingWelcomeBanner />
-
-      <header className="portal-section-head portal-section-head--social portal-section-head--compact">
-        <h2 id="feed-heading">Feed</h2>
-        <p>
-          Share rounds, request introductions, and connect with founding members as the community
-          grows.
+    <section className="et-feed et-feed-card-scope" aria-labelledby="feed-heading">
+      <header className="et-feed-hero et-animate-fade-up">
+        <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Member Society</p>
+        <h2 id="feed-heading" className="et-h2 et-feed-title">
+          Feed
+        </h2>
+        <p className="et-body et-feed-lead">
+          Rounds, introductions, and member updates within EliteTee.
         </p>
       </header>
 
       {showComposer ? (
-        <div className="portal-feed-top">
+        <div className="et-feed-composer-wrap et-animate-fade-up et-animate-delay-1">
           <FeedComposer id={composerId} author={composerAuthor} onPosted={handlePosted} />
-          <p className="feed-composer-helper">
-            Use the feed to introduce yourself, share where you play, and ask for introductions as
-            EliteTee grows.
-          </p>
         </div>
       ) : null}
 
-      <section className="portal-feed-activity" aria-labelledby="latest-activity-heading">
-        <h3 id="latest-activity-heading" className="portal-feed-activity-title">
-          Latest Activity
-        </h3>
+      <section className="et-feed-stream" aria-labelledby="latest-activity-heading">
+        <div className="et-feed-stream-head">
+          <h3 id="latest-activity-heading" className="et-h3">
+            Latest
+          </h3>
+        </div>
 
-        <div className="portal-feed-list portal-feed-grid portal-feed-list--founder portal-feed-list--pinned">
-          <FeedCard post={founderWelcome} index={0} onToast={showToast} />
+        <div className="et-feed-list et-feed-list--founder">
+          <p className="et-label et-feed-founder-label">From the founder</p>
+          <FeedCard
+            post={founderWelcome}
+            index={0}
+            variant="founder"
+            onToast={showToast}
+          />
         </div>
 
         {isLoadingPosts ? (
-          <p className="portal-feed-loading">Loading member posts…</p>
+          <div className="et-loading et-feed-loading" aria-live="polite" aria-busy="true">
+            <div className="et-loading__mark" aria-hidden="true" />
+            <p className="et-loading__text">Loading member posts</p>
+          </div>
         ) : null}
 
         {postsError ? (
-          <div className="portal-feed-error">
-            <p className="portal-alert portal-alert--warning" role="alert">
-              {postsError}
-            </p>
+          <div className="et-feed-error">
+            <div className="et-alert et-alert--error" role="alert">
+              <div>
+                <p className="et-alert__title">Posts unavailable</p>
+                <p className="et-alert__body">{postsError}</p>
+              </div>
+            </div>
             <button
               type="button"
-              className="portal-btn portal-btn--outline portal-btn--compact"
+              className="et-btn et-btn--secondary"
               onClick={() => void loadInitialPage()}
             >
               Retry
@@ -175,35 +195,39 @@ export function PortalFeed({
         ) : null}
 
         {!isLoadingPosts && hasMemberPosts ? (
-          <div className="portal-feed-list portal-feed-grid">
+          <div className="et-feed-list">
             {memberPosts.map((post, index) => (
               <FeedCard
                 key={post.id}
                 post={post}
                 index={index + 1}
+                currentUserId={currentUserId}
                 onToast={showToast}
                 onViewAuthor={onViewMemberProfile}
+                onPostUpdated={handlePostUpdated}
               />
             ))}
           </div>
         ) : null}
 
         {!isLoadingPosts && !hasMemberPosts && !postsError ? (
-          <div className="portal-feed-empty">
-            <p className="portal-feed-empty-title">{earlyStageCopy.feedEmptyTitle}</p>
-            <p className="portal-feed-empty-lead">{earlyStageCopy.feedEmptyHint}</p>
-            <p className="portal-feed-empty-note">{earlyStageCopy.feedEmptyCta}</p>
+          <div className="et-feed-empty">
+            <p className="et-feed-empty-title">{earlyStageCopy.feedEmptyTitle}</p>
+            <p className="et-feed-empty-lead">{earlyStageCopy.feedEmptyHint}</p>
           </div>
         ) : null}
 
         {loadMoreError ? (
-          <div className="portal-feed-error portal-feed-error--inline">
-            <p className="portal-alert portal-alert--warning" role="alert">
-              {loadMoreError}
-            </p>
+          <div className="et-feed-error">
+            <div className="et-alert et-alert--warning" role="alert">
+              <div>
+                <p className="et-alert__title">Could not load older posts</p>
+                <p className="et-alert__body">{loadMoreError}</p>
+              </div>
+            </div>
             <button
               type="button"
-              className="portal-btn portal-btn--outline portal-btn--compact"
+              className="et-btn et-btn--secondary"
               onClick={() => void loadMorePosts()}
             >
               Retry
@@ -214,7 +238,7 @@ export function PortalFeed({
         {!isLoadingPosts && hasMore ? (
           <button
             type="button"
-            className="portal-btn portal-btn--outline portal-feed-load-more"
+            className="et-feed-load-more"
             onClick={() => void loadMorePosts()}
             disabled={isLoadingMore}
           >

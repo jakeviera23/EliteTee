@@ -1,0 +1,226 @@
+/**
+ * EliteTee Design System v2.0 — Typography
+ * Editorial hierarchy: serif for display, sans for UI and body.
+ */
+
+.et-theme-dark,
+.et-theme-light,
+[data-et-theme="dark"],
+[data-et-theme="light"] {
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-body);
+  line-height: var(--et-leading-normal);
+  color: var(--et-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display & headings — serif, generous tracking */
+.et-display-1,
+.et-display-2,
+.et-h1,
+.et-h2,
+.et-h3,
+.et-h4 {
+  margin: 0;
+  font-family: var(--et-font-serif);
+  font-weight: 400;
+  color: var(--et-text-primary);
+  text-wrap: balance;
+}
+
+.et-display-1 {
+  font-size: var(--et-text-display-1);
+  font-weight: 300;
+  line-height: var(--et-leading-tight);
+  letter-spacing: var(--et-tracking-tight);
+}
+
+.et-display-2 {
+  font-size: var(--et-text-display-2);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: var(--et-tracking-tight);
+}
+
+.et-h1 {
+  font-size: var(--et-text-h1);
+  line-height: var(--et-leading-snug);
+  letter-spacing: -0.025em;
+}
+
+.et-h2 {
+  font-size: var(--et-text-h2);
+  line-height: var(--et-leading-snug);
+  letter-spacing: -0.02em;
+}
+
+.et-h3 {
+  font-size: var(--et-text-h3);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.et-h4 {
+  font-size: var(--et-text-h4);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+/* Body copy */
+.et-body-lg,
+.et-body,
+.et-body-sm {
+  margin: 0;
+  font-family: var(--et-font-sans);
+  font-weight: 400;
+}
+
+.et-body-lg {
+  font-size: var(--et-text-body-lg);
+  line-height: var(--et-leading-relaxed);
+  color: var(--et-text-secondary);
+}
+
+.et-body {
+  font-size: var(--et-text-body);
+  line-height: var(--et-leading-normal);
+  color: var(--et-text-secondary);
+}
+
+.et-body-sm {
+  font-size: var(--et-text-body-sm);
+  line-height: 1.6;
+  color: var(--et-text-secondary);
+}
+
+/* Editorial accent line — Aman / magazine eyebrow */
+.et-eyebrow {
+  margin: 0 0 var(--et-space-5);
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-caption);
+  font-weight: 500;
+  letter-spacing: var(--et-tracking-widest);
+  text-transform: uppercase;
+  color: var(--et-text-tertiary);
+}
+
+.et-eyebrow--accent {
+  color: var(--et-accent-muted);
+}
+
+.et-eyebrow--line {
+  display: flex;
+  align-items: center;
+  gap: var(--et-space-4);
+}
+
+.et-eyebrow--line::before {
+  content: "";
+  flex-shrink: 0;
+  width: clamp(2rem, 5vw, 3.25rem);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--et-accent-muted) 0%,
+    transparent 100%
+  );
+}
+
+/* Labels & captions — Linear-style micro type */
+.et-label {
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-label);
+  font-weight: 500;
+  letter-spacing: var(--et-tracking-wider);
+  text-transform: uppercase;
+  color: var(--et-text-tertiary);
+}
+
+.et-caption {
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-caption);
+  letter-spacing: var(--et-tracking-wide);
+  color: var(--et-text-tertiary);
+}
+
+.et-overline {
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-caption);
+  font-weight: 500;
+  letter-spacing: var(--et-tracking-widest);
+  text-transform: uppercase;
+  color: var(--et-text-tertiary);
+}
+
+/* Pull quote / editorial aside */
+.et-quote {
+  margin: 0;
+  font-family: var(--et-font-serif);
+  font-size: var(--et-text-body-lg);
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.55;
+  color: var(--et-text-secondary);
+}
+
+/* Links */
+.et-link {
+  color: var(--et-text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--et-border-subtle);
+  transition:
+    color var(--et-duration-base) var(--et-ease-out),
+    border-color var(--et-duration-base) var(--et-ease-out);
+}
+
+.et-link:hover {
+  color: var(--et-accent-hover);
+  border-bottom-color: var(--et-accent-muted);
+}
+
+.et-link--accent {
+  color: var(--et-accent);
+  border-bottom-color: var(--et-border-accent);
+}
+
+/* Prose block — long-form editorial */
+.et-prose {
+  max-width: var(--et-reading-max);
+}
+
+.et-prose > * + * {
+  margin-top: var(--et-space-5);
+}
+
+.et-prose .et-h2,
+.et-prose .et-h3 {
+  margin-top: var(--et-space-10);
+}
+
+.et-prose .et-h2:first-child,
+.et-prose .et-h3:first-child {
+  margin-top: 0;
+}
+
+/* Numeric / data — Porsche precision */
+.et-metric {
+  font-family: var(--et-font-serif);
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--et-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.et-metric-label {
+  display: block;
+  margin-top: var(--et-space-2);
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-caption);
+  letter-spacing: var(--et-tracking-wider);
+  text-transform: uppercase;
+  color: var(--et-text-tertiary);
+}

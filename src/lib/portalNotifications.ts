@@ -7,6 +7,14 @@ export function formatNotificationCount(count: number) {
   return String(count);
 }
 
+export type NotificationBadgeDisplay = "none" | "dot" | "count";
+
+export function getNotificationBadgeDisplay(count: number): NotificationBadgeDisplay {
+  if (count <= 0) return "none";
+  if (count === 1) return "dot";
+  return "count";
+}
+
 export function getSeenIntroductionRequestIds(userId: string) {
   try {
     const raw = localStorage.getItem(SEEN_INTRO_REQUESTS_KEY(userId));

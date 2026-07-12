@@ -40,22 +40,22 @@ export function ApplicationViewModal({
   }
 
   return (
-    <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="et-admin-modal-backdrop" role="presentation" onClick={onClose}>
       <div
-        className="portal-modal portal-modal--application"
+        className="et-admin-modal"
         role="dialog"
         aria-labelledby="application-view-title"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="portal-modal-head">
-          <h3 id="application-view-title">Membership Application</h3>
-          <button type="button" className="portal-modal-close" onClick={onClose} aria-label="Close">
+        <header className="et-admin-modal-head">
+          <h3 id="application-view-title">Membership application</h3>
+          <button type="button" className="et-admin-modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
 
-        <dl className="admin-application-details">
+        <dl className="et-admin-application-details">
           <div>
             <dt>Name</dt>
             <dd>{application.full_name}</dd>
@@ -69,7 +69,7 @@ export function ApplicationViewModal({
             <dd>{application.location}</dd>
           </div>
           <div>
-            <dt>Home Course</dt>
+            <dt>Home course</dt>
             <dd>{application.home_club}</dd>
           </div>
           {application.handicap ? (
@@ -86,7 +86,7 @@ export function ApplicationViewModal({
           ) : null}
           {application.founding_member_number ? (
             <div>
-              <dt>Founding Member #</dt>
+              <dt>Founding member #</dt>
               <dd>{application.founding_member_number}</dd>
             </div>
           ) : null}
@@ -102,54 +102,56 @@ export function ApplicationViewModal({
           ) : null}
           <div>
             <dt>Status</dt>
-            <dd className="admin-application-status">{application.status.replace("_", " ")}</dd>
+            <dd>{application.status.replace("_", " ")}</dd>
           </div>
-          <div className="admin-application-details-wide">
+          <div className="et-admin-application-details-wide">
             <dt>What they love about golf</dt>
             <dd>{application.golf_love}</dd>
           </div>
-          <div className="admin-application-details-wide">
+          <div className="et-admin-application-details-wide">
             <dt>Why they want to join</dt>
             <dd>{application.why_join}</dd>
           </div>
         </dl>
 
         {isApproved ? (
-          <div className="admin-application-invite-panel">
+          <div className="et-admin-invite-panel">
             <h4>Private invite link</h4>
             {inviteRedeemed ? (
-              <p className="admin-application-invite-note">
+              <p className="et-admin-note">
                 Invite redeemed on {formatDate(application.invite_redeemed_at ?? "")}.
               </p>
             ) : inviteLink ? (
               <>
-                <p className="admin-invitation-link">
+                <p className="et-admin-invitation-link">
                   <span>Invite link</span>
                   <a href={inviteLink} target="_blank" rel="noreferrer">
                     {inviteLink}
                   </a>
                 </p>
-                <button
-                  type="button"
-                  className="portal-btn portal-btn--outline portal-btn--compact"
-                  onClick={() => void handleCopyInviteLink()}
-                >
-                  Copy Invite Link
-                </button>
+                <div className="et-admin-modal-actions">
+                  <button
+                    type="button"
+                    className="et-btn et-btn--secondary"
+                    onClick={() => void handleCopyInviteLink()}
+                  >
+                    Copy invite link
+                  </button>
+                </div>
               </>
             ) : (
               <>
-                <p className="portal-alert portal-alert--warning" role="status">
+                <p className="et-admin-alert et-admin-alert--warning" role="status">
                   Invite link missing
                 </p>
                 {onRegenerateInvite ? (
                   <button
                     type="button"
-                    className="portal-btn portal-btn--gold portal-btn--compact"
+                    className="et-btn et-btn--forest"
                     disabled={isRegeneratingInvite}
                     onClick={() => onRegenerateInvite(application.id)}
                   >
-                    {isRegeneratingInvite ? "Regenerating…" : "Regenerate Invite Link"}
+                    {isRegeneratingInvite ? "Regenerating…" : "Regenerate invite link"}
                   </button>
                 ) : null}
               </>

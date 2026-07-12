@@ -1,0 +1,109 @@
+/**
+ * EliteTee Design System v2.0 — Icons
+ * No icon library today — conventions for inline SVG usage.
+ */
+
+.et-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--et-icon-md);
+  height: var(--et-icon-md);
+  color: currentColor;
+  vertical-align: middle;
+}
+
+.et-icon--xs { width: var(--et-icon-xs); height: var(--et-icon-xs); }
+.et-icon--sm { width: var(--et-icon-sm); height: var(--et-icon-sm); }
+.et-icon--lg { width: var(--et-icon-lg); height: var(--et-icon-lg); }
+
+.et-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Stroke icons — Arc / Linear style: 1.5px, rounded caps */
+.et-icon svg path,
+.et-icon svg line,
+.et-icon svg polyline,
+.et-icon svg circle,
+.et-icon svg rect {
+  stroke: currentColor;
+  stroke-width: var(--et-icon-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.et-icon--filled svg path {
+  fill: currentColor;
+  stroke: none;
+}
+
+.et-icon--muted {
+  color: var(--et-text-tertiary);
+}
+
+.et-icon--accent {
+  color: var(--et-accent);
+}
+
+.et-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--et-text-tertiary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--et-radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--et-duration-fast) var(--et-ease-out),
+    background var(--et-duration-fast) var(--et-ease-out),
+    border-color var(--et-duration-fast) var(--et-ease-out);
+}
+
+.et-icon-btn:hover {
+  color: var(--et-text-primary);
+  background: var(--et-bg-surface-hover);
+  border-color: var(--et-border-hairline);
+}
+
+.et-icon-btn:focus-visible {
+  outline: 2px solid var(--et-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Logo mark container */
+.et-logo-mark {
+  display: block;
+  height: 2rem;
+  width: calc(2rem * 1024 / 682);
+  background-color: var(--et-accent);
+  -webkit-mask-image: url(/elitetee-logo-mark.png);
+  mask-image: url(/elitetee-logo-mark.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.et-logo-mark--lg {
+  height: 2.625rem;
+  width: calc(2.625rem * 1024 / 682);
+}
+
+.et-logo-mark--hero {
+  background-color: rgba(var(--et-hero-ivory-rgb), 0.94);
+}
+
+.et-theme-light .et-logo-mark {
+  background-color: var(--et-text-primary);
+}
+
+.et-theme-light .et-logo-mark--accent {
+  background-color: var(--et-accent);
+}

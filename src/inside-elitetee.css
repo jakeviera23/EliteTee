@@ -785,6 +785,39 @@
   color: #f0a8a8;
 }
 
+.invite-info {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #d8c99a;
+}
+
+.invite-followup {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.invite-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.invite-action-link,
+.invite-action-button {
+  width: 100%;
+}
+
+.invite-action-link {
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.invite-note--center {
+  text-align: center;
+}
+
 .invite-submit,
 .invite-back-link {
   width: 100%;

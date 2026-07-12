@@ -10,24 +10,31 @@ import {
   fetchApprovedMemberProfileByUserId,
   fetchOwnMemberProfile,
 } from "../../lib/memberProfiles";
+import { getBucketListCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
+import {
+  buildProfileExperienceStats,
+  buildUniqueCoursesPlayed,
+} from "../../lib/profilePageDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
 import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { FeedCard } from "./FeedCard";
+import { FEED_CARD_SCOPE_CLASS } from "../../lib/feedCardScope";
 import { MemberActivityList } from "./MemberActivityList";
-import { MemberClubAvatar } from "./MemberClubAvatar";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileDossier } from "./ProfileDossier";
+import { ProfileCoursesPlayed } from "./profile/ProfileCoursesPlayed";
+import { ProfileMemberAvatar } from "./profile/ProfileMemberAvatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 function ProfileEmptyState({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="portal-profile-empty">
-      <p className="portal-profile-empty-title">{title}</p>
-      <p className="portal-profile-empty-hint">{hint}</p>
+    <div className="et-profile-empty">
+      <p className="et-profile-empty-title">{title}</p>
+      <p className="et-profile-empty-copy">{hint}</p>
     </div>
   );
 }
@@ -42,12 +49,12 @@ function ProfileSection({
   children: ReactNode;
 }) {
   return (
-    <section className="portal-profile-section">
-      <header className="portal-profile-section-head">
-        <h3>{title}</h3>
-        {description ? <p>{description}</p> : null}
+    <section className="et-profile-section">
+      <header className="et-profile-section-head">
+        <h3 className="et-profile-section-title">{title}</h3>
+        {description ? <p className="et-profile-section-lead">{description}</p> : null}
       </header>
-      <div className="portal-profile-section-body">{children}</div>
+      {children}
     </section>
   );
 }
@@ -159,9 +166,7 @@ export function GolferProfilePage({
       return;
     }
 
-    setMemberProfile(
-      profile ? ({ ...profile, email: "" } as MemberProfileRecord) : null,
-    );
+    setMemberProfile({ ...profile, email: "" } as MemberProfileRecord);
     setFeedPosts(posts ?? []);
     setCourseRounds(rounds ?? []);
     setIsLoading(false);
@@ -181,24 +186,33 @@ export function GolferProfilePage({
     });
   }, [avatarImageUrl, coverImageUrl, isViewingOther, memberProfile, profileVersion]);
 
+  const uniqueCourses = useMemo(() => buildUniqueCoursesPlayed(courseRounds), [courseRounds]);
+  const experienceStats = useMemo(
+    () => buildProfileExperienceStats(courseRounds, feedPosts.length),
+    [courseRounds, feedPosts.length],
+  );
+  const recentExperiences = useMemo(() => courseRounds, [courseRounds]);
+  const bucketListCount = isViewingOther ? 0 : getBucketListCourseIds().length;
+
   const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
-  const roundsShared = courseRounds.length;
-  const connections = 0;
   const canMessage = isViewingOther && Boolean(onMessageMember && memberProfile?.user_id);
   const canRequestIntroduction =
     isViewingOther && Boolean(onRequestIntroduction && memberProfile?.user_id);
+  const businessInterests = memberProfile?.business_interests ?? [];
+  const industryLabel = display.title.trim();
 
   if (isEditing && !isViewingOther) {
     return (
-      <section className="portal-social-page portal-profile-page" aria-labelledby="profile-heading">
-        <header className="portal-section-head portal-section-head--social portal-profile-edit-head">
+      <div className="et-profile et-profile--edit" aria-labelledby="profile-edit-heading">
+        <header className="et-profile-edit-header">
           <div>
-            <h2 id="profile-heading">Edit Profile</h2>
-            <p>{earlyStageCopy.profileOnboarding}</p>
+            <p className="et-profile-eyebrow">Member Profile</p>
+            <h2 id="profile-edit-heading">Edit Profile</h2>
+            <p className="et-profile-section-lead">{earlyStageCopy.profileOnboarding}</p>
           </div>
           <button
             type="button"
-            className="portal-btn portal-btn--outline portal-btn--compact"
+            className="et-btn et-btn--secondary"
             onClick={() => setIsEditing(false)}
           >
             View Profile
@@ -211,315 +225,354 @@ export function GolferProfilePage({
             setIsEditing(false);
           }}
         />
-      </section>
+      </div>
     );
   }
 
   if (!isLoading && loadError) {
     return (
-      <section className="portal-social-page portal-profile-page" aria-labelledby="profile-heading">
+      <div className="et-profile" aria-labelledby="profile-heading">
         {onBack ? (
-          <button type="button" className="portal-profile-back" onClick={onBack}>
+          <button type="button" className="et-profile-back" onClick={onBack}>
             ← {backLabel}
           </button>
         ) : null}
-        <header className="portal-section-head portal-section-head--social">
-          <h2 id="profile-heading">Profile</h2>
-        </header>
         <ProfileEmptyState title="Profile unavailable" hint={loadError} />
         <button
           type="button"
-          className="portal-btn portal-btn--outline portal-btn--compact"
-          onClick={() => {
-            setProfileVersion((version) => version + 1);
-          }}
+          className="et-btn et-btn--secondary"
+          onClick={() => setProfileVersion((version) => version + 1)}
         >
           Retry
         </button>
-      </section>
+      </div>
     );
   }
 
   if (!isLoading && !memberProfile) {
     return (
-      <section className="portal-social-page portal-profile-page" aria-labelledby="profile-heading">
+      <div className="et-profile" aria-labelledby="profile-heading">
         {onBack ? (
-          <button type="button" className="portal-profile-back" onClick={onBack}>
+          <button type="button" className="et-profile-back" onClick={onBack}>
             ← {backLabel}
           </button>
         ) : null}
-        <header className="portal-section-head portal-section-head--social">
-          <h2 id="profile-heading">Profile</h2>
-        </header>
         <ProfileEmptyState
           title="Complete your profile"
           hint="Your member profile is not linked to this account yet. If you just joined through an invite, refresh the page. Otherwise contact membership@elitetee.club."
         />
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="portal-social-page portal-profile-page" aria-labelledby="profile-heading">
+    <article className="et-profile" aria-labelledby="profile-heading">
       {onBack ? (
-        <button type="button" className="portal-profile-back" onClick={onBack}>
+        <button type="button" className="et-profile-back" onClick={onBack}>
           ← {backLabel}
         </button>
       ) : null}
 
-      {isLoading ? <p className="portal-empty">Loading profile…</p> : null}
+      {isLoading ? <p className="et-profile-loading">Loading profile…</p> : null}
 
-      <article className="portal-golfer-profile portal-golfer-profile--premium">
-        <ProfileCover src={display.coverImage} alt={`${display.name} cover`}>
-          {!isViewingOther ? (
-            <button
-              type="button"
-              className="portal-btn portal-btn--gold portal-btn--compact portal-golfer-edit"
-              onClick={() => setIsEditing(true)}
-            >
-              Edit Profile
-            </button>
-          ) : (
-            <div className="portal-golfer-cover-actions">
-              {canRequestIntroduction && memberProfile ? (
-                <button
-                  type="button"
-                  className="portal-btn portal-btn--outline portal-btn--compact"
-                  onClick={() => onRequestIntroduction?.(memberProfile)}
-                >
-                  Request Introduction
-                </button>
-              ) : null}
-              {canMessage && memberProfile?.user_id ? (
-                <button
-                  type="button"
-                  className="portal-btn portal-btn--gold portal-btn--compact"
-                  onClick={() =>
-                    onMessageMember?.(memberProfile.user_id as string, memberProfile.full_name)
-                  }
-                >
-                  Message
-                </button>
-              ) : null}
-            </div>
-          )}
-        </ProfileCover>
-
-        <div className="portal-golfer-profile-main">
-          <div className="portal-golfer-profile-hero-block">
-            <div className="portal-golfer-profile-header">
-              <div className="portal-golfer-profile-avatar-col">
-                <div className="portal-golfer-avatar-wrap">
-                  <MemberClubAvatar
-                    member={{ club_logo_url: display.avatarImage || null }}
-                    name={display.name}
-                    size="lg"
-                  />
+      {!isLoading && memberProfile ? (
+        <>
+          <header className="et-profile-hero">
+            <div className="et-profile-hero-cover">
+              <ProfileCover src={display.coverImage} alt={`${display.name} cover`}>
+                <div className="et-profile-hero-actions">
+                  {!isViewingOther ? (
+                    <button
+                      type="button"
+                      className="et-btn et-btn--forest"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Edit Profile
+                    </button>
+                  ) : (
+                    <>
+                      {canRequestIntroduction ? (
+                        <button
+                          type="button"
+                          className="et-btn et-btn--secondary"
+                          onClick={() => onRequestIntroduction?.(memberProfile)}
+                        >
+                          Request Introduction
+                        </button>
+                      ) : null}
+                      {canMessage && memberProfile.user_id ? (
+                        <button
+                          type="button"
+                          className="et-btn et-btn--forest"
+                          onClick={() =>
+                            onMessageMember?.(
+                              memberProfile.user_id as string,
+                              memberProfile.full_name,
+                            )
+                          }
+                        >
+                          Message
+                        </button>
+                      ) : null}
+                    </>
+                  )}
                 </div>
-              </div>
-              <div className="portal-golfer-profile-identity">
-                <h2 id="profile-heading" className="portal-golfer-profile-name">
-                  <span className="portal-golfer-profile-name-text">{display.name}</span>
+              </ProfileCover>
+            </div>
+
+            <div className="et-profile-hero-avatar">
+              <ProfileMemberAvatar name={display.name} imageUrl={display.avatarImage} size="xl" />
+            </div>
+            <div className="et-profile-identity">
+                <p className="et-profile-eyebrow">Member Profile</p>
+                <div className="et-profile-name-row">
+                  <h1 id="profile-heading" className="et-profile-name">
+                    {display.name}
+                  </h1>
                   {display.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
-                </h2>
-                {display.title ? <p className="portal-golfer-title">{display.title}</p> : null}
-                <p className="portal-golfer-location">
+                </div>
+                {industryLabel ? (
+                  <p className="et-profile-headline">{industryLabel}</p>
+                ) : null}
+                <p className="et-profile-location">
                   {display.location ||
                     (isViewingOther ? "Location not shared" : "Add your location in Edit Profile")}
                 </p>
-                <div className="portal-golfer-profile-identity-meta">
-                  <span className="portal-golfer-member-badge portal-golfer-founding-badge">
-                    {memberProfile?.founding_member_number ?? earlyStageCopy.foundingMember}
+                <p className="et-profile-club">
+                  Home club · <strong>{display.homeCourse || "Not shared"}</strong>
+                </p>
+                <div className="et-profile-badges">
+                  <span className="et-profile-badge et-profile-badge--gold">
+                    {memberProfile.founding_member_number ?? earlyStageCopy.foundingMember}
                   </span>
-                  {memberProfile ? (
-                    <span className="portal-golfer-status-badge">
-                      {formatMembershipLabel(memberProfile.membership_status)}
+                  <span className="et-profile-badge et-profile-badge--muted">
+                    {formatMembershipLabel(memberProfile.membership_status)}
+                  </span>
+                  {joinedLabel ? (
+                    <span className="et-profile-badge et-profile-badge--muted">
+                      Joined {joinedLabel}
                     </span>
                   ) : null}
-                  {joinedLabel ? (
-                    <span className="portal-golfer-joined-badge">Joined {joinedLabel}</span>
-                  ) : null}
                 </div>
-                <p className="portal-golfer-founding-note">{earlyStageCopy.foundingMemberNote}</p>
-              </div>
+                <p className="et-profile-note">{earlyStageCopy.foundingMemberNote}</p>
             </div>
-          </div>
+          </header>
 
-          <ProfileSection title="Bio">
-            {!isViewingOther ? (
-              <p className="portal-profile-intro-note">{earlyStageCopy.profileOnboarding}</p>
-            ) : null}
+          <div className="et-profile-layout">
+            <div className="et-profile-main">
+              <ProfileSection
+                title="About"
+                description="How this member shows up in the EliteTee network."
+              >
+                {!isViewingOther ? (
+                  <p className="et-profile-section-lead">{earlyStageCopy.profileOnboarding}</p>
+                ) : null}
+                <p className="et-profile-about">{display.bio}</p>
+              </ProfileSection>
 
-            <div className="portal-profile-card portal-profile-card--inline">
-              <h4>Bio</h4>
-              <p>{display.bio}</p>
+              <ProfileSection
+                title="Experience statistics"
+                description="Real activity drawn from shared rounds and feed posts."
+              >
+                <dl className="et-profile-stats">
+                  <div className="et-profile-stat et-profile-stat--accent">
+                    <dt>Rounds shared</dt>
+                    <dd>{experienceStats.roundsShared}</dd>
+                  </div>
+                  <div className="et-profile-stat">
+                    <dt>Courses played</dt>
+                    <dd>{experienceStats.coursesPlayed}</dd>
+                  </div>
+                  <div className="et-profile-stat">
+                    <dt>Feed posts</dt>
+                    <dd>{experienceStats.feedPosts}</dd>
+                  </div>
+                  <div className="et-profile-stat">
+                    <dt>Connections</dt>
+                    <dd>{experienceStats.connections}</dd>
+                  </div>
+                </dl>
+                {!isViewingOther ? (
+                  <p className="et-profile-note">{earlyStageCopy.profileStatsNote}</p>
+                ) : null}
+              </ProfileSection>
+
+              <ProfileSection
+                title="Recent experiences"
+                description={
+                  isViewingOther
+                    ? "The latest rounds this member has shared."
+                    : "Your most recent rounds and reviews."
+                }
+              >
+                {recentExperiences.length > 0 ? (
+                  <MemberActivityList
+                    rounds={recentExperiences}
+                    showMemberIdentity={false}
+                    allowPhotoDelete={!isViewingOther}
+                    onRoundsChanged={() => void loadProfile()}
+                  />
+                ) : (
+                  <ProfileEmptyState
+                    title={earlyStageCopy.roundsEmpty}
+                    hint={
+                      isViewingOther
+                        ? "This member has not shared course rounds yet."
+                        : "Add a course round from Courses to build your golf history."
+                    }
+                  />
+                )}
+              </ProfileSection>
+
+              <ProfileSection
+                title="Courses played"
+                description="Distinct courses represented in shared experiences."
+              >
+                <ProfileCoursesPlayed courses={uniqueCourses} isViewingOther={isViewingOther} />
+              </ProfileSection>
+
+              {feedPosts.length > 0 ? (
+                <ProfileSection
+                  title="Recent feed activity"
+                  description={
+                    isViewingOther
+                      ? "Posts this member has shared in the member feed."
+                      : "Posts you've shared in the member feed."
+                  }
+                >
+                  <div className={`et-profile-feed-grid ${FEED_CARD_SCOPE_CLASS}`}>
+                    {feedPosts.map((post, index) => (
+                      <FeedCard
+                        key={post.id}
+                        post={post}
+                        index={index}
+                        onViewAuthor={onViewMemberProfile}
+                      />
+                    ))}
+                  </div>
+                </ProfileSection>
+              ) : null}
             </div>
-          </ProfileSection>
 
-          <dl className="portal-profile-stats-grid portal-profile-stats-grid--early">
-            <div className="portal-profile-stat">
-              <dt>Course Rounds</dt>
-              <dd>{roundsShared}</dd>
-            </div>
-            <div className="portal-profile-stat">
-              <dt>Connections</dt>
-              <dd>{connections}</dd>
-            </div>
-          </dl>
-
-          <ProfileSection
-            title="Golf Background"
-            description="Where you play and what defines your game."
-          >
-            <div className="portal-profile-cards portal-profile-cards--compact">
-              <div className="portal-profile-card">
-                <h4>Home Course</h4>
-                <p>
-                  {display.homeCourse ||
-                    (isViewingOther
-                      ? "Not shared"
-                      : "Add your home course in Edit Profile.")}
-                </p>
-              </div>
-              {!isViewingOther ? (
-                <div className="portal-profile-card">
-                  <h4>Handicap</h4>
-                  {display.handicap !== undefined ? (
-                    <p>{display.handicap}</p>
+            <aside className="et-profile-aside">
+              <ProfileSection title="Golf" description="Where they play and what they love.">
+                <dl className="et-profile-aside-block">
+                  <div>
+                    <dt>Home club</dt>
+                    <dd>{display.homeCourse || "Not shared"}</dd>
+                  </div>
+                  {!isViewingOther ? (
+                    <div>
+                      <dt>Handicap</dt>
+                      <dd>
+                        {display.handicap !== undefined
+                          ? display.handicap
+                          : "Add your handicap in Edit Profile."}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+                <div>
+                  <p className="et-profile-section-lead">Favorite courses</p>
+                  {display.favoriteCourses.length > 0 ? (
+                    <ul className="et-profile-chips">
+                      {display.favoriteCourses.map((course) => (
+                        <li key={course}>
+                          <span className="et-profile-chip">{course}</span>
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
                     <ProfileEmptyState
-                      title="Not added yet"
-                      hint="Add your handicap in Edit Profile."
+                      title={earlyStageCopy.favoriteCoursesEmpty}
+                      hint={
+                        isViewingOther
+                          ? "This member has not shared favorite courses yet."
+                          : "List the courses that define your game in Edit Profile."
+                      }
                     />
                   )}
                 </div>
-              ) : null}
-              <div className="portal-profile-card portal-profile-card--wide">
-                <h4>Favorite Courses</h4>
-                {display.favoriteCourses.length > 0 ? (
-                  <ul>
-                    {display.favoriteCourses.map((course) => (
-                      <li key={course}>{course}</li>
+              </ProfileSection>
+
+              {(industryLabel || businessInterests.length > 0) && (
+                <ProfileSection title="Business" description="Professional context and interests.">
+                  {industryLabel ? (
+                    <dl className="et-profile-aside-block">
+                      <div>
+                        <dt>Industry</dt>
+                        <dd>{industryLabel}</dd>
+                      </div>
+                    </dl>
+                  ) : null}
+                  {businessInterests.length > 0 ? (
+                    <ul className="et-profile-chips">
+                      {businessInterests.map((interest) => (
+                        <li key={interest}>
+                          <span className="et-profile-chip">{interest}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </ProfileSection>
+              )}
+
+              <ProfileSection title="Travel" description="Upcoming golf travel and destinations.">
+                {display.upcomingTravel ? (
+                  <p className="et-profile-travel">{display.upcomingTravel}</p>
+                ) : (
+                  <ProfileEmptyState
+                    title={earlyStageCopy.tripsEmpty}
+                    hint={
+                      isViewingOther
+                        ? "This member has not shared upcoming travel yet."
+                        : "Share upcoming golf travel in Edit Profile to connect with members nearby."
+                    }
+                  />
+                )}
+              </ProfileSection>
+
+              <ProfileSection
+                title="Interests"
+                description="Connection goals and golf interests."
+              >
+                {display.connectionInterests.length > 0 ? (
+                  <ul className="et-profile-chips">
+                    {display.connectionInterests.map((interest) => (
+                      <li key={interest}>
+                        <span className="et-profile-chip">{interest}</span>
+                      </li>
                     ))}
                   </ul>
                 ) : (
                   <ProfileEmptyState
-                    title={earlyStageCopy.favoriteCoursesEmpty}
+                    title={earlyStageCopy.connectionInterestsTitle}
                     hint={
                       isViewingOther
-                        ? "This member has not shared favorite courses yet."
-                        : "List the courses that define your game in Edit Profile."
+                        ? "This member has not shared connection interests yet."
+                        : earlyStageCopy.connectionInterestsEmpty
                     }
                   />
                 )}
-              </div>
-            </div>
-          </ProfileSection>
+              </ProfileSection>
 
-          <ProfileSection
-            title="Travel Plans"
-            description="Let members know where you're headed next."
-          >
-            {display.upcomingTravel ? (
-              <p className="portal-profile-travel-copy">{display.upcomingTravel}</p>
-            ) : (
-              <ProfileEmptyState
-                title={earlyStageCopy.tripsEmpty}
-                hint={
-                  isViewingOther
-                    ? "This member has not shared upcoming travel yet."
-                    : "Share upcoming golf travel in Edit Profile to connect with members nearby."
-                }
-              />
-            )}
-          </ProfileSection>
-
-          <ProfileSection
-            title="Connection Interests"
-            description="The golf relationships and introductions they're open to."
-          >
-            {display.connectionInterests.length > 0 ? (
-              <ul className="portal-profile-interest-list">
-                {display.connectionInterests.map((interest) => (
-                  <li key={interest}>{interest}</li>
-                ))}
-              </ul>
-            ) : (
-              <ProfileEmptyState
-                title={earlyStageCopy.connectionInterestsTitle}
-                hint={
-                  isViewingOther
-                    ? "This member has not shared connection interests yet."
-                    : earlyStageCopy.connectionInterestsEmpty
-                }
-              />
-            )}
-          </ProfileSection>
-
-          {memberProfile?.business_interests?.length ? (
-            <ProfileSection title="Off-Course Interests">
-              <ul className="portal-profile-interest-list">
-                {memberProfile.business_interests.map((interest) => (
-                  <li key={interest}>{interest}</li>
-                ))}
-              </ul>
-            </ProfileSection>
-          ) : null}
-
-          <ProfileSection
-            title="Course Rounds"
-            description={
-              isViewingOther
-                ? "Courses this member has played and shared with EliteTee."
-                : "Every course you've played and shared with EliteTee members."
-            }
-          >
-            {courseRounds.length > 0 ? (
-              <MemberActivityList
-                rounds={courseRounds}
-                showMemberIdentity={false}
-                allowPhotoDelete={!isViewingOther}
-                onRoundsChanged={() => {
-                  void loadProfile();
-                }}
-              />
-            ) : (
-              <ProfileEmptyState
-                title={earlyStageCopy.roundsEmpty}
-                hint={
-                  isViewingOther
-                    ? "This member has not shared course rounds yet."
-                    : "Add a course round from Courses to build your golf history."
-                }
-              />
-            )}
-          </ProfileSection>
-
-          {feedPosts.length > 0 ? (
-            <ProfileSection
-              title="Recent Feed Activity"
-              description={
-                isViewingOther
-                  ? "Posts this member has shared in the member feed."
-                  : "Posts you've shared in the member feed."
-              }
-            >
-              <div
-                className={`portal-profile-rounds${feedPosts.length === 1 ? " portal-profile-rounds--single" : ""}`}
-              >
-                {feedPosts.map((post, index) => (
-                  <FeedCard
-                    key={post.id}
-                    post={post}
-                    index={index}
-                    onViewAuthor={onViewMemberProfile}
-                  />
-                ))}
-              </div>
-            </ProfileSection>
-          ) : null}
-        </div>
-      </article>
-    </section>
+              {!isViewingOther ? (
+                <ProfileSection title="Bucket list" description="Courses you want to play next.">
+                  <div className="et-profile-bucket">
+                    <p className="et-profile-bucket-label">Bucket list</p>
+                    <p className="et-profile-bucket-copy">
+                      Save courses from the library to build your list.
+                      {bucketListCount > 0
+                        ? ` You currently have ${bucketListCount} legacy saved course${bucketListCount === 1 ? "" : "s"} on this device.`
+                        : ""}
+                    </p>
+                  </div>
+                </ProfileSection>
+              ) : null}
+            </aside>
+          </div>
+        </>
+      ) : null}
+    </article>
   );
 }

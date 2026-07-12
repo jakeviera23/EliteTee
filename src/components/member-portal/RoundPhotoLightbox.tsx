@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { formatPlayedOnDate } from "../../lib/memberCourseRounds";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { createSignedPhotoUrl, deleteOwnCourseRoundPhoto } from "../../lib/memberCourseRoundPhotos";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { MemberCourseRoundPhotoRecord } from "../../types/memberCourseRoundPhoto";
 
 type RoundPhotoLightboxProps = {
@@ -96,7 +97,7 @@ export function RoundPhotoLightbox({
     setDeleting(false);
 
     if (error) {
-      setDeleteError(error.message);
+      setDeleteError(memberFacingPortalError(error.message, "general"));
       return;
     }
 

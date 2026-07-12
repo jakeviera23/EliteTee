@@ -1,15 +1,16 @@
 import { FormEvent, useRef, useState } from "react";
 import type { FeedPost, PortalGolfer, PostType, ComposerPostType } from "../../data/portalSocial";
 import {
-  MAX_RATING,
-  ratingOptions,
   composerPostTypeLabels,
   composerPostTypeBadges,
   composerPostTypePlaceholders,
   composerPostTypeOrder,
   earlyStageCopy,
 } from "../../data/portalSocial";
+import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
 import { createMemberFeedPost } from "../../lib/memberFeedPosts";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
+import { CourseRatingPicker } from "./CourseRatingPicker";
 import { FeedAvatar } from "./FeedAvatar";
 
 type FeedComposerProps = {
@@ -105,9 +106,14 @@ const detailLabels: Record<string, string> = {
 function defaultValuesFor(type: ComposerPostType): Record<string, string> {
   const values: Record<string, string> = { message: "" };
   for (const field of composerConfig[type].fields) {
-    values[field.key] = field.type === "rating" ? String(MAX_RATING) : "";
+    values[field.key] = field.type === "rating" ? String(COURSE_RATING_MAX) : "";
   }
   return values;
+}
+
+function parseComposerRating(value: string | undefined): number | null {
+  const result = validateCourseRating(value ?? "");
+  return result.ok ? result.value : null;
 }
 
 export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
@@ -152,7 +158,9 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
   const primaryMissing = config.primaryKey
     ? !values[config.primaryKey]?.trim()
     : false;
-  const canSubmit = !messageMissing && !primaryMissing && !isSubmitting;
+  const ratingMissing =
+    postType === "round-review" && !validateCourseRating(values.rating ?? "").ok;
+  const canSubmit = !messageMissing && !primaryMissing && !ratingMissing && !isSubmitting;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -160,6 +168,16 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
     const message = values.message.trim();
     const isReview = postType === "round-review";
+    let normalizedRating: number | undefined;
+
+    if (isReview) {
+      const ratingResult = validateCourseRating(values.rating ?? "");
+      if (!ratingResult.ok) {
+        setSubmitError(ratingResult.message);
+        return;
+      }
+      normalizedRating = ratingResult.value;
+    }
 
     const details = config.fields
       .filter((field) => field.key !== "rating" && values[field.key]?.trim())
@@ -181,7 +199,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       badge,
       details: details.length ? details : undefined,
       internalPostType: config.internalPostType,
-      rating: isReview ? Number(values.rating) : undefined,
+      rating: normalizedRating,
       playedWith: isReview ? values.playedWith?.trim() || undefined : undefined,
     });
 
@@ -189,7 +207,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
     if (error) {
       console.error("[FeedComposer] post failed", error.message);
-      setSubmitError(error.message);
+      setSubmitError(memberFacingPortalError(error.message, "feed"));
       return;
     }
 
@@ -220,9 +238,13 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
           </button>
         )}
         {!expanded ? (
-          <span className="feed-composer-bar-hint" aria-hidden="true">
+          <button
+            type="button"
+            className="feed-composer-new"
+            onClick={() => setExpanded(true)}
+          >
             New Post
-          </span>
+          </button>
         ) : null}
       </div>
 
@@ -244,24 +266,24 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
           {config.fields.length > 0 ? (
             <div className="feed-composer-grid">
-              {config.fields.map((field) => (
-                <label key={field.key} className="feed-composer-field">
-                  <span>
-                    {field.label}
-                    {field.optional ? " (optional)" : ""}
-                  </span>
-                  {field.type === "rating" ? (
-                    <select
-                      value={values[field.key] ?? String(MAX_RATING)}
-                      onChange={(event) => updateValue(field.key, event.target.value)}
-                    >
-                      {ratingOptions.map((value) => (
-                        <option key={value} value={value}>
-                          {value} / {MAX_RATING}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
+              {config.fields.map((field) =>
+                field.type === "rating" ? (
+                  <div
+                    key={field.key}
+                    className="feed-composer-field feed-composer-field--wide feed-composer-field--rating"
+                  >
+                    <CourseRatingPicker
+                      value={parseComposerRating(values[field.key])}
+                      onChange={(next) => updateValue(field.key, String(next))}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                ) : (
+                  <label key={field.key} className="feed-composer-field">
+                    <span>
+                      {field.label}
+                      {field.optional ? " (optional)" : ""}
+                    </span>
                     <input
                       type="text"
                       value={values[field.key] ?? ""}
@@ -269,9 +291,9 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                       placeholder={field.placeholder}
                       required={!field.optional}
                     />
-                  )}
-                </label>
-              ))}
+                  </label>
+                ),
+              )}
             </div>
           ) : null}
 
@@ -311,7 +333,9 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                     <span>+ Photo</span>
                   )}
                 </label>
-                <p className="feed-composer-photo-note">Photo preview is local only for now.</p>
+                <p className="feed-composer-photo-note">
+                  Photos attach when you share a full round experience from Courses.
+                </p>
               </div>
             ) : (
               <span className="feed-composer-footer-note">Shared with approved members only</span>
@@ -322,7 +346,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
               </button>
               <button
                 type="submit"
-                className="portal-btn portal-btn--gold portal-btn--compact"
+                className="et-btn et-btn--forest feed-composer-submit"
                 disabled={!canSubmit}
               >
                 {isSubmitting ? "Posting…" : "Post to Feed"}

@@ -1,10 +1,12 @@
 import { FormEvent, useState } from "react";
+import { introductionsCopy } from "../../data/portalSocial";
 import {
   INTRODUCTION_REQUEST_TYPES,
   INTRODUCTION_REQUEST_TYPE_HINTS,
   type IntroductionRequestType,
 } from "../../types/introductionRequest";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
+import { MemberClubAvatar } from "./MemberClubAvatar";
 
 type IntroductionRequestFormProps = {
   member: MemberProfileRecord;
@@ -31,28 +33,37 @@ export function IntroductionRequestForm({
     onSubmit({ requestType, message });
   }
 
+  const memberMeta = [member.primary_club, member.based_in, member.founding_member_number]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <form className="portal-intro-form" onSubmit={handleSubmit}>
-      <p className="portal-intro-form-lead">
-        Request a private introduction to <strong>{member.full_name}</strong>. Your request is
-        reviewed by the member before any connection is made.
-      </p>
+    <form className="et-introductions-form" onSubmit={handleSubmit}>
+      <div className="et-introductions-member-summary">
+        <MemberClubAvatar member={member} name={member.full_name} size="sm" />
+        <div>
+          <h4>{member.full_name}</h4>
+          <p>{memberMeta || "Founding member"}</p>
+        </div>
+      </div>
+
+      <p className="et-introductions-form-lead">{introductionsCopy.modalLead}</p>
 
       {errorMessage ? (
-        <p className="portal-alert portal-alert--error" role="alert">
+        <p className="et-introductions-alert et-introductions-alert--error" role="alert">
           {errorMessage}
         </p>
       ) : null}
 
-      <fieldset className="portal-intro-reasons">
-        <legend>Why would you like to connect?</legend>
-        <div className="portal-intro-reason-grid" role="radiogroup" aria-label="Connection reason">
+      <fieldset className="et-introductions-reasons">
+        <legend>{introductionsCopy.requestType}</legend>
+        <div className="et-introductions-reason-grid" role="radiogroup" aria-label="Connection reason">
           {INTRODUCTION_REQUEST_TYPES.map((type) => {
             const isSelected = requestType === type;
             return (
               <label
                 key={type}
-                className={`portal-intro-reason${isSelected ? " is-selected" : ""}`}
+                className={`et-introductions-reason${isSelected ? " is-selected" : ""}`}
               >
                 <input
                   type="radio"
@@ -61,8 +72,8 @@ export function IntroductionRequestForm({
                   checked={isSelected}
                   onChange={() => setRequestType(type)}
                 />
-                <span className="portal-intro-reason-label">{type}</span>
-                <span className="portal-intro-reason-hint">
+                <span className="et-introductions-reason-label">{type}</span>
+                <span className="et-introductions-reason-hint">
                   {INTRODUCTION_REQUEST_TYPE_HINTS[type]}
                 </span>
               </label>
@@ -71,28 +82,27 @@ export function IntroductionRequestForm({
         </div>
       </fieldset>
 
-      <label className="portal-profile-field">
-        <span>Personal message</span>
+      <label className="portal-profile-field portal-profile-field--full">
+        <span>{introductionsCopy.messageLabel}</span>
         <textarea
           rows={5}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Share context for your introduction — where you play, when you travel, or what you hope to connect on…"
-          required
+          placeholder={`${introductionsCopy.messagePrompt} ${introductionsCopy.messageHint}`}
         />
       </label>
 
-      <div className="portal-intro-form-actions">
-        <button type="submit" className="portal-btn portal-btn--gold" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting request…" : "Submit Introduction Request"}
+      <div className="et-introductions-form-actions">
+        <button type="submit" className="et-btn et-btn--forest" disabled={isSubmitting}>
+          {isSubmitting ? introductionsCopy.submittingRequest : introductionsCopy.submitRequest}
         </button>
         <button
           type="button"
-          className="portal-btn portal-btn--outline"
+          className="et-btn et-btn--secondary"
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancel
+          {introductionsCopy.cancel}
         </button>
       </div>
     </form>

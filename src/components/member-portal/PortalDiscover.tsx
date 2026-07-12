@@ -1,86 +1,54 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { photos } from "../../assets/photos";
-import { earlyStageCopy } from "../../data/portalSocial";
-import { fetchDiscoverablePortalMembers } from "../../lib/memberProfiles";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import {
+  DEFAULT_DISCOVER_FILTERS,
+  buildDiscoverGeoGroups,
+  buildFeaturedDiscoverSections,
+  countActiveDiscoverFilters,
+  extractDiscoverFilterOptions,
+  filterDiscoverMembers,
+  sortDiscoverMembers,
+  type DiscoverFilters,
+  type DiscoverSortOption,
+} from "../../lib/discoverDirectory";
+import {
+  fetchDiscoverablePortalMembers,
+  fetchOwnMemberProfile,
+} from "../../lib/memberProfiles";
+import {
+  formatDiscoverMemberLoadError,
+  logDiscoverMemberLoadError,
+} from "../../lib/portalDiscoverErrors";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
+import { DiscoverDirectoryCard } from "./discover/DiscoverDirectoryCard";
+import { DiscoverFeaturedSections } from "./discover/DiscoverFeaturedSections";
+import { DiscoverFilterDrawer } from "./discover/DiscoverFilterDrawer";
+import { DiscoverFiltersBar } from "./discover/DiscoverFiltersBar";
+import { DiscoverGeoBrowse } from "./discover/DiscoverGeoBrowse";
 import { IntroductionRequestModal } from "./IntroductionRequestModal";
-import { MemberCard } from "./MemberCard";
 import { usePortalToast } from "./PortalToastProvider";
-
-const discoverFilters = [
-  "All Members",
-  "Near Me",
-  "Traveling Soon",
-  "Same Home Club",
-  "Business Golf",
-  "Competitive Golf",
-  "Course Architecture",
-  "International Travel",
-] as const;
 
 type PortalDiscoverProps = {
   onViewCourse?: (courseId: string) => void;
   onNavigate?: (tab: "profile" | "messages" | "introductions") => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
+  onMessageMember?: (userId: string, memberName: string) => void;
 };
-
-function memberMatchesQuery(member: MemberProfileRecord, query: string) {
-  const haystack = [
-    member.full_name,
-    member.primary_club,
-    member.based_in,
-    member.traveling_to,
-    member.current_request,
-    member.industry,
-    ...member.golf_interests,
-    ...member.regions,
-    member.founding_member_number ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(query);
-}
-
-function memberMatchesFilter(member: MemberProfileRecord, filter: string) {
-  if (filter === "All Members") return true;
-  if (filter === "Traveling Soon") return Boolean(member.traveling_to?.trim());
-  if (filter === "Same Home Club") return Boolean(member.primary_club?.trim());
-
-  const interests = member.golf_interests.join(" ").toLowerCase();
-  const industry = member.industry.toLowerCase();
-  const regions = member.regions.join(" ").toLowerCase();
-
-  if (filter === "Business Golf") {
-    return interests.includes("business") || industry.includes("business");
-  }
-  if (filter === "Competitive Golf") {
-    return interests.includes("competitive") || interests.includes("tournament");
-  }
-  if (filter === "Course Architecture") {
-    return interests.includes("architecture") || interests.includes("design");
-  }
-  if (filter === "International Travel") {
-    return (
-      regions.length > 1 ||
-      interests.includes("travel") ||
-      Boolean(member.traveling_to?.trim())
-    );
-  }
-
-  return true;
-}
 
 export function PortalDiscover({
   onViewCourse: _onViewCourse,
   onNavigate,
   onViewMemberProfile,
+  onMessageMember,
 }: PortalDiscoverProps) {
   const { showToast } = usePortalToast();
-  const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("All Members");
+  const [filters, setFilters] = useState<DiscoverFilters>(DEFAULT_DISCOVER_FILTERS);
+  const debouncedFilters = useDebouncedValue(filters, 250);
+  const [sortBy, setSortBy] = useState<DiscoverSortOption>("most-relevant");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [members, setMembers] = useState<MemberProfileRecord[]>([]);
+  const [viewer, setViewer] = useState<MemberProfileRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
@@ -89,26 +57,20 @@ export function PortalDiscover({
     setIsLoading(true);
     setLoadError(null);
 
-    const { data, error } = await fetchDiscoverablePortalMembers();
+    const [{ data, error }, ownProfileResult] = await Promise.all([
+      fetchDiscoverablePortalMembers(),
+      fetchOwnMemberProfile(),
+    ]);
 
     if (error) {
-      const supabaseError = error as Error & {
-        code?: string;
-        details?: string;
-        hint?: string;
-      };
-      console.error("[PortalDiscover] failed to load members", {
-        code: supabaseError.code,
-        message: supabaseError.message,
-        details: supabaseError.details,
-        hint: supabaseError.hint,
-      });
-      setLoadError("Member profiles could not be loaded right now.");
+      logDiscoverMemberLoadError(error);
+      setLoadError(formatDiscoverMemberLoadError(error));
       setMembers([]);
     } else {
       setMembers(data);
     }
 
+    setViewer(ownProfileResult.data ?? null);
     setIsLoading(false);
   }, []);
 
@@ -116,19 +78,20 @@ export function PortalDiscover({
     void loadMembers();
   }, [loadMembers]);
 
+  const filterOptions = useMemo(() => extractDiscoverFilterOptions(members), [members]);
+  const geoGroups = useMemo(() => buildDiscoverGeoGroups(members), [members]);
+  const hasActiveFilters =
+    debouncedFilters.query.trim().length > 0 || countActiveDiscoverFilters(debouncedFilters) > 0;
+
   const filteredMembers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const filtered = filterDiscoverMembers(members, debouncedFilters);
+    return sortDiscoverMembers(filtered, sortBy, viewer);
+  }, [members, debouncedFilters, sortBy, viewer]);
 
-    return members.filter((member) => {
-      const matchesQuery = normalizedQuery === "" || memberMatchesQuery(member, normalizedQuery);
-      const matchesFilter = memberMatchesFilter(member, activeFilter);
-      return matchesQuery && matchesFilter;
-    });
-  }, [members, query, activeFilter]);
-
-  function openIntroductionRequest(member: MemberProfileRecord) {
-    setIntroRequestMember(member);
-  }
+  const featuredSections = useMemo(() => {
+    if (hasActiveFilters) return [];
+    return buildFeaturedDiscoverSections(members, viewer);
+  }, [hasActiveFilters, members, viewer]);
 
   function handleViewProfile(member: MemberProfileRecord) {
     const userId = member.user_id?.trim();
@@ -136,113 +99,150 @@ export function PortalDiscover({
     onViewMemberProfile(userId, member.full_name);
   }
 
+  function handleMessageMember(member: MemberProfileRecord) {
+    const userId = member.user_id?.trim();
+    if (!userId || !onMessageMember) return;
+    if (viewer?.user_id && viewer.user_id === userId) return;
+    onMessageMember(userId, member.full_name);
+  }
+
   function handleIntroductionSubmitted() {
     showToast("Introduction request submitted");
     onNavigate?.("introductions");
   }
 
-  return (
-    <section className="portal-social-page portal-discover-page" aria-labelledby="discover-heading">
-      <div className="portal-discover-hero" aria-hidden="true">
-        <img
-          src={photos.heroAerial}
-          alt="Aerial view of sand bunkers on a private fairway"
-          style={{ objectFit: "cover", objectPosition: "center", width: "100%", height: "100%" }}
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
+  function handleResetFilters() {
+    setFilters(DEFAULT_DISCOVER_FILTERS);
+    setSortBy("most-relevant");
+  }
 
-      <header className="portal-section-head portal-section-head--social portal-section-head--compact">
-        <h2 id="discover-heading">Discover</h2>
-        <p>
-          Find golfers by club, location, travel plans, and interests as founding members join
-          EliteTee.
+  function handleApplyGeoFilter(partial: Partial<DiscoverFilters>) {
+    setFilters((current) => ({
+      ...current,
+      city: partial.city ?? "",
+      region: partial.region ?? "",
+      country: partial.country ?? "",
+      travelDestination: partial.travelDestination ?? "",
+    }));
+  }
+
+  return (
+    <section className="et-discover" aria-labelledby="discover-heading">
+      <header className="et-discover-header">
+        <p className="et-discover-eyebrow">Private Network</p>
+        <h2 id="discover-heading" className="et-discover-title">
+          Discover
+        </h2>
+        <p className="et-discover-lead">
+          Explore members by club, location, interests, and travel — and find meaningful golf
+          connections inside EliteTee.
         </p>
+        {!isLoading && !loadError ? (
+          <p className="et-discover-count" aria-live="polite">
+            {members.length} member{members.length === 1 ? "" : "s"} in the directory
+          </p>
+        ) : null}
       </header>
 
-      <div className="discover-layout discover-layout--founding">
-        <div className="discover-main">
-          <section className="discover-toolbar" aria-labelledby="find-golfers-heading">
-            <h3 id="find-golfers-heading" className="discover-section-title">
-              Find Golfers
-            </h3>
-            <label className="portal-search-label portal-search-label--social">
-              <span className="visually-hidden">Search golfers</span>
-              <input
-                type="search"
-                className="portal-search-input"
-                placeholder="Search by name, club, city, destination, or interest…"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
+      <DiscoverFiltersBar
+        filters={filters}
+        onFiltersChange={setFilters}
+        filterOptions={filterOptions}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        onOpenMobileFilters={() => setFiltersOpen(true)}
+      />
+
+      {isLoading ? (
+        <div className="et-discover-loading" aria-live="polite" aria-busy="true">
+          <p className="et-discover-empty-title">Loading members…</p>
+          <p className="et-discover-empty-copy">Gathering the EliteTee member directory.</p>
+        </div>
+      ) : null}
+
+      {loadError ? (
+        <div className="et-discover-error" role="alert">
+          <p className="et-discover-error-title">Could not load members</p>
+          <p className="et-discover-error-copy">{loadError}</p>
+          <button type="button" className="et-btn et-btn--forest" onClick={() => void loadMembers()}>
+            Try again
+          </button>
+        </div>
+      ) : null}
+
+      {!isLoading && !loadError && members.length === 0 ? (
+        <div className="et-discover-empty">
+          <p className="et-discover-empty-title">No members in the directory yet</p>
+          <p className="et-discover-empty-copy">
+            Approved member profiles will appear here as the directory grows.
+          </p>
+        </div>
+      ) : null}
+
+      {!isLoading && !loadError && members.length > 0 ? (
+        <>
+          {!hasActiveFilters ? (
+            <>
+              <DiscoverFeaturedSections
+                sections={featuredSections}
+                viewer={viewer}
+                onViewProfile={handleViewProfile}
+                onRequestIntroduction={setIntroRequestMember}
+                onMessageMember={onMessageMember ? handleMessageMember : undefined}
               />
-            </label>
-            <div className="discover-filters" role="group" aria-label="Filter golfers">
-              {discoverFilters.map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  className={`discover-chip${activeFilter === filter ? " is-active" : ""}`}
-                  aria-pressed={activeFilter === filter}
-                  onClick={() => setActiveFilter(filter)}
-                >
-                  {filter}
-                </button>
-              ))}
+              <DiscoverGeoBrowse groups={geoGroups} onApplyFilter={handleApplyGeoFilter} />
+            </>
+          ) : null}
+
+          <section className="et-discover-results" aria-labelledby="discover-results-heading">
+            <div className="et-discover-results-head">
+              <h3 id="discover-results-heading" className="et-discover-section-title">
+                {hasActiveFilters ? "Filtered members" : "All members"}
+              </h3>
+              <p className="et-discover-featured-count" aria-live="polite">
+                {filteredMembers.length} result{filteredMembers.length === 1 ? "" : "s"}
+              </p>
             </div>
-          </section>
 
-          <section
-            className="portal-discover-founding"
-            aria-labelledby="founding-members-heading"
-          >
-            <h3 id="founding-members-heading" className="discover-section-title">
-              {earlyStageCopy.discoverFoundingTitle}
-            </h3>
-
-            {isLoading ? (
-              <p className="portal-discover-loading">Loading founding members…</p>
-            ) : null}
-
-            {loadError ? (
-              <p className="portal-alert portal-alert--warning" role="alert">
-                {loadError}
-              </p>
-            ) : null}
-
-            {!isLoading && !loadError && members.length === 0 ? (
-              <div className="portal-discover-founding-body">
-                <p>{earlyStageCopy.discoverFoundingBody}</p>
-                <p className="portal-discover-founding-note">{earlyStageCopy.discoverFoundingNote}</p>
+            {filteredMembers.length === 0 ? (
+              <div className="et-discover-empty">
+                <p className="et-discover-empty-title">No members match these filters</p>
+                <p className="et-discover-empty-copy">
+                  Try broadening your search or reset filters to explore the full directory.
+                </p>
+                <button type="button" className="et-btn et-btn--forest" onClick={handleResetFilters}>
+                  Reset filters
+                </button>
               </div>
-            ) : null}
-
-            {!isLoading && !loadError && members.length > 0 ? (
-              <p className="portal-discover-count" aria-live="polite">
-                {members.length} founding member{members.length === 1 ? "" : "s"}
-              </p>
-            ) : null}
-
-            {!isLoading && !loadError && members.length > 0 && filteredMembers.length === 0 ? (
-              <p className="discover-no-match">{earlyStageCopy.discoverNoMatch}</p>
-            ) : null}
-
-            {!isLoading && filteredMembers.length > 0 ? (
-              <ul className="portal-member-grid">
+            ) : (
+              <ul className="et-discover-grid">
                 {filteredMembers.map((member) => (
                   <li key={member.id}>
-                    <MemberCard
+                    <DiscoverDirectoryCard
                       member={member}
+                      viewer={viewer}
+                      showMatchReasons={sortBy === "most-relevant" && Boolean(viewer)}
                       onViewProfile={handleViewProfile}
-                      onRequest={openIntroductionRequest}
+                      onRequestIntroduction={setIntroRequestMember}
+                      onMessageMember={onMessageMember ? handleMessageMember : undefined}
                     />
                   </li>
                 ))}
               </ul>
-            ) : null}
+            )}
           </section>
-        </div>
-      </div>
+        </>
+      ) : null}
+
+      <DiscoverFilterDrawer
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        onFiltersChange={setFilters}
+        filterOptions={filterOptions}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
 
       {introRequestMember ? (
         <IntroductionRequestModal

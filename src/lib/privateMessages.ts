@@ -119,8 +119,10 @@ export function buildDirectConversationSummaries({
         otherUserPhotoUrl: identity?.club_logo_url ?? null,
         otherUserFoundingNumber: identity?.founding_member_number ?? null,
         otherUserPrimaryClub: identity?.primary_club ?? "",
+        otherUserBasedIn: identity?.based_in ?? "",
         lastMessageBody: message.body,
         lastMessageAt: message.created_at,
+        lastMessageWasEdited: Boolean(message.edited_at),
         unreadCount:
           message.receiver_id === currentUserId && !message.read_at ? 1 : 0,
       });
@@ -129,6 +131,7 @@ export function buildDirectConversationSummaries({
 
     existing.lastMessageBody = message.body;
     existing.lastMessageAt = message.created_at;
+    existing.lastMessageWasEdited = Boolean(message.edited_at);
     if (!existing.otherUserName || existing.otherUserName === "Member") {
       existing.otherUserName = otherUserName;
     }
@@ -140,6 +143,9 @@ export function buildDirectConversationSummaries({
     }
     if (identity?.primary_club && !existing.otherUserPrimaryClub) {
       existing.otherUserPrimaryClub = identity.primary_club;
+    }
+    if (identity?.based_in && !existing.otherUserBasedIn) {
+      existing.otherUserBasedIn = identity.based_in;
     }
     if (message.receiver_id === currentUserId && !message.read_at) {
       existing.unreadCount += 1;

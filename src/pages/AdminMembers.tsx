@@ -1,7 +1,24 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AdminActivityPanel } from "../components/admin/AdminActivityPanel";
+import { AdminCoursesLocationPanel } from "../components/admin/AdminCoursesLocationPanel";
+import { AdminApplicationsPanel } from "../components/admin/AdminApplicationsPanel";
+import { AdminInvitesPanel } from "../components/admin/AdminInvitesPanel";
+import { AdminMemberDirectory } from "../components/admin/AdminMemberDirectory";
+import { AdminMetricGrid } from "../components/admin/AdminMetricGrid";
+import { AdminNav } from "../components/admin/AdminNav";
 import { ApplicationViewModal } from "../components/admin/ApplicationViewModal";
+import { AiOperationsPanel } from "../components/admin/AiOperationsPanel";
 import { InvitationDraftModal } from "../components/admin/InvitationDraftModal";
+import { adminCopy, type AdminTabId } from "../data/adminCopy";
+import {
+  buildOverviewMetrics,
+  computeInviteMetrics,
+  fetchMemberProfilesForAdmin,
+  fetchPortalActiveMemberCount,
+  filterAdminMembers,
+} from "../lib/adminDashboard";
+import { fetchAiAdminDashboard } from "../lib/askEliteTee";
 import {
   approveMembershipApplication,
   declineMembershipApplication,
@@ -11,24 +28,26 @@ import {
   regenerateApplicationInviteToken,
 } from "../lib/membershipApplications";
 import type { ApproveApplicationResult } from "../lib/membershipApplications";
+import type { AiAdminDashboard } from "../types/askEliteTee";
 import type { MembershipApplicationRecord } from "../types/membershipApplication";
 import {
   copyInviteLinkToClipboard,
   getApplicationInviteLink,
 } from "../lib/membershipInvites";
 import {
+  AUTH_USER_ID_LINKING_NOTE,
   createMemberProfile,
   fetchAdminDashboardCounts,
-  fetchRecentMemberProfilesForAdmin,
   formatAdminError,
   linkMemberProfileToAuthUser,
   parseListInput,
-  AUTH_USER_ID_LINKING_NOTE,
   type AdminMemberRow,
 } from "../lib/memberProfiles";
 import { supabase } from "../lib/supabase";
 import "../inside-elitetee.css";
 import "../member-portal.css";
+import "../member-portal-theme.css";
+import "../member-portal-admin.css";
 
 type FormState = {
   auth_user_id: string;
@@ -64,15 +83,9 @@ const initialFormState: FormState = {
   is_verified: true,
 };
 
-function formatAdminDate(value: string) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
 export function AdminMembers() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<AdminTabId>("overview");
   const [form, setForm] = useState<FormState>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -87,8 +100,14 @@ export function AdminMembers() {
     profilesCreated: 0,
     approvedMembers: 0,
   });
-  const [recentMembers, setRecentMembers] = useState<AdminMemberRow[]>([]);
+  const [portalActiveMembers, setPortalActiveMembers] = useState<number | null>(null);
+  const [allMembers, setAllMembers] = useState<AdminMemberRow[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberFilter, setMemberFilter] = useState<"all" | "portal" | "awaiting" | "unverified">(
+    "all",
+  );
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [pendingApplications, setPendingApplications] = useState<MembershipApplicationRecord[]>(
     [],
   );
@@ -106,24 +125,49 @@ export function AdminMembers() {
   const [pendingLoadWarning, setPendingLoadWarning] = useState<string | null>(null);
   const [approvedLoadWarning, setApprovedLoadWarning] = useState<string | null>(null);
   const [inviteActionId, setInviteActionId] = useState<string | null>(null);
+  const [aiDashboard, setAiDashboard] = useState<AiAdminDashboard | null>(null);
+  const [aiLoadError, setAiLoadError] = useState<string | null>(null);
+  const [isLoadingAi, setIsLoadingAi] = useState(true);
+
+  const refreshAiDashboard = useCallback(async () => {
+    setIsLoadingAi(true);
+    const { data, error } = await fetchAiAdminDashboard();
+    setIsLoadingAi(false);
+    if (error) {
+      console.error("[AdminMembers] AI dashboard failed", error);
+      setAiLoadError(error.message);
+      setAiDashboard(null);
+      return;
+    }
+    setAiLoadError(null);
+    setAiDashboard(data);
+  }, []);
 
   const refreshAdminData = useCallback(async () => {
     setIsLoadingDashboard(true);
     setPendingLoadWarning(null);
+    setLoadError(null);
 
-    const [counts, recent, pending, approved, pendingTotal] = await Promise.all([
+    const [counts, members, pending, approved, pendingTotal, portalActive] = await Promise.all([
       fetchAdminDashboardCounts(),
-      fetchRecentMemberProfilesForAdmin(10),
+      fetchMemberProfilesForAdmin({ limit: 50 }),
       fetchPendingApplications(),
       fetchApprovedApplications(),
       fetchPendingApplicationCount(),
+      fetchPortalActiveMemberCount(),
     ]);
 
     setDashboardCounts(counts);
-    setRecentMembers(recent.data);
+    setAllMembers(members.data);
     setPendingApplications(pending.data);
     setApprovedApplications(approved.data);
     setPendingCount(pendingTotal);
+    setPortalActiveMembers(portalActive);
+
+    if (members.error) {
+      console.error("[AdminMembers] failed to fetch member profiles", members.error);
+      setLoadError(adminCopy.loadError);
+    }
 
     if (pending.error) {
       console.error("[AdminMembers] failed to fetch pending applications", pending.error);
@@ -140,11 +184,35 @@ export function AdminMembers() {
     }
 
     setIsLoadingDashboard(false);
-  }, []);
+    void refreshAiDashboard();
+  }, [refreshAiDashboard]);
 
   useEffect(() => {
     void refreshAdminData();
   }, [refreshAdminData]);
+
+  const inviteMetrics = useMemo(
+    () => computeInviteMetrics(approvedApplications),
+    [approvedApplications],
+  );
+
+  const overviewMetrics = useMemo(
+    () =>
+      buildOverviewMetrics({
+        pendingApplications: pendingCount,
+        approvedMembers: dashboardCounts.approvedMembers,
+        profilesCreated: dashboardCounts.profilesCreated,
+        portalActiveMembers,
+        inviteMetrics,
+        aiDashboard,
+      }),
+    [pendingCount, dashboardCounts, portalActiveMembers, inviteMetrics, aiDashboard],
+  );
+
+  const filteredMembers = useMemo(
+    () => filterAdminMembers(allMembers, { search: memberSearch, filter: memberFilter }),
+    [allMembers, memberSearch, memberFilter],
+  );
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -291,7 +359,9 @@ export function AdminMembers() {
   }
 
   async function handleDeclineApplication(applicationId: string) {
-    const reason = window.prompt("Optional decline note for your records:");
+    if (!window.confirm(adminCopy.applications.declineConfirm)) return;
+
+    const reason = window.prompt(adminCopy.applications.declinePrompt);
     if (reason === null) return;
 
     setApplicationActionId(applicationId);
@@ -312,593 +382,379 @@ export function AdminMembers() {
   }
 
   return (
-    <div className="inside-page portal-page">
-      <header className="portal-top">
+    <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
+      <header className="portal-top portal-chrome">
         <Link to="/member-portal" className="portal-logo-link" aria-label="EliteTee member portal">
           <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
         </Link>
         <button
           type="button"
-          className="portal-btn portal-btn--gold portal-signout"
+          className="portal-btn portal-btn--gold portal-signout et-admin-signout"
           onClick={handleSignOut}
           disabled={isSigningOut}
         >
-          {isSigningOut ? "Signing out..." : "Sign Out"}
+          {isSigningOut ? adminCopy.signingOut : adminCopy.signOut}
         </button>
       </header>
 
-      <main className="portal-main portal-admin-main">
-        <header className="portal-section-head portal-admin-head">
-          <h1>EliteTee Admin</h1>
-          <p>
-            Internal dashboard for onboarding approved members, linking logins, and keeping member
-            records accurate.
-          </p>
+      <main className="portal-main et-admin">
+        <header className="et-admin-header">
+          <div className="et-admin-header-copy">
+            <p className="et-admin-eyebrow">{adminCopy.eyebrow}</p>
+            <h1 className="et-admin-title">{adminCopy.title}</h1>
+            <p className="et-admin-lead">{adminCopy.lead}</p>
+          </div>
         </header>
 
-        <section className="admin-dashboard" aria-label="Admin overview">
-          <article className="admin-stat-card">
-            <p className="admin-stat-label">Pending Applications</p>
-            <p className="admin-stat-value">
-              {isLoadingDashboard ? "…" : pendingCount}
-            </p>
-            <p className="admin-stat-note">Awaiting review in EliteTee Admin</p>
-          </article>
-          <article className="admin-stat-card">
-            <p className="admin-stat-label">Approved Members</p>
-            <p className="admin-stat-value">
-              {isLoadingDashboard ? "…" : dashboardCounts.approvedMembers}
-            </p>
-            <p className="admin-stat-note">Founding, verified, approved, or active status</p>
-          </article>
-          <article className="admin-stat-card">
-            <p className="admin-stat-label">Member Profiles Created</p>
-            <p className="admin-stat-value">
-              {isLoadingDashboard ? "…" : dashboardCounts.profilesCreated}
-            </p>
-            <p className="admin-stat-note">Profiles in member_profiles</p>
-          </article>
-        </section>
+        <AdminNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          pendingCount={pendingCount}
+        />
 
-        <section className="admin-section" aria-labelledby="pending-applications-heading">
-          <header className="admin-section-head">
-            <h2 id="pending-applications-heading">Pending Applications</h2>
-            <p>
-              Review membership requests submitted through the website. Approve to create a Founding
-              Member profile and generate an invitation.
-            </p>
-          </header>
-
-          {applicationMessage ? (
-            <p className="portal-alert portal-alert--success" role="status">
-              {applicationMessage}
-            </p>
-          ) : null}
-
-          {applicationError ? (
-            <p className="portal-alert portal-alert--error" role="alert">
-              {applicationError}
-            </p>
-          ) : null}
-
-          {pendingLoadWarning ? (
-            <p className="portal-alert portal-alert--warning" role="alert">
-              {pendingLoadWarning}
-            </p>
-          ) : null}
-
-          {isLoadingDashboard ? (
-            <p className="admin-empty-state">Loading applications…</p>
-          ) : pendingApplications.length === 0 ? (
-            <div className="admin-empty-state">
-              <p>No applications waiting for review.</p>
-              <p className="admin-empty-state-note">
-                New requests from the homepage application form will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="admin-members-table-wrap">
-              <table className="admin-members-table admin-applications-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Date Applied</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingApplications.map((application) => (
-                    <tr key={application.id}>
-                      <td data-label="Name">{application.full_name}</td>
-                      <td data-label="Email">{application.email}</td>
-                      <td data-label="Date Applied">{formatAdminDate(application.applied_at)}</td>
-                      <td data-label="Status">
-                        <span className="admin-badge admin-badge--pending">Pending Review</span>
-                      </td>
-                      <td data-label="Actions">
-                        <div className="admin-application-actions">
-                          <button
-                            type="button"
-                            className="portal-btn portal-btn--gold portal-btn--compact"
-                            disabled={applicationActionId === application.id}
-                            onClick={() => void handleApproveApplication(application.id)}
-                          >
-                            {applicationActionId === application.id ? "Approving…" : "Approve"}
-                          </button>
-                          <button
-                            type="button"
-                            className="portal-btn portal-btn--outline portal-btn--compact"
-                            disabled={applicationActionId === application.id}
-                            onClick={() => void handleDeclineApplication(application.id)}
-                          >
-                            Decline
-                          </button>
-                          <button
-                            type="button"
-                            className="portal-btn portal-btn--outline portal-btn--compact"
-                            onClick={() => setViewingApplication(application)}
-                          >
-                            View Application
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="admin-section" aria-labelledby="approved-applications-heading">
-          <header className="admin-section-head">
-            <h2 id="approved-applications-heading">Approved Applications</h2>
-            <p>
-              Recover private invite links for approved founding members. Existing tokens are reused —
-              links are not regenerated unless missing.
-            </p>
-          </header>
-
-          {approvedLoadWarning ? (
-            <p className="portal-alert portal-alert--warning" role="alert">
-              {approvedLoadWarning}
-            </p>
-          ) : null}
-
-          {isLoadingDashboard ? (
-            <p className="admin-empty-state">Loading approved applications…</p>
-          ) : approvedApplications.length === 0 ? (
-            <div className="admin-empty-state">
-              <p>No approved applications yet.</p>
-            </div>
-          ) : (
-            <div className="admin-members-table-wrap">
-              <table className="admin-members-table admin-applications-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">FM #</th>
-                    <th scope="col">Invite</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {approvedApplications.map((application) => {
-                    const inviteLink = getApplicationInviteLink(application);
-                    const inviteRedeemed = Boolean(application.invite_redeemed_at);
-
-                    return (
-                      <tr key={application.id}>
-                        <td data-label="Name">{application.full_name}</td>
-                        <td data-label="Email">{application.email}</td>
-                        <td data-label="FM #">{application.founding_member_number || "—"}</td>
-                        <td data-label="Invite">
-                          {inviteRedeemed ? (
-                            <span className="admin-badge admin-badge--linked">Redeemed</span>
-                          ) : inviteLink ? (
-                            <span className="admin-badge admin-badge--verified">Link ready</span>
-                          ) : (
-                            <span className="admin-badge admin-badge--pending">Link missing</span>
-                          )}
-                        </td>
-                        <td data-label="Actions">
-                          <div className="admin-application-actions">
-                            {inviteLink && !inviteRedeemed ? (
-                              <button
-                                type="button"
-                                className="portal-btn portal-btn--gold portal-btn--compact"
-                                onClick={() => void handleCopyInviteLink(application)}
-                              >
-                                Copy Invite Link
-                              </button>
-                            ) : null}
-                            {!inviteLink && !inviteRedeemed ? (
-                              <button
-                                type="button"
-                                className="portal-btn portal-btn--outline portal-btn--compact"
-                                disabled={inviteActionId === application.id}
-                                onClick={() => void handleRegenerateInviteLink(application.id)}
-                              >
-                                {inviteActionId === application.id
-                                  ? "Regenerating…"
-                                  : "Regenerate Invite Link"}
-                              </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              className="portal-btn portal-btn--outline portal-btn--compact"
-                              onClick={() => setViewingApplication(application)}
-                            >
-                              View Application
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="admin-section" aria-labelledby="recent-members-heading">
-          <header className="admin-section-head">
-            <h2 id="recent-members-heading">Recent Member Profiles</h2>
-            <p>Latest profiles created in Supabase, most recent first.</p>
-          </header>
-
-          {isLoadingDashboard ? (
-            <p className="admin-empty-state">Loading member profiles…</p>
-          ) : recentMembers.length === 0 ? (
-            <div className="admin-empty-state">
-              <p>No member profiles yet.</p>
-              <p className="admin-empty-state-note">
-                Create the first approved member profile below to get started.
-              </p>
-            </div>
-          ) : (
-            <div className="admin-members-table-wrap">
-              <table className="admin-members-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Primary Club</th>
-                    <th scope="col">Based In</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">FM #</th>
-                    <th scope="col">Portal</th>
-                    <th scope="col">Verified</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Linked</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentMembers.map((member) => (
-                    <tr key={member.id}>
-                      <td data-label="Name">{member.full_name || "—"}</td>
-                      <td data-label="Email">{member.email || "—"}</td>
-                      <td data-label="Primary Club">{member.primary_club || "—"}</td>
-                      <td data-label="Based In">{member.based_in || "—"}</td>
-                      <td data-label="Status">{member.membership_status || "—"}</td>
-                      <td data-label="FM #">{member.founding_member_number || "—"}</td>
-                      <td data-label="Portal">
-                        {member.portal_access_enabled ? (
-                          <span className="admin-badge admin-badge--linked">Enabled</span>
-                        ) : (
-                          <span className="admin-badge admin-badge--muted">No</span>
-                        )}
-                      </td>
-                      <td data-label="Verified">
-                        {member.is_verified ? (
-                          <span className="admin-badge admin-badge--verified">Verified</span>
-                        ) : (
-                          <span className="admin-badge admin-badge--muted">No</span>
-                        )}
-                      </td>
-                      <td data-label="Created">{formatAdminDate(member.created_at)}</td>
-                      <td data-label="Linked">
-                        {member.user_id ? (
-                          <span className="admin-badge admin-badge--linked">Yes</span>
-                        ) : (
-                          <span className="admin-badge admin-badge--unlinked">No</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="admin-section" aria-labelledby="create-member-heading">
-          <header className="admin-section-head">
-            <h2 id="create-member-heading">Create Approved Member Profile</h2>
-            <p>
-              Use this when an applicant has been approved and you need to create their member
-              profile before they can use the portal. Requires the member&apos;s Supabase Auth UID.
-            </p>
-          </header>
-
-          {successMessage ? (
-            <p className="portal-alert portal-alert--success" role="status">
-              {successMessage}
-            </p>
-          ) : null}
-
-          {errorMessage ? (
-            <p className="portal-alert portal-alert--error" role="alert">
-              {errorMessage}
-            </p>
-          ) : null}
-
-          <form className="portal-admin-form" onSubmit={handleSubmit}>
-            <div className="admin-form-card">
-              <h3 className="admin-form-group-title">Account</h3>
-              <div className="portal-admin-form-grid">
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Supabase Auth User UID</span>
-                  <input
-                    type="text"
-                    value={form.auth_user_id}
-                    onChange={(event) => updateField("auth_user_id", event.target.value)}
-                    placeholder="Paste UID from Supabase Authentication > Users"
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => updateField("email", event.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="admin-form-card">
-              <h3 className="admin-form-group-title">Member Identity</h3>
-              <div className="portal-admin-form-grid">
-                <label className="portal-profile-field">
-                  <span>Full Name</span>
-                  <input
-                    type="text"
-                    value={form.full_name}
-                    onChange={(event) => updateField("full_name", event.target.value)}
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field">
-                  <span>Primary Club</span>
-                  <input
-                    type="text"
-                    value={form.primary_club}
-                    onChange={(event) => updateField("primary_club", event.target.value)}
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field">
-                  <span>Based In</span>
-                  <input
-                    type="text"
-                    value={form.based_in}
-                    onChange={(event) => updateField("based_in", event.target.value)}
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field">
-                  <span>Industry</span>
-                  <input
-                    type="text"
-                    value={form.industry}
-                    onChange={(event) => updateField("industry", event.target.value)}
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field">
-                  <span>Membership Status</span>
-                  <select
-                    value={form.membership_status}
-                    onChange={(event) => updateField("membership_status", event.target.value)}
-                    required
-                  >
-                    <option value="Founding Member">Founding Member</option>
-                    <option value="Verified Member">Verified Member</option>
-                  </select>
-                </label>
-
-                <label className="portal-profile-field portal-profile-field--checkbox">
-                  <input
-                    type="checkbox"
-                    checked={form.is_verified}
-                    onChange={(event) => updateField("is_verified", event.target.checked)}
-                  />
-                  <span>Verified Member</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="admin-form-card">
-              <h3 className="admin-form-group-title">Golf Profile</h3>
-              <div className="portal-admin-form-grid">
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Additional Clubs</span>
-                  <textarea
-                    rows={3}
-                    value={form.additional_clubs}
-                    onChange={(event) => updateField("additional_clubs", event.target.value)}
-                    placeholder="One club per line"
-                  />
-                </label>
-
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Regions</span>
-                  <textarea
-                    rows={3}
-                    value={form.regions}
-                    onChange={(event) => updateField("regions", event.target.value)}
-                    placeholder="One region per line"
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Traveling To</span>
-                  <input
-                    type="text"
-                    value={form.traveling_to}
-                    onChange={(event) => updateField("traveling_to", event.target.value)}
-                    placeholder="Upcoming travel destination, if any"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="admin-form-card">
-              <h3 className="admin-form-group-title">Interests &amp; Requests</h3>
-              <div className="portal-admin-form-grid">
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Golf Interests</span>
-                  <textarea
-                    rows={3}
-                    value={form.golf_interests}
-                    onChange={(event) => updateField("golf_interests", event.target.value)}
-                    placeholder="One interest per line"
-                  />
-                </label>
-
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Business Interests</span>
-                  <textarea
-                    rows={3}
-                    value={form.business_interests}
-                    onChange={(event) => updateField("business_interests", event.target.value)}
-                    placeholder="One interest per line"
-                  />
-                </label>
-
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Current Request</span>
-                  <textarea
-                    rows={3}
-                    value={form.current_request}
-                    onChange={(event) => updateField("current_request", event.target.value)}
-                    placeholder="What the member is currently seeking"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="portal-btn portal-btn--gold portal-admin-submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Create Member Profile"}
+        {loadError ? (
+          <div className="et-admin-alert et-admin-alert--error" role="alert">
+            <p>{loadError}</p>
+            <button type="button" className="et-btn et-btn--secondary" onClick={() => void refreshAdminData()}>
+              {adminCopy.actions.retry}
             </button>
-          </form>
-        </section>
-
-        <section className="admin-section" aria-labelledby="link-member-heading">
-          <header className="admin-section-head">
-            <h2 id="link-member-heading">Link Existing Member Login</h2>
-            <p>
-              Use this when a member profile already exists but their Supabase Auth UID is missing
-              or incorrect. This connects their login to the correct member_profiles record.
-            </p>
-          </header>
-
-          {linkMessage ? (
-            <p className="portal-alert portal-alert--success" role="status">
-              {linkMessage}
-            </p>
-          ) : null}
-
-          {linkError ? (
-            <p className="portal-alert portal-alert--error" role="alert">
-              {linkError}
-            </p>
-          ) : null}
-
-          <form className="portal-admin-form" onSubmit={handleLinkSubmit}>
-            <div className="admin-form-card">
-              <div className="portal-admin-form-grid">
-                <label className="portal-profile-field">
-                  <span>Member Email</span>
-                  <input
-                    type="email"
-                    value={linkEmail}
-                    onChange={(event) => setLinkEmail(event.target.value)}
-                    placeholder="member@email.com"
-                    required
-                  />
-                </label>
-
-                <label className="portal-profile-field">
-                  <span>Supabase Auth User UID</span>
-                  <input
-                    type="text"
-                    value={linkAuthUserId}
-                    onChange={(event) => setLinkAuthUserId(event.target.value)}
-                    placeholder="Paste UID from Authentication > Users"
-                    required
-                  />
-                </label>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="portal-btn portal-btn--outline portal-admin-submit"
-              disabled={isLinking}
-            >
-              {isLinking ? "Linking..." : "Link Member To Auth UID"}
-            </button>
-          </form>
-        </section>
-
-        <section className="admin-section admin-section--notes" aria-labelledby="admin-notes-heading">
-          <header className="admin-section-head">
-            <h2 id="admin-notes-heading">Admin Notes</h2>
-            <p>Reference guidance for onboarding and account linking.</p>
-          </header>
-          <div className="admin-notes-card">
-            <p>{AUTH_USER_ID_LINKING_NOTE}</p>
-            <ul>
-              <li>
-                Applications submit to Supabase and appear in Pending Applications above for review.
-              </li>
-              <li>
-                Approving creates a Founding Member profile (FM-001, FM-002, …), generates a
-                private invite link, and prepares an invitation email draft (not sent automatically).
-              </li>
-              <li>
-                The applicant uses the private invite link to create their login. Portal access is
-                enabled only after they complete invite signup.
-              </li>
-              <li>
-                Create a profile manually below when needed. Link Existing Member Login when a
-                profile exists but portal access fails due to a UID mismatch.
-              </li>
-              <li>
-                <code>auth.uid()</code> must equal <code>public.users.id</code> and{" "}
-                <code>member_profiles.user_id</code>.
-              </li>
-            </ul>
           </div>
-        </section>
+        ) : null}
+
+        {(activeTab === "applications" || activeTab === "invites") && applicationMessage ? (
+          <p className="et-admin-alert et-admin-alert--success" role="status">
+            {applicationMessage}
+          </p>
+        ) : null}
+
+        {(activeTab === "applications" || activeTab === "invites") && applicationError ? (
+          <p className="et-admin-alert et-admin-alert--error" role="alert">
+            {applicationError}
+          </p>
+        ) : null}
+
+        {activeTab === "overview" ? (
+          <AdminMetricGrid metrics={overviewMetrics} isLoading={isLoadingDashboard || isLoadingAi} />
+        ) : null}
+
+        {activeTab === "applications" ? (
+          <AdminApplicationsPanel
+            pendingApplications={pendingApplications}
+            approvedApplications={approvedApplications}
+            isLoading={isLoadingDashboard}
+            pendingLoadWarning={pendingLoadWarning}
+            approvedLoadWarning={approvedLoadWarning}
+            applicationMessage={applicationMessage}
+            applicationError={applicationError}
+            applicationActionId={applicationActionId}
+            inviteActionId={inviteActionId}
+            onApprove={(applicationId) => void handleApproveApplication(applicationId)}
+            onDecline={(applicationId) => void handleDeclineApplication(applicationId)}
+            onView={setViewingApplication}
+            onCopyInvite={(application) => void handleCopyInviteLink(application)}
+            onRegenerateInvite={(applicationId) => void handleRegenerateInviteLink(applicationId)}
+          />
+        ) : null}
+
+        {activeTab === "invites" ? (
+          <AdminInvitesPanel
+            approvedApplications={approvedApplications}
+            isLoading={isLoadingDashboard}
+            inviteActionId={inviteActionId}
+            onView={setViewingApplication}
+            onCopyInvite={(application) => void handleCopyInviteLink(application)}
+            onRegenerateInvite={(applicationId) => void handleRegenerateInviteLink(applicationId)}
+          />
+        ) : null}
+
+        {activeTab === "members" ? (
+          <div className="et-admin-stack">
+            <AdminMemberDirectory
+              members={filteredMembers}
+              isLoading={isLoadingDashboard}
+              search={memberSearch}
+              filter={memberFilter}
+              onSearchChange={setMemberSearch}
+              onFilterChange={setMemberFilter}
+            />
+
+            <section className="et-admin-section" aria-labelledby="create-member-heading">
+              <header className="et-admin-section-head">
+                <h2 id="create-member-heading">{adminCopy.members.createTitle}</h2>
+                <p>{adminCopy.members.createLead}</p>
+              </header>
+
+              {successMessage ? (
+                <p className="et-admin-alert et-admin-alert--success" role="status">
+                  {successMessage}
+                </p>
+              ) : null}
+              {errorMessage ? (
+                <p className="et-admin-alert et-admin-alert--error" role="alert">
+                  {errorMessage}
+                </p>
+              ) : null}
+
+              <form className="et-admin-stack" onSubmit={handleSubmit}>
+                <div className="et-admin-form-card">
+                  <h3>Account</h3>
+                  <div className="et-admin-form-grid">
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Supabase Auth User UID</span>
+                      <input
+                        type="text"
+                        value={form.auth_user_id}
+                        onChange={(event) => updateField("auth_user_id", event.target.value)}
+                        placeholder="Paste UID from Supabase Authentication > Users"
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Email</span>
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(event) => updateField("email", event.target.value)}
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="et-admin-form-card">
+                  <h3>Member identity</h3>
+                  <div className="et-admin-form-grid">
+                    <label className="et-admin-field">
+                      <span>Full name</span>
+                      <input
+                        type="text"
+                        value={form.full_name}
+                        onChange={(event) => updateField("full_name", event.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field">
+                      <span>Primary club</span>
+                      <input
+                        type="text"
+                        value={form.primary_club}
+                        onChange={(event) => updateField("primary_club", event.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field">
+                      <span>Based in</span>
+                      <input
+                        type="text"
+                        value={form.based_in}
+                        onChange={(event) => updateField("based_in", event.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field">
+                      <span>Industry</span>
+                      <input
+                        type="text"
+                        value={form.industry}
+                        onChange={(event) => updateField("industry", event.target.value)}
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field">
+                      <span>Membership status</span>
+                      <select
+                        value={form.membership_status}
+                        onChange={(event) => updateField("membership_status", event.target.value)}
+                        required
+                      >
+                        <option value="Founding Member">Founding Member</option>
+                        <option value="Verified Member">Verified Member</option>
+                      </select>
+                    </label>
+                    <label className="et-admin-field et-admin-field--checkbox">
+                      <input
+                        type="checkbox"
+                        checked={form.is_verified}
+                        onChange={(event) => updateField("is_verified", event.target.checked)}
+                      />
+                      <span>Verified member</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="et-admin-form-card">
+                  <h3>Golf profile</h3>
+                  <div className="et-admin-form-grid">
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Additional clubs</span>
+                      <textarea
+                        rows={3}
+                        value={form.additional_clubs}
+                        onChange={(event) => updateField("additional_clubs", event.target.value)}
+                        placeholder="One club per line"
+                      />
+                    </label>
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Regions</span>
+                      <textarea
+                        rows={3}
+                        value={form.regions}
+                        onChange={(event) => updateField("regions", event.target.value)}
+                        placeholder="One region per line"
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Traveling to</span>
+                      <input
+                        type="text"
+                        value={form.traveling_to}
+                        onChange={(event) => updateField("traveling_to", event.target.value)}
+                        placeholder="Upcoming travel destination, if any"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="et-admin-form-card">
+                  <h3>Interests &amp; requests</h3>
+                  <div className="et-admin-form-grid">
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Golf interests</span>
+                      <textarea
+                        rows={3}
+                        value={form.golf_interests}
+                        onChange={(event) => updateField("golf_interests", event.target.value)}
+                        placeholder="One interest per line"
+                      />
+                    </label>
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Business interests</span>
+                      <textarea
+                        rows={3}
+                        value={form.business_interests}
+                        onChange={(event) => updateField("business_interests", event.target.value)}
+                        placeholder="One interest per line"
+                      />
+                    </label>
+                    <label className="et-admin-field et-admin-field--full">
+                      <span>Current request</span>
+                      <textarea
+                        rows={3}
+                        value={form.current_request}
+                        onChange={(event) => updateField("current_request", event.target.value)}
+                        placeholder="What the member is currently seeking"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <button type="submit" className="et-btn et-btn--forest" disabled={isSubmitting}>
+                  {isSubmitting ? adminCopy.actions.saving : adminCopy.actions.createProfile}
+                </button>
+              </form>
+            </section>
+
+            <section className="et-admin-section" aria-labelledby="link-member-heading">
+              <header className="et-admin-section-head">
+                <h2 id="link-member-heading">{adminCopy.members.linkTitle}</h2>
+                <p>{adminCopy.members.linkLead}</p>
+              </header>
+
+              {linkMessage ? (
+                <p className="et-admin-alert et-admin-alert--success" role="status">
+                  {linkMessage}
+                </p>
+              ) : null}
+              {linkError ? (
+                <p className="et-admin-alert et-admin-alert--error" role="alert">
+                  {linkError}
+                </p>
+              ) : null}
+
+              <form className="et-admin-stack" onSubmit={handleLinkSubmit}>
+                <div className="et-admin-form-card">
+                  <div className="et-admin-form-grid">
+                    <label className="et-admin-field">
+                      <span>Member email</span>
+                      <input
+                        type="email"
+                        value={linkEmail}
+                        onChange={(event) => setLinkEmail(event.target.value)}
+                        placeholder="member@email.com"
+                        required
+                      />
+                    </label>
+                    <label className="et-admin-field">
+                      <span>Supabase Auth User UID</span>
+                      <input
+                        type="text"
+                        value={linkAuthUserId}
+                        onChange={(event) => setLinkAuthUserId(event.target.value)}
+                        placeholder="Paste UID from Authentication > Users"
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
+                <button type="submit" className="et-btn et-btn--secondary" disabled={isLinking}>
+                  {isLinking ? adminCopy.actions.linking : adminCopy.actions.linkMember}
+                </button>
+              </form>
+            </section>
+
+            <section className="et-admin-section" aria-labelledby="admin-notes-heading">
+              <header className="et-admin-section-head">
+                <h2 id="admin-notes-heading">{adminCopy.members.notesTitle}</h2>
+                <p>{adminCopy.members.notesLead}</p>
+              </header>
+              <div className="et-admin-notes-card">
+                <p>{AUTH_USER_ID_LINKING_NOTE}</p>
+                <ul className="et-admin-notes-list">
+                  <li>
+                    Applications submit to Supabase and appear in Applications for review.
+                  </li>
+                  <li>
+                    Approving creates a Founding Member profile, generates a private invite link,
+                    and prepares an invitation email draft (not sent automatically).
+                  </li>
+                  <li>
+                    The applicant uses the private invite link to create their login. Portal access
+                    is enabled only after they complete invite signup.
+                  </li>
+                  <li>
+                    Create a profile manually when needed. Link Existing Member Login when a profile
+                    exists but portal access fails due to a UID mismatch.
+                  </li>
+                  <li>
+                    <code>auth.uid()</code> must equal <code>public.users.id</code> and{" "}
+                    <code>member_profiles.user_id</code>.
+                  </li>
+                </ul>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {activeTab === "ai" ? (
+          <AiOperationsPanel
+            dashboard={aiDashboard}
+            isLoading={isLoadingAi}
+            errorMessage={aiLoadError}
+            onRefresh={() => void refreshAiDashboard()}
+          />
+        ) : null}
+
+        {activeTab === "activity" ? (
+          <>
+            <AdminActivityPanel
+              recentMembers={allMembers}
+              approvedApplications={approvedApplications}
+              isLoading={isLoadingDashboard}
+            />
+            <AdminCoursesLocationPanel isLoading={isLoadingDashboard} />
+          </>
+        ) : null}
       </main>
 
       {viewingApplication ? (

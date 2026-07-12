@@ -19,7 +19,7 @@ export function EditablePrivateMessage({
   message,
   isOwn,
   formatTime,
-  bubbleClassName = "portal-message-bubble",
+  bubbleClassName = "et-messages-bubble-inner",
   onEdited,
 }: EditablePrivateMessageProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -83,13 +83,13 @@ export function EditablePrivateMessage({
   return (
     <article className={bubbleClassName}>
       {isEditing ? (
-        <form className="portal-message-edit" onSubmit={handleSave}>
+        <form className="et-messages-edit-form" onSubmit={handleSave}>
           <label className="visually-hidden" htmlFor={`edit-message-${message.id}`}>
             Edit message
           </label>
           <textarea
             id={`edit-message-${message.id}`}
-            className="portal-message-edit-input"
+            className="et-messages-edit-input"
             rows={3}
             value={draft}
             maxLength={PRIVATE_MESSAGE_MAX_LENGTH}
@@ -98,14 +98,14 @@ export function EditablePrivateMessage({
             autoFocus
           />
           {editError ? (
-            <p className="portal-message-edit-error" role="alert">
+            <p className="et-messages-edit-error" role="alert">
               {editError}
             </p>
           ) : null}
-          <div className="portal-message-edit-actions">
+          <div className="et-messages-edit-actions">
             <button
               type="button"
-              className="portal-btn portal-btn--outline portal-btn--compact"
+              className="et-btn et-btn--secondary et-btn--sm"
               onClick={handleCancel}
               disabled={isSaving}
             >
@@ -113,7 +113,7 @@ export function EditablePrivateMessage({
             </button>
             <button
               type="submit"
-              className="portal-btn portal-btn--gold portal-btn--compact"
+              className="et-btn et-btn--forest et-btn--sm"
               disabled={isSaving || !draft.trim() || draft.trim() === message.body.trim()}
             >
               {isSaving ? "Saving…" : "Save"}
@@ -122,12 +122,12 @@ export function EditablePrivateMessage({
         </form>
       ) : (
         <>
-          <div className="portal-message-body-row">
-            <p className="portal-message-body">{message.body}</p>
+          <div className="et-messages-body-row">
+            <p className="et-messages-body">{message.body}</p>
             {canEdit ? (
               <button
                 type="button"
-                className="portal-message-edit-trigger"
+                className="et-messages-edit-trigger"
                 onClick={() => setIsEditing(true)}
                 aria-label="Edit message"
               >
@@ -135,9 +135,9 @@ export function EditablePrivateMessage({
               </button>
             ) : null}
           </div>
-          <div className="portal-message-meta">
+          <div className="et-messages-meta">
             <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
-            {message.edited_at ? <span className="portal-message-edited">Edited</span> : null}
+            {message.edited_at ? <span className="et-messages-edited">Edited</span> : null}
           </div>
         </>
       )}

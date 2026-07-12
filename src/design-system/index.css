@@ -1,0 +1,85 @@
+/**
+ * EliteTee Design System v2.0
+ * Entry point — imported from src/main.tsx.
+ * See DESIGN-SYSTEM.md for migration plan.
+ */
+
+@import "./tokens.css";
+@import "./typography.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./states.css";
+@import "./motion.css";
+@import "./icons.css";
+@import "./bridge.css";
+
+/* Base reset scoped to design-system contexts only */
+.et-theme-dark,
+.et-theme-light,
+.et-theme-portal,
+[data-et-theme="dark"],
+[data-et-theme="light"],
+[data-et-theme="portal"] {
+  background: var(--et-bg-base);
+}
+
+.et-theme-dark *,
+.et-theme-light *,
+.et-theme-portal *,
+[data-et-theme="dark"] *,
+[data-et-theme="light"] *,
+[data-et-theme="portal"] * {
+  box-sizing: border-box;
+}
+
+.et-theme-dark a,
+.et-theme-light a,
+.et-theme-portal a,
+[data-et-theme="dark"] a,
+[data-et-theme="light"] a,
+[data-et-theme="portal"] a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.et-theme-dark button,
+.et-theme-light button,
+.et-theme-portal button,
+[data-et-theme="dark"] button,
+[data-et-theme="light"] button,
+[data-et-theme="portal"] button {
+  font: inherit;
+}
+
+/* Responsive — mobile-first touch targets */
+@media (max-width: 37.5rem) {
+  .et-btn {
+    min-height: 3rem;
+  }
+
+  .et-btn-group--stack-mobile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .et-btn-group--stack-mobile .et-btn {
+    width: 100%;
+  }
+
+  .et-input,
+  .et-select,
+  .et-textarea {
+    font-size: 1rem; /* prevent iOS zoom */
+  }
+
+  :root {
+    --et-page-x: 1.25rem;
+    --et-section-y: clamp(4rem, 10vw, 5.5rem);
+  }
+}
+
+@media (min-width: 56rem) {
+  .et-card--spacious {
+    padding: var(--et-space-10);
+  }
+}

@@ -1,6 +1,7 @@
 export type PortalProfileTab =
   | "feed"
   | "discover"
+  | "ask"
   | "compose"
   | "courses"
   | "messages"

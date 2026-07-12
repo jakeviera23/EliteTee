@@ -1,3 +1,8 @@
+/**
+ * Legacy intro-scoped messaging modal.
+ * Member UI routes accepted introductions to direct Messages (PortalMessages).
+ * Preserved for backward compatibility with introduction_request_id message rows in the database.
+ */
 import { FormEvent, useEffect, useState } from "react";
 import { fetchPrivateMessages, markIntroductionMessagesAsRead, sendPrivateMessage } from "../../lib/privateMessages";
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";

@@ -1,5 +1,5 @@
 import type { ComposerPostType, FeedPost, PortalGolfer } from "../data/portalSocial";
-import { composerPostTypeBadges } from "../data/portalSocial";
+import { composerPostTypeBadges, experienceCopy } from "../data/portalSocial";
 import type {
   MemberFeedPostAuthorProfile,
   MemberFeedPostPayload,
@@ -10,6 +10,13 @@ import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchOwnMemberProfile } from "./memberProfiles";
 import { fetchPhotosForRoundIds } from "./memberCourseRoundPhotos";
 import { formatPlayedOnDate } from "./memberCourseRounds";
+import { formatCourseRatingDisplay, validateCourseRating } from "./courseRating";
+import {
+  validateCourseRoundPostEditInput,
+  validateTextPostEditInput,
+  buildCourseRoundEditPayload,
+  type CourseRoundPostEditInput,
+} from "./feedPostEditing";
 import { supabase } from "./supabase";
 
 const FEED_PAGE_SIZE = 20;
@@ -198,6 +205,9 @@ export function memberFeedPostToFeedPost(
     rating: parsed.rating,
     playedWith: parsed.playedWith,
     memberCourseRoundId: row.member_course_round_id ?? undefined,
+    authorUserId: row.user_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -461,17 +471,20 @@ export async function createCourseRoundFeedPost({
   courseRating: number;
 }) {
   const message = note.trim() || `Played ${courseName.trim()}`;
+  const ratingDisplay = formatCourseRatingDisplay(courseRating);
 
   return createMemberFeedPost(
     {
       composerPostType: "round-review",
       message,
       headline: courseName.trim(),
-      badge: "Course Played",
+      badge: experienceCopy.feedBadge,
       details: [
         { label: "Location", value: location.trim() },
         { label: "Played", value: formatPlayedOnDate(playedOn) },
-        { label: "Course Rating", value: `${courseRating}/10` },
+        ...(ratingDisplay
+          ? [{ label: "Course Rating", value: `${ratingDisplay}/10.0` }]
+          : []),
         { label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" },
       ],
       internalPostType: "course-review",
@@ -479,6 +492,155 @@ export async function createCourseRoundFeedPost({
     },
     roundId,
   );
+}
+
+type EditedFeedPostRow = {
+  id: string;
+  content: string;
+  post_type: string;
+  created_at: string;
+  updated_at: string;
+  member_course_round_id: string | null;
+  user_id: string;
+  member_profiles?: MemberFeedPostAuthorProfile | MemberFeedPostAuthorProfile[] | null;
+};
+
+async function mapEditedFeedPostRow(
+  row: EditedFeedPostRow,
+  existingProfile?: MemberFeedPostAuthorProfile | null,
+): Promise<FeedPost> {
+  const record = normalizeFeedPostRow(row as unknown as Record<string, unknown>);
+  const authorProfile =
+    normalizeAuthorProfile(row.member_profiles) ?? existingProfile ?? null;
+
+  let imageUrls: string[] = [];
+  if (record.member_course_round_id) {
+    const { data: photos } = await fetchPhotosForRoundIds([record.member_course_round_id]);
+    imageUrls = (photos ?? [])
+      .map((photo) => photo.signed_url)
+      .filter((url): url is string => Boolean(url));
+  }
+
+  return memberFeedPostToFeedPost(record, authorProfile, imageUrls);
+}
+
+function profileToFeedAuthorProfile(
+  profile: Awaited<ReturnType<typeof fetchOwnMemberProfile>>["data"],
+): MemberFeedPostAuthorProfile | null {
+  if (!profile) return null;
+  return {
+    full_name: profile.full_name,
+    primary_club: profile.primary_club,
+    based_in: profile.based_in,
+    club_logo_url: profile.club_logo_url ?? null,
+    is_verified: profile.is_verified,
+    user_id: profile.user_id,
+    founding_member_number: profile.founding_member_number,
+    industry: profile.industry,
+  };
+}
+
+export async function updateMemberFeedPostCaption(postId: string, message: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const validation = validateTextPostEditInput({ message });
+  if (!validation.ok) {
+    return { data: null, error: new Error(validation.message) };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError || !userId) {
+    return {
+      data: null,
+      error: sessionError ?? new Error("You must be signed in to edit a post."),
+    };
+  }
+
+  const { data, error } = await supabase.rpc("edit_member_feed_post", {
+    p_post_id: postId,
+    p_message: message.trim(),
+  });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { data: null, error: new Error("Post could not be updated.") };
+  }
+
+  const { data: profile } = await fetchOwnMemberProfile();
+  const feedPost = await mapEditedFeedPostRow(
+    {
+      ...(row as EditedFeedPostRow),
+      user_id: userId,
+      member_profiles: profileToFeedAuthorProfile(profile),
+    },
+    null,
+  );
+
+  return { data: feedPost, error: null };
+}
+
+export async function updateCourseRoundFeedPost(postId: string, input: CourseRoundPostEditInput) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const validation = validateCourseRoundPostEditInput(input);
+  if (!validation.ok) {
+    return { data: null, error: new Error(validation.message) };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError || !userId) {
+    return {
+      data: null,
+      error: sessionError ?? new Error("You must be signed in to edit a post."),
+    };
+  }
+
+  const payload = buildCourseRoundEditPayload(input);
+  const ratingResult = validateCourseRating(payload.courseRating);
+  if (!ratingResult.ok) {
+    return { data: null, error: new Error(ratingResult.message) };
+  }
+
+  const { data, error } = await supabase.rpc("edit_course_round_feed_post", {
+    p_post_id: postId,
+    p_message: payload.message.trim(),
+    p_course_rating: ratingResult.value,
+    p_played_on: payload.playedOn,
+    p_would_play_again: payload.wouldPlayAgain,
+    p_location: payload.location.trim(),
+    p_city: payload.city ?? null,
+    p_region: payload.region ?? null,
+    p_country: payload.country ?? null,
+  });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { data: null, error: new Error("Post could not be updated.") };
+  }
+
+  const { data: profile } = await fetchOwnMemberProfile();
+  const feedPost = await mapEditedFeedPostRow(
+    {
+      ...(row as EditedFeedPostRow),
+      user_id: userId,
+      member_profiles: profileToFeedAuthorProfile(profile),
+    },
+    null,
+  );
+
+  return { data: feedPost, error: null };
 }
 
 export { FEED_PAGE_SIZE };

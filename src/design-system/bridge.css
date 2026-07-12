@@ -1,0 +1,72 @@
+/**
+ * EliteTee Design System v2.0 — Legacy token bridge
+ *
+ * Maps v1 CSS custom properties to v2 --et-* tokens inside themed scopes.
+ * Unmigrated pages keep their existing values until wrapped in et-theme-*.
+ */
+
+.et-theme-dark,
+[data-et-theme="dark"] {
+  --inside-bg: var(--et-bg-base);
+  --inside-bg-panel: var(--et-bg-elevated);
+  --inside-surface: var(--et-bg-surface);
+  --inside-surface-raised: var(--et-bg-surface-hover);
+  --inside-border: var(--et-border-hairline);
+  --inside-border-gold: var(--et-border-accent);
+  --inside-text: var(--et-text-primary);
+  --inside-muted: var(--et-text-secondary);
+  --inside-faint: var(--et-text-tertiary);
+  --inside-gold: var(--et-accent);
+  --inside-gold-soft: var(--et-accent-soft);
+
+  --portal-white: var(--et-text-primary);
+  --portal-heading: var(--et-text-primary);
+  --portal-body: var(--et-text-secondary);
+  --portal-muted: var(--et-text-tertiary);
+  --portal-faint: var(--et-text-tertiary);
+}
+
+.et-theme-light,
+[data-et-theme="light"] {
+  --bg: var(--et-bg-base);
+  --bg-paper: var(--et-bg-elevated);
+  --ink: var(--et-text-primary);
+  --ink-muted: var(--et-text-secondary);
+  --ink-faint: var(--et-text-tertiary);
+  --accent: var(--et-accent);
+  --line: var(--et-border-hairline);
+
+  --inside-bg: var(--et-bg-base);
+  --inside-bg-panel: var(--et-bg-elevated);
+  --inside-surface: var(--et-bg-surface);
+  --inside-surface-raised: var(--et-bg-surface-hover);
+  --inside-border: var(--et-border-hairline);
+  --inside-border-gold: var(--et-border-accent);
+  --inside-text: var(--et-text-primary);
+  --inside-muted: var(--et-text-secondary);
+  --inside-faint: var(--et-text-tertiary);
+  --inside-gold: var(--et-accent);
+  --inside-gold-soft: var(--et-accent-soft);
+}
+
+/* Member portal — warm ivory workspace + legacy v1 variable bridge */
+.et-theme-portal,
+[data-et-theme="portal"] {
+  --inside-bg: var(--et-bg-base);
+  --inside-bg-panel: var(--et-bg-elevated);
+  --inside-surface: var(--et-bg-surface);
+  --inside-surface-raised: var(--et-bg-surface-hover);
+  --inside-border: var(--et-border-hairline);
+  --inside-border-gold: var(--et-border-accent);
+  --inside-text: var(--et-text-primary);
+  --inside-muted: var(--et-text-secondary);
+  --inside-faint: var(--et-text-tertiary);
+  --inside-gold: var(--et-accent);
+  --inside-gold-soft: var(--et-accent-soft);
+
+  --portal-heading: var(--et-text-primary);
+  --portal-body: var(--et-text-secondary);
+  --portal-muted: var(--et-text-tertiary);
+  --portal-faint: var(--et-text-tertiary);
+  --portal-white: var(--et-text-primary);
+}

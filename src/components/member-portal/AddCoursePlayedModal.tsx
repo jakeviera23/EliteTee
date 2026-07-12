@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, type ReactNode } from "react";
+import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { searchGolfCourses } from "../../lib/golfCourses";
 import { createCourseRoundFeedPost } from "../../lib/memberFeedPosts";
@@ -8,8 +9,10 @@ import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { formatGolfCourseLocation } from "../../types/golfCourse";
 import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
 import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
+import { validateCourseRating } from "../../lib/courseRating";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { RoundPhotoPicker } from "./RoundPhotoPicker";
+import "../../member-portal-experience.css";
 
 type AddCoursePlayedModalProps = {
   onClose: () => void;
@@ -30,6 +33,31 @@ const emptyForm: Omit<MemberCourseRoundInsert, "course_rating"> & { course_ratin
   golf_course_id: null,
   course_rating: null,
 };
+
+function ExperienceSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: number;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="et-experience-section" aria-labelledby={`experience-section-${step}`}>
+      <header className="et-experience-section-head">
+        <p className="et-experience-section-eyebrow">Section {step}</p>
+        <h3 id={`experience-section-${step}`} className="et-experience-section-title">
+          {title}
+        </h3>
+        {description ? <p className="et-experience-section-lead">{description}</p> : null}
+      </header>
+      <div className="et-experience-section-body">{children}</div>
+    </section>
+  );
+}
 
 export function AddCoursePlayedModal({
   onClose,
@@ -116,8 +144,9 @@ export function AddCoursePlayedModal({
       return;
     }
 
-    if (!form.course_rating || form.course_rating < 1 || form.course_rating > 10) {
-      setError("Please rate this course from 1 to 10.");
+    const ratingResult = validateCourseRating(form.course_rating);
+    if (!ratingResult.ok) {
+      setError(ratingResult.message);
       return;
     }
 
@@ -127,12 +156,12 @@ export function AddCoursePlayedModal({
 
     const { data: roundData, error: submitError } = await submitMemberCourseRound({
       ...form,
-      course_rating: form.course_rating,
+      course_rating: ratingResult.value,
     });
 
     if (submitError || !roundData?.id) {
       setSubmitting(false);
-      setError(submitError?.message ?? "Your round could not be saved.");
+      setError(submitError?.message ?? "Your experience could not be saved.");
       return;
     }
 
@@ -143,12 +172,12 @@ export function AddCoursePlayedModal({
       note: form.note,
       wouldPlayAgain: form.would_play_again,
       playedOn: form.played_on,
-      courseRating: form.course_rating,
+      courseRating: ratingResult.value,
     });
 
     let feedWarning: string | null = null;
     if (feedError) {
-      feedWarning = "Your round was saved, but it could not be added to the member feed yet.";
+      feedWarning = "Your experience was saved, but it could not be added to the member feed yet.";
     }
 
     if (photoDrafts.length > 0) {
@@ -166,7 +195,7 @@ export function AddCoursePlayedModal({
       if (uploadError) {
         setPhotoWarning(
           feedWarning ??
-            "Your round was saved, but photos could not be uploaded. You can try adding photos again later.",
+            "Your experience was saved, but photos could not be uploaded. You can try adding photos again later.",
         );
         setSubmitted(true);
         onSubmitted?.();
@@ -179,12 +208,12 @@ export function AddCoursePlayedModal({
       if (failedCount > 0 && uploadedCount > 0) {
         const failedNames = uploadResult?.failed.map((item) => item.fileName).join(", ") ?? "";
         setPhotoWarning(
-          `${feedWarning ? `${feedWarning} ` : ""}Your round was saved. ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"} uploaded, but ${failedCount} failed (${failedNames}).`,
+          `${feedWarning ? `${feedWarning} ` : ""}Your experience was saved. ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"} uploaded, but ${failedCount} failed (${failedNames}).`,
         );
       } else if (failedCount > 0 && uploadedCount === 0) {
         const firstFailure = uploadResult?.failed[0]?.message ?? "Photo upload failed.";
         setPhotoWarning(
-          `${feedWarning ? `${feedWarning} ` : ""}Your round was saved, but photos could not be uploaded: ${firstFailure}`,
+          `${feedWarning ? `${feedWarning} ` : ""}Your experience was saved, but photos could not be uploaded: ${firstFailure}`,
         );
       } else if (feedWarning) {
         setPhotoWarning(feedWarning);
@@ -206,169 +235,200 @@ export function AddCoursePlayedModal({
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
-        className="portal-modal portal-modal--course-played"
+        className="portal-modal portal-modal--course-played et-experience-modal"
         role="dialog"
-        aria-labelledby="add-course-played-heading"
+        aria-labelledby="share-experience-heading"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="portal-modal-head">
-          <h2 id="add-course-played-heading">Add Course Played</h2>
+          <h2 id="share-experience-heading">{experienceCopy.shareTitle}</h2>
           <button type="button" className="portal-modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
 
         {submitted ? (
-          <div className="portal-course-played-sent" role="status">
-            <p className="portal-course-played-sent-title">Round added.</p>
-            <p>Thanks for sharing where you played. Member rounds help the EliteTee course library grow.</p>
-            {photoWarning ? <p className="portal-course-played-warning">{photoWarning}</p> : null}
-            <button type="button" className="portal-btn portal-btn--gold portal-btn--full" onClick={onClose}>
+          <div className="et-experience-sent" role="status">
+            <p className="et-experience-sent-title">{experienceCopy.shareSuccessTitle}</p>
+            <p className="et-experience-sent-copy">{experienceCopy.shareSuccessBody}</p>
+            {photoWarning ? <p className="et-experience-warning">{photoWarning}</p> : null}
+            <button type="button" className="et-btn et-btn--forest et-btn--full portal-btn--full" onClick={onClose}>
               Done
             </button>
           </div>
         ) : (
-          <form className="portal-course-played-form" onSubmit={handleSubmit}>
-            <p className="portal-course-played-lead">
-              Share a course you&apos;ve played. Search the library or enter a course manually if it is
-              not listed yet.
-            </p>
+          <form className="portal-course-played-form et-experience-form" onSubmit={handleSubmit}>
+            <p className="et-experience-lead">{experienceCopy.shareLead}</p>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Course name</span>
-              <input
-                type="text"
-                value={form.course_name}
-                onChange={(event) => {
-                  setForm((current) => ({
-                    ...current,
-                    course_name: event.target.value,
-                    golf_course_id: manualEntry ? null : current.golf_course_id,
-                  }));
-                  if (!manualEntry && event.target.value !== form.course_name) {
-                    setManualEntry(true);
-                    setForm((current) => ({ ...current, golf_course_id: null }));
-                  }
-                }}
-                required
-                autoComplete="off"
-              />
-            </label>
-
-            {!manualEntry && form.golf_course_id ? (
-              <p className="portal-course-played-match" role="status">
-                Linked to EliteTee course library.
-              </p>
-            ) : null}
-
-            {isSearching ? <p className="portal-course-played-searching">Searching courses…</p> : null}
-
-            {suggestions.length > 0 ? (
-              <ul className="portal-course-played-suggestions" role="listbox" aria-label="Course matches">
-                {suggestions.map((course) => {
-                  const location = formatGolfCourseLocation(course);
-                  return (
-                    <li key={course.id}>
-                      <button
-                        type="button"
-                        className="portal-course-played-suggestion"
-                        onClick={() => selectSuggestion(course)}
-                      >
-                        <span>{course.name}</span>
-                        {location ? <span>{location}</span> : null}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
-
-            <button
-              type="button"
-              className="portal-course-played-manual"
-              onClick={enableManualEntry}
+            <ExperienceSection
+              step={1}
+              title={experienceCopy.chooseCourseTitle}
+              description={experienceCopy.chooseCourseLead}
             >
-              Course not listed — enter manually
-            </button>
+              <label className="portal-profile-field portal-profile-field--full">
+                <span>Course name</span>
+                <input
+                  type="text"
+                  value={form.course_name}
+                  onChange={(event) => {
+                    setForm((current) => ({
+                      ...current,
+                      course_name: event.target.value,
+                      golf_course_id: manualEntry ? null : current.golf_course_id,
+                    }));
+                    if (!manualEntry && event.target.value !== form.course_name) {
+                      setManualEntry(true);
+                      setForm((current) => ({ ...current, golf_course_id: null }));
+                    }
+                  }}
+                  required
+                  autoComplete="off"
+                />
+              </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Location</span>
-              <input
-                type="text"
-                value={form.location}
-                onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
-                placeholder="City, region, or country"
-                required
-                autoComplete="off"
+              {!manualEntry && form.golf_course_id ? (
+                <p className="et-experience-match" role="status">
+                  {experienceCopy.linkedToLibrary}
+                </p>
+              ) : null}
+
+              {isSearching ? (
+                <p className="et-experience-searching">{experienceCopy.searchingCourses}</p>
+              ) : null}
+
+              {suggestions.length > 0 ? (
+                <ul className="et-experience-suggestions" role="listbox" aria-label="Course matches">
+                  {suggestions.map((course) => {
+                    const location = formatGolfCourseLocation(course);
+                    return (
+                      <li key={course.id}>
+                        <button
+                          type="button"
+                          className="et-experience-suggestion"
+                          onClick={() => selectSuggestion(course)}
+                        >
+                          <span>{course.name}</span>
+                          {location ? <span>{location}</span> : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+
+              <button type="button" className="et-experience-manual" onClick={enableManualEntry}>
+                {experienceCopy.manualEntry}
+              </button>
+
+              <label className="portal-profile-field portal-profile-field--full">
+                <span>Location</span>
+                <input
+                  type="text"
+                  value={form.location}
+                  onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
+                  placeholder="City, region, or country"
+                  required
+                  autoComplete="off"
+                />
+              </label>
+            </ExperienceSection>
+
+            <ExperienceSection
+              step={2}
+              title={experienceCopy.experienceTitle}
+              description={experienceCopy.experienceLead}
+            >
+              <label className="portal-profile-field portal-profile-field--full">
+                <span>Date played</span>
+                <input
+                  type="date"
+                  value={form.played_on}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(event) => setForm((current) => ({ ...current, played_on: event.target.value }))}
+                  required
+                />
+              </label>
+
+              <CourseRatingPicker
+                value={form.course_rating}
+                onChange={(course_rating) => setForm((current) => ({ ...current, course_rating }))}
+                disabled={submitting}
               />
-            </label>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Date played</span>
-              <input
-                type="date"
-                value={form.played_on}
-                max={new Date().toISOString().slice(0, 10)}
-                onChange={(event) => setForm((current) => ({ ...current, played_on: event.target.value }))}
-                required
-              />
-            </label>
+              <label className="portal-profile-field portal-profile-field--full">
+                <span>{experienceCopy.reviewLabel}</span>
+                <textarea
+                  rows={4}
+                  value={form.note}
+                  onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
+                  placeholder={experienceCopy.reviewPlaceholder}
+                />
+              </label>
 
-            <CourseRatingPicker
-              value={form.course_rating}
-              onChange={(course_rating) => setForm((current) => ({ ...current, course_rating }))}
-              disabled={submitting}
-            />
+              <fieldset className="et-experience-choice">
+                <legend>{experienceCopy.wouldPlayAgain}</legend>
+                <div className="et-experience-choice-options">
+                  <label className="et-experience-choice-option">
+                    <input
+                      type="radio"
+                      name="would_play_again"
+                      checked={form.would_play_again}
+                      onChange={() => setForm((current) => ({ ...current, would_play_again: true }))}
+                    />
+                    <span>Yes</span>
+                  </label>
+                  <label className="et-experience-choice-option">
+                    <input
+                      type="radio"
+                      name="would_play_again"
+                      checked={!form.would_play_again}
+                      onChange={() => setForm((current) => ({ ...current, would_play_again: false }))}
+                    />
+                    <span>No</span>
+                  </label>
+                </div>
+              </fieldset>
+            </ExperienceSection>
 
-            <label className="portal-profile-field portal-profile-field--full">
-              <span>Short note about the experience</span>
-              <textarea
-                rows={4}
-                value={form.note}
-                onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
-                placeholder="What stood out—layout, conditions, hospitality, travel tips…"
-              />
-            </label>
+            <ExperienceSection
+              step={3}
+              title={experienceCopy.photographyTitle}
+              description={experienceCopy.photographyLead}
+            >
+              <RoundPhotoPicker drafts={photoDrafts} onChange={setPhotoDrafts} disabled={submitting} />
+            </ExperienceSection>
 
-            <fieldset className="portal-course-played-choice">
-              <legend>Would play again?</legend>
-              <div className="portal-course-played-choice-options">
-                <label className="portal-course-played-choice-option">
-                  <input
-                    type="radio"
-                    name="would_play_again"
-                    checked={form.would_play_again}
-                    onChange={() => setForm((current) => ({ ...current, would_play_again: true }))}
-                  />
-                  <span>Yes</span>
-                </label>
-                <label className="portal-course-played-choice-option">
-                  <input
-                    type="radio"
-                    name="would_play_again"
-                    checked={!form.would_play_again}
-                    onChange={() => setForm((current) => ({ ...current, would_play_again: false }))}
-                  />
-                  <span>No</span>
-                </label>
+            <ExperienceSection
+              step={4}
+              title={experienceCopy.detailsTitle}
+              description={experienceCopy.detailsLead}
+            >
+              <div className="et-experience-future-grid" aria-hidden="true">
+                {experienceCopy.futureFields.map((field) => (
+                  <div key={field.key} className="et-experience-future-field">
+                    <p className="et-experience-future-label">{field.label}</p>
+                    <p className="et-experience-future-soon">Later</p>
+                  </div>
+                ))}
               </div>
-            </fieldset>
+              <p className="et-experience-future-note">{experienceCopy.futureFieldsNote}</p>
+            </ExperienceSection>
 
-            <RoundPhotoPicker drafts={photoDrafts} onChange={setPhotoDrafts} disabled={submitting} />
+            <div className="et-experience-footer">
+              {error ? (
+                <p className="et-experience-error portal-course-played-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
-            {error ? (
-              <p className="portal-course-played-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
-              className="portal-btn portal-btn--gold portal-btn--full"
-              disabled={submitting || !form.course_rating}
-            >
-              {submitting ? "Saving…" : "Save Course Played"}
-            </button>
+              <button
+                type="submit"
+                className="et-btn et-btn--forest et-btn--full"
+                disabled={submitting || !form.course_rating}
+              >
+                {submitting ? experienceCopy.shareSaving : experienceCopy.shareSubmit}
+              </button>
+            </div>
           </form>
         )}
       </article>

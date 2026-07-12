@@ -24,13 +24,7 @@ const founderAuthor: PortalGolfer = {
 
 const founderWelcomeCaption = `Welcome to EliteTee.
 
-Thanks for being one of the first members to join.
-
-The goal of EliteTee is simple: build meaningful relationships through golf.
-
-Over the coming weeks we'll continue growing the community, improving the platform, and creating opportunities for members to connect around the world.
-
-If you're one of the first members, thank you for helping shape what EliteTee becomes.`;
+Share memorable rounds. Meet exceptional people. Help shape what this community becomes.`;
 
 export function getFounderWelcomePost(): FeedPost {
   return {

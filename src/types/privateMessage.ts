@@ -15,8 +15,10 @@ export type DirectConversationSummary = {
   otherUserPhotoUrl?: string | null;
   otherUserFoundingNumber?: string | null;
   otherUserPrimaryClub?: string;
+  otherUserBasedIn?: string;
   lastMessageBody: string;
   lastMessageAt: string;
+  lastMessageWasEdited?: boolean;
   unreadCount: number;
 };
 
@@ -25,4 +27,5 @@ export type ConversationParticipantIdentity = {
   club_logo_url: string | null;
   founding_member_number: string | null;
   primary_club: string;
+  based_in: string;
 };

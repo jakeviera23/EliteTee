@@ -1,0 +1,558 @@
+/**
+ * Ask EliteTee — warm-light private concierge
+ * Scoped to .et-ask only. Inherits .et-theme-portal tokens from MemberPortal.
+ * Admin AI ops legacy styles remain at the bottom of this file.
+ */
+
+.et-ask {
+  --ask-gold: var(--et-accent);
+  --ask-gold-soft: var(--et-accent-soft);
+  --ask-forest: var(--et-forest);
+  --ask-forest-soft: var(--et-forest-soft);
+  --ask-slate: var(--et-slate);
+  --ask-burgundy: var(--et-burgundy);
+  --ask-burgundy-soft: var(--et-burgundy-soft);
+  --ask-stone: color-mix(in srgb, var(--et-bg-surface) 90%, var(--et-bg-inset) 10%);
+
+  width: min(100%, 72rem);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--et-space-5);
+  padding-block: var(--et-space-3) var(--et-space-10);
+  color: var(--et-text-secondary);
+}
+
+@media (min-width: 48rem) {
+  .et-ask {
+    gap: var(--et-space-6);
+    padding-block: var(--et-space-4) var(--et-space-12);
+  }
+}
+
+/* —— Header —— */
+.et-ask-header {
+  display: grid;
+  gap: var(--et-space-2);
+  max-width: 40rem;
+}
+
+.et-ask-eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ask-gold);
+}
+
+.et-ask-title {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: clamp(1.85rem, 4vw, 2.5rem);
+  line-height: 1.08;
+  color: var(--et-text-primary);
+}
+
+.et-ask-tagline {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: clamp(1.15rem, 2.5vw, 1.35rem);
+  line-height: 1.25;
+  color: var(--et-text-primary);
+}
+
+.et-ask-lead {
+  margin: 0;
+  max-width: 36rem;
+  line-height: 1.55;
+  color: var(--et-text-secondary);
+}
+
+/* —— Suggested prompts —— */
+.et-ask-prompts {
+  display: grid;
+  gap: var(--et-space-3);
+}
+
+.et-ask-prompts-label {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ask-slate);
+}
+
+.et-ask-prompts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+}
+
+.et-ask-prompt {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.75rem;
+  background: var(--et-bg-surface);
+  color: var(--et-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--et-shadow-xs);
+  transition:
+    border-color var(--et-duration-base) var(--et-ease-out),
+    background var(--et-duration-base) var(--et-ease-out),
+    color var(--et-duration-base) var(--et-ease-out);
+}
+
+.et-ask-prompt:hover {
+  border-color: color-mix(in srgb, var(--ask-forest) 35%, var(--et-border-hairline) 65%);
+  background: var(--ask-stone);
+}
+
+.et-ask-prompt:focus-visible {
+  outline: none;
+  border-color: var(--ask-forest);
+  box-shadow: 0 0 0 2px var(--ask-forest-soft);
+}
+
+.et-ask-prompt.is-active {
+  border-color: var(--ask-forest);
+  background: var(--ask-forest-soft);
+  color: var(--ask-forest);
+}
+
+@media (max-width: 37.5rem) {
+  .et-ask-prompts-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .et-ask-prompt {
+    width: 100%;
+  }
+}
+
+/* —— Composer —— */
+.et-ask-composer {
+  display: grid;
+  gap: var(--et-space-4);
+  max-width: 44rem;
+  padding: var(--et-space-5);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 1rem;
+  background: var(--ask-stone);
+  box-shadow: var(--et-shadow-xs);
+}
+
+.et-ask-field {
+  display: grid;
+  gap: var(--et-space-2);
+}
+
+.et-ask-field-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ask-gold);
+}
+
+.et-ask-textarea {
+  width: 100%;
+  min-height: 6.5rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--et-text-primary);
+  background: var(--et-bg-surface);
+  resize: vertical;
+}
+
+.et-ask-textarea:focus-visible {
+  outline: none;
+  border-color: var(--ask-forest);
+  box-shadow: 0 0 0 2px var(--ask-forest-soft);
+}
+
+.et-ask-field-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ask-slate);
+}
+
+.et-ask-composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+}
+
+.et-ask-submit {
+  min-height: 2.75rem;
+  min-width: 10rem;
+}
+
+.et-ask .et-btn--forest {
+  color: var(--et-text-inverse);
+  background: var(--ask-forest);
+  border-color: var(--ask-forest);
+}
+
+.et-ask .et-btn--forest:hover:not(:disabled) {
+  color: var(--et-text-inverse);
+  background: #2d5a48;
+  border-color: #2d5a48;
+}
+
+.et-ask .et-btn--forest:disabled {
+  opacity: 1;
+  color: color-mix(in srgb, var(--et-text-inverse) 88%, var(--ask-forest) 12%);
+  background: color-mix(in srgb, var(--ask-forest) 72%, var(--et-bg-surface) 28%);
+  border-color: color-mix(in srgb, var(--ask-forest) 72%, var(--et-bg-surface) 28%);
+  cursor: not-allowed;
+}
+
+/* —— Loading —— */
+.et-ask-loading {
+  display: grid;
+  justify-items: center;
+  gap: var(--et-space-3);
+  padding-block: var(--et-space-8);
+}
+
+.et-ask-loading-mark {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--ask-gold) 35%, transparent);
+  border-top-color: var(--ask-gold);
+  animation: et-ask-breathe 1.1s ease-in-out infinite;
+}
+
+.et-ask-loading-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--ask-slate);
+}
+
+@keyframes et-ask-breathe {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.65;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .et-ask-loading-mark {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
+/* —— Error —— */
+.et-ask-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--et-space-3);
+  max-width: 44rem;
+  padding: var(--et-space-4);
+  border: 1px solid color-mix(in srgb, var(--ask-burgundy) 28%, var(--et-border-hairline) 72%);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--ask-burgundy-soft) 35%, var(--et-bg-surface) 65%);
+}
+
+.et-ask-alert-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: var(--ask-burgundy);
+}
+
+.et-ask-alert-body {
+  margin: 0;
+  color: var(--et-text-secondary);
+  line-height: 1.5;
+}
+
+.et-ask-retry {
+  min-height: 2.75rem;
+}
+
+/* —— Results —— */
+.et-ask-results {
+  display: grid;
+  gap: var(--et-space-6);
+}
+
+.et-ask-answer {
+  display: grid;
+  gap: var(--et-space-4);
+  max-width: 44rem;
+  padding: var(--et-space-5);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 1rem;
+  background: var(--et-bg-surface);
+  box-shadow: var(--et-shadow-xs);
+}
+
+.et-ask-answer--success {
+  border-color: color-mix(in srgb, var(--ask-gold) 30%, var(--et-border-hairline) 70%);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ask-gold-soft) 55%, white 45%) 0%,
+    var(--et-bg-surface) 48%
+  );
+}
+
+.et-ask-answer--limited {
+  border-color: var(--et-border-hairline);
+  background: var(--ask-stone);
+}
+
+.et-ask-answer-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+}
+
+.et-ask-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.et-ask-status--ok {
+  border: 1px solid color-mix(in srgb, var(--ask-gold) 35%, transparent);
+  background: color-mix(in srgb, var(--ask-gold-soft) 50%, white 50%);
+  color: color-mix(in srgb, var(--ask-gold) 80%, var(--et-text-primary) 20%);
+}
+
+.et-ask-status--muted {
+  border: 1px solid var(--et-border-hairline);
+  background: var(--et-bg-inset);
+  color: var(--ask-slate);
+}
+
+.et-ask-status--error {
+  border: 1px solid color-mix(in srgb, var(--ask-burgundy) 35%, transparent);
+  background: var(--ask-burgundy-soft);
+  color: var(--ask-burgundy);
+}
+
+.et-ask-answer-text {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--et-text-primary);
+}
+
+.et-ask-next-steps {
+  display: grid;
+  gap: var(--et-space-2);
+  padding-top: var(--et-space-3);
+  border-top: 1px solid var(--et-border-hairline);
+}
+
+.et-ask-next-steps-label {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ask-slate);
+}
+
+.et-ask-next-steps-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--et-text-secondary);
+  line-height: 1.55;
+}
+
+.et-ask-note {
+  margin: var(--et-space-2) 0 0;
+  font-size: 0.875rem;
+  color: var(--ask-slate);
+  line-height: 1.5;
+}
+
+/* —— Result sections —— */
+.et-ask-section {
+  display: grid;
+  gap: var(--et-space-4);
+}
+
+.et-ask-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--et-space-2) var(--et-space-4);
+}
+
+.et-ask-section-title {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  color: var(--et-text-primary);
+}
+
+.et-ask-section-meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ask-slate);
+}
+
+.et-ask-member-grid,
+.et-ask-course-grid {
+  display: grid;
+  gap: var(--et-space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .et-ask-member-grid,
+  .et-ask-course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.et-ask .et-discover-card,
+.et-ask .et-course-card {
+  height: 100%;
+}
+
+.et-ask-course-item {
+  display: grid;
+  gap: var(--et-space-2);
+}
+
+.et-ask-course-reasons,
+.et-ask-match-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* —— Match summary —— */
+.et-ask-match {
+  display: grid;
+  gap: var(--et-space-3);
+  padding: var(--et-space-4);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.85rem;
+  background: var(--et-bg-surface);
+}
+
+/* —— Sources —— */
+.et-ask-sources {
+  display: grid;
+  gap: var(--et-space-2);
+  max-width: 44rem;
+}
+
+.et-ask-sources-label {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ask-slate);
+}
+
+.et-ask-sources-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+}
+
+.et-ask-source {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ask-slate) 25%, var(--et-border-hairline) 75%);
+  background: var(--et-bg-inset);
+  font-size: 0.8125rem;
+  color: var(--ask-slate);
+}
+
+/* —— Feedback —— */
+.et-ask-feedback {
+  display: grid;
+  gap: var(--et-space-3);
+  max-width: 44rem;
+  padding: var(--et-space-4);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.85rem;
+  background: var(--et-bg-surface);
+}
+
+.et-ask-feedback-label {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ask-slate);
+}
+
+.et-ask-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+}
+
+.et-ask-feedback-btn {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.65rem;
+  background: var(--et-bg-inset);
+  color: var(--et-text-primary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition:
+    border-color var(--et-duration-base) var(--et-ease-out),
+    background var(--et-duration-base) var(--et-ease-out),
+    color var(--et-duration-base) var(--et-ease-out);
+}
+
+.et-ask-feedback-btn:hover {
+  border-color: color-mix(in srgb, var(--ask-forest) 35%, var(--et-border-hairline) 65%);
+}
+
+.et-ask-feedback-btn:focus-visible {
+  outline: none;
+  border-color: var(--ask-forest);
+  box-shadow: 0 0 0 2px var(--ask-forest-soft);
+}
+
+.et-ask-feedback-btn.is-selected {
+  border-color: var(--ask-forest);
+  background: var(--ask-forest-soft);
+  color: var(--ask-forest);
+}
+
+.et-ask-feedback-thanks {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ask-slate);
+}

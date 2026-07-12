@@ -5,44 +5,41 @@ export const MAX_RATING = 10;
 export const ratingOptions = Array.from({ length: MAX_RATING }, (_, index) => MAX_RATING - index);
 
 export const earlyStageCopy = {
-  earlyCommunity: "Early community",
+  earlyCommunity: "Member network",
   foundingMember: "Founding Member",
-  foundingMemberNote: "One of the first members helping shape EliteTee.",
+  foundingMemberNote: "Part of EliteTee's founding member cohort.",
   memberActivityPending: "No member activity yet.",
   memberActivityGrowing:
-    "Member notes, recent rounds, and travel requests will appear here as founding members begin using EliteTee.",
+    "Member notes, recent rounds, and travel requests appear here as members share activity.",
   coursesLibraryGrowth:
-    "EliteTee's course library will grow through member rounds, travel notes, and recommendations.",
+    "The course library grows through member experiences, travel notes, and recommendations.",
   coursesIntro:
-    "The course library starts with a curated set of standout destinations and grows as members add rounds they've played.",
+    "Explore standout destinations and member-submitted courses from the EliteTee network.",
   featuredCoursesStartingPoint:
-    "These six featured courses are a starting point—not a complete database. Member rounds will expand what appears here over time.",
-  curatedLibraryLabel: "Curated Course Library",
-  featuredCourseLabel: "Featured Course",
+    "Featured courses highlight destinations members are talking about. The library expands as experiences are shared.",
+  curatedLibraryLabel: "Course library",
+  featuredCourseLabel: "Featured course",
   profileOnboarding:
-    "Complete your profile so other founding members know where you play, where you travel, and what kind of golf connections you're looking for.",
+    "Complete your profile so members know where you play, where you travel, and what connections you're looking for.",
   beAmongFirst:
-    "Complete your profile so other founding members know where you play, where you travel, and what kind of golf connections you're looking for.",
-  noPublicDirectory: "No public member directory until the community is active.",
+    "Complete your profile so members know where you play, where you travel, and what connections you're looking for.",
+  noPublicDirectory: "Member profiles are visible to approved portal members.",
   coursesGrowNote:
-    "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
-  feedEmptyTitle: "No member posts yet.",
-  feedEmptyHint: "The next post could be yours.",
-  feedEmptyCta: "Introduce yourself once your profile is complete.",
-  discoverFoundingTitle: "Founding Members",
-  discoverFoundingBody:
-    "As new members join EliteTee, approved profiles will appear here.",
-  discoverFoundingNote:
-    "Search by location, home club, travel plans, and interests as the community grows.",
-  discoverNoMatch:
-    "No members match that search yet. Profiles will appear here as founding members join.",
-  messagesEmptyTitle: "No conversations yet.",
+    "Members add rounds, recommendations, and travel notes as they share experiences.",
+  feedEmptyTitle: "No member posts yet",
+  feedEmptyHint: "Share a round, travel plan, or introduction request to begin the conversation.",
+  feedEmptyCta: "",
+  discoverFoundingTitle: "Members",
+  discoverFoundingBody: "Approved member profiles appear here as the directory grows.",
+  discoverFoundingNote: "Search by location, home club, travel plans, and interests.",
+  discoverNoMatch: "No members match that search. Try broadening your filters or search terms.",
+  messagesEmptyTitle: "No conversations yet",
   messagesEmptyBody:
-    "As more founding members join EliteTee, you'll be able to connect directly, introduce yourself, and build relationships through the game.",
-  messagesEmptyNote: "Start your first conversation when another member joins.",
-  messagesNewEmpty: "No members available to message yet. Conversations will open as founding members join.",
+    "Start a conversation from Discover, a member profile, or an accepted introduction.",
+  messagesEmptyNote: "Use New Conversation to message another member directly.",
+  messagesNewEmpty: "No other members to message yet. Start from Discover or a member profile.",
   courseDiscoveryPreview: "Course discovery",
-  courseMemberPhotosNote: "Member photos will appear as rounds are shared.",
+  courseMemberPhotosNote: "Member photos appear as experiences are shared.",
   profileStatsNote: "These numbers grow as you share rounds, save courses, and connect with members.",
   connectionInterestsEmpty:
     "Share the kinds of golf connections you're looking for in Edit Profile.",
@@ -52,9 +49,135 @@ export const earlyStageCopy = {
   favoriteCoursesEmpty: "No saved courses yet.",
   tripsEmpty: "No trips planned yet.",
   roundsEmpty: "No rounds shared yet.",
-  notificationsEmpty: "Alerts will appear as member activity grows.",
-  composerCollapsedPlaceholder:
-    "Introduce yourself, share where you play, or ask for an introduction…",
+  notificationsEmpty: "Alerts appear when there is member activity to review.",
+  composerCollapsedPlaceholder: "Share a round, request an introduction, or post an update…",
+} as const;
+
+/** Share an Experience — canonical round creation copy */
+export const experienceCopy = {
+  shareTitle: "Share an Experience",
+  shareLead:
+    "Document where you played, how it felt, and what fellow members should know. Experiences power the EliteTee course library, feed, and member profiles.",
+  chooseCourseTitle: "Choose Course",
+  chooseCourseLead: "Search the library or enter a course manually if it is not listed yet.",
+  experienceTitle: "Experience",
+  experienceLead: "Rate the round, capture the story, and note when you played.",
+  photographyTitle: "Photography",
+  photographyLead: "Optional photos from the day — they appear on your feed post and course gallery.",
+  detailsTitle: "Details",
+  detailsLead: "Additional context will live here as EliteTee expands the experience model.",
+  shareSubmit: "Share Experience",
+  shareSaving: "Sharing…",
+  shareSuccessTitle: "Experience shared.",
+  shareSuccessBody:
+    "Thank you for contributing. Your experience helps members discover courses and plan their next round.",
+  feedBadge: "Experience",
+  linkedToLibrary: "Linked to EliteTee course library.",
+  searchingCourses: "Searching courses…",
+  manualEntry: "Course not listed — enter manually",
+  reviewLabel: "Review",
+  reviewPlaceholder: "What stood out—layout, conditions, hospitality, travel tips…",
+  wouldPlayAgain: "Would play again?",
+  futureFields: [
+    { key: "tees", label: "Tees played" },
+    { key: "hole", label: "Favorite hole" },
+    { key: "cart", label: "Walking / riding" },
+    { key: "weather", label: "Weather" },
+    { key: "partners", label: "Playing partners" },
+    { key: "trip", label: "Trip" },
+  ] as const,
+  futureFieldsNote: "Additional details will be available in a future update. Your experience saves with the fields above.",
+} as const;
+
+/** Messages — member correspondence copy */
+export const messagesCopy = {
+  eyebrow: "Member Messages",
+  title: "Messages",
+  lead: "Private correspondence with members — calm, direct, and golf-connected.",
+  newConversation: "New Conversation",
+  backToList: "Back to conversations",
+  viewProfile: "View Profile",
+  selectThread: "Select a conversation",
+  selectThreadHint: "Choose a member from the list or start a new conversation.",
+  threadEmptyTitle: "Start the conversation",
+  loadingInbox: "Loading conversations…",
+  loadingThread: "Loading conversation…",
+  send: "Send",
+  sending: "Sending…",
+  composeLabel: "Write a message",
+  composePlaceholder: (name: string) => `Message ${name}…`,
+  retryThread: "Retry",
+} as const;
+
+/** Introductions — concierge connection workflow copy */
+export const introductionsCopy = {
+  eyebrow: "Member Introductions",
+  title: "Introductions",
+  lead: "Request thoughtful introductions to members you may want to know.",
+  incoming: "Incoming",
+  sent: "Sent",
+  accepted: "Accepted",
+  declined: "Declined",
+  loading: "Loading introduction requests…",
+  requestType: "Introduction type",
+  messageLabel: "Your message",
+  messagePrompt: "Tell them why you'd like to connect.",
+  messageHint: "Mention travel, shared courses, business interests, or a potential round.",
+  submitRequest: "Submit Introduction Request",
+  submittingRequest: "Submitting request…",
+  cancel: "Cancel",
+  accept: "Accept",
+  decline: "Decline",
+  messageMember: "Message Member",
+  viewProfile: "View Profile",
+  acceptSuccess: "Introduction accepted. You can continue the conversation in Messages.",
+  emptyIncomingTitle: "No incoming requests",
+  emptyIncomingCopy: "When a member requests an introduction to you, it will appear here.",
+  emptySentTitle: "No sent requests",
+  emptySentCopy: "Requests you send from Discover or member profiles will appear here.",
+  emptyAcceptedTitle: "No accepted introductions yet",
+  emptyAcceptedCopy: "Accepted introductions become direct Messages threads you can continue anytime.",
+  emptyDeclinedTitle: "No declined requests",
+  emptyDeclinedCopy: "Declined requests remain here for your records.",
+  emptyAllTitle: "No introduction requests yet",
+  emptyAllCopy: "Request a private introduction from Discover or a member profile to begin.",
+  modalEyebrow: "Private Introduction",
+  modalTitle: "Request Introduction",
+  modalLead:
+    "Introductions give members a professional, discreet way to connect before messaging.",
+} as const;
+
+/** Ask EliteTee — private concierge copy */
+export const askCopy = {
+  eyebrow: "Private Concierge",
+  title: "Ask EliteTee",
+  lead: "Discover members, courses, and meaningful connections through EliteTee intelligence.",
+  tagline: "Your private golf concierge.",
+  suggestedLabel: "Suggested questions",
+  composeLabel: "Your question",
+  composePlaceholder: "Who should I meet in Florida?",
+  submit: "Ask EliteTee",
+  submitting: "Searching EliteTee…",
+  loading: "Searching EliteTee…",
+  answerEyebrow: "Concierge response",
+  membersTitle: "Member recommendations",
+  membersMeta: (count: number) => `${count} from EliteTee data`,
+  coursesTitle: "Course recommendations",
+  coursesMeta: (count: number) => `${count} from EliteTee data`,
+  matchTitle: "Why these match",
+  sourcesLabel: "Data sources",
+  feedbackLabel: "Was this helpful?",
+  feedbackThanks: "Thank you — your feedback improves Ask EliteTee.",
+  errorTitle: "Something went wrong",
+  retry: "Try again",
+  insufficientNextSteps: [
+    "Complete your profile with location, clubs, and interests.",
+    "Share course experiences so Ask EliteTee can learn your taste.",
+    "Broaden your question with a region, course, or interest.",
+    "Explore members and courses manually while the directory grows.",
+  ],
+  insufficientNote:
+    "Live external news and weather are not connected yet. Ask EliteTee uses member profiles, the course directory, and member review data only.",
 } as const;
 
 export type PostType =
@@ -171,6 +294,13 @@ export type FeedPost = {
   details?: { label: string; value: string }[];
   /** Linked member course round — photos resolved from member_course_round_photos */
   memberCourseRoundId?: string;
+  /** Author auth user id — used for ownership checks */
+  authorUserId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /** ISO date (YYYY-MM-DD) when available from linked round */
+  playedOn?: string;
+  wouldPlayAgain?: boolean;
 };
 
 export type CourseListing = {

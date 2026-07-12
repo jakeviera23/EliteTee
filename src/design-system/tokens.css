@@ -1,0 +1,283 @@
+/**
+ * EliteTee Design System v2.0 — Tokens
+ * ------------------------------------
+ * Standalone foundation. NOT wired into the app yet.
+ * Import via src/design-system/index.css when migration begins.
+ *
+ * Aesthetic: warm charcoal · muted gold · editorial serif · spacious UI
+ * References: Apple restraint, Aman warmth, Porsche precision, Arc/Linear clarity
+ */
+
+:root {
+  /* —— Motion —— */
+  --et-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --et-ease-in-out: cubic-bezier(0.45, 0, 0.15, 1);
+  --et-duration-fast: 180ms;
+  --et-duration-base: 320ms;
+  --et-duration-slow: 520ms;
+
+  /* —— Typography families —— */
+  --et-font-serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --et-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --et-font-mono: ui-monospace, "SF Mono", "Menlo", monospace;
+
+  /* —— Type scale (rem) —— */
+  --et-text-display-1: clamp(3rem, 6.2vw, 5.5rem);
+  --et-text-display-2: clamp(2.375rem, 4.8vw, 3.875rem);
+  --et-text-h1: clamp(1.875rem, 3.2vw, 2.625rem);
+  --et-text-h2: clamp(1.5rem, 2.6vw, 2.0625rem);
+  --et-text-h3: clamp(1.25rem, 2vw, 1.5rem);
+  --et-text-h4: 1.125rem;
+  --et-text-body-lg: 1.0625rem;
+  --et-text-body: 1rem;
+  --et-text-body-sm: 0.875rem;
+  --et-text-caption: 0.6875rem;
+  --et-text-label: 0.75rem;
+
+  --et-leading-tight: 1.08;
+  --et-leading-snug: 1.25;
+  --et-leading-normal: 1.65;
+  --et-leading-relaxed: 1.78;
+
+  --et-tracking-tight: -0.035em;
+  --et-tracking-normal: 0;
+  --et-tracking-wide: 0.06em;
+  --et-tracking-wider: 0.14em;
+  --et-tracking-widest: 0.22em;
+
+  /* —— Spacing (4px grid, generous v2 rhythm) —— */
+  --et-space-1: 0.25rem;
+  --et-space-2: 0.5rem;
+  --et-space-3: 0.75rem;
+  --et-space-4: 1rem;
+  --et-space-5: 1.25rem;
+  --et-space-6: 1.5rem;
+  --et-space-7: 1.75rem;
+  --et-space-8: 2rem;
+  --et-space-10: 2.5rem;
+  --et-space-12: 3rem;
+  --et-space-14: 3.5rem;
+  --et-space-16: 4rem;
+  --et-space-20: 5rem;
+  --et-space-24: 6rem;
+  --et-space-28: 7rem;
+  --et-space-32: 8rem;
+
+  --et-page-x: clamp(1.5rem, 4vw, 3.5rem);
+  --et-section-y: clamp(5.5rem, 12vw, 9rem);
+  --et-section-y-compact: clamp(3rem, 6vw, 4.5rem);
+  --et-content-max: 72rem;
+  --et-reading-max: 42rem;
+  --et-nav-h: 3.75rem;
+
+  /* —— Radius —— */
+  --et-radius-sm: 0.375rem;
+  --et-radius-md: 0.625rem;
+  --et-radius-lg: 0.875rem;
+  --et-radius-xl: 1.25rem;
+  --et-radius-full: 9999px;
+
+  /* —— Shadows (soft, never harsh SaaS drop) —— */
+  --et-shadow-xs: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --et-shadow-sm: 0 1px 2px rgba(12, 11, 10, 0.14);
+  --et-shadow-md:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 12px 40px rgba(8, 7, 6, 0.22);
+  --et-shadow-lg:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 28px 72px rgba(8, 7, 6, 0.28);
+  --et-shadow-gold: 0 0 0 1px rgba(166, 148, 112, 0.18);
+
+  /* —— Icon sizing —— */
+  --et-icon-xs: 0.875rem;
+  --et-icon-sm: 1rem;
+  --et-icon-md: 1.25rem;
+  --et-icon-lg: 1.5rem;
+  --et-icon-stroke: 1.5;
+
+  /* —— Z-index —— */
+  --et-z-nav: 100;
+  --et-z-dropdown: 200;
+  --et-z-modal: 300;
+  --et-z-toast: 400;
+  --et-z-loader: 500;
+}
+
+/* —— Dark app theme (member portal, private surfaces) —— */
+.et-theme-dark,
+[data-et-theme="dark"] {
+  color-scheme: dark;
+
+  /* Warm charcoal — not pure black */
+  --et-bg-base: #181715;
+  --et-bg-elevated: #1f1d1b;
+  --et-bg-surface: #262320;
+  --et-bg-surface-hover: #2e2b27;
+  --et-bg-surface-active: #35312c;
+  --et-bg-overlay: rgba(18, 17, 15, 0.94);
+  --et-bg-inset: #141312;
+
+  --et-text-primary: rgba(248, 246, 242, 0.94);
+  --et-text-secondary: rgba(248, 246, 242, 0.68);
+  --et-text-tertiary: rgba(248, 246, 242, 0.44);
+  --et-text-disabled: rgba(248, 246, 242, 0.28);
+  --et-text-inverse: #181715;
+
+  /* Muted antique gold — not bright yellow */
+  --et-accent: #a69470;
+  --et-accent-hover: #b8a47e;
+  --et-accent-muted: rgba(166, 148, 112, 0.58);
+  --et-accent-soft: rgba(166, 148, 112, 0.1);
+  --et-accent-softer: rgba(166, 148, 112, 0.06);
+
+  --et-border-hairline: rgba(248, 246, 242, 0.06);
+  --et-border-subtle: rgba(248, 246, 242, 0.1);
+  --et-border-strong: rgba(248, 246, 242, 0.16);
+  --et-border-accent: rgba(166, 148, 112, 0.24);
+
+  --et-focus-ring: rgba(166, 148, 112, 0.45);
+
+  --et-success: #7a9a80;
+  --et-success-soft: rgba(122, 154, 128, 0.12);
+  --et-error: #b87a72;
+  --et-error-soft: rgba(184, 122, 114, 0.12);
+  --et-warning: #a69060;
+  --et-warning-soft: rgba(166, 144, 96, 0.12);
+  --et-info: #8a9aaa;
+  --et-info-soft: rgba(138, 154, 170, 0.12);
+
+  --et-scrim-rgb: 18, 17, 15;
+  --et-hero-ivory-rgb: 248, 246, 242;
+}
+
+/* —— Light editorial theme (public marketing site) —— */
+.et-theme-light,
+[data-et-theme="light"] {
+  color-scheme: light;
+
+  --et-bg-base: #f3f1ec;
+  --et-bg-elevated: #faf8f4;
+  --et-bg-surface: #ffffff;
+  --et-bg-surface-hover: #f7f5f0;
+  --et-bg-surface-active: #efede7;
+  --et-bg-overlay: rgba(243, 241, 236, 0.92);
+  --et-bg-inset: #ebe8e1;
+
+  --et-text-primary: #1a1917;
+  --et-text-secondary: #5c5954;
+  --et-text-tertiary: #8e8a84;
+  --et-text-disabled: #b5b1aa;
+  --et-text-inverse: #faf8f4;
+
+  --et-accent: #8f7d5c;
+  --et-accent-hover: #a69470;
+  --et-accent-muted: rgba(143, 125, 92, 0.72);
+  --et-accent-soft: rgba(143, 125, 92, 0.1);
+  --et-accent-softer: rgba(143, 125, 92, 0.06);
+
+  --et-border-hairline: rgba(26, 25, 23, 0.07);
+  --et-border-subtle: rgba(26, 25, 23, 0.11);
+  --et-border-strong: rgba(26, 25, 23, 0.18);
+  --et-border-accent: rgba(143, 125, 92, 0.28);
+
+  --et-focus-ring: rgba(143, 125, 92, 0.42);
+
+  --et-success: #5a7d60;
+  --et-success-soft: rgba(90, 125, 96, 0.1);
+  --et-error: #a06860;
+  --et-error-soft: rgba(160, 104, 96, 0.1);
+  --et-warning: #8f7948;
+  --et-warning-soft: rgba(143, 121, 72, 0.1);
+  --et-info: #6a7d8f;
+  --et-info-soft: rgba(106, 125, 143, 0.1);
+
+  --et-scrim-rgb: 26, 25, 23;
+  --et-hero-ivory-rgb: 250, 248, 244;
+
+  --et-shadow-sm: 0 1px 2px rgba(26, 25, 23, 0.06);
+  --et-shadow-md:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 16px 48px rgba(26, 25, 23, 0.07);
+  --et-shadow-lg:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 28px 64px rgba(26, 25, 23, 0.1);
+}
+
+/* —— Portal light theme (member portal editorial workspace) —— */
+.et-theme-portal,
+[data-et-theme="portal"] {
+  color-scheme: light;
+
+  --et-bg-base: #f4f1ea;
+  --et-bg-elevated: #f0ece4;
+  --et-bg-surface: #fbfaf7;
+  --et-bg-surface-hover: #f5f2eb;
+  --et-bg-surface-active: #ece7de;
+  --et-bg-overlay: rgba(244, 241, 234, 0.94);
+  --et-bg-inset: #ece7de;
+
+  --et-text-primary: #1c211d;
+  --et-text-secondary: #6e716b;
+  --et-text-tertiary: #94978f;
+  --et-text-disabled: #b5b8b0;
+  --et-text-inverse: #f4f1ea;
+
+  --et-accent: #a58a55;
+  --et-accent-hover: #8f7548;
+  --et-accent-muted: rgba(165, 138, 85, 0.72);
+  --et-accent-soft: rgba(165, 138, 85, 0.12);
+  --et-accent-softer: rgba(165, 138, 85, 0.07);
+
+  --et-forest: #244a3a;
+  --et-forest-soft: rgba(36, 74, 58, 0.1);
+  --et-forest-border: rgba(36, 74, 58, 0.28);
+
+  --et-slate: #61798a;
+  --et-slate-soft: rgba(97, 121, 138, 0.1);
+  --et-slate-border: rgba(97, 121, 138, 0.22);
+
+  --et-burgundy: #753e43;
+  --et-burgundy-soft: rgba(117, 62, 67, 0.1);
+
+  --et-border-hairline: rgba(40, 46, 40, 0.12);
+  --et-border-subtle: rgba(40, 46, 40, 0.16);
+  --et-border-strong: rgba(40, 46, 40, 0.22);
+  --et-border-accent: rgba(165, 138, 85, 0.32);
+
+  --et-focus-ring: rgba(36, 74, 58, 0.38);
+
+  --et-success: #4a6b58;
+  --et-success-soft: rgba(74, 107, 88, 0.12);
+  --et-error: #9e5050;
+  --et-error-soft: rgba(158, 80, 80, 0.1);
+  --et-warning: #8f7548;
+  --et-warning-soft: rgba(143, 117, 72, 0.1);
+  --et-info: #61798a;
+  --et-info-soft: rgba(97, 121, 138, 0.1);
+
+  --et-scrim-rgb: 28, 33, 29;
+  --et-hero-ivory-rgb: 251, 250, 247;
+
+  /* Deep forest chrome (nav framing) */
+  --et-chrome-bg: #1c2b24;
+  --et-chrome-bg-elevated: #243830;
+  --et-chrome-text: #f4f1ea;
+  --et-chrome-muted: rgba(244, 241, 234, 0.58);
+  --et-chrome-border: rgba(244, 241, 234, 0.1);
+  --et-chrome-accent: #a58a55;
+  --et-chrome-accent-soft: rgba(165, 138, 85, 0.16);
+
+  --et-shadow-xs: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  --et-shadow-sm: 0 1px 2px rgba(28, 33, 29, 0.05);
+  --et-shadow-md: 0 4px 24px rgba(28, 33, 29, 0.07);
+  --et-shadow-lg: 0 12px 40px rgba(28, 33, 29, 0.09);
+  --et-shadow-gold: 0 0 0 1px rgba(165, 138, 85, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --et-duration-fast: 0.01ms;
+    --et-duration-base: 0.01ms;
+    --et-duration-slow: 0.01ms;
+  }
+}

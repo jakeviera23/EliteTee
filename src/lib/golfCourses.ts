@@ -141,4 +141,68 @@ export async function fetchGolfCourseBySlug(slug: string) {
   };
 }
 
+export async function fetchGolfCourseById(courseId: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedId = courseId.trim();
+  if (!normalizedId) {
+    return { data: null, error: new Error("Course id is required.") };
+  }
+
+  const { data, error } = await supabase
+    .from("golf_courses")
+    .select(
+      "id, name, slug, city, region, country, source_name, submitted_by_member, course_type, access_type",
+    )
+    .eq("id", normalizedId)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (!data) {
+    return { data: null, error: null };
+  }
+
+  return {
+    data: normalizeCourseRow(data as Record<string, unknown>),
+    error: null,
+  };
+}
+
+export async function adminUpdateGolfCourseLocation(input: {
+  courseId: string;
+  city: string;
+  region: string;
+  country: string;
+}) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("admin_update_golf_course_location", {
+    p_course_id: input.courseId.trim(),
+    p_city: input.city.trim(),
+    p_region: input.region.trim(),
+    p_country: input.country.trim(),
+  });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { data: null, error: new Error("Course location could not be updated.") };
+  }
+
+  return {
+    data: normalizeCourseRow(row as Record<string, unknown>),
+    error: null,
+  };
+}
+
 export { SEARCH_PAGE_SIZE };

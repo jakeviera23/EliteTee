@@ -1,0 +1,572 @@
+/**
+ * Member Portal v2 — global light theme overrides
+ * Scoped to .portal-page.et-theme-portal only.
+ * Loads after member-portal.css; does not replace the legacy file.
+ */
+
+/* —— Root: override v1 dark hardcodes —— */
+.inside-page.portal-page.et-theme-portal {
+  background: var(--et-bg-base);
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal {
+  --portal-heading: var(--et-text-primary);
+  --portal-body: var(--et-text-secondary);
+  --portal-muted: var(--et-text-tertiary);
+  --portal-faint: var(--et-text-tertiary);
+  --portal-white: var(--et-text-primary);
+  --et-portal-content-max: 72rem;
+  background: var(--et-bg-base);
+  color: var(--et-text-secondary);
+}
+
+/* —— Deep forest chrome —— */
+.portal-page.et-theme-portal .portal-chrome {
+  --portal-heading: var(--et-chrome-text);
+  --portal-body: var(--et-chrome-muted);
+  --portal-muted: var(--et-chrome-muted);
+  --portal-faint: rgba(244, 241, 234, 0.42);
+  --portal-white: var(--et-chrome-text);
+  --inside-border: var(--et-chrome-border);
+  --inside-border-gold: rgba(165, 138, 85, 0.38);
+  --inside-gold: var(--et-chrome-accent);
+  --inside-gold-soft: var(--et-chrome-accent-soft);
+  --inside-bg: var(--et-chrome-bg);
+  --inside-bg-panel: var(--et-chrome-bg-elevated);
+}
+
+.portal-page.et-theme-portal .portal-top {
+  background: rgba(28, 43, 36, 0.97);
+  border-bottom-color: var(--et-chrome-border);
+}
+
+.portal-page.et-theme-portal .portal-tabs--desktop {
+  background: var(--et-chrome-bg-elevated);
+  border-bottom-color: var(--et-chrome-border);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-tab {
+  color: var(--et-chrome-muted);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-tab:hover {
+  color: var(--et-chrome-text);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-tab.is-active {
+  color: var(--et-chrome-accent);
+  background: var(--et-chrome-accent-soft);
+  border-color: rgba(165, 138, 85, 0.35);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-tab-badge {
+  color: var(--et-chrome-bg);
+  background: var(--et-chrome-accent);
+  border-color: rgba(165, 138, 85, 0.45);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-icon-btn {
+  color: var(--et-chrome-muted);
+  border-color: var(--et-chrome-border);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-icon-btn:hover {
+  color: var(--et-chrome-text);
+  border-color: rgba(165, 138, 85, 0.38);
+  background: rgba(165, 138, 85, 0.08);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-icon-badge {
+  color: var(--et-chrome-bg);
+  background: var(--et-chrome-accent);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-btn--gold {
+  color: var(--et-chrome-bg);
+  background: var(--et-chrome-accent);
+  border-color: var(--et-chrome-accent);
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-btn--gold:hover:not(:disabled) {
+  background: #b89862;
+  border-color: #b89862;
+}
+
+.portal-page.et-theme-portal .portal-chrome .portal-btn--gold:focus-visible {
+  outline: 2px solid var(--et-chrome-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .portal-page.et-theme-portal .portal-bottom-nav {
+    background: rgba(28, 43, 36, 0.98);
+    border-top-color: var(--et-chrome-border);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-btn {
+    color: var(--et-chrome-muted);
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-btn.is-active {
+    color: var(--et-chrome-accent);
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-btn--post .portal-bottom-nav-icon {
+    color: var(--et-chrome-bg);
+    background: var(--et-chrome-accent);
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-badge {
+    color: var(--et-chrome-bg);
+    background: var(--et-chrome-accent);
+  }
+}
+
+/* —— Main workspace —— */
+.portal-page.et-theme-portal .portal-main {
+  background: var(--et-bg-base);
+}
+
+.portal-page.et-theme-portal .portal-loader {
+  background: var(--et-bg-base);
+}
+
+.portal-page.et-theme-portal .portal-loader-logo {
+  background-color: var(--et-accent);
+}
+
+/* —— Typography & section heads —— */
+.portal-page.et-theme-portal .portal-eyebrow,
+.portal-page.et-theme-portal .portal-marketplace-category {
+  color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-section-head h2,
+.portal-page.et-theme-portal .portal-section-head--social h2,
+.portal-page.et-theme-portal .portal-home-welcome h1 {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-section-head p,
+.portal-page.et-theme-portal .portal-section-head--social p,
+.portal-page.et-theme-portal .portal-home-welcome p {
+  color: var(--et-text-secondary);
+}
+
+/* —— Shared cards —— */
+.portal-page.et-theme-portal .portal-member-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+  box-shadow: var(--et-shadow-sm);
+}
+
+.portal-page.et-theme-portal .portal-member-card:hover {
+  border-color: var(--et-border-accent);
+  box-shadow: var(--et-shadow-md);
+}
+
+.portal-page.et-theme-portal .portal-member-details dt {
+  color: var(--et-text-tertiary);
+}
+
+.portal-page.et-theme-portal .portal-member-details dd {
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .portal-member-fm-badge,
+.portal-page.et-theme-portal .portal-member-check {
+  color: var(--et-accent);
+  border-color: var(--et-border-accent);
+}
+
+.portal-page.et-theme-portal .portal-dossier {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-accent);
+  box-shadow: var(--et-shadow-sm);
+}
+
+.portal-page.et-theme-portal .portal-dossier-header {
+  border-bottom-color: var(--et-border-hairline);
+}
+
+.portal-page.et-theme-portal .portal-dossier-header h2,
+.portal-page.et-theme-portal .portal-dossier-header h3 {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-dossier-membership {
+  color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-course-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+  box-shadow: var(--et-shadow-sm);
+}
+
+.portal-page.et-theme-portal .portal-course-card-body h3 {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-course-location {
+  color: var(--et-slate);
+}
+
+.portal-page.et-theme-portal .portal-course-stats dd {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-empty--social {
+  background: var(--et-bg-surface);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-lg, 0.875rem);
+}
+
+/* —— Buttons —— */
+.portal-page.et-theme-portal .portal-btn--gold {
+  color: var(--et-text-inverse);
+  background: var(--et-accent);
+  border-color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-btn--gold:hover:not(:disabled) {
+  background: var(--et-accent-hover);
+  border-color: var(--et-accent-hover);
+}
+
+.portal-page.et-theme-portal .portal-btn--gold:focus-visible {
+  outline: 2px solid var(--et-focus-ring);
+  outline-offset: 2px;
+}
+
+.portal-page.et-theme-portal .portal-btn--outline {
+  color: var(--et-forest);
+  border-color: var(--et-forest-border);
+}
+
+.portal-page.et-theme-portal .portal-btn--outline:hover:not(:disabled) {
+  color: var(--et-forest);
+  background: var(--et-forest-soft);
+}
+
+/* —— Forms & fields —— */
+.portal-page.et-theme-portal .portal-profile-field span,
+.portal-page.et-theme-portal .portal-composer-field span {
+  color: var(--et-text-tertiary);
+}
+
+.portal-page.et-theme-portal .portal-profile-field input,
+.portal-page.et-theme-portal .portal-profile-field select,
+.portal-page.et-theme-portal .portal-profile-field textarea,
+.portal-page.et-theme-portal .portal-composer-field input,
+.portal-page.et-theme-portal .portal-composer-field textarea,
+.portal-page.et-theme-portal .portal-search-input {
+  color: var(--et-text-primary);
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+}
+
+.portal-page.et-theme-portal .portal-profile-field input:focus,
+.portal-page.et-theme-portal .portal-profile-field select:focus,
+.portal-page.et-theme-portal .portal-profile-field textarea:focus,
+.portal-page.et-theme-portal .portal-composer-field input:focus,
+.portal-page.et-theme-portal .portal-composer-field textarea:focus,
+.portal-page.et-theme-portal .portal-search-input:focus {
+  outline: none;
+  border-color: var(--et-forest-border);
+  box-shadow: 0 0 0 3px var(--et-forest-soft);
+}
+
+@media (max-width: 767px) {
+  .portal-page.et-theme-portal .portal-profile-field input,
+  .portal-page.et-theme-portal .portal-profile-field select,
+  .portal-page.et-theme-portal .portal-profile-field textarea,
+  .portal-page.et-theme-portal .portal-search-input {
+    font-size: 1rem;
+  }
+}
+
+/* —— Messages —— */
+.portal-page.et-theme-portal .portal-message-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+  box-shadow: var(--et-shadow-xs);
+}
+
+.portal-page.et-theme-portal .portal-message-card:hover {
+  border-color: var(--et-border-accent);
+}
+
+.portal-page.et-theme-portal .portal-message-name,
+.portal-page.et-theme-portal .portal-message-preview.is-unread {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-message-thread {
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+}
+
+.portal-page.et-theme-portal .portal-message-bubble {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+}
+
+.portal-page.et-theme-portal .portal-message-item.is-own .portal-message-bubble {
+  background: var(--et-accent-softer);
+  border-color: var(--et-border-accent);
+}
+
+.portal-page.et-theme-portal .portal-message-avatar {
+  background: linear-gradient(145deg, rgba(165, 138, 85, 0.2), rgba(236, 231, 222, 0.8));
+}
+
+/* —— Modals —— */
+.portal-page.et-theme-portal .portal-modal-backdrop {
+  background: rgba(28, 33, 29, 0.42);
+}
+
+.portal-page.et-theme-portal .portal-modal-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-accent);
+  box-shadow: var(--et-shadow-lg);
+}
+
+/* —— Toasts —— */
+.portal-page.et-theme-portal .portal-toast {
+  color: var(--et-text-primary);
+  background: var(--et-bg-surface);
+  border: 1px solid var(--et-border-hairline);
+  border-left: 3px solid var(--et-accent);
+  box-shadow: var(--et-shadow-md);
+}
+
+/* —— Empty, error, success —— */
+.portal-page.et-theme-portal .portal-empty {
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .portal-course-played-error,
+.portal-page.et-theme-portal .portal-composer-error {
+  color: var(--et-error);
+  background: var(--et-error-soft);
+}
+
+.portal-page.et-theme-portal .portal-notifications {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-accent);
+}
+
+.portal-page.et-theme-portal .portal-privacy p {
+  color: var(--et-text-tertiary);
+}
+
+/* —— Course played modal / rating picker —— */
+.portal-page.et-theme-portal .portal-course-rating-display {
+  color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-slider {
+  accent-color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-input {
+  color: var(--et-text-primary);
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+  font-size: 1rem;
+}
+
+.portal-page.et-theme-portal .portal-course-rating-input:focus {
+  border-color: var(--et-forest);
+  box-shadow: 0 0 0 2px var(--et-forest-soft);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-selected {
+  color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-error {
+  color: var(--et-error);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-option {
+  color: var(--et-text-secondary);
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-option.is-active {
+  color: var(--et-text-inverse);
+  background: var(--et-forest);
+  border-color: var(--et-forest);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-option:hover:not(:disabled):not(.is-active) {
+  border-color: var(--et-forest-border);
+  background: var(--et-forest-soft);
+}
+
+.portal-page.et-theme-portal .portal-course-played-manual {
+  color: var(--et-slate);
+}
+
+/* —— Introduction requests & activity —— */
+.portal-page.et-theme-portal .portal-request-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+  box-shadow: var(--et-shadow-xs);
+}
+
+.portal-page.et-theme-portal .portal-request-card:hover {
+  border-color: var(--et-border-accent);
+  background: var(--et-bg-surface-hover);
+}
+
+.portal-page.et-theme-portal .portal-request-name {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-request-type,
+.portal-page.et-theme-portal .portal-request-status {
+  color: var(--et-accent);
+}
+
+.portal-page.et-theme-portal .portal-request-badge--accepted {
+  color: var(--et-success);
+}
+
+.portal-page.et-theme-portal .portal-request-badge--declined {
+  color: var(--et-burgundy);
+}
+
+.portal-page.et-theme-portal .portal-verified-list li {
+  border-color: var(--et-border-hairline);
+}
+
+/* —— Admin panel (shared shell) —— */
+.portal-page.et-theme-portal .portal-admin-main {
+  background: transparent;
+}
+
+.portal-page.et-theme-portal .portal-admin-head h1 {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-admin-head p,
+.portal-page.et-theme-portal .portal-admin-note {
+  color: var(--et-text-secondary);
+}
+
+/* —— Add course played modal —— */
+.portal-page.et-theme-portal .portal-course-played-form,
+.portal-page.et-theme-portal .portal-course-played-sent {
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .portal-course-played-lead,
+.portal-page.et-theme-portal .portal-course-played-sent-title {
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-course-played-choice-option {
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .portal-course-played-choice-option:has(input:checked) {
+  background: var(--et-forest-soft);
+  border-color: var(--et-forest-border);
+  color: var(--et-forest);
+}
+
+/* —— Focus visibility (content area) —— */
+.portal-page.et-theme-portal .portal-tab:focus-visible,
+.portal-page.et-theme-portal .portal-bottom-nav-btn:focus-visible,
+.portal-page.et-theme-portal .portal-member-card:focus-within,
+.portal-page.et-theme-portal .portal-message-card:focus-visible {
+  outline: 2px solid var(--et-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-page.et-theme-portal .portal-member-card,
+  .portal-page.et-theme-portal .portal-course-card {
+    transition: none;
+  }
+}
+
+/* —— Launch consistency pass —— */
+@media (max-width: 767px) {
+  .portal-page.et-theme-portal .portal-main {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.portal-page.et-theme-portal .et-discover,
+.portal-page.et-theme-portal .et-messages,
+.portal-page.et-theme-portal .et-profile,
+.portal-page.et-theme-portal .et-ask,
+.portal-page.et-theme-portal .et-introductions,
+.portal-page.et-theme-portal .et-course-detail {
+  width: min(100%, var(--et-portal-content-max));
+}
+
+.portal-page.et-theme-portal .et-courses {
+  width: min(100%, var(--et-portal-content-max));
+}
+
+.portal-page.et-theme-portal .et-profile-feed-grid .feed-card,
+.portal-page.et-theme-portal .et-profile .feed-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+  box-shadow: var(--et-shadow-sm);
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .et-profile-feed-grid .feed-card:hover,
+.portal-page.et-theme-portal .et-profile .feed-card:hover {
+  border-color: var(--et-border-subtle);
+  box-shadow: var(--et-shadow-md);
+}
+
+.portal-page.et-theme-portal .portal-modal {
+  background: var(--et-bg-surface);
+  border: 1px solid var(--et-border-hairline);
+  box-shadow: var(--et-shadow-lg);
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .portal-modal-head h3,
+.portal-page.et-theme-portal .portal-modal-head h2 {
+  color: var(--et-text-primary);
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+}
+
+.portal-page.et-theme-portal .portal-modal-close {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.65rem;
+  background: var(--et-bg-inset);
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-main .portal-btn--gold,
+.portal-page.et-theme-portal .portal-modal .portal-btn--gold,
+.portal-page.et-theme-portal .feed-composer .portal-btn--gold {
+  color: var(--et-bg-surface);
+  background: var(--et-forest);
+  border-color: var(--et-forest);
+}
+
+.portal-page.et-theme-portal .portal-main .portal-btn--gold:hover:not(:disabled),
+.portal-page.et-theme-portal .portal-modal .portal-btn--gold:hover:not(:disabled),
+.portal-page.et-theme-portal .feed-composer .portal-btn--gold:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--et-forest) 88%, black 12%);
+  border-color: color-mix(in srgb, var(--et-forest) 88%, black 12%);
+}

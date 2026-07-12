@@ -1,0 +1,224 @@
+/**
+ * EliteTee Design System v2.0 — States
+ * Loading · empty · success · error · toasts
+ */
+
+/* —— Loading —— */
+.et-loading {
+  display: grid;
+  place-items: center;
+  gap: var(--et-space-4);
+  padding: var(--et-space-12) var(--et-space-6);
+  text-align: center;
+}
+
+.et-loading__spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--et-border-subtle);
+  border-top-color: var(--et-accent);
+  border-radius: var(--et-radius-full);
+  animation: et-spin 0.9s linear infinite;
+}
+
+.et-loading__mark {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--et-border-accent);
+  border-radius: var(--et-radius-full);
+  background: radial-gradient(
+    circle at 30% 30%,
+    var(--et-accent-soft),
+    transparent 65%
+  );
+  animation: et-breathe 1.8s var(--et-ease-in-out) infinite;
+}
+
+.et-loading__text {
+  margin: 0;
+  font-size: var(--et-text-caption);
+  letter-spacing: var(--et-tracking-wider);
+  text-transform: uppercase;
+  color: var(--et-text-tertiary);
+}
+
+.et-skeleton {
+  border-radius: var(--et-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--et-bg-surface) 0%,
+    var(--et-bg-surface-hover) 45%,
+    var(--et-bg-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: et-shimmer 1.4s var(--et-ease-in-out) infinite;
+}
+
+.et-skeleton--text {
+  height: 0.875rem;
+  margin-bottom: var(--et-space-2);
+}
+
+.et-skeleton--title {
+  height: 1.5rem;
+  width: 60%;
+  margin-bottom: var(--et-space-4);
+}
+
+.et-skeleton--avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--et-radius-full);
+}
+
+.et-skeleton--card {
+  height: 8rem;
+  border-radius: var(--et-radius-lg);
+}
+
+/* —— Empty state —— */
+.et-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--et-space-4);
+  padding: var(--et-space-16) var(--et-space-6);
+  text-align: center;
+}
+
+.et-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  color: var(--et-accent-muted);
+  border: 1px solid var(--et-border-accent);
+  border-radius: var(--et-radius-full);
+  background: var(--et-accent-softer);
+}
+
+.et-empty__title {
+  margin: 0;
+  font-family: var(--et-font-serif);
+  font-size: var(--et-text-h3);
+  font-weight: 400;
+  color: var(--et-text-primary);
+}
+
+.et-empty__body {
+  margin: 0;
+  max-width: 24rem;
+  font-size: var(--et-text-body-sm);
+  line-height: 1.65;
+  color: var(--et-text-tertiary);
+}
+
+/* —— Alerts / feedback —— */
+.et-alert {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--et-space-3) var(--et-space-4);
+  padding: var(--et-space-4) var(--et-space-5);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-md);
+  background: var(--et-bg-surface);
+}
+
+.et-alert__title {
+  margin: 0;
+  font-size: var(--et-text-body-sm);
+  font-weight: 500;
+  color: var(--et-text-primary);
+}
+
+.et-alert__body {
+  margin: var(--et-space-1) 0 0;
+  font-size: var(--et-text-body-sm);
+  line-height: 1.55;
+  color: var(--et-text-secondary);
+}
+
+.et-alert--success {
+  border-color: transparent;
+  background: var(--et-success-soft);
+}
+
+.et-alert--success .et-alert__title {
+  color: var(--et-success);
+}
+
+.et-alert--error {
+  border-color: transparent;
+  background: var(--et-error-soft);
+}
+
+.et-alert--error .et-alert__title {
+  color: var(--et-error);
+}
+
+.et-alert--warning {
+  border-color: transparent;
+  background: var(--et-warning-soft);
+}
+
+.et-alert--warning .et-alert__title {
+  color: var(--et-warning);
+}
+
+/* Toast — minimal, top-right */
+.et-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--et-space-3);
+  min-width: min(100%, 20rem);
+  padding: var(--et-space-4) var(--et-space-5);
+  background: var(--et-bg-elevated);
+  border: 1px solid var(--et-border-subtle);
+  border-radius: var(--et-radius-lg);
+  box-shadow: var(--et-shadow-lg);
+}
+
+.et-toast__message {
+  margin: 0;
+  font-size: var(--et-text-body-sm);
+  line-height: 1.5;
+  color: var(--et-text-primary);
+}
+
+/* Inline form success */
+.et-success-panel {
+  padding: var(--et-space-8) var(--et-space-6);
+  text-align: center;
+}
+
+.et-success-panel__title {
+  margin: 0 0 var(--et-space-3);
+  font-family: var(--et-font-serif);
+  font-size: var(--et-text-h3);
+  color: var(--et-accent);
+}
+
+.et-success-panel__body {
+  margin: 0;
+  font-size: var(--et-text-body);
+  line-height: 1.65;
+  color: var(--et-text-secondary);
+}
+
+/* Focus & disabled global helpers */
+.et-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.et-interactive:focus-visible {
+  outline: 2px solid var(--et-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .et-loading__spinner,
+  .et-loading__mark,
+  .et-skeleton {
+    animation: none;
+  }
+}
