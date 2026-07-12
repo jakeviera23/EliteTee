@@ -1,3 +1,4 @@
+import { experienceCopy } from "../../../data/portalSocial";
 import type { ApprovedMemberDirectoryProfile } from "../../../lib/memberProfiles";
 import {
   formatCourseRatingValue,
@@ -41,7 +42,7 @@ export function CourseDetailMembersPlayed({
         </p>
         {onAddPlayed ? (
           <button type="button" className="et-btn et-btn--forest" onClick={onAddPlayed}>
-            Add Course Played
+            {experienceCopy.shareTitle}
           </button>
         ) : null}
       </div>

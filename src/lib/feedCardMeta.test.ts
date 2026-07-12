@@ -100,6 +100,14 @@ describe("isCourseRoundPost", () => {
     expect(isCourseRoundPost(makePost())).toBe(true);
   });
 
+  it("detects experience badge label", () => {
+    expect(
+      isCourseRoundPost(
+        makePost({ postType: "photo", requestLabel: "Experience" }),
+      ),
+    ).toBe(true);
+  });
+
   it("detects linked member course rounds", () => {
     expect(
       isCourseRoundPost(

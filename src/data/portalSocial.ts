@@ -56,6 +56,42 @@ export const earlyStageCopy = {
   composerCollapsedPlaceholder: "Share a round, request an introduction, or post an update…",
 } as const;
 
+/** Share an Experience — canonical round creation copy */
+export const experienceCopy = {
+  shareTitle: "Share an Experience",
+  shareLead:
+    "Document where you played, how it felt, and what fellow members should know. Experiences power the EliteTee course library, feed, and member profiles.",
+  chooseCourseTitle: "Choose Course",
+  chooseCourseLead: "Search the library or enter a course manually if it is not listed yet.",
+  experienceTitle: "Experience",
+  experienceLead: "Rate the round, capture the story, and note when you played.",
+  photographyTitle: "Photography",
+  photographyLead: "Optional photos from the day — they appear on your feed post and course gallery.",
+  detailsTitle: "Details",
+  detailsLead: "Additional context will live here as EliteTee expands the experience model.",
+  shareSubmit: "Share Experience",
+  shareSaving: "Sharing…",
+  shareSuccessTitle: "Experience shared.",
+  shareSuccessBody:
+    "Thank you for contributing. Your experience helps members discover courses and plan their next round.",
+  feedBadge: "Experience",
+  linkedToLibrary: "Linked to EliteTee course library.",
+  searchingCourses: "Searching courses…",
+  manualEntry: "Course not listed — enter manually",
+  reviewLabel: "Review",
+  reviewPlaceholder: "What stood out—layout, conditions, hospitality, travel tips…",
+  wouldPlayAgain: "Would play again?",
+  futureFields: [
+    { key: "tees", label: "Tees played" },
+    { key: "hole", label: "Favorite hole" },
+    { key: "cart", label: "Walking / riding" },
+    { key: "weather", label: "Weather" },
+    { key: "partners", label: "Playing partners" },
+    { key: "trip", label: "Trip" },
+  ] as const,
+  futureFieldsNote: "These fields are coming soon. Your experience still saves with the details above.",
+} as const;
+
 export type PostType =
   | "photo"
   | "carousel"

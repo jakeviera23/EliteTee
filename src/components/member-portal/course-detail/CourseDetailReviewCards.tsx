@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { experienceCopy } from "../../../data/portalSocial";
 import {
   formatCourseRatingStars,
   formatCourseRatingValue,
@@ -43,7 +44,7 @@ export function CourseDetailReviewCards({
         </p>
         {emptyOnAdd ? (
           <button type="button" className="et-btn et-btn--forest" onClick={emptyOnAdd}>
-            Add Course Played
+            {experienceCopy.shareTitle}
           </button>
         ) : null}
       </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import {
   buildFeaturedSections,
@@ -187,7 +188,7 @@ export function PortalCourses() {
             className="et-btn et-btn--primary et-courses-add-btn"
             onClick={() => setShowAddCourseModal(true)}
           >
-            Add Course Played
+            {experienceCopy.shareTitle}
           </button>
         </div>
       </header>

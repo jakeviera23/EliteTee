@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { experienceCopy } from "../data/portalSocial";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CourseDetailGallery } from "../components/member-portal/course-detail/CourseDetailGallery";
 import { CourseDetailMembersPlayed } from "../components/member-portal/course-detail/CourseDetailMembersPlayed";
@@ -276,7 +277,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                 className="et-btn et-btn--forest"
                 onClick={() => setShowAddModal(true)}
               >
-                Add Course Played
+                {experienceCopy.shareTitle}
               </button>
               {memberSummaries.length > 0 ? (
                 <button type="button" className="et-btn et-btn--secondary" onClick={scrollToMembers}>

@@ -1,5 +1,5 @@
 import type { ComposerPostType, FeedPost, PortalGolfer } from "../data/portalSocial";
-import { composerPostTypeBadges } from "../data/portalSocial";
+import { composerPostTypeBadges, experienceCopy } from "../data/portalSocial";
 import type {
   MemberFeedPostAuthorProfile,
   MemberFeedPostPayload,
@@ -476,7 +476,7 @@ export async function createCourseRoundFeedPost({
       composerPostType: "round-review",
       message,
       headline: courseName.trim(),
-      badge: "Course Played",
+      badge: experienceCopy.feedBadge,
       details: [
         { label: "Location", value: location.trim() },
         { label: "Played", value: formatPlayedOnDate(playedOn) },

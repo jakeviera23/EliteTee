@@ -99,7 +99,12 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
 export function badgeToneForPost(post: FeedPost): FeedMetaChipTone {
   const label = (post.requestLabel ?? post.postType ?? "").toLowerCase();
 
-  if (label.includes("course") || label.includes("round") || label.includes("played")) {
+  if (
+    label.includes("course") ||
+    label.includes("round") ||
+    label.includes("played") ||
+    label.includes("experience")
+  ) {
     return "positive";
   }
 
@@ -115,9 +120,11 @@ export function badgeToneForPost(post: FeedPost): FeedMetaChipTone {
 }
 
 export function isCourseRoundPost(post: FeedPost): boolean {
+  const label = post.requestLabel?.toLowerCase() ?? "";
   return (
     post.postType === "course-review" ||
     Boolean(post.memberCourseRoundId) ||
-    (post.requestLabel?.toLowerCase().includes("course played") ?? false)
+    label.includes("course played") ||
+    label.includes("experience")
   );
 }
