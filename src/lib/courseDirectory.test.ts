@@ -95,4 +95,34 @@ describe("filterCourses", () => {
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.id).toBe("1");
   });
+
+  it("finds courses by city/state/country after region metadata is added", () => {
+    const before = course({
+      id: "legacy-1",
+      name: "Southampton Golf Club",
+      slug: "southampton-golf-club",
+      city: "Southampton",
+      region: null,
+      country: null,
+    });
+    const after = course({
+      ...before,
+      region: "NY",
+      country: "United States",
+    });
+
+    expect(groupCoursesGeographically([before])[0]?.regions[0]?.region).toBe(UNSPECIFIED_REGION);
+    expect(groupCoursesGeographically([after])[0]?.regions[0]?.region).toBe("NY");
+
+    const filtered = filterCourses([after], {
+      country: "United States",
+      region: "NY",
+      city: "Southampton",
+      courseType: "",
+      accessType: "",
+    });
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]?.id).toBe("legacy-1");
+  });
 });

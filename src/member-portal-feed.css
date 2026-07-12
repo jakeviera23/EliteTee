@@ -1250,6 +1250,14 @@
   grid-column: 1 / -1;
 }
 
+.feed-edit-field-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--et-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .feed-edit-choice {
   margin: 0;
   padding: 0;

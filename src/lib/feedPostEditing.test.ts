@@ -130,6 +130,21 @@ describe("validateCourseRoundPostEditInput", () => {
       }).ok,
     ).toBe(false);
   });
+
+  it("accepts structured city, region, and country for member-submitted course correction", () => {
+    expect(
+      validateCourseRoundPostEditInput({
+        message: "Updated review",
+        courseRating: 9,
+        playedOn: "2026-06-12",
+        wouldPlayAgain: true,
+        location: "",
+        city: "Southampton",
+        region: "NY",
+        country: "United States",
+      }).ok,
+    ).toBe(true);
+  });
 });
 
 describe("isFeedPostEdited", () => {

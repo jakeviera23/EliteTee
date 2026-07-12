@@ -102,6 +102,17 @@ export const adminCopy = {
     emptyApprovals: "No approved applications yet.",
   },
 
+  courses: {
+    title: "Course location correction",
+    lead: "Search the course library and update city, state/region, and country for legacy cleanup.",
+    searchLabel: "Search courses",
+    searchPlaceholder: "Course name or city",
+    searchAction: "Search",
+    editingLabel: "Editing location for",
+    saveAction: "Save course location",
+    locationSaved: "Course location updated.",
+  },
+
   ai: {
     title: "AI Operations",
     lead: "Usage, failures, and capability controls for Ask EliteTee.",

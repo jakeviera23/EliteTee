@@ -320,11 +320,10 @@ export function GolferProfilePage({
               </ProfileCover>
             </div>
 
-            <div className="et-profile-hero-body">
-              <div className="et-profile-avatar-col">
-                <ProfileMemberAvatar name={display.name} imageUrl={display.avatarImage} size="xl" />
-              </div>
-              <div className="et-profile-identity">
+            <div className="et-profile-hero-avatar">
+              <ProfileMemberAvatar name={display.name} imageUrl={display.avatarImage} size="xl" />
+            </div>
+            <div className="et-profile-identity">
                 <p className="et-profile-eyebrow">Member Profile</p>
                 <div className="et-profile-name-row">
                   <h1 id="profile-heading" className="et-profile-name">
@@ -356,7 +355,6 @@ export function GolferProfilePage({
                   ) : null}
                 </div>
                 <p className="et-profile-note">{earlyStageCopy.foundingMemberNote}</p>
-              </div>
             </div>
           </header>
 

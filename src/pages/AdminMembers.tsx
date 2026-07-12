@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AdminActivityPanel } from "../components/admin/AdminActivityPanel";
+import { AdminCoursesLocationPanel } from "../components/admin/AdminCoursesLocationPanel";
 import { AdminApplicationsPanel } from "../components/admin/AdminApplicationsPanel";
 import { AdminInvitesPanel } from "../components/admin/AdminInvitesPanel";
 import { AdminMemberDirectory } from "../components/admin/AdminMemberDirectory";
@@ -745,11 +746,14 @@ export function AdminMembers() {
         ) : null}
 
         {activeTab === "activity" ? (
-          <AdminActivityPanel
-            recentMembers={allMembers}
-            approvedApplications={approvedApplications}
-            isLoading={isLoadingDashboard}
-          />
+          <>
+            <AdminActivityPanel
+              recentMembers={allMembers}
+              approvedApplications={approvedApplications}
+              isLoading={isLoadingDashboard}
+            />
+            <AdminCoursesLocationPanel isLoading={isLoadingDashboard} />
+          </>
         ) : null}
       </main>
 

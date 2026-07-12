@@ -679,6 +679,47 @@
   gap: var(--et-space-2);
 }
 
+.et-admin-course-results {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.et-admin-course-result {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.75rem;
+  background: var(--et-bg-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.et-admin-course-result.is-selected {
+  border-color: var(--admin-forest);
+  box-shadow: inset 0 0 0 1px var(--admin-forest);
+}
+
+.et-admin-course-result span {
+  color: var(--et-text-secondary);
+  font-size: 0.875rem;
+}
+
+.et-admin-course-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--et-bg-inset);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .et-admin-nav-btn,
   .et-admin-app-card,

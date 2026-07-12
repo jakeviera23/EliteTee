@@ -14,6 +14,8 @@ import { formatCourseRatingDisplay, validateCourseRating } from "./courseRating"
 import {
   validateCourseRoundPostEditInput,
   validateTextPostEditInput,
+  buildCourseRoundEditPayload,
+  type CourseRoundPostEditInput,
 } from "./feedPostEditing";
 import { supabase } from "./supabase";
 
@@ -583,16 +585,7 @@ export async function updateMemberFeedPostCaption(postId: string, message: strin
   return { data: feedPost, error: null };
 }
 
-export async function updateCourseRoundFeedPost(
-  postId: string,
-  input: {
-    message: string;
-    courseRating: number;
-    playedOn: string;
-    wouldPlayAgain: boolean;
-    location: string;
-  },
-) {
+export async function updateCourseRoundFeedPost(postId: string, input: CourseRoundPostEditInput) {
   if (!supabase) {
     return { data: null, error: new Error("Supabase is not configured.") };
   }
@@ -610,18 +603,22 @@ export async function updateCourseRoundFeedPost(
     };
   }
 
-  const ratingResult = validateCourseRating(input.courseRating);
+  const payload = buildCourseRoundEditPayload(input);
+  const ratingResult = validateCourseRating(payload.courseRating);
   if (!ratingResult.ok) {
     return { data: null, error: new Error(ratingResult.message) };
   }
 
   const { data, error } = await supabase.rpc("edit_course_round_feed_post", {
     p_post_id: postId,
-    p_message: input.message.trim(),
+    p_message: payload.message.trim(),
     p_course_rating: ratingResult.value,
-    p_played_on: input.playedOn,
-    p_would_play_again: input.wouldPlayAgain,
-    p_location: input.location.trim(),
+    p_played_on: payload.playedOn,
+    p_would_play_again: payload.wouldPlayAgain,
+    p_location: payload.location.trim(),
+    p_city: payload.city ?? null,
+    p_region: payload.region ?? null,
+    p_country: payload.country ?? null,
   });
 
   if (error) {

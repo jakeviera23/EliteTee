@@ -1,6 +1,7 @@
 import {
+  COMMUNITY_ADDED_COURSE_LABEL,
   formatGolfCourseLocation,
-  isMemberSubmittedCourse,
+  shouldShowCommunityAddedBadge,
   type GolfCourseSearchResult,
 } from "../../types/golfCourse";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
@@ -28,7 +29,7 @@ export function CourseDirectoryCard({ course, onOpen }: CourseDirectoryCardProps
     roundCount > 0
       ? formatCourseRatingDisplay(course.avg_rating)
       : null;
-  const isMemberSubmitted = isMemberSubmittedCourse(course);
+  const showCommunityBadge = shouldShowCommunityAddedBadge(course);
 
   return (
     <article className="et-course-card">
@@ -70,8 +71,8 @@ export function CourseDirectoryCard({ course, onOpen }: CourseDirectoryCardProps
         </div>
 
         <div className="et-course-card-meta">
-          {isMemberSubmitted ? (
-            <span className="et-course-card-pill et-course-card-pill--member">Member submitted</span>
+          {showCommunityBadge ? (
+            <span className="et-course-card-pill et-course-card-pill--member">{COMMUNITY_ADDED_COURSE_LABEL}</span>
           ) : null}
           {course.course_type ? (
             <span className="et-course-card-pill">{course.course_type}</span>

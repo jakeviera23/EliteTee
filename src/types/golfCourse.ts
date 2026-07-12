@@ -38,6 +38,15 @@ export function isMemberSubmittedCourse(
   return Boolean(course.submitted_by_member) || course.source_name === "member_submitted";
 }
 
+export const COMMUNITY_ADDED_COURSE_LABEL = "Community Added";
+
+export function shouldShowCommunityAddedBadge(
+  course: Pick<GolfCourseRecord, "source_name" | "submitted_by_member" | "region" | "country">,
+): boolean {
+  if (!isMemberSubmittedCourse(course)) return false;
+  return !course.region?.trim() || !course.country?.trim();
+}
+
 export function formatGolfCourseLocation(course: Pick<GolfCourseRecord, "city" | "region" | "country">) {
   return [course.city, course.region, course.country].filter(Boolean).join(", ");
 }

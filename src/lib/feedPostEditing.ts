@@ -1,4 +1,6 @@
 import { validateCourseRating } from "./courseRating";
+import { buildCourseLocationSnapshot } from "./courseLocationParse";
+import { validateStructuredCourseLocationInput } from "./memberSubmittedCourseLocation";
 import { isCourseRoundPost } from "./feedCardMeta";
 import type { FeedPost } from "../data/portalSocial";
 
@@ -16,6 +18,9 @@ export type CourseRoundPostEditInput = {
   playedOn: string;
   wouldPlayAgain: boolean;
   location: string;
+  city?: string;
+  region?: string;
+  country?: string;
 };
 
 export type FeedPostEditValidationResult =
@@ -57,8 +62,17 @@ export function validateCourseRoundPostEditInput(
   const messageResult = validateTextPostEditInput({ message: input.message });
   if (!messageResult.ok) return messageResult;
 
-  if (!input.location.trim()) {
+  if (!input.location.trim() && !(input.city?.trim() && input.region?.trim() && input.country?.trim())) {
     return { ok: false, message: "Location cannot be empty." };
+  }
+
+  if (input.city?.trim() || input.region?.trim() || input.country?.trim()) {
+    const structured = validateStructuredCourseLocationInput({
+      city: input.city ?? "",
+      region: input.region ?? "",
+      country: input.country ?? "",
+    });
+    if (!structured.ok) return structured;
   }
 
   const ratingResult = validateCourseRating(input.courseRating);
@@ -104,6 +118,29 @@ export function deriveCourseRoundEditDefaults(post: FeedPost): CourseRoundPostEd
       post.wouldPlayAgain ??
       (wouldPlayAgainDetail ? wouldPlayAgainDetail.toLowerCase() === "yes" : true),
     location: locationDetail ?? "",
+  };
+}
+
+export function buildCourseRoundEditPayload(input: CourseRoundPostEditInput): CourseRoundPostEditInput {
+  if (input.city?.trim() && input.region?.trim() && input.country?.trim()) {
+    const snapshot = buildCourseLocationSnapshot({
+      city: input.city.trim(),
+      region: input.region.trim(),
+      country: input.country.trim(),
+    });
+
+    return {
+      ...input,
+      location: snapshot,
+      city: input.city.trim(),
+      region: input.region.trim(),
+      country: input.country.trim(),
+    };
+  }
+
+  return {
+    ...input,
+    location: input.location.trim(),
   };
 }
 
