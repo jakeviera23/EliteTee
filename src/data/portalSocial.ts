@@ -112,6 +112,44 @@ export const messagesCopy = {
   retryThread: "Retry",
 } as const;
 
+/** Introductions — concierge connection workflow copy */
+export const introductionsCopy = {
+  eyebrow: "Member Introductions",
+  title: "Introductions",
+  lead: "Request thoughtful introductions to members you may want to know.",
+  incoming: "Incoming",
+  sent: "Sent",
+  accepted: "Accepted",
+  declined: "Declined",
+  loading: "Loading introduction requests…",
+  requestType: "Introduction type",
+  messageLabel: "Your message",
+  messagePrompt: "Tell them why you'd like to connect.",
+  messageHint: "Mention travel, shared courses, business interests, or a potential round.",
+  submitRequest: "Submit Introduction Request",
+  submittingRequest: "Submitting request…",
+  cancel: "Cancel",
+  accept: "Accept",
+  decline: "Decline",
+  messageMember: "Message Member",
+  viewProfile: "View Profile",
+  acceptSuccess: "Introduction accepted. You can continue the conversation in Messages.",
+  emptyIncomingTitle: "No incoming requests",
+  emptyIncomingCopy: "When a member requests an introduction to you, it will appear here.",
+  emptySentTitle: "No sent requests",
+  emptySentCopy: "Requests you send from Discover or member profiles will appear here.",
+  emptyAcceptedTitle: "No accepted introductions yet",
+  emptyAcceptedCopy: "Accepted introductions become direct Messages threads you can continue anytime.",
+  emptyDeclinedTitle: "No declined requests",
+  emptyDeclinedCopy: "Declined requests remain here for your records.",
+  emptyAllTitle: "No introduction requests yet",
+  emptyAllCopy: "Request a private introduction from Discover or a member profile to begin.",
+  modalEyebrow: "Private Introduction",
+  modalTitle: "Request Introduction",
+  modalLead:
+    "Introductions give members a professional, discreet way to connect before messaging.",
+} as const;
+
 export type PostType =
   | "photo"
   | "carousel"

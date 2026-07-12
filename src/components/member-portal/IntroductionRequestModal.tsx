@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { introductionsCopy } from "../../data/portalSocial";
 import { createIntroductionRequest } from "../../lib/introductionRequests";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { IntroductionRequestType } from "../../types/introductionRequest";
 import { IntroductionRequestForm } from "./IntroductionRequestForm";
+import "../../member-portal-introductions.css";
 
 type IntroductionRequestModalProps = {
   member: MemberProfileRecord;
@@ -47,8 +49,8 @@ export function IntroductionRequestModal({
 
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
-      <div
-        className="portal-modal portal-modal--intro"
+      <article
+        className="portal-modal et-introductions-modal"
         role="dialog"
         aria-labelledby="introduction-request-title"
         aria-modal="true"
@@ -56,8 +58,8 @@ export function IntroductionRequestModal({
       >
         <header className="portal-modal-head">
           <div>
-            <p className="portal-eyebrow">Private Introduction</p>
-            <h3 id="introduction-request-title">Request Private Introduction</h3>
+            <p className="et-introductions-eyebrow">{introductionsCopy.modalEyebrow}</p>
+            <h3 id="introduction-request-title">{introductionsCopy.modalTitle}</h3>
           </div>
           <button
             type="button"
@@ -70,14 +72,16 @@ export function IntroductionRequestModal({
           </button>
         </header>
 
-        <IntroductionRequestForm
-          member={member}
-          isSubmitting={isSubmitting}
-          errorMessage={errorMessage}
-          onSubmit={handleSubmit}
-          onCancel={onClose}
-        />
-      </div>
+        <div className="et-introductions-modal-body">
+          <IntroductionRequestForm
+            member={member}
+            isSubmitting={isSubmitting}
+            errorMessage={errorMessage}
+            onSubmit={handleSubmit}
+            onCancel={onClose}
+          />
+        </div>
+      </article>
     </div>
   );
 }
