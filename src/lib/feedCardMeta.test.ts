@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { FeedPost } from "../data/portalSocial";
-import { buildFeedMetaChips } from "./feedCardMeta";
+import {
+  badgeToneForPost,
+  buildFeedMetaChips,
+  isCourseRoundPost,
+} from "./feedCardMeta";
 
-function basePost(overrides: Partial<FeedPost> = {}): FeedPost {
+function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
   return {
     id: "post-1",
     postType: "course-review",
@@ -13,39 +17,102 @@ function basePost(overrides: Partial<FeedPost> = {}): FeedPost {
       location: "",
       homeCourse: "",
       bio: "",
+      isVerified: false,
       followers: 0,
       following: 0,
       coursesPlayed: 0,
       roundsPosted: 0,
       countriesPlayed: 0,
       favoriteCourses: [],
-      isVerified: false,
     },
-    courseName: "Test Course",
-    courseLocation: "Test City",
+    courseName: "National Golf Links",
+    courseLocation: "Southampton, NY",
     images: [],
     imageAlt: "",
-    caption: "",
+    caption: "Great round.",
     likes: 0,
     comments: 0,
-    timestamp: "Just now",
+    timestamp: "2d ago",
+    rating: 9,
+    details: [
+      { label: "Location", value: "Southampton, NY" },
+      { label: "Played", value: "Jun 12, 2026" },
+      { label: "Course Rating", value: "9/10" },
+      { label: "Would play again", value: "Yes" },
+    ],
     ...overrides,
   };
 }
 
 describe("buildFeedMetaChips", () => {
-  it("adds a formatted rating chip when post.rating is valid", () => {
-    const chips = buildFeedMetaChips(basePost({ rating: 9.4 }));
-    expect(chips.some((chip) => chip.label === "Rating" && chip.value === "9.4/10.0")).toBe(true);
+  it("uses formatted post.rating instead of duplicate course rating detail", () => {
+    const chips = buildFeedMetaChips(makePost());
+    const ratingChips = chips.filter((chip) => chip.label === "Rating");
+    expect(ratingChips).toHaveLength(1);
+    expect(ratingChips[0]?.value).toBe("9.0/10.0");
+    expect(chips.some((chip) => chip.label === "Played")).toBe(true);
+  });
+
+  it("adds a formatted rating chip when post.rating is decimal", () => {
+    const chips = buildFeedMetaChips(makePost({ rating: 9.4 }));
+    expect(chips.some((chip) => chip.label === "Rating" && chip.value === "9.4/10.0")).toBe(
+      true,
+    );
   });
 
   it("does not add an empty rating chip when post.rating is null", () => {
-    const chips = buildFeedMetaChips(basePost({ rating: undefined }));
+    const chips = buildFeedMetaChips(
+      makePost({
+        rating: undefined,
+        details: [
+          { label: "Location", value: "Southampton, NY" },
+          { label: "Played", value: "Jun 12, 2026" },
+          { label: "Would play again", value: "Yes" },
+        ],
+      }),
+    );
     expect(chips.some((chip) => chip.label === "Rating")).toBe(false);
   });
 
   it("does not add a rating chip for invalid values", () => {
-    const chips = buildFeedMetaChips(basePost({ rating: 10.1 }));
+    const chips = buildFeedMetaChips(makePost({ rating: 10.1 }));
     expect(chips.some((chip) => chip.label === "Rating")).toBe(false);
+  });
+
+  it("maps would play again yes to positive tone", () => {
+    const chips = buildFeedMetaChips(makePost());
+    const again = chips.find((chip) => chip.label === "Would play again");
+    expect(again?.tone).toBe("positive");
+  });
+
+  it("maps would play again no to emphasis tone", () => {
+    const chips = buildFeedMetaChips(
+      makePost({
+        details: [{ label: "Would play again", value: "No" }],
+      }),
+    );
+    expect(chips[0]?.tone).toBe("emphasis");
+  });
+});
+
+describe("isCourseRoundPost", () => {
+  it("detects course-review posts", () => {
+    expect(isCourseRoundPost(makePost())).toBe(true);
+  });
+
+  it("detects linked member course rounds", () => {
+    expect(
+      isCourseRoundPost(
+        makePost({ postType: "photo", memberCourseRoundId: "round-1" }),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("badgeToneForPost", () => {
+  it("uses location tone for travel posts", () => {
+    expect(
+      badgeToneForPost(makePost({ requestLabel: "Traveling", postType: "golf-travel" })),
+    ).toBe("location");
   });
 });
