@@ -1,0 +1,104 @@
+/**
+ * EliteTee Design System v2.0 — Layout & spacing utilities
+ */
+
+.et-container {
+  width: 100%;
+  max-width: var(--et-content-max);
+  margin-inline: auto;
+  padding-inline: var(--et-page-x);
+}
+
+.et-container--narrow {
+  max-width: var(--et-reading-max);
+}
+
+.et-container--wide {
+  max-width: 90rem;
+}
+
+.et-section {
+  padding-block: var(--et-section-y);
+}
+
+.et-section--compact {
+  padding-block: var(--et-section-y-compact);
+}
+
+.et-section--lined {
+  border-top: 1px solid var(--et-border-hairline);
+}
+
+.et-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.et-stack-2 { gap: var(--et-space-2); }
+.et-stack-3 { gap: var(--et-space-3); }
+.et-stack-4 { gap: var(--et-space-4); }
+.et-stack-5 { gap: var(--et-space-5); }
+.et-stack-6 { gap: var(--et-space-6); }
+.et-stack-8 { gap: var(--et-space-8); }
+.et-stack-10 { gap: var(--et-space-10); }
+.et-stack-12 { gap: var(--et-space-12); }
+
+.et-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--et-space-4);
+}
+
+.et-cluster--tight {
+  gap: var(--et-space-2);
+}
+
+.et-grid {
+  display: grid;
+  gap: var(--et-space-6);
+}
+
+@media (min-width: 48rem) {
+  .et-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .et-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 64rem) {
+  .et-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.et-split {
+  display: grid;
+  gap: var(--et-space-10);
+}
+
+@media (min-width: 56rem) {
+  .et-split {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: clamp(var(--et-space-10), 5vw, var(--et-space-16));
+    align-items: start;
+  }
+}
+
+.et-divider {
+  border: 0;
+  border-top: 1px solid var(--et-border-hairline);
+  margin: 0;
+}
+
+.et-divider--spaced {
+  margin-block: var(--et-space-8);
+}
+
+.et-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

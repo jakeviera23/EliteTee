@@ -1,0 +1,136 @@
+/**
+ * EliteTee Design System v2.0 — Motion & animation
+ */
+
+@keyframes et-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes et-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes et-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes et-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes et-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reveal on scroll / page enter */
+.et-animate-fade-up {
+  animation: et-fade-up var(--et-duration-slow) var(--et-ease-out) both;
+}
+
+.et-animate-fade-in {
+  animation: et-fade-in var(--et-duration-base) var(--et-ease-out) both;
+}
+
+.et-animate-delay-1 { animation-delay: 80ms; }
+.et-animate-delay-2 { animation-delay: 160ms; }
+.et-animate-delay-3 { animation-delay: 240ms; }
+.et-animate-delay-4 { animation-delay: 320ms; }
+
+/* Hover lift — cards, images */
+.et-hover-lift {
+  transition:
+    transform var(--et-duration-base) var(--et-ease-out),
+    box-shadow var(--et-duration-base) var(--et-ease-out);
+}
+
+@media (hover: hover) {
+  .et-hover-lift:hover {
+    transform: translateY(-3px);
+  }
+}
+
+/* Image ken burns — hero only */
+.et-ken-burns {
+  animation: et-ken-burns 36s var(--et-ease-out) infinite alternate;
+}
+
+@keyframes et-ken-burns {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+/* Page transition overlay */
+.et-page-enter {
+  animation: et-fade-in var(--et-duration-slow) var(--et-ease-out);
+}
+
+/* Modal / drawer */
+.et-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--et-z-modal);
+  background: rgba(var(--et-scrim-rgb), 0.72);
+  backdrop-filter: blur(6px);
+  animation: et-fade-in var(--et-duration-base) var(--et-ease-out);
+}
+
+.et-drawer {
+  animation: et-slide-up var(--et-duration-slow) var(--et-ease-out);
+}
+
+@keyframes et-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .et-animate-fade-up,
+  .et-animate-fade-in,
+  .et-ken-burns,
+  .et-page-enter,
+  .et-overlay,
+  .et-drawer {
+    animation: none;
+  }
+
+  .et-hover-lift:hover {
+    transform: none;
+  }
+}
