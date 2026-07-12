@@ -150,6 +150,39 @@ export const introductionsCopy = {
     "Introductions give members a professional, discreet way to connect before messaging.",
 } as const;
 
+/** Ask EliteTee — private concierge copy */
+export const askCopy = {
+  eyebrow: "Private Concierge",
+  title: "Ask EliteTee",
+  lead: "Discover members, courses, and meaningful connections through EliteTee intelligence.",
+  tagline: "Your private golf concierge.",
+  suggestedLabel: "Suggested questions",
+  composeLabel: "Your question",
+  composePlaceholder: "Who should I meet in Florida?",
+  submit: "Ask EliteTee",
+  submitting: "Searching EliteTee…",
+  loading: "Searching EliteTee…",
+  answerEyebrow: "Concierge response",
+  membersTitle: "Member recommendations",
+  membersMeta: (count: number) => `${count} from EliteTee data`,
+  coursesTitle: "Course recommendations",
+  coursesMeta: (count: number) => `${count} from EliteTee data`,
+  matchTitle: "Why these match",
+  sourcesLabel: "Data sources",
+  feedbackLabel: "Was this helpful?",
+  feedbackThanks: "Thank you — your feedback improves Ask EliteTee.",
+  errorTitle: "Something went wrong",
+  retry: "Try again",
+  insufficientNextSteps: [
+    "Complete your profile with location, clubs, and interests.",
+    "Share course experiences so Ask EliteTee can learn your taste.",
+    "Broaden your question with a region, course, or interest.",
+    "Explore members and courses manually while the directory grows.",
+  ],
+  insufficientNote:
+    "Live external news and weather are not connected yet. Ask EliteTee uses member profiles, the course directory, and member review data only.",
+} as const;
+
 export type PostType =
   | "photo"
   | "carousel"

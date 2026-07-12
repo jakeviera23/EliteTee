@@ -11,6 +11,7 @@ type DiscoverDirectoryCardProps = {
   member: MemberProfileRecord;
   viewer: MemberProfileRecord | null;
   showMatchReasons?: boolean;
+  matchReasonsOverride?: string[];
   onViewProfile: (member: MemberProfileRecord) => void;
   onRequestIntroduction: (member: MemberProfileRecord) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
@@ -20,12 +21,15 @@ export function DiscoverDirectoryCard({
   member,
   viewer,
   showMatchReasons = false,
+  matchReasonsOverride,
   onViewProfile,
   onRequestIntroduction,
   onMessageMember,
 }: DiscoverDirectoryCardProps) {
   const interestChips = selectInterestChips(member, 4);
-  const matchReasons = showMatchReasons ? buildMatchReasons(viewer, member) : [];
+  const matchReasons =
+    matchReasonsOverride ??
+    (showMatchReasons ? buildMatchReasons(viewer, member) : []);
   const activitySummary = formatMemberActivitySummary(member.updated_at);
   const currentRequest = member.current_request.trim();
   const location = member.based_in.trim();

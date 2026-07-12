@@ -1,18 +1,26 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { askCopy } from "../../data/portalSocial";
 import {
   ASK_ELITETEE_EXAMPLE_PROMPTS,
   askEliteTee,
   submitAskEliteTeeFeedback,
 } from "../../lib/askEliteTee";
+import {
+  buildAskReasonMaps,
+  collectUniqueMatchSignals,
+  getAskAnswerText,
+  getAskStatusLabel,
+  memberFacingAskError,
+} from "../../lib/askEliteTeeDisplay";
 import { coerceProfileStringList } from "../../lib/memberProfiles";
-import type { AiQueryStatus, AskEliteTeeMemberResult, AskEliteTeeResponse } from "../../types/askEliteTee";
+import type { AskEliteTeeMemberResult, AskEliteTeeResponse } from "../../types/askEliteTee";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
+import { CourseDirectoryCard } from "./CourseDirectoryCard";
+import { DiscoverDirectoryCard } from "./discover/DiscoverDirectoryCard";
 import { IntroductionRequestModal } from "./IntroductionRequestModal";
-import { MemberCard } from "./MemberCard";
-import { CourseSearchCard } from "./CourseSearchCard";
 import { usePortalToast } from "./PortalToastProvider";
 
 type AskEliteTeeProps = {
@@ -67,23 +75,6 @@ function toCourseSearchResult(course: AskEliteTeeResponse["courses"][number]): G
   };
 }
 
-function statusLabel(status: AiQueryStatus): string | null {
-  switch (status) {
-    case "insufficient_data":
-      return "Limited directory data";
-    case "rate_limited":
-      return "Daily limit reached";
-    case "disabled":
-      return "Temporarily unavailable";
-    case "unsupported":
-      return "Unsupported request";
-    case "error":
-      return "Could not complete";
-    default:
-      return null;
-  }
-}
-
 export function AskEliteTee({
   isActive = true,
   initialQuestion = null,
@@ -99,15 +90,15 @@ export function AskEliteTee({
   const [introMember, setIntroMember] = useState<MemberProfileRecord | null>(null);
   const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
 
-  const reasonMap = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const reason of response?.reasons ?? []) {
-      if (reason.target_type === "member") {
-        map.set(reason.target_id, reason.signals);
-      }
-    }
-    return map;
-  }, [response?.reasons]);
+  const { memberMap, courseMap } = useMemo(
+    () => buildAskReasonMaps(response?.reasons ?? []),
+    [response?.reasons],
+  );
+
+  const uniqueMatchSignals = useMemo(
+    () => collectUniqueMatchSignals(response?.reasons ?? []),
+    [response?.reasons],
+  );
 
   useEffect(() => {
     const trimmed = initialQuestion?.trim();
@@ -116,13 +107,7 @@ export function AskEliteTee({
     onInitialQuestionConsumed?.();
   }, [initialQuestion, onInitialQuestionConsumed]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!isActive) return;
-
-    const trimmed = question.trim();
-    if (!trimmed) return;
-
+  async function submitQuestion(trimmed: string) {
     setIsLoading(true);
     setErrorMessage(null);
     setResponse(null);
@@ -132,16 +117,33 @@ export function AskEliteTee({
     setIsLoading(false);
 
     if (error) {
-      setErrorMessage(error.message);
+      console.error("[Ask EliteTee]", error);
+      setErrorMessage(memberFacingAskError(error.message));
       return;
     }
 
     if (!data) {
-      setErrorMessage("Ask EliteTee did not return a response.");
+      setErrorMessage(memberFacingAskError("Ask EliteTee did not return a response."));
       return;
     }
 
     setResponse(data);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isActive) return;
+
+    const trimmed = question.trim();
+    if (!trimmed) return;
+
+    await submitQuestion(trimmed);
+  }
+
+  async function handleRetry() {
+    const trimmed = question.trim();
+    if (!trimmed || !isActive) return;
+    await submitQuestion(trimmed);
   }
 
   async function handleFeedback(rating: number) {
@@ -167,35 +169,30 @@ export function AskEliteTee({
     navigate(`/members/${member.user_id}`);
   }
 
-  const responseStatusLabel = response ? statusLabel(response.status) : null;
+  const responseStatusLabel = response ? getAskStatusLabel(response.status) : null;
+  const answerText = response ? getAskAnswerText(response.status, response.answer) : "";
 
   return (
-    <section
-      className="et-ask et-theme-dark"
-      data-et-theme="dark"
-      aria-labelledby="ask-elitetee-heading"
-    >
-      <header className="et-ask-hero et-animate-fade-up">
-        <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Private Concierge</p>
-        <h2 id="ask-elitetee-heading" className="et-h1">
-          Ask EliteTee
+    <section className="et-ask" aria-labelledby="ask-elitetee-heading">
+      <header className="et-ask-header">
+        <p className="et-ask-eyebrow">{askCopy.eyebrow}</p>
+        <h2 id="ask-elitetee-heading" className="et-ask-title">
+          {askCopy.title}
         </h2>
-        <p className="et-body-lg et-ask-lead">
-          Member discovery, course discovery, and introduction suggestions — drawn only from
-          EliteTee directory data. Nothing is invented.
-        </p>
+        <p className="et-ask-tagline">{askCopy.tagline}</p>
+        <p className="et-ask-lead">{askCopy.lead}</p>
       </header>
 
-      <div className="et-ask-prompts et-animate-fade-up et-animate-delay-1">
-        <p className="et-label" id="ask-elitetee-prompts-label">
-          Suggested questions
+      <div className="et-ask-prompts">
+        <p className="et-ask-prompts-label" id="ask-elitetee-prompts-label">
+          {askCopy.suggestedLabel}
         </p>
         <div className="et-ask-prompts-list" aria-labelledby="ask-elitetee-prompts-label">
           {ASK_ELITETEE_EXAMPLE_PROMPTS.map((prompt) => (
             <button
               key={prompt}
               type="button"
-              className={`et-chip${question === prompt ? " is-active" : ""}`}
+              className={`et-ask-prompt${question === prompt ? " is-active" : ""}`}
               onClick={() => setQuestion(prompt)}
               aria-pressed={question === prompt}
             >
@@ -205,120 +202,148 @@ export function AskEliteTee({
         </div>
       </div>
 
-      <form
-        className="et-ask-composer et-card et-card--spacious et-animate-fade-up et-animate-delay-2"
-        onSubmit={handleSubmit}
-        aria-busy={isLoading}
-      >
-        <div className="et-field">
-          <label className="et-field__label" htmlFor="ask-elitetee-question">
-            Your question
+      <form className="et-ask-composer" onSubmit={handleSubmit} aria-busy={isLoading}>
+        <div className="et-ask-field">
+          <label className="et-ask-field-label" htmlFor="ask-elitetee-question">
+            {askCopy.composeLabel}
           </label>
           <textarea
             id="ask-elitetee-question"
-            className="et-textarea et-ask-textarea"
+            className="et-ask-textarea"
             rows={4}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Who should I meet in Florida?"
+            placeholder={askCopy.composePlaceholder}
             maxLength={500}
             required
             disabled={isLoading}
           />
-          <p className="et-field__hint">{question.trim().length}/500 characters</p>
+          <p className="et-ask-field-hint">{question.trim().length}/500 characters</p>
         </div>
-        <div className="et-btn-group et-btn-group--stack-mobile">
-          <button type="submit" className="et-btn et-btn--gold" disabled={isLoading || !question.trim()}>
-            {isLoading ? "Searching…" : "Ask EliteTee"}
+        <div className="et-ask-composer-actions">
+          <button
+            type="submit"
+            className="et-btn et-btn--forest et-ask-submit"
+            disabled={isLoading || !question.trim()}
+          >
+            {isLoading ? askCopy.submitting : askCopy.submit}
           </button>
         </div>
       </form>
 
       {isLoading ? (
-        <div className="et-loading et-ask-loading" aria-live="polite" aria-busy="true">
-          <div className="et-loading__mark" aria-hidden="true" />
-          <p className="et-loading__text">Searching EliteTee directory data</p>
+        <div className="et-ask-loading" aria-live="polite" aria-busy="true">
+          <div className="et-ask-loading-mark" aria-hidden="true" />
+          <p className="et-ask-loading-text">{askCopy.loading}</p>
         </div>
       ) : null}
 
       {errorMessage ? (
-        <div className="et-alert et-alert--error et-ask-alert" role="alert">
-          <div>
-            <p className="et-alert__title">Something went wrong</p>
-            <p className="et-alert__body">{errorMessage}</p>
+        <div className="et-ask-alert" role="alert">
+          <div className="et-ask-alert-copy">
+            <p className="et-ask-alert-title">{askCopy.errorTitle}</p>
+            <p className="et-ask-alert-body">{errorMessage}</p>
           </div>
+          <button
+            type="button"
+            className="et-btn et-btn--secondary et-ask-retry"
+            onClick={() => void handleRetry()}
+            disabled={isLoading || !question.trim()}
+          >
+            {askCopy.retry}
+          </button>
         </div>
       ) : null}
 
       {response && !isLoading ? (
-        <div className="et-ask-results et-stack et-stack-10 et-animate-fade-up">
+        <div className="et-ask-results">
           <article
-            className={`et-card et-card--spacious et-ask-answer${
-              response.status === "insufficient_data" ? " et-ask-answer--empty" : ""
+            className={`et-ask-answer${
+              response.status === "insufficient_data" ? " et-ask-answer--limited" : ""
             }${response.status === "ok" ? " et-ask-answer--success" : ""}`}
           >
             <div className="et-ask-answer-head">
               {responseStatusLabel ? (
                 <span
-                  className={`et-badge${
+                  className={`et-ask-status${
                     response.status === "ok"
-                      ? " et-badge--gold"
+                      ? " et-ask-status--ok"
                       : response.status === "insufficient_data"
-                        ? ""
-                        : " et-badge--error"
+                        ? " et-ask-status--muted"
+                        : " et-ask-status--error"
                   }`}
                 >
                   {responseStatusLabel}
                 </span>
               ) : (
-                <span className="et-badge et-badge--gold">Concierge response</span>
+                <span className="et-ask-status et-ask-status--ok">{askCopy.answerEyebrow}</span>
               )}
             </div>
-            <p className="et-ask-answer-text">{response.answer}</p>
-            {response.sources.length > 0 ? (
-              <div className="et-ask-sources" aria-label="Data sources">
-                {response.sources.map((source) => (
-                  <span key={source} className="et-badge et-badge--gold">
-                    {source}
-                  </span>
-                ))}
-              </div>
-            ) : null}
+            <p className="et-ask-answer-text">{answerText}</p>
             {response.status === "insufficient_data" ? (
-              <p className="et-body-sm et-ask-note">
-                Live external news and weather are not connected yet. Ask EliteTee uses member
-                profiles, the course directory, and member review data only.
-              </p>
+              <div className="et-ask-next-steps">
+                <p className="et-ask-next-steps-label">Helpful next steps</p>
+                <ul className="et-ask-next-steps-list">
+                  {askCopy.insufficientNextSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ul>
+                <p className="et-ask-note">{askCopy.insufficientNote}</p>
+              </div>
             ) : null}
           </article>
 
           {response.members.length > 0 ? (
-            <section className="et-ask-result-block" aria-labelledby="ask-elitetee-members">
-              <div className="et-ask-result-head">
-                <h3 id="ask-elitetee-members" className="et-h3">
-                  Suggested members
+            <section className="et-ask-section" aria-labelledby="ask-elitetee-members">
+              <div className="et-ask-section-head">
+                <h3 id="ask-elitetee-members" className="et-ask-section-title">
+                  {askCopy.membersTitle}
                 </h3>
-                <p className="et-caption">{response.members.length} from EliteTee data</p>
+                <p className="et-ask-section-meta">{askCopy.membersMeta(response.members.length)}</p>
               </div>
               <div className="et-ask-member-grid">
                 {response.members.map((member) => {
                   const profile = toMemberProfileRecord(member);
-                  const signals = reasonMap.get(member.user_id) ?? [];
                   return (
-                    <div key={member.user_id} className="et-ask-member-shell et-hover-lift">
+                    <DiscoverDirectoryCard
+                      key={member.user_id}
+                      member={profile}
+                      viewer={null}
+                      matchReasonsOverride={memberMap.get(member.user_id) ?? []}
+                      onViewProfile={handleViewProfile}
+                      onRequestIntroduction={setIntroMember}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {response.courses.length > 0 ? (
+            <section className="et-ask-section" aria-labelledby="ask-elitetee-courses">
+              <div className="et-ask-section-head">
+                <h3 id="ask-elitetee-courses" className="et-ask-section-title">
+                  {askCopy.coursesTitle}
+                </h3>
+                <p className="et-ask-section-meta">{askCopy.coursesMeta(response.courses.length)}</p>
+              </div>
+              <div className="et-ask-course-grid">
+                {response.courses.map((course) => {
+                  const signals = courseMap.get(course.id) ?? [];
+                  return (
+                    <div key={course.id} className="et-ask-course-item">
                       {signals.length > 0 ? (
-                        <ul className="et-ask-signals" aria-label="Match signals">
+                        <ul className="et-ask-course-reasons" aria-label="Match reasons">
                           {signals.map((signal) => (
                             <li key={signal}>
-                              <span className="et-badge et-badge--verified">{signal}</span>
+                              <span className="et-discover-reason">{signal}</span>
                             </li>
                           ))}
                         </ul>
                       ) : null}
-                      <MemberCard
-                        member={profile}
-                        onViewProfile={handleViewProfile}
-                        onRequest={setIntroMember}
+                      <CourseDirectoryCard
+                        course={toCourseSearchResult(course)}
+                        onOpen={(slug) => navigate(`/courses/${slug}`)}
                       />
                     </div>
                   );
@@ -327,37 +352,44 @@ export function AskEliteTee({
             </section>
           ) : null}
 
-          {response.courses.length > 0 ? (
-            <section className="et-ask-result-block" aria-labelledby="ask-elitetee-courses">
-              <div className="et-ask-result-head">
-                <h3 id="ask-elitetee-courses" className="et-h3">
-                  Suggested courses
-                </h3>
-                <p className="et-caption">{response.courses.length} from EliteTee data</p>
-              </div>
-              <div className="et-ask-course-grid">
-                {response.courses.map((course) => (
-                  <div key={course.id} className="et-ask-course-shell et-hover-lift">
-                    <CourseSearchCard
-                      course={toCourseSearchResult(course)}
-                      onOpen={(slug) => navigate(`/courses/${slug}`)}
-                    />
-                  </div>
+          {uniqueMatchSignals.length > 0 ? (
+            <section className="et-ask-match" aria-labelledby="ask-elitetee-match">
+              <h3 id="ask-elitetee-match" className="et-ask-section-title">
+                {askCopy.matchTitle}
+              </h3>
+              <ul className="et-ask-match-list" aria-label={askCopy.matchTitle}>
+                {uniqueMatchSignals.map((signal) => (
+                  <li key={signal}>
+                    <span className="et-discover-reason">{signal}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </section>
           ) : null}
 
+          {response.sources.length > 0 ? (
+            <div className="et-ask-sources" aria-label={askCopy.sourcesLabel}>
+              <p className="et-ask-sources-label">{askCopy.sourcesLabel}</p>
+              <div className="et-ask-sources-list">
+                {response.sources.map((source) => (
+                  <span key={source} className="et-ask-source">
+                    {source}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {response.query_id ? (
-            <div className="et-card et-ask-feedback">
-              <p className="et-label">Was this helpful?</p>
-              <div className="et-ask-feedback-actions" role="group" aria-label="Rate this response">
+            <div className="et-ask-feedback">
+              <p className="et-ask-feedback-label">{askCopy.feedbackLabel}</p>
+              <div className="et-ask-feedback-actions" role="group" aria-label={askCopy.feedbackLabel}>
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button
                     key={rating}
                     type="button"
-                    className={`et-btn et-btn--sm et-btn--secondary${
-                      feedbackRating === rating ? " et-ask-feedback-active" : ""
+                    className={`et-ask-feedback-btn${
+                      feedbackRating === rating ? " is-selected" : ""
                     }`}
                     onClick={() => void handleFeedback(rating)}
                     aria-pressed={feedbackRating === rating}
@@ -368,8 +400,8 @@ export function AskEliteTee({
                 ))}
               </div>
               {feedbackRating ? (
-                <p className="et-caption et-ask-feedback-thanks" role="status">
-                  Thank you — your feedback improves Ask EliteTee.
+                <p className="et-ask-feedback-thanks" role="status">
+                  {askCopy.feedbackThanks}
                 </p>
               ) : null}
             </div>

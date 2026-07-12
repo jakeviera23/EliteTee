@@ -482,11 +482,6 @@
   color: var(--et-forest);
 }
 
-/* —— Ask EliteTee dark island: preserve pilot until migrated —— */
-.portal-page.et-theme-portal .et-ask.et-theme-dark {
-  border-radius: var(--et-radius-lg, 0.875rem);
-}
-
 /* —— Focus visibility (content area) —— */
 .portal-page.et-theme-portal .portal-tab:focus-visible,
 .portal-page.et-theme-portal .portal-bottom-nav-btn:focus-visible,
