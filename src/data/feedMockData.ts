@@ -22,15 +22,9 @@ const founderAuthor: PortalGolfer = {
   favoriteCourses: [],
 };
 
-const founderWelcomeCaption = `Welcome to EliteTee.
+const founderWelcomeCaption = `Welcome to EliteTee — a private golf society built around meaningful connections.
 
-Thanks for being one of the first members to join.
-
-The goal of EliteTee is simple: build meaningful relationships through golf.
-
-Over the coming weeks we'll continue growing the community, improving the platform, and creating opportunities for members to connect around the world.
-
-If you're one of the first members, thank you for helping shape what EliteTee becomes.`;
+Share rounds, request introductions, and discover courses through members you trust. Thank you for helping shape what we become.`;
 
 export function getFounderWelcomePost(): FeedPost {
   return {

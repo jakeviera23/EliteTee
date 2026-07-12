@@ -20,6 +20,7 @@ import type { ProfileReturnContext } from "../types/memberProfileNavigation";
 import "../inside-elitetee.css";
 import "../member-portal.css";
 import "../member-portal-ask.css";
+import "../member-portal-feed.css";
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;

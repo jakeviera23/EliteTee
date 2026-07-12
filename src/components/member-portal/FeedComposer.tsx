@@ -311,7 +311,9 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                     <span>+ Photo</span>
                   )}
                 </label>
-                <p className="feed-composer-photo-note">Photo preview is local only for now.</p>
+                <p className="feed-composer-photo-note">
+                  Photo preview only — round photos publish with completed rounds.
+                </p>
               </div>
             ) : (
               <span className="feed-composer-footer-note">Shared with approved members only</span>

@@ -26,9 +26,9 @@ export const earlyStageCopy = {
   noPublicDirectory: "No public member directory until the community is active.",
   coursesGrowNote:
     "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
-  feedEmptyTitle: "No member posts yet.",
-  feedEmptyHint: "The next post could be yours.",
-  feedEmptyCta: "Introduce yourself once your profile is complete.",
+  feedEmptyTitle: "No member posts yet",
+  feedEmptyHint: "Share a round, travel plan, or introduction request to begin the conversation.",
+  feedEmptyCta: "",
   discoverFoundingTitle: "Founding Members",
   discoverFoundingBody:
     "As new members join EliteTee, approved profiles will appear here.",
@@ -53,8 +53,7 @@ export const earlyStageCopy = {
   tripsEmpty: "No trips planned yet.",
   roundsEmpty: "No rounds shared yet.",
   notificationsEmpty: "Alerts will appear as member activity grows.",
-  composerCollapsedPlaceholder:
-    "Introduce yourself, share where you play, or ask for an introduction…",
+  composerCollapsedPlaceholder: "Share a round, request an introduction, or post an update…",
 } as const;
 
 export type PostType =

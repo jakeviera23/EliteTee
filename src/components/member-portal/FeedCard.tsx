@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
+import { getFeedContentFlags } from "../../lib/feedContentAudit";
 import { FeedAvatar } from "./FeedAvatar";
 import { RoundPhotoGallery } from "./RoundPhotoGallery";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -9,6 +10,7 @@ import { VerifiedBadge } from "./VerifiedBadge";
 type FeedCardProps = {
   post: FeedPost;
   index?: number;
+  variant?: "default" | "founder";
   onToast?: (message: string) => void;
   onViewAuthor?: (userId: string, memberName: string) => void;
 };
@@ -69,7 +71,13 @@ function ShareIcon() {
   );
 }
 
-export function FeedCard({ post, index = 0, onToast, onViewAuthor }: FeedCardProps) {
+export function FeedCard({
+  post,
+  index = 0,
+  variant = "default",
+  onToast,
+  onViewAuthor,
+}: FeedCardProps) {
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [saved, setSaved] = useState(Boolean(post.isSaved));
   const [commentCount, setCommentCount] = useState(post.comments);
@@ -143,8 +151,13 @@ export function FeedCard({ post, index = 0, onToast, onViewAuthor }: FeedCardPro
     onViewAuthor(authorUserId, post.author.name);
   }
 
+  const contentFlags = variant === "founder" ? [] : getFeedContentFlags(post);
+
   return (
-    <article className="feed-card" style={entranceStyle}>
+    <article
+      className={`feed-card${variant === "founder" ? " feed-card--founder" : ""}`}
+      style={entranceStyle}
+    >
       <header className="feed-card-head">
         {canViewAuthor ? (
           <button
@@ -244,6 +257,12 @@ export function FeedCard({ post, index = 0, onToast, onViewAuthor }: FeedCardPro
       )}
 
       <div className="feed-card-body">
+        {contentFlags.length > 0 ? (
+          <div className="et-feed-content-flag" role="note">
+            <p className="et-caption">Review suggested: {contentFlags.join(" · ")}</p>
+          </div>
+        ) : null}
+
         <p className="feed-card-caption">{post.caption}</p>
 
         {post.details?.length ? (
