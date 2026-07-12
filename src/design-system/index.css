@@ -1,8 +1,7 @@
 /**
  * EliteTee Design System v2.0
- * Entry point — import this file when ready to activate v2 styling.
- *
- * NOT imported by the app yet. See DESIGN-SYSTEM.md for migration plan.
+ * Entry point — imported from src/main.tsx.
+ * See DESIGN-SYSTEM.md for migration plan.
  */
 
 @import "./tokens.css";
