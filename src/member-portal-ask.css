@@ -1,127 +1,275 @@
-.portal-ask-page {
+/**
+ * Ask EliteTee pilot — v2 design system (scoped to .et-ask only)
+ * Admin AI ops styles remain legacy below.
+ */
+
+.et-ask {
   display: grid;
-  gap: 1.25rem;
+  gap: var(--et-space-10);
+  padding-block: var(--et-space-6) var(--et-space-12);
+  background: var(--et-bg-base);
+  border-radius: var(--et-radius-lg);
 }
 
-.portal-ask-examples {
+@media (min-width: 48rem) {
+  .et-ask {
+    gap: var(--et-space-12);
+    padding-block: var(--et-space-8) var(--et-space-16);
+  }
+}
+
+/* —— Editorial header —— */
+.et-ask-hero {
+  display: grid;
+  gap: var(--et-space-4);
+  max-width: 40rem;
+}
+
+.et-ask-lead {
+  max-width: 36rem;
+}
+
+/* —— Suggested prompts —— */
+.et-ask-prompts {
+  display: grid;
+  gap: var(--et-space-4);
+}
+
+.et-ask-prompts-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--et-space-2);
 }
 
-.portal-ask-example-chip {
-  border: 1px solid var(--inside-border-gold);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--portal-body);
-  border-radius: 999px;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.72rem;
-  cursor: pointer;
+.et-ask-prompts-list .et-chip {
+  text-align: left;
+  line-height: 1.45;
+  max-width: 100%;
 }
 
-.portal-ask-example-chip:hover {
-  border-color: var(--inside-gold);
-  color: var(--inside-gold);
+@media (max-width: 37.5rem) {
+  .et-ask-prompts-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .et-ask-prompts-list .et-chip {
+    width: 100%;
+  }
 }
 
-.portal-ask-form {
-  display: grid;
-  gap: 0.85rem;
+/* —— Composer —— */
+.et-ask-composer {
+  max-width: 44rem;
 }
 
-.portal-ask-field {
-  display: grid;
-  gap: 0.35rem;
+.et-ask-textarea {
+  min-height: 7rem;
+  line-height: var(--et-leading-relaxed);
 }
 
-.portal-ask-field span {
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--portal-faint);
+/* —— Loading —— */
+.et-ask-loading {
+  padding-block: var(--et-space-10);
 }
 
-.portal-ask-field textarea {
-  width: 100%;
-  min-height: 5.5rem;
-  resize: vertical;
+/* —— Alerts —— */
+.et-ask-alert {
+  max-width: 44rem;
 }
 
-.portal-ask-results {
-  display: grid;
-  gap: 1.25rem;
+/* —— Answer card —— */
+.et-ask-answer {
+  max-width: 44rem;
+  border-color: var(--et-border-accent);
+  background: linear-gradient(
+    165deg,
+    var(--et-accent-softer) 0%,
+    var(--et-bg-surface) 42%
+  );
 }
 
-.portal-ask-answer-card {
-  border: 1px solid var(--inside-border-gold);
-  border-radius: 8px;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+.et-ask-answer--empty {
+  border-color: var(--et-border-subtle);
+  background: var(--et-bg-surface);
 }
 
-.portal-ask-answer {
+.et-ask-answer--success {
+  box-shadow: var(--et-shadow-gold);
+}
+
+.et-ask-answer-head {
+  margin-bottom: var(--et-space-4);
+}
+
+.et-ask-answer-text {
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  font-family: var(--et-font-serif);
+  font-size: var(--et-text-body-lg);
+  font-weight: 300;
+  line-height: var(--et-leading-relaxed);
+  color: var(--et-text-primary);
 }
 
-.portal-ask-sources {
+.et-ask-sources {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 0.75rem;
+  gap: var(--et-space-2);
+  margin-top: var(--et-space-5);
 }
 
-.portal-ask-source-badge {
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: 1px solid rgba(196, 164, 98, 0.35);
-  color: var(--inside-gold);
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
+.et-ask-note {
+  margin: var(--et-space-5) 0 0;
+  padding-top: var(--et-space-4);
+  border-top: 1px solid var(--et-border-hairline);
 }
 
-.portal-ask-note {
-  margin: 0.75rem 0 0;
-  font-size: 0.78rem;
-  color: var(--portal-faint);
-}
-
-.portal-ask-result-section h3 {
-  margin: 0 0 0.75rem;
-  font-size: 0.95rem;
-}
-
-.portal-ask-member-wrap {
+/* —— Result sections —— */
+.et-ask-result-block {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--et-space-6);
 }
 
-.portal-ask-reason-list {
+.et-ask-result-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--et-space-2) var(--et-space-4);
+}
+
+/* —— Member results —— */
+.et-ask-member-grid {
+  display: grid;
+  gap: var(--et-space-6);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .et-ask-member-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.et-ask-member-shell {
+  display: grid;
+  gap: var(--et-space-3);
+}
+
+.et-ask-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
   margin: 0;
-  padding-left: 1rem;
-  color: var(--portal-muted);
-  font-size: 0.78rem;
+  padding: 0;
+  list-style: none;
 }
 
-.portal-ask-course-grid {
+.et-ask .portal-member-card {
+  height: 100%;
+  margin: 0;
+  padding: var(--et-space-6);
+  background: var(--et-bg-inset);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-lg);
+  box-shadow: var(--et-shadow-xs);
+  transition:
+    border-color var(--et-duration-base) var(--et-ease-out),
+    box-shadow var(--et-duration-base) var(--et-ease-out),
+    transform var(--et-duration-base) var(--et-ease-out);
+}
+
+@media (hover: hover) {
+  .et-ask-member-shell:hover .portal-member-card {
+    border-color: var(--et-border-accent);
+    box-shadow: var(--et-shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+.et-ask .portal-member-card:hover {
+  transform: none;
+  box-shadow: inherit;
+}
+
+.et-ask .portal-member-fm-badge {
+  color: var(--et-accent-muted);
+}
+
+.et-ask .portal-member-details dt {
+  color: var(--et-text-tertiary);
+}
+
+.et-ask .portal-member-details dd {
+  color: var(--et-text-primary);
+}
+
+/* —— Course results —— */
+.et-ask-course-grid {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--et-space-6);
+  grid-template-columns: 1fr;
 }
 
-.portal-ask-feedback {
+@media (min-width: 48rem) {
+  .et-ask-course-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.et-ask-course-shell {
+  height: 100%;
+}
+
+.et-ask .golf-course-search-card {
+  height: 100%;
+  background: var(--et-bg-inset);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--et-shadow-xs);
+  transition:
+    border-color var(--et-duration-base) var(--et-ease-out),
+    box-shadow var(--et-duration-base) var(--et-ease-out),
+    transform var(--et-duration-base) var(--et-ease-out);
+}
+
+@media (hover: hover) {
+  .et-ask-course-shell:hover .golf-course-search-card {
+    border-color: var(--et-border-accent);
+    box-shadow: var(--et-shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+/* —— Feedback —— */
+.et-ask-feedback {
   display: grid;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  color: var(--portal-muted);
+  gap: var(--et-space-4);
+  max-width: 44rem;
+  background: var(--et-bg-elevated);
 }
 
-.portal-ask-feedback-actions {
+.et-ask-feedback-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: var(--et-space-2);
 }
+
+.et-ask-feedback-active {
+  color: var(--et-accent) !important;
+  border-color: var(--et-border-accent) !important;
+  background: var(--et-accent-soft) !important;
+}
+
+.et-ask-feedback-thanks {
+  margin: 0;
+  color: var(--et-accent-muted);
+}
+
+/* ============================================================
+   Admin AI ops — legacy styles (unchanged, not part of pilot)
+   ============================================================ */
 
 .portal-admin-ai-ops {
   margin: 1.5rem 0 2rem;
@@ -174,10 +322,4 @@
   margin: 1rem 0 0;
   font-size: 0.78rem;
   color: var(--portal-faint);
-}
-
-@media (min-width: 768px) {
-  .portal-ask-course-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

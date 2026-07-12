@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
+import "./design-system/index.css";
 import "./index.css";
 import App from "./App.tsx";
 
