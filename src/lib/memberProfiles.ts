@@ -641,6 +641,7 @@ const PORTAL_APPROVED_MEMBER_SELECT = `
   founding_member_number,
   portal_access_enabled,
   user_id,
+  created_at,
   updated_at
 `;
 

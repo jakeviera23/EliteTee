@@ -23,6 +23,7 @@ import "../member-portal-theme.css";
 import "../member-portal-ask.css";
 import "../member-portal-feed.css";
 import "../member-portal-courses.css";
+import "../member-portal-discover.css";
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;
@@ -369,6 +370,7 @@ function MemberPortalContent() {
               onViewCourse={handleViewCourse}
               onNavigate={(tab) => transitionTo(tab)}
               onViewMemberProfile={handleViewMemberProfile}
+              onMessageMember={handleMessageMember}
             />
           ) : null}
           {activeView === "ask" ? (
