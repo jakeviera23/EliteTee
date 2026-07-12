@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ASK_ELITETEE_EXAMPLE_PROMPTS,
@@ -17,6 +17,8 @@ import { usePortalToast } from "./PortalToastProvider";
 
 type AskEliteTeeProps = {
   isActive?: boolean;
+  initialQuestion?: string | null;
+  onInitialQuestionConsumed?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
@@ -82,7 +84,12 @@ function statusLabel(status: AiQueryStatus): string | null {
   }
 }
 
-export function AskEliteTee({ isActive = true, onViewMemberProfile }: AskEliteTeeProps) {
+export function AskEliteTee({
+  isActive = true,
+  initialQuestion = null,
+  onInitialQuestionConsumed,
+  onViewMemberProfile,
+}: AskEliteTeeProps) {
   const navigate = useNavigate();
   const { showToast } = usePortalToast();
   const [question, setQuestion] = useState("");
@@ -101,6 +108,13 @@ export function AskEliteTee({ isActive = true, onViewMemberProfile }: AskEliteTe
     }
     return map;
   }, [response?.reasons]);
+
+  useEffect(() => {
+    const trimmed = initialQuestion?.trim();
+    if (!trimmed) return;
+    setQuestion(trimmed);
+    onInitialQuestionConsumed?.();
+  }, [initialQuestion, onInitialQuestionConsumed]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

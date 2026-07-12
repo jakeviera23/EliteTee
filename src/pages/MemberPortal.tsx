@@ -74,6 +74,7 @@ function MemberPortalContent() {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [pendingIntroductionCount, setPendingIntroductionCount] = useState(0);
   const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
+  const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
 
   useEffect(() => {
@@ -115,10 +116,18 @@ function MemberPortalContent() {
     const state = location.state as
       | {
           openMessagesWith?: { userId: string; memberName: string };
+          openAskWith?: { question: string };
           restorePortalTab?: PortalTab;
         }
       | null
       | undefined;
+
+    if (state?.openAskWith?.question?.trim()) {
+      setPendingAskQuestion(state.openAskWith.question.trim());
+      setActiveView("ask");
+      navigate("/member-portal", { replace: true, state: null });
+      return;
+    }
 
     if (state?.openMessagesWith) {
       setPendingConversation({
@@ -365,6 +374,8 @@ function MemberPortalContent() {
           {activeView === "ask" ? (
             <AskEliteTee
               isActive={activeView === "ask"}
+              initialQuestion={pendingAskQuestion}
+              onInitialQuestionConsumed={() => setPendingAskQuestion(null)}
               onViewMemberProfile={handleViewMemberProfile}
             />
           ) : null}
