@@ -16,30 +16,38 @@
 /* Base reset scoped to design-system contexts only */
 .et-theme-dark,
 .et-theme-light,
+.et-theme-portal,
 [data-et-theme="dark"],
-[data-et-theme="light"] {
+[data-et-theme="light"],
+[data-et-theme="portal"] {
   background: var(--et-bg-base);
 }
 
 .et-theme-dark *,
 .et-theme-light *,
+.et-theme-portal *,
 [data-et-theme="dark"] *,
-[data-et-theme="light"] * {
+[data-et-theme="light"] *,
+[data-et-theme="portal"] * {
   box-sizing: border-box;
 }
 
 .et-theme-dark a,
 .et-theme-light a,
+.et-theme-portal a,
 [data-et-theme="dark"] a,
-[data-et-theme="light"] a {
+[data-et-theme="light"] a,
+[data-et-theme="portal"] a {
   color: inherit;
   text-decoration: none;
 }
 
 .et-theme-dark button,
 .et-theme-light button,
+.et-theme-portal button,
 [data-et-theme="dark"] button,
-[data-et-theme="light"] button {
+[data-et-theme="light"] button,
+[data-et-theme="portal"] button {
   font: inherit;
 }
 

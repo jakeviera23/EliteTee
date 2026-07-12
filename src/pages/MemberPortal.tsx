@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabase";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
 import "../inside-elitetee.css";
 import "../member-portal.css";
+import "../member-portal-theme.css";
 import "../member-portal-ask.css";
 import "../member-portal-feed.css";
 
@@ -245,7 +246,7 @@ function MemberPortalContent() {
   }
 
   return (
-    <div className="inside-page portal-page portal-page--social">
+    <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
       {showLoader ? (
         <div
           className={`portal-loader${isInitialLoading || isTransitioning ? "" : " is-fading"}`}
@@ -255,91 +256,93 @@ function MemberPortalContent() {
         </div>
       ) : null}
 
-      <header className="portal-top">
-        <div className="portal-shell portal-shell--bar">
-          <button
-            type="button"
-            className="portal-logo-link"
-            aria-label="EliteTee feed"
-            onClick={() => transitionTo("feed")}
-          >
-            <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
-          </button>
+      <div className="portal-chrome">
+        <header className="portal-top">
+          <div className="portal-shell portal-shell--bar">
+            <button
+              type="button"
+              className="portal-logo-link"
+              aria-label="EliteTee feed"
+              onClick={() => transitionTo("feed")}
+            >
+              <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
+            </button>
 
-          <div className="portal-top-actions">
-            <button
-              type="button"
-              className="portal-icon-btn"
-              aria-label={
-                pendingIntroductionCount > 0
-                  ? `${pendingIntroductionCount} pending introduction requests`
-                  : "Open introduction requests"
-              }
-              onClick={() => transitionTo("introductions")}
-            >
-              <span aria-hidden="true">◇</span>
-              <span className="portal-icon-btn-label">Introductions</span>
-              {pendingIntroductionCount > 0 ? (
-                <span className="portal-icon-badge">
-                  {formatNotificationCount(pendingIntroductionCount)}
-                </span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className="portal-icon-btn portal-icon-btn--messages"
-              aria-label={
-                unreadMessageCount > 0
-                  ? `${unreadMessageCount} unread messages`
-                  : "Open messages"
-              }
-              onClick={() => transitionTo("messages")}
-            >
-              <span aria-hidden="true">✉</span>
-              <span className="portal-icon-btn-label">Messages</span>
-              {unreadMessageCount > 0 ? (
-                <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className="portal-btn portal-btn--gold portal-signout"
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-            >
-              {isSigningOut ? "Signing out..." : "Sign Out"}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <nav className="portal-tabs portal-tabs--desktop" aria-label="EliteTee member portal">
-        <div className="portal-shell portal-shell--bar">
-          {desktopTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`portal-tab${activeView === tab.id ? " is-active" : ""}`}
-              onClick={() => transitionTo(tab.id)}
-              aria-current={activeView === tab.id ? "page" : undefined}
-            >
-              <span className="portal-tab-label">
-                {tab.label}
-                {tab.id === "messages" && unreadMessageCount > 0 ? (
-                  <span className="portal-tab-badge" aria-hidden="true">
-                    {formatNotificationCount(unreadMessageCount)}
-                  </span>
-                ) : null}
-                {tab.id === "introductions" && pendingIntroductionCount > 0 ? (
-                  <span className="portal-tab-badge" aria-hidden="true">
+            <div className="portal-top-actions">
+              <button
+                type="button"
+                className="portal-icon-btn"
+                aria-label={
+                  pendingIntroductionCount > 0
+                    ? `${pendingIntroductionCount} pending introduction requests`
+                    : "Open introduction requests"
+                }
+                onClick={() => transitionTo("introductions")}
+              >
+                <span aria-hidden="true">◇</span>
+                <span className="portal-icon-btn-label">Introductions</span>
+                {pendingIntroductionCount > 0 ? (
+                  <span className="portal-icon-badge">
                     {formatNotificationCount(pendingIntroductionCount)}
                   </span>
                 ) : null}
-              </span>
-            </button>
-          ))}
-        </div>
-      </nav>
+              </button>
+              <button
+                type="button"
+                className="portal-icon-btn portal-icon-btn--messages"
+                aria-label={
+                  unreadMessageCount > 0
+                    ? `${unreadMessageCount} unread messages`
+                    : "Open messages"
+                }
+                onClick={() => transitionTo("messages")}
+              >
+                <span aria-hidden="true">✉</span>
+                <span className="portal-icon-btn-label">Messages</span>
+                {unreadMessageCount > 0 ? (
+                  <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className="portal-btn portal-btn--gold portal-signout"
+                onClick={handleSignOut}
+                disabled={isSigningOut}
+              >
+                {isSigningOut ? "Signing out..." : "Sign Out"}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <nav className="portal-tabs portal-tabs--desktop" aria-label="EliteTee member portal">
+          <div className="portal-shell portal-shell--bar">
+            {desktopTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`portal-tab${activeView === tab.id ? " is-active" : ""}`}
+                onClick={() => transitionTo(tab.id)}
+                aria-current={activeView === tab.id ? "page" : undefined}
+              >
+                <span className="portal-tab-label">
+                  {tab.label}
+                  {tab.id === "messages" && unreadMessageCount > 0 ? (
+                    <span className="portal-tab-badge" aria-hidden="true">
+                      {formatNotificationCount(unreadMessageCount)}
+                    </span>
+                  ) : null}
+                  {tab.id === "introductions" && pendingIntroductionCount > 0 ? (
+                    <span className="portal-tab-badge" aria-hidden="true">
+                      {formatNotificationCount(pendingIntroductionCount)}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            ))}
+          </div>
+        </nav>
+      </div>
 
       <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
         <div className="portal-shell">

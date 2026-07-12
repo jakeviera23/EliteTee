@@ -203,6 +203,77 @@
     0 28px 64px rgba(26, 25, 23, 0.1);
 }
 
+/* —— Portal light theme (member portal editorial workspace) —— */
+.et-theme-portal,
+[data-et-theme="portal"] {
+  color-scheme: light;
+
+  --et-bg-base: #f4f1ea;
+  --et-bg-elevated: #f0ece4;
+  --et-bg-surface: #fbfaf7;
+  --et-bg-surface-hover: #f5f2eb;
+  --et-bg-surface-active: #ece7de;
+  --et-bg-overlay: rgba(244, 241, 234, 0.94);
+  --et-bg-inset: #ece7de;
+
+  --et-text-primary: #1c211d;
+  --et-text-secondary: #6e716b;
+  --et-text-tertiary: #94978f;
+  --et-text-disabled: #b5b8b0;
+  --et-text-inverse: #f4f1ea;
+
+  --et-accent: #a58a55;
+  --et-accent-hover: #8f7548;
+  --et-accent-muted: rgba(165, 138, 85, 0.72);
+  --et-accent-soft: rgba(165, 138, 85, 0.12);
+  --et-accent-softer: rgba(165, 138, 85, 0.07);
+
+  --et-forest: #244a3a;
+  --et-forest-soft: rgba(36, 74, 58, 0.1);
+  --et-forest-border: rgba(36, 74, 58, 0.28);
+
+  --et-slate: #61798a;
+  --et-slate-soft: rgba(97, 121, 138, 0.1);
+  --et-slate-border: rgba(97, 121, 138, 0.22);
+
+  --et-burgundy: #753e43;
+  --et-burgundy-soft: rgba(117, 62, 67, 0.1);
+
+  --et-border-hairline: rgba(40, 46, 40, 0.12);
+  --et-border-subtle: rgba(40, 46, 40, 0.16);
+  --et-border-strong: rgba(40, 46, 40, 0.22);
+  --et-border-accent: rgba(165, 138, 85, 0.32);
+
+  --et-focus-ring: rgba(36, 74, 58, 0.38);
+
+  --et-success: #4a6b58;
+  --et-success-soft: rgba(74, 107, 88, 0.12);
+  --et-error: #9e5050;
+  --et-error-soft: rgba(158, 80, 80, 0.1);
+  --et-warning: #8f7548;
+  --et-warning-soft: rgba(143, 117, 72, 0.1);
+  --et-info: #61798a;
+  --et-info-soft: rgba(97, 121, 138, 0.1);
+
+  --et-scrim-rgb: 28, 33, 29;
+  --et-hero-ivory-rgb: 251, 250, 247;
+
+  /* Deep forest chrome (nav framing) */
+  --et-chrome-bg: #1c2b24;
+  --et-chrome-bg-elevated: #243830;
+  --et-chrome-text: #f4f1ea;
+  --et-chrome-muted: rgba(244, 241, 234, 0.58);
+  --et-chrome-border: rgba(244, 241, 234, 0.1);
+  --et-chrome-accent: #a58a55;
+  --et-chrome-accent-soft: rgba(165, 138, 85, 0.16);
+
+  --et-shadow-xs: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  --et-shadow-sm: 0 1px 2px rgba(28, 33, 29, 0.05);
+  --et-shadow-md: 0 4px 24px rgba(28, 33, 29, 0.07);
+  --et-shadow-lg: 0 12px 40px rgba(28, 33, 29, 0.09);
+  --et-shadow-gold: 0 0 0 1px rgba(165, 138, 85, 0.2);
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --et-duration-fast: 0.01ms;

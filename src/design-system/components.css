@@ -64,6 +64,17 @@
   background: rgba(248, 246, 242, 0.94);
 }
 
+.et-theme-portal .et-btn--primary {
+  color: var(--et-text-inverse);
+  background: var(--et-forest);
+  border-color: transparent;
+}
+
+.et-theme-portal .et-btn--primary:hover:not(:disabled) {
+  background: #2d5a48;
+  color: var(--et-text-inverse);
+}
+
 .et-btn--primary:hover:not(:disabled) {
   background: var(--et-accent-hover);
   color: var(--et-text-inverse);
