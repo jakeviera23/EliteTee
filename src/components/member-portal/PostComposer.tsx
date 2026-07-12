@@ -1,6 +1,7 @@
 import { FormEvent, useRef, useState } from "react";
 import type { FeedPost, PortalGolfer, RoundType } from "../../data/portalSocial";
-import { MAX_RATING, ratingOptions, roundTypeOptions } from "../../data/portalSocial";
+import { roundTypeOptions } from "../../data/portalSocial";
+import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
 import { photos } from "../../assets/photos";
 
 type PostComposerProps = {
@@ -14,7 +15,8 @@ export function PostComposer({ author, onPost, id }: PostComposerProps) {
   const [courseName, setCourseName] = useState("");
   const [location, setLocation] = useState("");
   const [playedWith, setPlayedWith] = useState("");
-  const [rating, setRating] = useState(String(MAX_RATING));
+  const [rating, setRating] = useState(String(COURSE_RATING_MAX));
+  const [ratingError, setRatingError] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
   const [roundType, setRoundType] = useState<RoundType>("Casual Round");
   const [weather, setWeather] = useState("");
@@ -36,6 +38,13 @@ export function PostComposer({ author, onPost, id }: PostComposerProps) {
     event.preventDefault();
     if (!caption.trim() || !courseName.trim()) return;
 
+    const ratingResult = validateCourseRating(rating);
+    if (!ratingResult.ok) {
+      setRatingError(ratingResult.message);
+      return;
+    }
+    setRatingError(null);
+
     const newPost: FeedPost = {
       id: `post-${Date.now()}`,
       postType: roundType === "Bucket List" ? "bucket-list" : "played-today",
@@ -50,7 +59,7 @@ export function PostComposer({ author, onPost, id }: PostComposerProps) {
       timestamp: "Just now",
       roundType,
       playedWith: playedWith.trim() || undefined,
-      rating: Number(rating),
+      rating: ratingResult.value,
       weather: weather.trim() || undefined,
       score: score.trim() || undefined,
     };
@@ -61,7 +70,7 @@ export function PostComposer({ author, onPost, id }: PostComposerProps) {
     setLocation("");
     setPlayedWith("");
     setRoundType("Casual Round");
-    setRating(String(MAX_RATING));
+    setRating(String(COURSE_RATING_MAX));
     setWeather("");
     setScore("");
     setShowMore(false);
@@ -95,13 +104,24 @@ export function PostComposer({ author, onPost, id }: PostComposerProps) {
         </label>
         <label className="portal-composer-field">
           <span>Rating</span>
-          <select value={rating} onChange={(event) => setRating(event.target.value)}>
-            {ratingOptions.map((value) => (
-              <option key={value} value={value}>
-                {value} / {MAX_RATING}
-              </option>
-            ))}
-          </select>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={1}
+            max={10}
+            step={0.1}
+            value={rating}
+            onChange={(event) => {
+              setRating(event.target.value);
+              setRatingError(null);
+            }}
+            aria-label="Course rating from 1.0 to 10.0"
+          />
+          {ratingError ? (
+            <span className="portal-composer-error" role="alert">
+              {ratingError}
+            </span>
+          ) : null}
         </label>
         <label className="portal-composer-field">
           <span>Played with</span>

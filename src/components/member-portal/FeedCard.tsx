@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
+import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
 import {
@@ -248,8 +249,10 @@ export function FeedCard({
     onToast?.("Comment added");
   }
 
+  const ratingDisplay = formatCourseRatingDisplay(post.rating);
+
   const showCourseBlock =
-    isCourseRound && (roundLabel || post.courseName || post.courseLocation || post.rating);
+    isCourseRound && (roundLabel || post.courseName || post.courseLocation || ratingDisplay);
   const showSocialHeadline = !isCourseRound && !isFounder && (roundLabel || post.courseName);
 
   return (
@@ -269,7 +272,7 @@ export function FeedCard({
         <FeedCardHeroMedia
           photos={photoRecords}
           imageAlt={post.imageAlt}
-          rating={isCourseRound ? post.rating : undefined}
+          rating={isCourseRound ? (ratingDisplay ? post.rating : undefined) : undefined}
           maxRating={MAX_RATING}
           variant={isCourseRound ? "hero" : "editorial"}
         />
@@ -290,12 +293,12 @@ export function FeedCard({
           {post.courseLocation ? (
             <p className="feed-card-course-location">{post.courseLocation}</p>
           ) : null}
-          {post.rating != null && !hasImages ? (
+          {ratingDisplay && !hasImages ? (
             <div
               className="feed-card-rating feed-card-rating--inline"
-              title={`Rated ${post.rating} out of ${MAX_RATING}`}
+              title={`Rated ${ratingDisplay} out of ${MAX_RATING.toFixed(1)}`}
             >
-              <span className="feed-card-rating-value">{post.rating.toFixed(1)}</span>
+              <span className="feed-card-rating-value">{ratingDisplay}</span>
               <span className="feed-card-rating-label">Member rating</span>
             </div>
           ) : null}

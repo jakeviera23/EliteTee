@@ -7715,6 +7715,72 @@
   gap: 0.45rem;
 }
 
+.portal-course-rating-control {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portal-course-rating-display {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--inside-gold);
+}
+
+.portal-course-rating-slider-label {
+  display: block;
+}
+
+.portal-course-rating-slider {
+  width: 100%;
+  accent-color: var(--inside-gold);
+}
+
+.portal-course-rating-input-label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.portal-course-rating-input-caption {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--portal-faint);
+}
+
+.portal-course-rating-input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 1rem;
+  color: var(--portal-body);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--inside-border);
+  border-radius: 8px;
+}
+
+.portal-course-rating-input:focus {
+  outline: none;
+  border-color: var(--inside-gold);
+  box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.25);
+}
+
+.portal-course-rating-error {
+  margin: 0.55rem 0 0;
+  font-size: 0.8125rem;
+  color: #f87171;
+}
+
+.feed-composer-field--rating {
+  grid-column: 1 / -1;
+}
+
+.feed-composer-field--rating .portal-course-rating legend {
+  font-size: 0.6875rem;
+}
+
 @media (min-width: 480px) {
   .portal-course-rating-options {
     grid-template-columns: repeat(10, minmax(0, 1fr));

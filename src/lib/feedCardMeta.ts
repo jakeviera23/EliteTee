@@ -1,4 +1,5 @@
 import type { FeedPost } from "../data/portalSocial";
+import { formatCourseRatingDisplay } from "./courseRating";
 
 export type FeedMetaChipTone =
   | "location"
@@ -68,6 +69,18 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
       value,
       tone: toneForDetail(detail.label, value),
     });
+  }
+
+  if (post.rating != null) {
+    const ratingDisplay = formatCourseRatingDisplay(post.rating);
+    if (ratingDisplay) {
+      chips.push({
+        key: `rating-${ratingDisplay}`,
+        label: "Rating",
+        value: `${ratingDisplay}/10.0`,
+        tone: "rating",
+      });
+    }
   }
 
   if (post.playedWith?.trim()) {

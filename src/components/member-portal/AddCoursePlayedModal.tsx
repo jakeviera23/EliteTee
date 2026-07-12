@@ -8,6 +8,7 @@ import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { formatGolfCourseLocation } from "../../types/golfCourse";
 import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
 import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
+import { validateCourseRating } from "../../lib/courseRating";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { RoundPhotoPicker } from "./RoundPhotoPicker";
 
@@ -116,8 +117,9 @@ export function AddCoursePlayedModal({
       return;
     }
 
-    if (!form.course_rating || form.course_rating < 1 || form.course_rating > 10) {
-      setError("Please rate this course from 1 to 10.");
+    const ratingResult = validateCourseRating(form.course_rating);
+    if (!ratingResult.ok) {
+      setError(ratingResult.message);
       return;
     }
 
@@ -127,7 +129,7 @@ export function AddCoursePlayedModal({
 
     const { data: roundData, error: submitError } = await submitMemberCourseRound({
       ...form,
-      course_rating: form.course_rating,
+      course_rating: ratingResult.value,
     });
 
     if (submitError || !roundData?.id) {
@@ -143,7 +145,7 @@ export function AddCoursePlayedModal({
       note: form.note,
       wouldPlayAgain: form.would_play_again,
       playedOn: form.played_on,
-      courseRating: form.course_rating,
+      courseRating: ratingResult.value,
     });
 
     let feedWarning: string | null = null;

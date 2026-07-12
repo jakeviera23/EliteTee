@@ -5,6 +5,7 @@ import type {
 import { findOrCreateMemberGolfCourse } from "./golfCourses";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchPhotosForRoundIds, groupPhotosByRoundId } from "./memberCourseRoundPhotos";
+import { normalizeCourseRating, validateCourseRating } from "./courseRating";
 import { supabase } from "./supabase";
 
 const MEMBER_COURSE_ROUND_RLS_ERROR =
@@ -23,7 +24,7 @@ function normalizeRound(row: Record<string, unknown>): MemberCourseRoundRecord {
     played_on: String(row.played_on ?? ""),
     note: String(row.note ?? ""),
     would_play_again: Boolean(row.would_play_again),
-    course_rating: Number(row.course_rating ?? 10),
+    course_rating: normalizeCourseRating(Number(row.course_rating ?? 10)),
     created_at: String(row.created_at ?? ""),
     member_name: row.member_name ? String(row.member_name) : undefined,
   };
@@ -234,6 +235,11 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     golfCourseId = linkedCourse.id;
   }
 
+  const ratingResult = validateCourseRating(round.course_rating);
+  if (!ratingResult.ok) {
+    return { data: null, error: new Error(ratingResult.message) };
+  }
+
   const payload: Record<string, unknown> = {
     member_user_id: userId,
     course_name: round.course_name.trim(),
@@ -241,7 +247,7 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     played_on: round.played_on,
     note: round.note.trim(),
     would_play_again: round.would_play_again,
-    course_rating: round.course_rating,
+    course_rating: ratingResult.value,
     golf_course_id: golfCourseId,
   };
 

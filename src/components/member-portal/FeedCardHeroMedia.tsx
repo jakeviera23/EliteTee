@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { MemberCourseRoundPhotoRecord } from "../../types/memberCourseRoundPhoto";
+import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { RoundPhotoLightbox } from "./RoundPhotoLightbox";
 
 type FeedCardHeroMediaProps = {
@@ -23,6 +24,8 @@ export function FeedCardHeroMedia({
     () => photos.filter((photo) => photo.signed_url),
     [photos],
   );
+
+  const ratingDisplay = formatCourseRatingDisplay(rating);
 
   if (visiblePhotos.length === 0) {
     return null;
@@ -69,12 +72,12 @@ export function FeedCardHeroMedia({
               +{extraCount}
             </span>
           ) : null}
-          {variant === "hero" && rating != null ? (
+          {variant === "hero" && ratingDisplay ? (
             <span
               className="feed-card-rating feed-card-rating--overlay"
-              aria-label={`Member rating ${rating.toFixed(1)} out of ${maxRating}`}
+              aria-label={`Member rating ${ratingDisplay} out of ${maxRating.toFixed(1)}`}
             >
-              <span className="feed-card-rating-value">{rating.toFixed(1)}</span>
+              <span className="feed-card-rating-value">{ratingDisplay}</span>
               <span className="feed-card-rating-label">Member rating</span>
             </span>
           ) : null}

@@ -363,6 +363,34 @@
 }
 
 /* —— Course played modal / rating picker —— */
+.portal-page.et-theme-portal .portal-course-rating-display {
+  color: var(--et-gold);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-slider {
+  accent-color: var(--et-gold);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-input {
+  color: var(--et-text-primary);
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+  font-size: 1rem;
+}
+
+.portal-page.et-theme-portal .portal-course-rating-input:focus {
+  border-color: var(--et-forest);
+  box-shadow: 0 0 0 2px var(--et-forest-soft);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-selected {
+  color: var(--et-gold);
+}
+
+.portal-page.et-theme-portal .portal-course-rating-error {
+  color: var(--et-error);
+}
+
 .portal-page.et-theme-portal .portal-course-rating-option {
   color: var(--et-text-secondary);
   background: var(--et-bg-inset);

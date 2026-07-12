@@ -10,6 +10,7 @@ import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchOwnMemberProfile } from "./memberProfiles";
 import { fetchPhotosForRoundIds } from "./memberCourseRoundPhotos";
 import { formatPlayedOnDate } from "./memberCourseRounds";
+import { formatCourseRatingDisplay } from "./courseRating";
 import { supabase } from "./supabase";
 
 const FEED_PAGE_SIZE = 20;
@@ -461,6 +462,7 @@ export async function createCourseRoundFeedPost({
   courseRating: number;
 }) {
   const message = note.trim() || `Played ${courseName.trim()}`;
+  const ratingDisplay = formatCourseRatingDisplay(courseRating);
 
   return createMemberFeedPost(
     {
@@ -471,7 +473,9 @@ export async function createCourseRoundFeedPost({
       details: [
         { label: "Location", value: location.trim() },
         { label: "Played", value: formatPlayedOnDate(playedOn) },
-        { label: "Course Rating", value: `${courseRating}/10` },
+        ...(ratingDisplay
+          ? [{ label: "Course Rating", value: `${ratingDisplay}/10.0` }]
+          : []),
         { label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" },
       ],
       internalPostType: "course-review",
