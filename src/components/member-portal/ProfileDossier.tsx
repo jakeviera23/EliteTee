@@ -412,12 +412,12 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
   }
 
   if (isLoading) {
-    return <p className="portal-empty">Loading your profile...</p>;
+    return <p className="et-profile-loading">Loading your profile…</p>;
   }
 
   if (!profile || !form) {
     return (
-      <div className="portal-profile-status">
+      <div className="et-profile-empty">
         <p className="portal-alert portal-alert--error" role="alert">
           {errorMessage ?? "Your profile is not available."}
         </p>
@@ -429,14 +429,14 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
   const avatarPreview = media.avatarRemoved ? null : media.avatarPreviewUrl;
 
   return (
-    <article className="portal-dossier portal-dossier--editable portal-profile-edit">
-      <div className="portal-profile-edit-preview">
+    <article className="portal-dossier portal-dossier--editable et-profile-form">
+      <div className="et-profile-edit-preview">
         <ProfileCover
           src={coverPreview}
           alt="Cover preview"
           className="portal-profile-edit-cover"
         />
-        <div className="portal-profile-edit-preview-body">
+        <div className="et-profile-edit-preview-body">
           <div className="portal-profile-edit-avatar">
             <MemberClubAvatar
               member={{ club_logo_url: avatarPreview ?? profile.club_logo_url }}
@@ -466,10 +466,10 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         </p>
       ) : null}
 
-      <form className="portal-profile-form" onSubmit={handleSubmit}>
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Profile Media</h3>
-          <div className="portal-profile-form-grid">
+      <form className="portal-profile-form et-profile-form" onSubmit={handleSubmit}>
+        <section className="portal-profile-form-card et-profile-form-card">
+          <h3 className="portal-profile-form-card-title et-profile-form-card-title">Profile Media</h3>
+          <div className="portal-profile-form-grid et-profile-form-grid">
             <ProfileMediaUploadField
               label="Cover photo"
               hint="JPEG, PNG, or WebP up to 12 MB. Shown on your public profile."
@@ -494,9 +494,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
         </section>
 
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Member Identity</h3>
-          <div className="portal-profile-form-grid">
+        <section className="portal-profile-form-card et-profile-form-card">
+          <h3 className="portal-profile-form-card-title et-profile-form-card-title">Member Identity</h3>
+          <div className="portal-profile-form-grid et-profile-form-grid">
             <label className="portal-profile-field">
               <span>Full Name</span>
               <input
@@ -539,9 +539,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
         </section>
 
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Golf Background</h3>
-          <div className="portal-profile-form-grid">
+        <section className="portal-profile-form-card et-profile-form-card">
+          <h3 className="portal-profile-form-card-title et-profile-form-card-title">Golf Background</h3>
+          <div className="portal-profile-form-grid et-profile-form-grid">
             <label className="portal-profile-field">
               <span>Home Course</span>
               <input
@@ -575,9 +575,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
         </section>
 
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Travel Plans</h3>
-          <div className="portal-profile-form-grid">
+        <section className="portal-profile-form-card et-profile-form-card">
+          <h3 className="portal-profile-form-card-title et-profile-form-card-title">Travel Plans</h3>
+          <div className="portal-profile-form-grid et-profile-form-grid">
             <label className="portal-profile-field portal-profile-field--full">
               <span>Upcoming Golf Travel</span>
               <input
@@ -590,9 +590,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
         </section>
 
-        <section className="portal-profile-form-card">
-          <h3 className="portal-profile-form-card-title">Connection Interests</h3>
-          <div className="portal-profile-form-grid">
+        <section className="portal-profile-form-card et-profile-form-card">
+          <h3 className="portal-profile-form-card-title et-profile-form-card-title">Connection Interests</h3>
+          <div className="portal-profile-form-grid et-profile-form-grid">
             <label className="portal-profile-field portal-profile-field--full">
               <span>What connections are you looking for?</span>
               <textarea
@@ -605,9 +605,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
         </section>
 
-        <p className="portal-profile-form-note">{earlyStageCopy.profileStatsNote}</p>
+        <p className="portal-profile-form-note et-profile-form-note">{earlyStageCopy.profileStatsNote}</p>
 
-        <div className="portal-profile-form-actions">
+        <div className="portal-profile-form-actions et-profile-form-actions">
           <button type="submit" className="portal-btn portal-btn--gold" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Profile"}
           </button>
