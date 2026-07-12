@@ -1,0 +1,246 @@
+/**
+ * Member portal mobile layout containment (≤767px).
+ * Fixes horizontal overflow and tightens spacing without changing desktop.
+ */
+
+@media (max-width: 767px) {
+  .portal-page.et-theme-portal {
+    --mobile-nav-height: 3.75rem;
+    --portal-mobile-gutter: 20px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .portal-page.et-theme-portal *,
+  .portal-page.et-theme-portal *::before,
+  .portal-page.et-theme-portal *::after {
+    box-sizing: border-box;
+  }
+
+  .portal-page.et-theme-portal .portal-chrome,
+  .portal-page.et-theme-portal .portal-main,
+  .portal-page.et-theme-portal .portal-main--social,
+  .portal-page.et-theme-portal .portal-shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Single horizontal gutter — avoid stacked main + shell padding */
+  .portal-page.et-theme-portal .portal-main--social {
+    padding-inline: 0;
+  }
+
+  .portal-page.et-theme-portal .portal-main--social > .portal-shell {
+    padding-inline: var(--portal-mobile-gutter);
+  }
+
+  .portal-page.et-theme-portal .portal-main {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
+  }
+
+  /* Header */
+  .portal-page.et-theme-portal .portal-top {
+    padding-inline: 0;
+    overflow-x: clip;
+  }
+
+  .portal-page.et-theme-portal .portal-top .portal-shell--bar {
+    padding-inline: 16px;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .portal-logo-link {
+    flex-shrink: 0;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .portal-top-actions {
+    flex: 0 1 auto;
+    flex-shrink: 0;
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  .portal-page.et-theme-portal .portal-notifications-anchor {
+    min-width: 0;
+  }
+
+  /* Bottom navigation — 5 equal columns, full labels */
+  .portal-page.et-theme-portal .portal-bottom-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding-inline: 0.1rem;
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-btn {
+    min-width: 0;
+    padding: 0.3rem 0.05rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.02em;
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-btn > span:last-child {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+
+  .portal-page.et-theme-portal .portal-bottom-nav-icon {
+    font-size: 0.9rem;
+  }
+
+  /* Courses page */
+  .portal-page.et-theme-portal .et-courses {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 0;
+    gap: 1.25rem;
+    padding-block: 0.75rem 1.5rem;
+  }
+
+  .portal-page.et-theme-portal .et-courses-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .portal-page.et-theme-portal .et-courses-header-copy {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-courses-lead,
+  .portal-page.et-theme-portal .et-courses-featured-copy,
+  .portal-page.et-theme-portal .et-courses-directory-copy {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .portal-page.et-theme-portal .et-courses-add-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-courses-filters {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0.85rem;
+  }
+
+  .portal-page.et-theme-portal .et-courses-search input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .portal-page.et-theme-portal .et-courses-filters-toolbar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-courses-filters-mobile-trigger {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-courses-featured,
+  .portal-page.et-theme-portal .et-courses-directory,
+  .portal-page.et-theme-portal .et-courses-featured-section,
+  .portal-page.et-theme-portal .et-courses-body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-courses-featured-head,
+  .portal-page.et-theme-portal .et-courses-directory-head {
+    min-width: 0;
+  }
+
+  /* Featured rails scroll internally — must not expand document width */
+  .portal-page.et-theme-portal .et-courses-grid--featured {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.85rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 0 0.35rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    grid-auto-flow: unset;
+    grid-auto-columns: unset;
+    grid-template-columns: unset;
+  }
+
+  .portal-page.et-theme-portal .et-courses-grid--featured::-webkit-scrollbar {
+    display: none;
+  }
+
+  .portal-page.et-theme-portal .et-courses-grid--featured > li {
+    flex: 0 0 min(84vw, 22rem);
+    width: min(84vw, 22rem);
+    max-width: min(84vw, 22rem);
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  /* Directory cards — single column, bounded width */
+  .portal-page.et-theme-portal .et-courses-grid:not(.et-courses-grid--featured) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-page.et-theme-portal .et-course-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-body,
+  .portal-page.et-theme-portal .et-course-card-title,
+  .portal-page.et-theme-portal .et-course-card-location {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Shared portal tab content spacing */
+  .portal-page.et-theme-portal .et-discover,
+  .portal-page.et-theme-portal .et-messages,
+  .portal-page.et-theme-portal .et-profile,
+  .portal-page.et-theme-portal .et-ask,
+  .portal-page.et-theme-portal .et-introductions,
+  .portal-page.et-theme-portal .et-feed,
+  .portal-page.et-theme-portal .portal-feed-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .portal-toast-stack {
+    max-width: min(20rem, calc(100% - 2rem));
+    right: 1rem;
+    left: auto;
+  }
+
+  .portal-page.et-theme-portal .portal-notifications-panel {
+    width: min(22.5rem, calc(100% - 2rem));
+  }
+}
+
+@media (max-width: 390px) {
+  .portal-page.et-theme-portal .portal-bottom-nav-btn {
+    font-size: 0.5625rem;
+    letter-spacing: 0.01em;
+  }
+}
