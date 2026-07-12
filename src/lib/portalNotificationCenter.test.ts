@@ -6,7 +6,9 @@ import {
   buildPortalNotifications,
   computePortalNotificationBadgeCount,
   computePortalNotificationBadgeCountFromSources,
+  groupPortalNotifications,
 } from "./portalNotificationCenter";
+import { getNotificationBadgeDisplay } from "./portalNotifications";
 
 function introductionRequest(
   overrides: Partial<IntroductionRequestRecord> & Pick<IntroductionRequestRecord, "id">,
@@ -175,5 +177,41 @@ describe("computePortalNotificationBadgeCount", () => {
     });
 
     expect(count).toBe(6);
+  });
+});
+
+describe("getNotificationBadgeDisplay", () => {
+  it("shows no badge, dot, or count based on notification total", () => {
+    expect(getNotificationBadgeDisplay(0)).toBe("none");
+    expect(getNotificationBadgeDisplay(1)).toBe("dot");
+    expect(getNotificationBadgeDisplay(2)).toBe("count");
+    expect(getNotificationBadgeDisplay(9)).toBe("count");
+  });
+});
+
+describe("groupPortalNotifications", () => {
+  it("groups mixed notifications into sections when both types exist", () => {
+    const notifications = buildPortalNotifications({
+      currentUserId: "member-1",
+      seenIntroductionRequestIds: new Set(),
+      conversations: [
+        conversation({ otherUserId: "member-2", unreadCount: 1 }),
+      ],
+      introductionRequests: [
+        introductionRequest({
+          id: "intro-pending",
+          sender_id: "member-3",
+          receiver_id: "member-1",
+          status: "pending",
+        }),
+      ],
+    });
+
+    const sections = groupPortalNotifications(notifications);
+
+    expect(sections).toHaveLength(2);
+    expect(sections[0]?.id).toBe("messages");
+    expect(sections[1]?.id).toBe("introductions");
+    expect(sections.every((section) => section.showHeader)).toBe(true);
   });
 });

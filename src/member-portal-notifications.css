@@ -2,20 +2,58 @@
   position: relative;
 }
 
+.portal-notifications-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(24, 32, 27, 0.24);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  cursor: default;
+}
+
+.portal-notifications-backdrop.is-open {
+  opacity: 1;
+}
+
 .portal-notifications-panel {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
   z-index: 40;
-  width: min(22rem, calc(100vw - 2rem));
+  width: min(22.5rem, calc(100vw - 2rem));
   max-height: min(28rem, calc(100vh - 6rem));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--portal-surface-elevated, #f7f3ea);
-  border: 1px solid rgba(46, 59, 49, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 18px 40px rgba(24, 32, 27, 0.18);
+  background: #faf6ef;
+  border: 1px solid rgba(46, 59, 49, 0.1);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 12px rgba(24, 32, 27, 0.06),
+    0 18px 40px rgba(24, 32, 27, 0.14);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+  pointer-events: none;
+}
+
+.portal-notifications-panel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.portal-notifications-panel.is-closing {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.99);
+  pointer-events: none;
 }
 
 .portal-notifications-panel--mobile {
@@ -25,6 +63,7 @@
   left: 0.75rem;
   width: auto;
   max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 7rem);
+  transform-origin: top center;
 }
 
 .portal-notifications-panel-header {
@@ -32,8 +71,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid rgba(46, 59, 49, 0.08);
+  padding: 0.95rem 1rem 0.85rem;
+  border-bottom: 1px solid rgba(46, 59, 49, 0.07);
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.96) 0%, rgba(250, 246, 239, 0.96) 100%);
 }
 
 .portal-notifications-panel-title {
@@ -41,6 +81,7 @@
   font-family: var(--serif);
   font-size: 1.05rem;
   font-weight: 400;
+  letter-spacing: 0.01em;
   color: var(--portal-text-primary, #1f2a24);
 }
 
@@ -51,13 +92,13 @@
 
 .portal-notifications-panel-body {
   overflow: auto;
-  padding: 0.5rem;
+  padding: 0.65rem;
 }
 
 .portal-notifications-status,
 .portal-notifications-empty {
   margin: 0;
-  padding: 1rem 0.75rem;
+  padding: 1.15rem 0.85rem;
   font-size: 0.875rem;
   line-height: 1.55;
   color: var(--portal-text-muted, #5f6d66);
@@ -66,7 +107,7 @@
 .portal-notifications-error {
   display: grid;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.85rem;
 }
 
 .portal-notifications-error p {
@@ -76,25 +117,50 @@
   color: #8b3a3a;
 }
 
+.portal-notifications-sections {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.portal-notifications-section-title {
+  margin: 0 0 0.45rem;
+  padding: 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--portal-accent-gold, #b8955a);
+}
+
 .portal-notifications-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .portal-notifications-item {
   width: 100%;
   min-height: 44px;
-  padding: 0.75rem;
+  padding: 0.8rem 0.85rem;
   text-align: left;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(46, 59, 49, 0.08);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(46, 59, 49, 0.07);
+  border-radius: 11px;
   cursor: pointer;
   display: grid;
-  gap: 0.2rem;
+  gap: 0.22rem;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.portal-notifications-item:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(184, 149, 90, 0.22);
+  box-shadow: 0 2px 8px rgba(24, 32, 27, 0.05);
 }
 
 .portal-notifications-item:focus-visible {
@@ -128,6 +194,17 @@
 .portal-notifications-item--introduction_declined .portal-notifications-item-type,
 .portal-notifications-item--introduction_declined .portal-notifications-item-description {
   color: #8b3a3a;
+}
+
+.portal-icon-badge-dot {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--portal-accent-gold, #b8955a);
+  box-shadow: 0 0 0 2px rgba(24, 32, 27, 0.35);
 }
 
 .portal-page.et-theme-portal .portal-top-actions {
@@ -166,5 +243,13 @@
 
   .portal-page.et-theme-portal .portal-bottom-nav-btn span:last-child {
     white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-notifications-panel,
+  .portal-notifications-backdrop,
+  .portal-notifications-item {
+    transition: none;
   }
 }

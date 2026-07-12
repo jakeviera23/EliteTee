@@ -263,6 +263,43 @@ export function computePortalNotificationBadgeCountFromSources({
 
 export const PORTAL_NOTIFICATIONS_EMPTY_MESSAGE = "You're all caught up.";
 
+export type PortalNotificationSection = {
+  id: "messages" | "introductions";
+  label: string;
+  showHeader: boolean;
+  items: PortalNotificationItem[];
+};
+
+export function groupPortalNotifications(
+  items: PortalNotificationItem[],
+): PortalNotificationSection[] {
+  const messages = items.filter((item) => item.kind === "unread_message");
+  const introductions = items.filter((item) => item.kind !== "unread_message");
+
+  const sections: PortalNotificationSection[] = [];
+
+  if (messages.length > 0) {
+    sections.push({
+      id: "messages",
+      label: "Messages",
+      showHeader: false,
+      items: messages,
+    });
+  }
+
+  if (introductions.length > 0) {
+    sections.push({
+      id: "introductions",
+      label: "Introductions",
+      showHeader: false,
+      items: introductions,
+    });
+  }
+
+  const showHeaders = sections.length > 1;
+  return sections.map((section) => ({ ...section, showHeader: showHeaders }));
+}
+
 export const PORTAL_NOTIFICATIONS_LOAD_ERROR =
   "Notifications could not be loaded right now. Please try again.";
 

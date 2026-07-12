@@ -23,6 +23,7 @@ import {
 } from "../lib/portalNotificationCenter";
 import {
   formatNotificationCount,
+  getNotificationBadgeDisplay,
   getSeenIntroductionRequestIds,
   markIntroductionRequestsSeen,
 } from "../lib/portalNotifications";
@@ -411,9 +412,11 @@ function MemberPortalContent() {
                   className="portal-icon-btn portal-icon-btn--notifications"
                   data-notifications-trigger="true"
                   aria-label={
-                    notificationBadgeCount > 0
-                      ? `${notificationBadgeCount} notifications`
-                      : "Open notifications"
+                    notificationBadgeCount === 1
+                      ? "1 new notification"
+                      : notificationBadgeCount > 1
+                        ? `${notificationBadgeCount} notifications`
+                        : "Open notifications"
                   }
                   aria-expanded={notificationsOpen}
                   aria-haspopup="dialog"
@@ -421,7 +424,10 @@ function MemberPortalContent() {
                 >
                   <span aria-hidden="true">🔔</span>
                   <span className="portal-icon-btn-label">Notifications</span>
-                  {notificationBadgeCount > 0 ? (
+                  {getNotificationBadgeDisplay(notificationBadgeCount) === "dot" ? (
+                    <span className="portal-icon-badge-dot" aria-hidden="true" />
+                  ) : null}
+                  {getNotificationBadgeDisplay(notificationBadgeCount) === "count" ? (
                     <span className="portal-icon-badge">
                       {formatNotificationCount(notificationBadgeCount)}
                     </span>
