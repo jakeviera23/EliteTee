@@ -5,6 +5,14 @@ import {
   fetchMembershipInviteByToken,
   type MembershipInvitePreview,
 } from "../lib/membershipInvites";
+import {
+  establishInviteSignupSession,
+  mapInviteSignupCompletionError,
+  resendInviteSignupVerification,
+  toInviteSignupUiState,
+  validateInviteSignupForm,
+  type InviteSignupUiState,
+} from "../lib/inviteSignupFlow";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
   clearLegacySharedProfileExtras,
@@ -24,7 +32,10 @@ export function InviteSignup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitInfo, setSubmitInfo] = useState<string | null>(null);
+  const [uiState, setUiState] = useState<InviteSignupUiState>({ kind: "form" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -46,7 +57,9 @@ export function InviteSignup() {
       if (!active) return;
 
       if (error) {
-        console.error("[InviteSignup] invite lookup failed", error);
+        if (import.meta.env.DEV) {
+          console.error("[InviteSignup] invite lookup failed", error);
+        }
         setInviteInvalid(true);
         setIsLoadingInvite(false);
         return;
@@ -70,111 +83,106 @@ export function InviteSignup() {
     };
   }, [token]);
 
-  async function establishSession(inviteEmail: string, invitePassword: string) {
-    if (!supabase) {
-      throw new Error("Supabase is not configured.");
-    }
+  async function handleResendVerification() {
+    if (!invite || !supabase || isResending) return;
 
-    const signUp = await supabase.auth.signUp({
-      email: inviteEmail,
-      password: invitePassword,
-    });
+    setSubmitError(null);
+    setSubmitInfo(null);
+    setIsResending(true);
 
-    if (signUp.error && !signUp.error.message.toLowerCase().includes("already")) {
-      throw signUp.error;
-    }
-
-    if (signUp.data.session) {
-      return signUp.data.session;
-    }
-
-    const signIn = await supabase.auth.signInWithPassword({
-      email: inviteEmail,
-      password: invitePassword,
-    });
-
-    if (signIn.error) {
-      if (signUp.data.user && !signUp.data.session) {
-        throw new Error(
-          "Account created. Check your email to confirm your address, then return to this invite link to finish setup.",
-        );
+    try {
+      const result = await resendInviteSignupVerification(supabase.auth, invite.email);
+      if (result.ok) {
+        setSubmitInfo(result.message);
+      } else {
+        setSubmitError(result.message);
       }
-      throw signIn.error;
+    } finally {
+      setIsResending(false);
     }
-
-    return signIn.data.session;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
+    setSubmitInfo(null);
 
-    if (!invite) return;
+    if (!invite || uiState.kind !== "form") return;
 
     if (!isSupabaseConfigured || !supabase) {
       setSubmitError("Account setup is temporarily unavailable. Please try again later.");
       return;
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    if (normalizedEmail !== invite.email) {
-      setSubmitError("Use the same email address that was approved for this invitation.");
-      return;
-    }
+    const validation = validateInviteSignupForm({
+      email,
+      inviteEmail: invite.email,
+      password,
+      confirmPassword,
+    });
 
-    if (password.length < 8) {
-      setSubmitError("Password must be at least 8 characters.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setSubmitError("Passwords do not match.");
+    if (!validation.ok) {
+      setSubmitError(validation.message);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const session = await establishSession(normalizedEmail, password);
-      if (!session) {
-        setSubmitError("Unable to start your session. Please try again.");
+      const authResult = await establishInviteSignupSession(
+        supabase.auth,
+        validation.normalizedEmail,
+        password,
+      );
+
+      if (authResult.status === "session") {
+        const { error: completeError } = await completeMembershipInvite(token);
+        if (completeError) {
+          setSubmitError(mapInviteSignupCompletionError(completeError));
+          return;
+        }
+
+        clearLegacySharedProfileExtras();
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user?.id && invite.handicap?.trim()) {
+          const existingExtras = getPortalProfileExtras(user.id);
+          savePortalProfileExtras(user.id, {
+            ...defaultPortalProfileExtras,
+            ...existingExtras,
+            handicap: invite.handicap.trim(),
+          });
+        }
+
+        if (import.meta.env.DEV) {
+          console.info("[InviteSignup] invite redeemed for member profile", {
+            email: validation.normalizedEmail,
+            foundingMemberNumber: invite.founding_member_number,
+          });
+        }
+
+        navigate("/member-portal", { replace: true });
         return;
       }
 
-      const { error: completeError } = await completeMembershipInvite(token);
-      if (completeError) {
-        console.error("[InviteSignup] complete invite failed", completeError.message);
-        setSubmitError(completeError.message);
+      if (authResult.status === "pending_verification" || authResult.status === "account_exists") {
+        setUiState(toInviteSignupUiState(authResult));
+        setSubmitInfo(authResult.message);
         return;
       }
 
-      clearLegacySharedProfileExtras();
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user?.id && invite.handicap?.trim()) {
-        const existingExtras = getPortalProfileExtras(user.id);
-        savePortalProfileExtras(user.id, {
-          ...defaultPortalProfileExtras,
-          ...existingExtras,
-          handicap: invite.handicap.trim(),
-        });
-      }
-
-      console.info("[InviteSignup] invite redeemed for member profile", {
-        email: normalizedEmail,
-        foundingMemberNumber: invite.founding_member_number,
-      });
-
-      navigate("/member-portal", { replace: true });
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to create your account.");
+      setSubmitError(authResult.message);
+    } catch {
+      setSubmitError("We couldn't finish setting up your account. Please try again in a moment.");
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  const showFollowUpActions = uiState.kind !== "form";
 
   return (
     <div className="inside-page invite-page">
@@ -213,53 +221,117 @@ export function InviteSignup() {
                 private login to enter the EliteTee member portal.
               </p>
 
-              <form className="invite-form" onSubmit={handleSubmit}>
-                <label className="invite-field">
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    autoComplete="email"
-                    required
-                    readOnly
-                  />
-                </label>
+              {showFollowUpActions ? (
+                <div className="invite-followup">
+                  {submitInfo ? (
+                    <p className="invite-info" role="status">
+                      {submitInfo}
+                    </p>
+                  ) : null}
 
-                <label className="invite-field">
-                  <span>Password</span>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    autoComplete="new-password"
-                    minLength={8}
-                    required
-                  />
-                </label>
+                  {submitError ? (
+                    <p className="invite-error" role="alert">
+                      {submitError}
+                    </p>
+                  ) : null}
 
-                <label className="invite-field">
-                  <span>Confirm password</span>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    autoComplete="new-password"
-                    minLength={8}
-                    required
-                  />
-                </label>
+                  <div className="invite-actions">
+                    <Link to="/login" className="portal-btn portal-btn--gold invite-action-link">
+                      Sign in
+                    </Link>
 
-                {submitError ? (
-                  <p className="invite-error" role="alert">
-                    {submitError}
+                    {uiState.kind === "pending_verification" && uiState.canResend ? (
+                      <button
+                        type="button"
+                        className="portal-btn portal-btn--outline invite-action-button"
+                        onClick={() => void handleResendVerification()}
+                        disabled={isResending}
+                      >
+                        {isResending ? "Sending verification email..." : "Resend verification email"}
+                      </button>
+                    ) : null}
+
+                    {uiState.kind === "account_exists" ? (
+                      <button
+                        type="button"
+                        className="portal-btn portal-btn--outline invite-action-button"
+                        onClick={() => void handleResendVerification()}
+                        disabled={isResending}
+                      >
+                        {isResending ? "Sending verification email..." : "Resend verification email"}
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <p className="invite-note">
+                    Do not create another account with the same email. After your address is verified,
+                    sign in to finish redeeming this invitation.
                   </p>
-                ) : null}
+                </div>
+              ) : (
+                <form className="invite-form" onSubmit={handleSubmit}>
+                  <label className="invite-field">
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      autoComplete="email"
+                      required
+                      readOnly
+                    />
+                  </label>
 
-                <button type="submit" className="portal-btn portal-btn--gold invite-submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating account..." : "Create account"}
-                </button>
-              </form>
+                  <label className="invite-field">
+                    <span>Password</span>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                    />
+                  </label>
+
+                  <label className="invite-field">
+                    <span>Confirm password</span>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                    />
+                  </label>
+
+                  {submitError ? (
+                    <p className="invite-error" role="alert">
+                      {submitError}
+                    </p>
+                  ) : null}
+
+                  {submitInfo ? (
+                    <p className="invite-info" role="status">
+                      {submitInfo}
+                    </p>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    className="portal-btn portal-btn--gold invite-submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Creating account..." : "Create account"}
+                  </button>
+
+                  <p className="invite-note invite-note--center">
+                    Already confirmed your email?{" "}
+                    <Link to="/login">Sign in</Link>.
+                  </p>
+                </form>
+              )}
 
               <p className="invite-note">
                 This private link is for {invite.email} only. Do not share it publicly.
