@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
+import { canMemberEditFeedPost, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
 import {
@@ -12,14 +13,18 @@ import {
 } from "../../lib/feedCardMeta";
 import { FeedAvatar } from "./FeedAvatar";
 import { FeedCardHeroMedia } from "./FeedCardHeroMedia";
+import { FeedPostEditModal } from "./FeedPostEditModal";
+import { FeedPostMenu } from "./FeedPostMenu";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 type FeedCardProps = {
   post: FeedPost;
   index?: number;
   variant?: "default" | "founder";
+  currentUserId?: string | null;
   onToast?: (message: string) => void;
   onViewAuthor?: (userId: string, memberName: string) => void;
+  onPostUpdated?: (post: FeedPost) => void;
 };
 
 function HeartIcon({ filled }: { filled?: boolean }) {
@@ -113,10 +118,12 @@ function AuthorIdentity({
   post,
   canViewAuthor,
   onViewAuthor,
+  showEditedLabel = false,
 }: {
   post: FeedPost;
   canViewAuthor: boolean;
   onViewAuthor?: () => void;
+  showEditedLabel?: boolean;
 }) {
   const inner = (
     <>
@@ -139,7 +146,17 @@ function AuthorIdentity({
                   ·
                 </span>
               ) : null}
-              <time className="feed-card-time">{post.timestamp}</time>
+              <time className="feed-card-time" dateTime={post.createdAt}>
+                {post.timestamp}
+              </time>
+              {showEditedLabel ? (
+                <>
+                  <span className="feed-card-dot" aria-hidden="true">
+                    ·
+                  </span>
+                  <span className="feed-card-edited">Edited</span>
+                </>
+              ) : null}
             </>
           ) : null}
         </p>
@@ -167,9 +184,12 @@ export function FeedCard({
   post,
   index = 0,
   variant = "default",
+  currentUserId = null,
   onToast,
   onViewAuthor,
+  onPostUpdated,
 }: FeedCardProps) {
+  const [editing, setEditing] = useState(false);
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [saved, setSaved] = useState(Boolean(post.isSaved));
   const [commentCount, setCommentCount] = useState(post.comments);
@@ -183,6 +203,8 @@ export function FeedCard({
 
   const isFounder = variant === "founder";
   const isCourseRound = !isFounder && isCourseRoundPost(post);
+  const canEdit = !isFounder && canMemberEditFeedPost(post, currentUserId);
+  const showEditedLabel = isFeedPostEdited(post.createdAt, post.updatedAt);
   const roundLabel = post.requestLabel ?? post.roundType ?? postTypeLabels[post.postType];
   const hasImages = (post.images?.length ?? 0) > 0;
   const photoRecords = hasImages
@@ -265,7 +287,9 @@ export function FeedCard({
           post={post}
           canViewAuthor={canViewAuthor}
           onViewAuthor={handleViewAuthor}
+          showEditedLabel={showEditedLabel}
         />
+        {canEdit ? <FeedPostMenu onEdit={() => setEditing(true)} /> : null}
       </header>
 
       {hasImages ? (
@@ -424,6 +448,18 @@ export function FeedCard({
           </form>
         ) : null}
       </div>
+
+      {editing ? (
+        <FeedPostEditModal
+          post={post}
+          onClose={() => setEditing(false)}
+          onSaved={(updatedPost) => {
+            onPostUpdated?.(mergeFeedPostAfterEdit(post, updatedPost));
+            setEditing(false);
+            onToast?.("Post updated");
+          }}
+        />
+      ) : null}
     </article>
   );
 }

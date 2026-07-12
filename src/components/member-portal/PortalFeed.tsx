@@ -7,6 +7,7 @@ import {
   fetchMemberFeedPage,
   type MemberFeedCursor,
 } from "../../lib/memberFeedPosts";
+import { mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
@@ -32,6 +33,7 @@ export function PortalFeed({
 }: PortalFeedProps) {
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [memberPosts, setMemberPosts] = useState<FeedPost[]>([]);
   const [nextCursor, setNextCursor] = useState<MemberFeedCursor | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -46,6 +48,7 @@ export function PortalFeed({
       fetchOwnMemberProfile(),
       getCurrentAuthUserId(),
     ]);
+    setCurrentUserId(userId ?? null);
     const extras = getPortalProfileExtras(data?.user_id ?? userId);
     const media = await resolveMemberProfileMedia(data);
     setComposerAuthor(buildComposerAuthor(data, extras, media));
@@ -120,6 +123,14 @@ export function PortalFeed({
     void loadInitialPage();
   }
 
+  function handlePostUpdated(updatedPost: FeedPost) {
+    setMemberPosts((current) =>
+      current.map((post) =>
+        post.id === updatedPost.id ? mergeFeedPostAfterEdit(post, updatedPost) : post,
+      ),
+    );
+  }
+
   const founderWelcome = useMemo(() => getFounderWelcomePost(), []);
   const hasMemberPosts = memberPosts.length > 0;
 
@@ -190,8 +201,10 @@ export function PortalFeed({
                 key={post.id}
                 post={post}
                 index={index + 1}
+                currentUserId={currentUserId}
                 onToast={showToast}
                 onViewAuthor={onViewMemberProfile}
+                onPostUpdated={handlePostUpdated}
               />
             ))}
           </div>

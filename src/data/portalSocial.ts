@@ -170,6 +170,13 @@ export type FeedPost = {
   details?: { label: string; value: string }[];
   /** Linked member course round — photos resolved from member_course_round_photos */
   memberCourseRoundId?: string;
+  /** Author auth user id — used for ownership checks */
+  authorUserId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /** ISO date (YYYY-MM-DD) when available from linked round */
+  playedOn?: string;
+  wouldPlayAgain?: boolean;
 };
 
 export type CourseListing = {

@@ -71,6 +71,33 @@ async function attachPhotosToRounds(
   }));
 }
 
+export async function fetchMemberCourseRoundById(roundId: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedRoundId = roundId.trim();
+  if (!normalizedRoundId) {
+    return { data: null, error: new Error("Course round not found.") };
+  }
+
+  const { data, error } = await supabase
+    .from("member_course_rounds")
+    .select(ROUND_SELECT)
+    .eq("id", normalizedRoundId)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (!data) {
+    return { data: null, error: new Error("Course round not found.") };
+  }
+
+  return { data: normalizeRound(data as Record<string, unknown>), error: null };
+}
+
 async function attachCourseSlugs(
   rounds: MemberCourseRoundRecord[],
 ): Promise<MemberCourseRoundRecord[]> {
