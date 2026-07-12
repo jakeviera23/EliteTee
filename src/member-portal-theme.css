@@ -454,10 +454,8 @@
   color: var(--et-forest);
 }
 
-/* —— Ask / Feed dark islands: preserve pilot themes —— */
-.portal-page.et-theme-portal .et-feed.et-theme-dark,
+/* —— Ask EliteTee dark island: preserve pilot until migrated —— */
 .portal-page.et-theme-portal .et-ask.et-theme-dark {
-  /* Intentionally not overridden — temporary dark editorial pilots */
   border-radius: var(--et-radius-lg, 0.875rem);
 }
 

@@ -124,11 +124,7 @@ export function PortalFeed({
   const hasMemberPosts = memberPosts.length > 0;
 
   return (
-    <section
-      className="et-feed et-theme-dark"
-      data-et-theme="dark"
-      aria-labelledby="feed-heading"
-    >
+    <section className="et-feed" aria-labelledby="feed-heading">
       <header className="et-feed-hero et-animate-fade-up">
         <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Member Society</p>
         <h2 id="feed-heading" className="et-h2 et-feed-title">
