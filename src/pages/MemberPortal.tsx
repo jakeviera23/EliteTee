@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
 import { AskEliteTee } from "../components/member-portal/AskEliteTee";
@@ -8,14 +8,31 @@ import { PortalDiscover } from "../components/member-portal/PortalDiscover";
 import { PortalFeed } from "../components/member-portal/PortalFeed";
 import { PortalIntroductionRequests } from "../components/member-portal/PortalIntroductionRequests";
 import { PortalMessages } from "../components/member-portal/PortalMessages";
+import { PortalNotificationsPanel } from "../components/member-portal/PortalNotificationsPanel";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { getCurrentAuthUserId } from "../lib/authUserLinking";
-import { fetchPendingIncomingIntroductionCount } from "../lib/introductionRequests";
+import { fetchIntroductionRequests } from "../lib/introductionRequests";
+import type { IntroductionTab } from "../lib/introductionBoard";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
-import { formatNotificationCount } from "../lib/portalNotifications";
+import {
+  computePortalNotificationBadgeCountFromSources,
+  fetchPortalNotificationFeed,
+  type PortalNotificationItem,
+} from "../lib/portalNotificationCenter";
+import {
+  formatNotificationCount,
+  getSeenIntroductionRequestIds,
+  markIntroductionRequestsSeen,
+} from "../lib/portalNotifications";
+import {
+  PORTAL_DESKTOP_PRIMARY_TABS,
+  PORTAL_MOBILE_BOTTOM_TABS,
+  type PortalPrimaryTab,
+} from "../lib/portalNavigation";
 import { supabase } from "../lib/supabase";
+import type { IntroductionRequestRecord } from "../types/introductionRequest";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
 import "../inside-elitetee.css";
 import "../member-portal.css";
@@ -27,44 +44,37 @@ import "../member-portal-discover.css";
 import "../member-portal-profile.css";
 import "../member-portal-messages.css";
 import "../member-portal-introductions.css";
+import "../member-portal-notifications.css";
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;
 const FEED_COMPOSER_ID = "feed-composer";
 
-type PortalTab =
-  | "feed"
-  | "discover"
-  | "ask"
-  | "compose"
-  | "courses"
-  | "messages"
-  | "introductions"
-  | "profile";
+type PortalTab = PortalPrimaryTab;
 
 type PendingConversation = {
   otherUserId: string;
   otherUserName: string;
 };
 
-const desktopTabs: { id: PortalTab; label: string }[] = [
-  { id: "feed", label: "Feed" },
-  { id: "discover", label: "Discover" },
-  { id: "ask", label: "Ask EliteTee" },
-  { id: "courses", label: "Courses" },
-  { id: "introductions", label: "Introductions" },
-  { id: "messages", label: "Messages" },
-  { id: "profile", label: "Profile" },
-];
+const MOBILE_LAYOUT_QUERY = "(max-width: 767px)";
 
-const mobileTabs: { id: PortalTab; label: string }[] = [
-  { id: "feed", label: "Feed" },
-  { id: "discover", label: "Discover" },
-  { id: "ask", label: "Ask" },
-  { id: "courses", label: "Courses" },
-  { id: "messages", label: "Messages" },
-  { id: "profile", label: "Profile" },
-];
+function bottomNavIcon(tab: PortalTab) {
+  switch (tab) {
+    case "feed":
+      return "⌂";
+    case "discover":
+      return "◎";
+    case "ask":
+      return "✦";
+    case "courses":
+      return "⛳";
+    case "profile":
+      return "◉";
+    default:
+      return "•";
+  }
+}
 
 function MemberPortalContent() {
   const navigate = useNavigate();
@@ -76,10 +86,34 @@ function MemberPortalContent() {
   const [activeView, setActiveView] = useState<PortalTab>("feed");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [pendingIntroductionCount, setPendingIntroductionCount] = useState(0);
+  const [introductionRequests, setIntroductionRequests] = useState<IntroductionRequestRecord[]>([]);
+  const [seenIntroductionRequestIds, setSeenIntroductionRequestIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
+  const [notificationItems, setNotificationItems] = useState<PortalNotificationItem[]>([]);
+  const [isMobileLayout, setIsMobileLayout] = useState(() =>
+    window.matchMedia(MOBILE_LAYOUT_QUERY).matches,
+  );
   const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
+  const [pendingIntroductionTab, setPendingIntroductionTab] = useState<IntroductionTab | null>(
+    null,
+  );
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
+
+  const notificationBadgeCount = useMemo(
+    () =>
+      computePortalNotificationBadgeCountFromSources({
+        unreadMessageCount,
+        introductionRequests,
+        currentUserId,
+        seenIntroductionRequestIds,
+      }),
+    [currentUserId, introductionRequests, seenIntroductionRequestIds, unreadMessageCount],
+  );
 
   useEffect(() => {
     const fadeTimer = window.setTimeout(() => setIsInitialLoading(false), INITIAL_LOADER_MS);
@@ -99,14 +133,51 @@ function MemberPortalContent() {
     setUnreadMessageCount(count);
   }, []);
 
-  const refreshPendingIntroductionCount = useCallback(async () => {
-    const { count } = await fetchPendingIncomingIntroductionCount();
-    setPendingIntroductionCount(count);
+  const refreshIntroductionRequests = useCallback(async () => {
+    const [{ userId }, { data, error }] = await Promise.all([
+      getCurrentAuthUserId(),
+      fetchIntroductionRequests(),
+    ]);
+
+    if (userId) {
+      setCurrentUserId(userId);
+    }
+
+    if (error) {
+      return;
+    }
+
+    const nextRequests = data ?? [];
+    setIntroductionRequests(nextRequests);
   }, []);
 
   const refreshNotificationCounts = useCallback(async () => {
-    await Promise.all([refreshUnreadMessageCount(), refreshPendingIntroductionCount()]);
-  }, [refreshPendingIntroductionCount, refreshUnreadMessageCount]);
+    await Promise.all([refreshUnreadMessageCount(), refreshIntroductionRequests()]);
+  }, [refreshIntroductionRequests, refreshUnreadMessageCount]);
+
+  const loadNotificationPanel = useCallback(async () => {
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+
+    const result = await fetchPortalNotificationFeed();
+
+    if (result.error) {
+      setNotificationsError(result.error);
+      setNotificationItems([]);
+      setNotificationsLoading(false);
+      return;
+    }
+
+    setIntroductionRequests(result.introductionRequests);
+    setNotificationItems(result.notifications);
+
+    const unreadFromConversations = result.conversations.reduce(
+      (total, conversation) => total + conversation.unreadCount,
+      0,
+    );
+    setUnreadMessageCount(unreadFromConversations);
+    setNotificationsLoading(false);
+  }, []);
 
   useEffect(() => {
     void refreshNotificationCounts();
@@ -114,6 +185,25 @@ function MemberPortalContent() {
 
   useEffect(() => {
     void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setSeenIntroductionRequestIds(new Set());
+      return;
+    }
+
+    setSeenIntroductionRequestIds(getSeenIntroductionRequestIds(currentUserId));
+  }, [currentUserId]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(MOBILE_LAYOUT_QUERY);
+    const handleChange = () => setIsMobileLayout(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   useEffect(() => {
@@ -255,8 +345,40 @@ function MemberPortalContent() {
     }
   }
 
-  function handlePendingIntroductionCountChange(count: number) {
-    setPendingIntroductionCount(count);
+  function handleIntroductionDataChange() {
+    void refreshIntroductionRequests();
+  }
+
+  function toggleNotificationsPanel() {
+    setNotificationsOpen((isOpen) => {
+      const nextOpen = !isOpen;
+      if (nextOpen) {
+        void loadNotificationPanel();
+      }
+      return nextOpen;
+    });
+  }
+
+  function handleNotificationSelect(notification: PortalNotificationItem) {
+    setNotificationsOpen(false);
+
+    if (notification.acknowledgeIntroductionRequestId && currentUserId) {
+      markIntroductionRequestsSeen(currentUserId, [
+        notification.acknowledgeIntroductionRequestId,
+      ]);
+      setSeenIntroductionRequestIds(getSeenIntroductionRequestIds(currentUserId));
+    }
+
+    if (notification.messageTarget) {
+      setPendingConversation(notification.messageTarget);
+      transitionTo("messages");
+      return;
+    }
+
+    if (notification.introductionTarget) {
+      setPendingIntroductionTab(notification.introductionTarget.tab);
+      transitionTo("introductions");
+    }
   }
 
   return (
@@ -283,24 +405,39 @@ function MemberPortalContent() {
             </button>
 
             <div className="portal-top-actions">
-              <button
-                type="button"
-                className="portal-icon-btn"
-                aria-label={
-                  pendingIntroductionCount > 0
-                    ? `${pendingIntroductionCount} pending introduction requests`
-                    : "Open introduction requests"
-                }
-                onClick={() => transitionTo("introductions")}
-              >
-                <span aria-hidden="true">◇</span>
-                <span className="portal-icon-btn-label">Introductions</span>
-                {pendingIntroductionCount > 0 ? (
-                  <span className="portal-icon-badge">
-                    {formatNotificationCount(pendingIntroductionCount)}
-                  </span>
-                ) : null}
-              </button>
+              <div className="portal-notifications-anchor">
+                <button
+                  type="button"
+                  className="portal-icon-btn portal-icon-btn--notifications"
+                  data-notifications-trigger="true"
+                  aria-label={
+                    notificationBadgeCount > 0
+                      ? `${notificationBadgeCount} notifications`
+                      : "Open notifications"
+                  }
+                  aria-expanded={notificationsOpen}
+                  aria-haspopup="dialog"
+                  onClick={toggleNotificationsPanel}
+                >
+                  <span aria-hidden="true">🔔</span>
+                  <span className="portal-icon-btn-label">Notifications</span>
+                  {notificationBadgeCount > 0 ? (
+                    <span className="portal-icon-badge">
+                      {formatNotificationCount(notificationBadgeCount)}
+                    </span>
+                  ) : null}
+                </button>
+                <PortalNotificationsPanel
+                  isOpen={notificationsOpen}
+                  isMobile={isMobileLayout}
+                  isLoading={notificationsLoading}
+                  errorMessage={notificationsError}
+                  notifications={notificationItems}
+                  onClose={() => setNotificationsOpen(false)}
+                  onRetry={() => void loadNotificationPanel()}
+                  onSelect={handleNotificationSelect}
+                />
+              </div>
               <button
                 type="button"
                 className="portal-icon-btn portal-icon-btn--messages"
@@ -331,7 +468,7 @@ function MemberPortalContent() {
 
         <nav className="portal-tabs portal-tabs--desktop" aria-label="EliteTee member portal">
           <div className="portal-shell portal-shell--bar">
-            {desktopTabs.map((tab) => (
+            {PORTAL_DESKTOP_PRIMARY_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -339,19 +476,7 @@ function MemberPortalContent() {
                 onClick={() => transitionTo(tab.id)}
                 aria-current={activeView === tab.id ? "page" : undefined}
               >
-                <span className="portal-tab-label">
-                  {tab.label}
-                  {tab.id === "messages" && unreadMessageCount > 0 ? (
-                    <span className="portal-tab-badge" aria-hidden="true">
-                      {formatNotificationCount(unreadMessageCount)}
-                    </span>
-                  ) : null}
-                  {tab.id === "introductions" && pendingIntroductionCount > 0 ? (
-                    <span className="portal-tab-badge" aria-hidden="true">
-                      {formatNotificationCount(pendingIntroductionCount)}
-                    </span>
-                  ) : null}
-                </span>
+                <span className="portal-tab-label">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -391,9 +516,11 @@ function MemberPortalContent() {
           {activeView === "introductions" ? (
             <PortalIntroductionRequests
               isActive={activeView === "introductions"}
+              initialTab={pendingIntroductionTab}
+              onInitialTabConsumed={() => setPendingIntroductionTab(null)}
               onMessageMember={handleMessageMember}
               onViewMemberProfile={handleViewMemberProfile}
-              onPendingCountChange={handlePendingIntroductionCountChange}
+              onPendingCountChange={handleIntroductionDataChange}
             />
           ) : null}
           {activeView === "messages" ? (
@@ -420,7 +547,7 @@ function MemberPortalContent() {
       </main>
 
       <nav className="portal-bottom-nav" aria-label="Mobile navigation">
-        {mobileTabs.map((tab) => (
+        {PORTAL_MOBILE_BOTTOM_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -429,22 +556,7 @@ function MemberPortalContent() {
             aria-current={activeView === tab.id ? "page" : undefined}
           >
             <span className="portal-bottom-nav-icon" aria-hidden="true">
-              {tab.id === "feed"
-                ? "⌂"
-                : tab.id === "discover"
-                  ? "◎"
-                  : tab.id === "ask"
-                    ? "✦"
-                    : tab.id === "courses"
-                      ? "⛳"
-                      : tab.id === "messages"
-                        ? "✉"
-                        : "◉"}
-              {tab.id === "messages" && unreadMessageCount > 0 ? (
-                <span className="portal-bottom-nav-badge">
-                  {formatNotificationCount(unreadMessageCount)}
-                </span>
-              ) : null}
+              {bottomNavIcon(tab.id)}
             </span>
             <span>{tab.label}</span>
           </button>

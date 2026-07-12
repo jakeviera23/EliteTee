@@ -24,6 +24,8 @@ import "../../member-portal-introductions.css";
 
 type PortalIntroductionRequestsProps = {
   isActive: boolean;
+  initialTab?: IntroductionTab | null;
+  onInitialTabConsumed?: () => void;
   onMessageMember: (userId: string, memberName: string) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onPendingCountChange?: (count: number) => void;
@@ -69,6 +71,8 @@ const EMPTY_COPY: Record<IntroductionTab, { title: string; copy: string }> = {
 
 export function PortalIntroductionRequests({
   isActive,
+  initialTab,
+  onInitialTabConsumed,
   onMessageMember,
   onViewMemberProfile,
   onPendingCountChange,
@@ -136,6 +140,12 @@ export function PortalIntroductionRequests({
     void loadRequests();
   }, [isActive, loadRequests]);
 
+  useEffect(() => {
+    if (!isActive || !initialTab) return;
+    setActiveTab(initialTab);
+    onInitialTabConsumed?.();
+  }, [initialTab, isActive, onInitialTabConsumed]);
+
   const categorized = useMemo(
     () => categorizeIntroductionRequests(requests, currentUserId),
     [currentUserId, requests],
@@ -144,12 +154,12 @@ export function PortalIntroductionRequests({
   const tabCounts = useMemo(() => countIntroductionTabs(categorized), [categorized]);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || initialTab) return;
     setActiveTab((current) => {
       if (tabCounts[current] > 0) return current;
       return pickDefaultIntroductionTab(categorized);
     });
-  }, [categorized, isLoading, tabCounts]);
+  }, [categorized, initialTab, isLoading, tabCounts]);
 
   const activeRequests = categorized[activeTab];
   const hasAnyRequests = requests.length > 0;
