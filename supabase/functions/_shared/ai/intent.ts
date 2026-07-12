@@ -51,7 +51,13 @@ export function classifyIntent(question: string, explicitIntent?: AiIntent): AiI
     return "find_courses";
   }
 
-  if (lower.includes("which members have played") || lower.includes("members have played")) {
+  if (
+    lower.includes("which members have played") ||
+    lower.includes("members have played") ||
+    lower.includes("who has played") ||
+    lower.includes("who've played") ||
+    lower.includes("who have played")
+  ) {
     return "find_members";
   }
 
@@ -68,6 +74,53 @@ export function classifyIntent(question: string, explicitIntent?: AiIntent): AiI
   }
 
   return "find_members";
+}
+
+export function isSelfIdentityQuestion(question: string): boolean {
+  return /^who am i\??$/i.test(question.trim());
+}
+
+/** Extract a member name/term for RPC `query` filter. Empty string = no text filter (return all portal members). */
+export function extractMemberSearchQuery(question: string): string {
+  const trimmed = question.trim();
+  if (!trimmed) return "";
+
+  if (
+    /^(show|list|see|display|get)\s+(all\s+)?members?\??$/i.test(trimmed) ||
+    /^all\s+members?\??$/i.test(trimmed)
+  ) {
+    return "";
+  }
+
+  if (isSelfIdentityQuestion(trimmed)) {
+    return "";
+  }
+
+  const findMatch = trimmed.match(/^(?:find|search for|look up|lookup)\s+(.+?)\??$/i);
+  if (findMatch?.[1]) {
+    return findMatch[1].trim().slice(0, 80);
+  }
+
+  const namedMatch = trimmed.match(/members?\s+(?:named|called)\s+(.+?)\??$/i);
+  if (namedMatch?.[1]) {
+    return namedMatch[1].trim().slice(0, 80);
+  }
+
+  const whoIsMatch = trimmed.match(/^who(?:'s|\s+is|\s+are)\s+(.+?)\??$/i);
+  if (whoIsMatch?.[1] && !/^i(\s|$)/i.test(whoIsMatch[1].trim())) {
+    return whoIsMatch[1].trim().slice(0, 80);
+  }
+
+  // Location/introduction questions should not filter by the full question text.
+  if (
+    /\bwho should i meet\b/i.test(trimmed) ||
+    /\bwho shares\b/i.test(trimmed) ||
+    /\bwho can i meet\b/i.test(trimmed)
+  ) {
+    return "";
+  }
+
+  return "";
 }
 
 export function buildRetrievalFilters(question: string, intent: AiIntent) {
@@ -101,7 +154,7 @@ export function buildRetrievalFilters(question: string, intent: AiIntent) {
   return {
     courseQuery: "",
     memberFilters: {
-      query: question.slice(0, 120),
+      query: extractMemberSearchQuery(question),
       location: locationMatch,
       interest: interestMatch,
       travel: travelMatch.includes("travel") ? travelMatch : "",
@@ -110,7 +163,7 @@ export function buildRetrievalFilters(question: string, intent: AiIntent) {
 }
 
 export function extractCourseNameFromQuestion(question: string): string | null {
-  const playedMatch = question.match(/played\s+(.+?)(?:\?|$)/i);
+  const playedMatch = question.match(/(?:played|play at|played at)\s+(.+?)\??$/i);
   if (playedMatch?.[1]) {
     return playedMatch[1].trim();
   }

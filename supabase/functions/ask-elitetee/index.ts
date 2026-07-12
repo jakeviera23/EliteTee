@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { classifyIntent, buildRetrievalFilters, extractCourseNameFromQuestion } from "../_shared/ai/intent.ts";
+import { classifyIntent, buildRetrievalFilters, extractCourseNameFromQuestion, isSelfIdentityQuestion } from "../_shared/ai/intent.ts";
 import { getProviderForTask } from "../_shared/ai/provider-registry.ts";
 import { rankMembers, sanitizeUntrustedText } from "../_shared/ai/scoring.ts";
 import {
@@ -199,21 +199,76 @@ Deno.serve(async (req) => {
   const requestor = requestorProfile as RetrievedMember | null;
   const pendingIntroIds = await getPendingIntroUserIds(supabase, user.id);
 
+  if (isSelfIdentityQuestion(question)) {
+    if (!requestor) {
+      const insufficient = buildInsufficientDataResponse("find_members");
+      await supabase.from("ai_queries").insert({
+        user_id: user.id,
+        intent: "find_members",
+        status: "insufficient_data",
+        latency_ms: Date.now() - started,
+        error_code: "NO_REQUESTOR_PROFILE",
+      });
+      return jsonResponse(insufficient);
+    }
+
+    const selfAnswer = [
+      `You are ${requestor.full_name || "an EliteTee member"}.`,
+      requestor.primary_club ? `Primary club: ${requestor.primary_club}.` : "",
+      requestor.based_in ? `Based in: ${requestor.based_in}.` : "",
+      requestor.traveling_to ? `Traveling to: ${requestor.traveling_to}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const selfResponse: AskEliteTeeResponse = {
+      status: "ok",
+      intent: "find_members",
+      answer: selfAnswer,
+      sources: ["Member profiles"],
+      members: [],
+      courses: [],
+      reasons: [],
+      query_id: null,
+    };
+
+    const { data: queryRow } = await supabase
+      .from("ai_queries")
+      .insert({
+        user_id: user.id,
+        intent: "find_members",
+        status: "ok",
+        latency_ms: Date.now() - started,
+        model: "deterministic",
+      })
+      .select("id")
+      .maybeSingle();
+
+    selfResponse.query_id = queryRow?.id ? String(queryRow.id) : null;
+    return jsonResponse(selfResponse);
+  }
+
   if (intent === "find_courses") {
-    const { data: courseRows } = await supabase.rpc("ai_search_golf_courses", {
+    const { data: courseRows, error: courseError } = await supabase.rpc("ai_search_golf_courses", {
       p_query: filters.courseQuery,
       p_limit: 12,
     });
+    if (courseError) {
+      console.error("ai_search_golf_courses failed:", courseError.message);
+    }
     courses = (courseRows ?? []) as RetrievedCourse[];
     sources.push("Course directory");
     if (courses.some((course) => (course.avg_rating ?? 0) > 0 || (course.round_count ?? 0) > 0)) {
       sources.push("Member reviews");
     }
   } else {
-    const { data: memberRows } = await supabase.rpc("ai_search_portal_members", {
+    const { data: memberRows, error: memberError } = await supabase.rpc("ai_search_portal_members", {
       p_filters: filters.memberFilters,
       p_limit: 30,
     });
+    if (memberError) {
+      console.error("ai_search_portal_members failed:", memberError.message, filters.memberFilters);
+    }
 
     members = ((memberRows ?? []) as RetrievedMember[]).filter(
       (member) => !pendingIntroIds.has(member.user_id),

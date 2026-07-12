@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { classifyIntent, extractCourseNameFromQuestion, buildRetrievalFilters } from "./intent.ts";
+import {
+  classifyIntent,
+  extractCourseNameFromQuestion,
+  extractMemberSearchQuery,
+  buildRetrievalFilters,
+} from "./intent.ts";
 
 describe("classifyIntent", () => {
   it("classifies course rating questions as find_courses", () => {
@@ -14,6 +19,7 @@ describe("classifyIntent", () => {
 
   it("classifies played-course member questions as find_members", () => {
     expect(classifyIntent("Which members have played National Golf Links?")).toBe("find_members");
+    expect(classifyIntent("Who has played National Golf Links?")).toBe("find_members");
   });
 
   it("returns unsupported for empty questions", () => {
@@ -28,12 +34,33 @@ describe("buildRetrievalFilters", () => {
       "recommend_introductions",
     );
     expect(filters.memberFilters.location?.toLowerCase()).toBe("florida");
+    expect(filters.memberFilters.query).toBe("");
+  });
+
+  it("does not pass the full question as the member query filter", () => {
+    expect(buildRetrievalFilters("Show all members", "find_members").memberFilters.query).toBe("");
+    expect(buildRetrievalFilters("Find Ryan Konrad", "find_members").memberFilters.query).toBe(
+      "Ryan Konrad",
+    );
+  });
+});
+
+describe("extractMemberSearchQuery", () => {
+  it("returns empty for broad member list questions", () => {
+    expect(extractMemberSearchQuery("Show all members")).toBe("");
+  });
+
+  it("extracts names from find questions", () => {
+    expect(extractMemberSearchQuery("Find Ryan Konrad")).toBe("Ryan Konrad");
   });
 });
 
 describe("extractCourseNameFromQuestion", () => {
   it("extracts course names from played questions", () => {
     expect(extractCourseNameFromQuestion("Which members have played National Golf Links?")).toBe(
+      "National Golf Links",
+    );
+    expect(extractCourseNameFromQuestion("Who has played National Golf Links?")).toBe(
       "National Golf Links",
     );
   });
