@@ -5,6 +5,8 @@
 -- Does NOT modify provider-owned, seed-owned, or EliteTee-owned canonical courses.
 -- Does NOT rewrite member_course_rounds, feed posts, photos, ratings, or played dates.
 
+drop function if exists public.propose_legacy_member_course_location_fix(text, text, text, text, text);
+
 -- ---------------------------------------------------------------------------
 -- Helpers
 -- ---------------------------------------------------------------------------
@@ -248,12 +250,32 @@ as $$
     );
 $$;
 
+create or replace function public.best_parseable_round_location(p_golf_course_id uuid)
+returns text
+language sql
+stable
+set search_path = public
+as $$
+  select nullif(public.normalize_location_whitespace(mcr.location), '')
+  from public.member_course_rounds mcr
+  cross join lateral public.parse_legacy_us_course_location(
+    nullif(public.normalize_location_whitespace(mcr.location), '')
+  ) pl
+  where mcr.golf_course_id = p_golf_course_id
+    and nullif(public.normalize_location_whitespace(mcr.location), '') is not null
+    and pl.confidence = 'high'
+    and coalesce(pl.region, '') <> ''
+    and coalesce(pl.country, '') <> ''
+  order by mcr.played_on desc nulls last, mcr.created_at desc nulls last
+  limit 1;
+$$;
+
 create or replace function public.propose_legacy_member_course_location_fix(
+  p_golf_course_id uuid,
   p_name text,
   p_city text,
   p_region text,
-  p_country text,
-  p_latest_round_location text
+  p_country text
 )
 returns table (
   new_city text,
@@ -265,12 +287,14 @@ returns table (
   reason_manual_review text
 )
 language plpgsql
-immutable
+stable
+set search_path = public
 as $$
 declare
   v_city_parse record;
   v_round_parse record;
   v_city_like_name boolean;
+  v_round_location text;
 begin
   new_city := null;
   new_region := null;
@@ -288,7 +312,8 @@ begin
 
   v_city_like_name := public.is_course_city_equal_or_similar_to_name(p_name, p_city);
   select * into v_city_parse from public.parse_legacy_us_course_location(p_city);
-  select * into v_round_parse from public.parse_legacy_us_course_location(p_latest_round_location);
+  v_round_location := public.best_parseable_round_location(p_golf_course_id);
+  select * into v_round_parse from public.parse_legacy_us_course_location(v_round_location);
 
   if v_city_like_name then
     if v_round_parse.confidence = 'high'
@@ -347,7 +372,8 @@ revoke all on function public.is_legacy_member_submitted_golf_course(boolean, te
 revoke all on function public.is_course_city_equal_or_similar_to_name(text, text) from public;
 revoke all on function public.parse_legacy_us_course_location(text) from public;
 revoke all on function public.has_correct_member_submitted_location(text, text, text, text) from public;
-revoke all on function public.propose_legacy_member_course_location_fix(text, text, text, text, text) from public;
+revoke all on function public.best_parseable_round_location(uuid) from public;
+revoke all on function public.propose_legacy_member_course_location_fix(uuid, text, text, text, text) from public;
 
 -- ---------------------------------------------------------------------------
 -- Preview proposed changes (shown in migration output)
@@ -366,14 +392,6 @@ with member_courses as (
   where gc.moderation_status = 'active'
     and public.is_legacy_member_submitted_golf_course(gc.submitted_by_member, gc.source_name)
 ),
-latest_rounds as (
-  select distinct on (mcr.golf_course_id)
-    mcr.golf_course_id,
-    nullif(trim(mcr.location), '') as latest_round_location
-  from public.member_course_rounds mcr
-  where mcr.golf_course_id is not null
-  order by mcr.golf_course_id, mcr.played_on desc nulls last, mcr.created_at desc nulls last
-),
 proposed as (
   select
     mc.id as course_id,
@@ -389,13 +407,12 @@ proposed as (
     fix.cleanup_action,
     fix.reason_manual_review
   from member_courses mc
-  left join latest_rounds lr on lr.golf_course_id = mc.id
   cross join lateral public.propose_legacy_member_course_location_fix(
+    mc.id,
     mc.name,
     mc.city,
     mc.region,
-    mc.country,
-    lr.latest_round_location
+    mc.country
   ) fix
 )
 select
@@ -429,14 +446,6 @@ with member_courses as (
   where gc.moderation_status = 'active'
     and public.is_legacy_member_submitted_golf_course(gc.submitted_by_member, gc.source_name)
 ),
-latest_rounds as (
-  select distinct on (mcr.golf_course_id)
-    mcr.golf_course_id,
-    nullif(trim(mcr.location), '') as latest_round_location
-  from public.member_course_rounds mcr
-  where mcr.golf_course_id is not null
-  order by mcr.golf_course_id, mcr.played_on desc nulls last, mcr.created_at desc nulls last
-),
 proposed as (
   select
     mc.id as course_id,
@@ -447,13 +456,12 @@ proposed as (
     fix.parse_confidence,
     fix.cleanup_action
   from member_courses mc
-  left join latest_rounds lr on lr.golf_course_id = mc.id
   cross join lateral public.propose_legacy_member_course_location_fix(
+    mc.id,
     mc.name,
     mc.city,
     mc.region,
-    mc.country,
-    lr.latest_round_location
+    mc.country
   ) fix
   where fix.cleanup_action = 'auto_update'
     and fix.new_city is not null
@@ -492,14 +500,6 @@ with member_courses as (
   where gc.moderation_status = 'active'
     and public.is_legacy_member_submitted_golf_course(gc.submitted_by_member, gc.source_name)
 ),
-latest_rounds as (
-  select distinct on (mcr.golf_course_id)
-    mcr.golf_course_id,
-    nullif(trim(mcr.location), '') as latest_round_location
-  from public.member_course_rounds mcr
-  where mcr.golf_course_id is not null
-  order by mcr.golf_course_id, mcr.played_on desc nulls last, mcr.created_at desc nulls last
-),
 status as (
   select
     mc.id,
@@ -507,17 +507,16 @@ status as (
     mc.city,
     mc.region,
     mc.country,
-    lr.latest_round_location,
+    public.best_parseable_round_location(mc.id) as latest_round_location,
     fix.cleanup_action,
     fix.reason_manual_review
   from member_courses mc
-  left join latest_rounds lr on lr.golf_course_id = mc.id
   cross join lateral public.propose_legacy_member_course_location_fix(
+    mc.id,
     mc.name,
     mc.city,
     mc.region,
-    mc.country,
-    lr.latest_round_location
+    mc.country
   ) fix
 )
 select

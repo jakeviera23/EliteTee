@@ -60,6 +60,23 @@ describe("resolveMemberSubmittedLocationCleanup", () => {
     });
   });
 
+  it("auto-corrects Westhampton Beach NY embedded in city", () => {
+    expect(
+      resolveMemberSubmittedLocationCleanup({
+        name: "Westhampton Golf Club",
+        city: "Westhampton Beach NY",
+        region: null,
+        country: null,
+      }),
+    ).toMatchObject({
+      action: "auto_update",
+      suggestedCity: "Westhampton Beach",
+      suggestedRegion: "NY",
+      suggestedCountry: "United States",
+      parseSource: "golf_courses.city",
+    });
+  });
+
   it("uses experience location for course-name-as-city rows", () => {
     expect(
       resolveMemberSubmittedLocationCleanup({

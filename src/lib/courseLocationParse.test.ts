@@ -45,6 +45,16 @@ describe("parseLegacyCourseLocation", () => {
     });
   });
 
+  it("parses Westhampton Beach NY into city, region, and country", () => {
+    expect(parseLegacyCourseLocation("Westhampton Beach NY")).toEqual({
+      city: "Westhampton Beach",
+      region: "NY",
+      country: "United States",
+      confidence: "high",
+      source: "us_suffix",
+    });
+  });
+
   it("leaves low-confidence strings editable instead of guessing region", () => {
     const parsed = parseLegacyCourseLocation("Hidden Valley");
     expect(parsed.city).toBe("Hidden Valley");
