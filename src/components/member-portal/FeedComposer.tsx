@@ -9,6 +9,7 @@ import {
 } from "../../data/portalSocial";
 import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
 import { createMemberFeedPost } from "../../lib/memberFeedPosts";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { FeedAvatar } from "./FeedAvatar";
 
@@ -206,7 +207,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
     if (error) {
       console.error("[FeedComposer] post failed", error.message);
-      setSubmitError(error.message);
+      setSubmitError(memberFacingPortalError(error.message, "feed"));
       return;
     }
 
@@ -333,7 +334,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                   )}
                 </label>
                 <p className="feed-composer-photo-note">
-                  Photo preview only — round photos publish with completed rounds.
+                  Photos attach when you share a full round experience from Courses.
                 </p>
               </div>
             ) : (
@@ -345,7 +346,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
               </button>
               <button
                 type="submit"
-                className="portal-btn portal-btn--gold portal-btn--compact"
+                className="et-btn et-btn--forest feed-composer-submit"
                 disabled={!canSubmit}
               >
                 {isSubmitting ? "Posting…" : "Post to Feed"}

@@ -407,7 +407,7 @@ export function AddCoursePlayedModal({
                 {experienceCopy.futureFields.map((field) => (
                   <div key={field.key} className="et-experience-future-field">
                     <p className="et-experience-future-label">{field.label}</p>
-                    <p className="et-experience-future-soon">Coming soon</p>
+                    <p className="et-experience-future-soon">Later</p>
                   </div>
                 ))}
               </div>
@@ -423,7 +423,7 @@ export function AddCoursePlayedModal({
 
               <button
                 type="submit"
-                className="et-btn et-btn--forest et-btn--full portal-btn portal-btn--gold portal-btn--full"
+                className="et-btn et-btn--forest et-btn--full"
                 disabled={submitting || !form.course_rating}
               >
                 {submitting ? experienceCopy.shareSaving : experienceCopy.shareSubmit}

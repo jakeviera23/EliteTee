@@ -31,10 +31,12 @@ export function PortalCompose({ onPosted }: PortalComposeProps) {
   }
 
   return (
-    <section className="portal-social-page portal-compose-page" aria-labelledby="compose-heading">
-      <header className="portal-section-head portal-section-head--social portal-section-head--compact">
-        <h2 id="compose-heading">Create Post</h2>
-        <p>Share where you played, request introductions, and connect with founding members.</p>
+    <section className="et-feed et-feed-compose" aria-labelledby="compose-heading">
+      <header className="et-feed-hero">
+        <h2 id="compose-heading" className="et-feed-title">
+          Create post
+        </h2>
+        <p className="et-feed-lead">Share where you played, request introductions, and connect with members.</p>
       </header>
       <FeedComposer author={composerAuthor} onPosted={handlePosted} />
     </section>

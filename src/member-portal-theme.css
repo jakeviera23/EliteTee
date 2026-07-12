@@ -16,6 +16,7 @@
   --portal-muted: var(--et-text-tertiary);
   --portal-faint: var(--et-text-tertiary);
   --portal-white: var(--et-text-primary);
+  --et-portal-content-max: 72rem;
   background: var(--et-bg-base);
   color: var(--et-text-secondary);
 }
@@ -102,6 +103,7 @@
   .portal-page.et-theme-portal .portal-bottom-nav {
     background: rgba(28, 43, 36, 0.98);
     border-top-color: var(--et-chrome-border);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .portal-page.et-theme-portal .portal-bottom-nav-btn {
@@ -364,11 +366,11 @@
 
 /* —— Course played modal / rating picker —— */
 .portal-page.et-theme-portal .portal-course-rating-display {
-  color: var(--et-gold);
+  color: var(--et-accent);
 }
 
 .portal-page.et-theme-portal .portal-course-rating-slider {
-  accent-color: var(--et-gold);
+  accent-color: var(--et-accent);
 }
 
 .portal-page.et-theme-portal .portal-course-rating-input {
@@ -384,7 +386,7 @@
 }
 
 .portal-page.et-theme-portal .portal-course-rating-selected {
-  color: var(--et-gold);
+  color: var(--et-accent);
 }
 
 .portal-page.et-theme-portal .portal-course-rating-error {
@@ -496,4 +498,75 @@
   .portal-page.et-theme-portal .portal-course-card {
     transition: none;
   }
+}
+
+/* —— Launch consistency pass —— */
+@media (max-width: 767px) {
+  .portal-page.et-theme-portal .portal-main {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.portal-page.et-theme-portal .et-discover,
+.portal-page.et-theme-portal .et-messages,
+.portal-page.et-theme-portal .et-profile,
+.portal-page.et-theme-portal .et-ask,
+.portal-page.et-theme-portal .et-introductions,
+.portal-page.et-theme-portal .et-course-detail {
+  width: min(100%, var(--et-portal-content-max));
+}
+
+.portal-page.et-theme-portal .et-courses {
+  width: min(100%, var(--et-portal-content-max));
+}
+
+.portal-page.et-theme-portal .et-profile-feed-grid .feed-card,
+.portal-page.et-theme-portal .et-profile .feed-card {
+  background: var(--et-bg-surface);
+  border-color: var(--et-border-hairline);
+  box-shadow: var(--et-shadow-sm);
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .et-profile-feed-grid .feed-card:hover,
+.portal-page.et-theme-portal .et-profile .feed-card:hover {
+  border-color: var(--et-border-subtle);
+  box-shadow: var(--et-shadow-md);
+}
+
+.portal-page.et-theme-portal .portal-modal {
+  background: var(--et-bg-surface);
+  border: 1px solid var(--et-border-hairline);
+  box-shadow: var(--et-shadow-lg);
+  color: var(--et-text-secondary);
+}
+
+.portal-page.et-theme-portal .portal-modal-head h3,
+.portal-page.et-theme-portal .portal-modal-head h2 {
+  color: var(--et-text-primary);
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+}
+
+.portal-page.et-theme-portal .portal-modal-close {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.65rem;
+  background: var(--et-bg-inset);
+  color: var(--et-text-primary);
+}
+
+.portal-page.et-theme-portal .portal-main .portal-btn--gold,
+.portal-page.et-theme-portal .portal-modal .portal-btn--gold,
+.portal-page.et-theme-portal .feed-composer .portal-btn--gold {
+  color: var(--et-bg-surface);
+  background: var(--et-forest);
+  border-color: var(--et-forest);
+}
+
+.portal-page.et-theme-portal .portal-main .portal-btn--gold:hover:not(:disabled),
+.portal-page.et-theme-portal .portal-modal .portal-btn--gold:hover:not(:disabled),
+.portal-page.et-theme-portal .feed-composer .portal-btn--gold:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--et-forest) 88%, black 12%);
+  border-color: color-mix(in srgb, var(--et-forest) 88%, black 12%);
 }

@@ -10,6 +10,7 @@ import {
   updateCourseRoundFeedPost,
   updateMemberFeedPostCaption,
 } from "../../lib/memberFeedPosts";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { fetchMemberCourseRoundById } from "../../lib/memberCourseRounds";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 
@@ -93,7 +94,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
       setIsSaving(false);
 
       if (saveError || !data) {
-        setError(saveError?.message ?? "Your post could not be saved.");
+        setError(memberFacingPortalError(saveError?.message ?? "unknown", "feed"));
         return;
       }
 
@@ -130,7 +131,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
     setIsSaving(false);
 
     if (saveError || !data) {
-      setError(saveError?.message ?? "Your post could not be saved.");
+      setError(memberFacingPortalError(saveError?.message ?? "unknown", "feed"));
       return;
     }
 

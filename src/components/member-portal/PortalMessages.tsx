@@ -12,6 +12,7 @@ import {
   markDirectMessagesAsRead,
   sendDirectPrivateMessage,
 } from "../../lib/privateMessages";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { DirectConversationSummary, PrivateMessageRecord } from "../../types/privateMessage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
@@ -268,7 +269,7 @@ export function PortalMessages({
 
     if (error) {
       console.error("[PortalMessages] failed to send message", error.message);
-      setSendError(error.message);
+      setSendError(memberFacingPortalError(error.message, "message"));
       return;
     }
 

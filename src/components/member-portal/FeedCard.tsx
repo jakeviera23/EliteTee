@@ -256,7 +256,7 @@ export function FeedCard({
     } catch {
       return;
     }
-    onToast?.("Sharing coming soon");
+    onToast?.("Could not share this post. Try again.");
   }
 
   function handleCommentSubmit(event: React.FormEvent<HTMLFormElement>) {

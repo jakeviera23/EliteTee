@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { introductionsCopy } from "../../data/portalSocial";
 import { createIntroductionRequest } from "../../lib/introductionRequests";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { IntroductionRequestType } from "../../types/introductionRequest";
 import { IntroductionRequestForm } from "./IntroductionRequestForm";
@@ -39,7 +40,8 @@ export function IntroductionRequestModal({
     setIsSubmitting(false);
 
     if (error) {
-      setErrorMessage(error.message);
+      console.error("[IntroductionRequestModal]", error);
+      setErrorMessage(memberFacingPortalError(error.message, "introduction"));
       return;
     }
 

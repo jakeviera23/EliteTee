@@ -64,8 +64,9 @@
 }
 
 /* —— Composer —— */
-.et-feed-composer-wrap {
-  width: 100%;
+.feed-composer-submit {
+  min-height: 2.75rem;
+  min-width: 8.5rem;
 }
 
 .et-feed .feed-composer {

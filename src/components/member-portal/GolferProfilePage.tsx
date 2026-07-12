@@ -560,10 +560,9 @@ export function GolferProfilePage({
               {!isViewingOther ? (
                 <ProfileSection title="Bucket list" description="Courses you want to play next.">
                   <div className="et-profile-bucket">
-                    <p className="et-profile-bucket-label">Coming soon</p>
+                    <p className="et-profile-bucket-label">Bucket list</p>
                     <p className="et-profile-bucket-copy">
-                      Saved bucket-list courses will live here once collections connect to the
-                      EliteTee course library.
+                      Save courses from the library to build your list.
                       {bucketListCount > 0
                         ? ` You currently have ${bucketListCount} legacy saved course${bucketListCount === 1 ? "" : "s"} on this device.`
                         : ""}

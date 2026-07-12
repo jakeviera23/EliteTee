@@ -16,6 +16,7 @@ import {
   type ApprovedMemberDirectoryProfile,
 } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { IntroductionRequestCard } from "./introductions/IntroductionRequestCard";
@@ -163,7 +164,7 @@ export function PortalIntroductionRequests({
     setUpdatingRequestId(null);
 
     if (error) {
-      setActionError(error.message);
+      setActionError(memberFacingPortalError(error.message, "introduction"));
       return;
     }
 
@@ -182,7 +183,7 @@ export function PortalIntroductionRequests({
     setUpdatingRequestId(null);
 
     if (error) {
-      setActionError(error.message);
+      setActionError(memberFacingPortalError(error.message, "introduction"));
       return;
     }
 

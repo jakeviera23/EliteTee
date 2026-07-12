@@ -170,7 +170,7 @@ export function PortalDiscover({
         <div className="et-discover-empty">
           <p className="et-discover-empty-title">No members in the directory yet</p>
           <p className="et-discover-empty-copy">
-            Approved member profiles will appear here as founding members join EliteTee.
+            Approved member profiles will appear here as the directory grows.
           </p>
         </div>
       ) : null}

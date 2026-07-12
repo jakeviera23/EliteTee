@@ -13,6 +13,7 @@ import {
   uploadMemberAvatarPhoto,
   uploadMemberCoverPhoto,
 } from "../../lib/memberProfileMedia";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import {
   getPortalProfileExtras,
   savePortalProfileExtras,
@@ -169,7 +170,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         if (!active) return;
 
         if (error) {
-          setErrorMessage(error.message);
+          setErrorMessage(memberFacingPortalError(error.message, "profile"));
           setProfile(null);
           setForm(null);
           setInitialForm(null);
@@ -371,7 +372,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
       if (!error) {
         const refreshed = await fetchOwnMemberProfile();
         if (refreshed.error) {
-          setErrorMessage(refreshed.error.message);
+          setErrorMessage(memberFacingPortalError(refreshed.error.message, "profile"));
         } else if (!refreshed.data) {
           setErrorMessage(NO_LINKED_PROFILE_MESSAGE);
         } else {
@@ -394,7 +395,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           });
         }
       } else {
-        setErrorMessage(`Saved on this device. Remote sync failed: ${error.message}`);
+        setErrorMessage(
+          "Your profile was saved locally, but could not sync to EliteTee. Try again shortly.",
+        );
       }
 
       setSuccessMessage("Your profile has been updated.");
@@ -608,7 +611,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         <p className="portal-profile-form-note et-profile-form-note">{earlyStageCopy.profileStatsNote}</p>
 
         <div className="portal-profile-form-actions et-profile-form-actions">
-          <button type="submit" className="portal-btn portal-btn--gold" disabled={isSaving}>
+          <button type="submit" className="et-btn et-btn--forest" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Profile"}
           </button>
         </div>

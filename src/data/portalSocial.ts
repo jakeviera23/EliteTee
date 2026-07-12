@@ -5,44 +5,41 @@ export const MAX_RATING = 10;
 export const ratingOptions = Array.from({ length: MAX_RATING }, (_, index) => MAX_RATING - index);
 
 export const earlyStageCopy = {
-  earlyCommunity: "Early community",
+  earlyCommunity: "Member network",
   foundingMember: "Founding Member",
-  foundingMemberNote: "One of the first members helping shape EliteTee.",
+  foundingMemberNote: "Part of EliteTee's founding member cohort.",
   memberActivityPending: "No member activity yet.",
   memberActivityGrowing:
-    "Member notes, recent rounds, and travel requests will appear here as founding members begin using EliteTee.",
+    "Member notes, recent rounds, and travel requests appear here as members share activity.",
   coursesLibraryGrowth:
-    "EliteTee's course library will grow through member rounds, travel notes, and recommendations.",
+    "The course library grows through member experiences, travel notes, and recommendations.",
   coursesIntro:
-    "The course library starts with a curated set of standout destinations and grows as members add rounds they've played.",
+    "Explore standout destinations and member-submitted courses from the EliteTee network.",
   featuredCoursesStartingPoint:
-    "These six featured courses are a starting point—not a complete database. Member rounds will expand what appears here over time.",
-  curatedLibraryLabel: "Curated Course Library",
-  featuredCourseLabel: "Featured Course",
+    "Featured courses highlight destinations members are talking about. The library expands as experiences are shared.",
+  curatedLibraryLabel: "Course library",
+  featuredCourseLabel: "Featured course",
   profileOnboarding:
-    "Complete your profile so other founding members know where you play, where you travel, and what kind of golf connections you're looking for.",
+    "Complete your profile so members know where you play, where you travel, and what connections you're looking for.",
   beAmongFirst:
-    "Complete your profile so other founding members know where you play, where you travel, and what kind of golf connections you're looking for.",
-  noPublicDirectory: "No public member directory until the community is active.",
+    "Complete your profile so members know where you play, where you travel, and what connections you're looking for.",
+  noPublicDirectory: "Member profiles are visible to approved portal members.",
   coursesGrowNote:
-    "Founding Members will begin adding rounds, recommendations, and travel notes soon.",
+    "Members add rounds, recommendations, and travel notes as they share experiences.",
   feedEmptyTitle: "No member posts yet",
   feedEmptyHint: "Share a round, travel plan, or introduction request to begin the conversation.",
   feedEmptyCta: "",
-  discoverFoundingTitle: "Founding Members",
-  discoverFoundingBody:
-    "As new members join EliteTee, approved profiles will appear here.",
-  discoverFoundingNote:
-    "Search by location, home club, travel plans, and interests as the community grows.",
-  discoverNoMatch:
-    "No members match that search yet. Profiles will appear here as founding members join.",
-  messagesEmptyTitle: "No conversations yet.",
+  discoverFoundingTitle: "Members",
+  discoverFoundingBody: "Approved member profiles appear here as the directory grows.",
+  discoverFoundingNote: "Search by location, home club, travel plans, and interests.",
+  discoverNoMatch: "No members match that search. Try broadening your filters or search terms.",
+  messagesEmptyTitle: "No conversations yet",
   messagesEmptyBody:
-    "As more founding members join EliteTee, you'll be able to connect directly, introduce yourself, and build relationships through the game.",
-  messagesEmptyNote: "Start your first conversation when another member joins.",
-  messagesNewEmpty: "No members available to message yet. Conversations will open as founding members join.",
+    "Start a conversation from Discover, a member profile, or an accepted introduction.",
+  messagesEmptyNote: "Use New Conversation to message another member directly.",
+  messagesNewEmpty: "No other members to message yet. Start from Discover or a member profile.",
   courseDiscoveryPreview: "Course discovery",
-  courseMemberPhotosNote: "Member photos will appear as rounds are shared.",
+  courseMemberPhotosNote: "Member photos appear as experiences are shared.",
   profileStatsNote: "These numbers grow as you share rounds, save courses, and connect with members.",
   connectionInterestsEmpty:
     "Share the kinds of golf connections you're looking for in Edit Profile.",
@@ -52,7 +49,7 @@ export const earlyStageCopy = {
   favoriteCoursesEmpty: "No saved courses yet.",
   tripsEmpty: "No trips planned yet.",
   roundsEmpty: "No rounds shared yet.",
-  notificationsEmpty: "Alerts will appear as member activity grows.",
+  notificationsEmpty: "Alerts appear when there is member activity to review.",
   composerCollapsedPlaceholder: "Share a round, request an introduction, or post an update…",
 } as const;
 
@@ -89,14 +86,14 @@ export const experienceCopy = {
     { key: "partners", label: "Playing partners" },
     { key: "trip", label: "Trip" },
   ] as const,
-  futureFieldsNote: "These fields are coming soon. Your experience still saves with the details above.",
+  futureFieldsNote: "Additional details will be available in a future update. Your experience saves with the fields above.",
 } as const;
 
 /** Messages — member correspondence copy */
 export const messagesCopy = {
   eyebrow: "Member Messages",
   title: "Messages",
-  lead: "Private correspondence with founding members — calm, direct, and golf-connected.",
+  lead: "Private correspondence with members — calm, direct, and golf-connected.",
   newConversation: "New Conversation",
   backToList: "Back to conversations",
   viewProfile: "View Profile",
