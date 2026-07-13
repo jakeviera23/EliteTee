@@ -15,6 +15,7 @@ type IntroductionRequestCardProps = {
   updatingRequestId: string | null;
   onAccept: (requestId: string) => void;
   onDecline: (requestId: string) => void;
+  onCancel: (requestId: string) => void;
   onMessageMember: (request: IntroductionRequestRecord) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
 };
@@ -51,6 +52,7 @@ export function IntroductionRequestCard({
   updatingRequestId,
   onAccept,
   onDecline,
+  onCancel,
   onMessageMember,
   onViewMemberProfile,
 }: IntroductionRequestCardProps) {
@@ -60,6 +62,8 @@ export function IntroductionRequestCard({
   const counterpart = getIntroductionCounterpart(request, currentUserId);
   const isIncomingPending =
     normalizedStatus === "pending" && request.receiver_id === currentUserId;
+  const isSentPending =
+    normalizedStatus === "pending" && request.sender_id === currentUserId;
   const canMessage = normalizedStatus === "accepted";
   const isUpdating = updatingRequestId === request.id;
   const timeline = buildIntroductionTimeline(request);
@@ -136,6 +140,17 @@ export function IntroductionRequestCard({
               {introductionsCopy.decline}
             </button>
           </>
+        ) : null}
+
+        {isSentPending ? (
+          <button
+            type="button"
+            className="et-btn et-btn--secondary et-btn--sm"
+            onClick={() => onCancel(request.id)}
+            disabled={isUpdating}
+          >
+            {isUpdating ? "Updating…" : introductionsCopy.cancelRequest}
+          </button>
         ) : null}
 
         {canMessage ? (

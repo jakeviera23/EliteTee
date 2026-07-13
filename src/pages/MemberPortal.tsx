@@ -347,9 +347,9 @@ function MemberPortalContent() {
     }
   }
 
-  function handleIntroductionDataChange() {
-    void refreshIntroductionRequests();
-  }
+  const handleIntroductionRequestsChange = useCallback((requests: IntroductionRequestRecord[]) => {
+    setIntroductionRequests(requests);
+  }, []);
 
   function toggleNotificationsPanel() {
     setNotificationsOpen((isOpen) => {
@@ -527,7 +527,7 @@ function MemberPortalContent() {
               onInitialTabConsumed={() => setPendingIntroductionTab(null)}
               onMessageMember={handleMessageMember}
               onViewMemberProfile={handleViewMemberProfile}
-              onPendingCountChange={handleIntroductionDataChange}
+              onRequestsChange={handleIntroductionRequestsChange}
             />
           ) : null}
           {activeView === "messages" ? (
