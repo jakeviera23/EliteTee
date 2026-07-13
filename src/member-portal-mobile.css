@@ -7,9 +7,12 @@
   .portal-page.et-theme-portal {
     --mobile-nav-height: 3.75rem;
     --portal-mobile-gutter: 20px;
+    --portal-mobile-course-card-width: calc(100vw - 40px);
     width: 100%;
     max-width: 100%;
     overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   .portal-page.et-theme-portal *,
@@ -168,7 +171,7 @@
   .portal-page.et-theme-portal .et-courses-grid--featured {
     display: flex;
     flex-wrap: nowrap;
-    gap: 0.85rem;
+    gap: 0.75rem;
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -177,7 +180,7 @@
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scroll-padding-inline: var(--portal-mobile-gutter);
     scrollbar-width: none;
     grid-auto-flow: unset;
@@ -190,14 +193,21 @@
   }
 
   .portal-page.et-theme-portal .et-courses-grid--featured > li {
-    flex: 0 0 min(
-      calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem),
-      22rem
-    );
-    width: min(calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem), 22rem);
-    max-width: min(calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem), 22rem);
+    flex: 0 0 var(--portal-mobile-course-card-width);
+    width: var(--portal-mobile-course-card-width);
+    max-width: var(--portal-mobile-course-card-width);
     min-width: 0;
+    margin: 0;
     scroll-snap-align: start;
+    box-sizing: border-box;
+  }
+
+  .portal-page.et-theme-portal .et-courses-grid--featured > li > .et-course-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    box-sizing: border-box;
   }
 
   /* Directory cards — single column, bounded width */
@@ -209,13 +219,175 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
+    box-sizing: border-box;
+    transform: none;
   }
 
-  .portal-page.et-theme-portal .et-course-card-body,
-  .portal-page.et-theme-portal .et-course-card-title,
-  .portal-page.et-theme-portal .et-course-card-location {
+  .portal-page.et-theme-portal .et-course-card:hover {
+    transform: none;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media {
+    position: relative;
+    width: 100%;
+    height: 15rem;
+    max-height: 16.25rem;
+    aspect-ratio: auto;
+    overflow: hidden;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image,
+  .portal-page.et-theme-portal .et-course-card-media .course-image--card,
+  .portal-page.et-theme-portal .et-course-card-media .et-course-card-image {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    aspect-ratio: auto;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image img,
+  .portal-page.et-theme-portal .et-course-card-media .course-image-placeholder {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    object-fit: cover;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image-placeholder {
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image-placeholder-content {
+    max-width: 100%;
     min-width: 0;
+    width: 100%;
+    padding-inline: 0.5rem;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image-placeholder-initials {
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image-placeholder-name {
+    font-size: 1.125rem;
+    line-height: 1.35;
+    white-space: normal;
     overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-media .course-image-placeholder-location {
+    font-size: 1rem;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-rating {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--et-text-primary, #1f2a24);
+    background: color-mix(in srgb, var(--et-accent, #b8955a) 24%, #faf6ef 76%);
+    border: 1px solid color-mix(in srgb, var(--et-accent, #b8955a) 45%, transparent);
+    border-radius: 999px;
+    max-width: calc(100% - 24px);
+    white-space: nowrap;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-body {
+    width: 100%;
+    min-width: 0;
+    padding: 1.25rem;
+    box-sizing: border-box;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-head,
+  .portal-page.et-theme-portal .et-course-card-copy {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-title {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-location {
+    font-size: 1rem;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-meta {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-pill {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem 0.75rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-stats > div {
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-stats-wide {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-stats dt {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-stats dd {
+    font-size: 1.125rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .portal-page.et-theme-portal .et-course-card-cta {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.9375rem;
+    white-space: normal;
   }
 
   /* Shared portal tab content spacing */
