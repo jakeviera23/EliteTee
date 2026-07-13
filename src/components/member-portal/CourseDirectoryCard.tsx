@@ -49,11 +49,7 @@ export function CourseDirectoryCard({ course, onOpen }: CourseDirectoryCardProps
           <span className="et-course-card-rating" aria-label={`Average rating ${ratingDisplay} out of 10.0`}>
             {ratingDisplay}
           </span>
-        ) : (
-          <span className="et-course-card-rating et-course-card-rating--empty">
-            No member ratings yet
-          </span>
-        )}
+        ) : null}
       </div>
 
       <div className="et-course-card-body">
