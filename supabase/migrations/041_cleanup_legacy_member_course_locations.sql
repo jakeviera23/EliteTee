@@ -1,16 +1,27 @@
 -- One-time cleanup for legacy member-submitted golf course structured locations.
--- Run manually in Supabase SQL Editor after reviewing:
---   supabase/scripts/audit_legacy_member_course_locations.sql
+-- Self-contained: paste this entire file into a blank Supabase SQL Editor tab.
+-- Run manually after reviewing: supabase/scripts/audit_legacy_member_course_locations.sql
 -- Safe to re-run: only updates malformed member-submitted rows with high-confidence parses.
 -- Does NOT modify provider-owned, seed-owned, or EliteTee-owned canonical courses.
 -- Does NOT rewrite member_course_rounds, feed posts, photos, ratings, or played dates.
 
+-- Drop legacy signatures from earlier drafts (no-op if absent).
 drop function if exists public.propose_legacy_member_course_location_fix(text, text, text, text, text);
+drop function if exists public.propose_legacy_member_course_location_fix(uuid, text, text, text, text);
+drop function if exists public.best_parseable_round_location(uuid);
+drop function if exists public.has_correct_member_submitted_location(text, text, text, text);
+drop function if exists public.is_course_name_used_as_city(text, text);
+drop function if exists public.is_course_city_equal_or_similar_to_name(text, text);
+drop function if exists public.parse_legacy_us_course_location(text);
+drop function if exists public.is_legacy_member_submitted_golf_course(boolean, text);
+drop function if exists public.normalize_us_country_label(text);
+drop function if exists public.normalize_location_whitespace(text);
 
 -- ---------------------------------------------------------------------------
--- Helpers
+-- Helpers (dependency order: each function is defined before first reference)
 -- ---------------------------------------------------------------------------
 
+-- 1. normalize_location_whitespace
 create or replace function public.normalize_location_whitespace(p_text text)
 returns text
 language sql
@@ -19,6 +30,7 @@ as $$
   select trim(regexp_replace(coalesce(p_text, ''), '\s+', ' ', 'g'));
 $$;
 
+-- 2. normalize_us_country_label -> normalize_location_whitespace
 create or replace function public.normalize_us_country_label(p_country text)
 returns text
 language sql
@@ -33,6 +45,7 @@ as $$
   end;
 $$;
 
+-- 3. is_legacy_member_submitted_golf_course
 create or replace function public.is_legacy_member_submitted_golf_course(
   p_submitted_by_member boolean,
   p_source_name text
@@ -45,55 +58,7 @@ as $$
     or coalesce(p_source_name, '') = 'member_submitted';
 $$;
 
-create or replace function public.is_course_city_equal_or_similar_to_name(
-  p_name text,
-  p_city text
-)
-returns boolean
-language sql
-immutable
-as $$
-  with normalized as (
-    select
-      lower(public.normalize_location_whitespace(p_name)) as name_key,
-      lower(public.normalize_location_whitespace(p_city)) as city_key
-  )
-  select
-    n.city_key <> ''
-    and (
-      n.city_key = n.name_key
-      or (
-        n.city_key <> n.name_key
-        and (n.city_key like n.name_key || '%' or n.name_key like n.city_key || '%')
-        and (
-          n.city_key like '%golf%'
-          or n.name_key like '%golf%'
-          or n.city_key like '%country club%'
-          or n.name_key like '%country club%'
-        )
-      )
-    )
-  from normalized n;
-$$;
-
-create or replace function public.is_course_name_used_as_city(
-  p_name text,
-  p_city text
-)
-returns boolean
-language sql
-immutable
-as $$
-  select public.is_course_city_equal_or_similar_to_name(p_name, p_city)
-    and not exists (
-      select 1
-      from public.parse_legacy_us_course_location(p_city) pl
-      where pl.confidence = 'high'
-        and coalesce(pl.region, '') <> ''
-        and coalesce(pl.country, '') <> ''
-    );
-$$;
-
+-- 4. parse_legacy_us_course_location -> normalize_location_whitespace
 create or replace function public.parse_legacy_us_course_location(p_input text)
 returns table (
   city text,
@@ -246,6 +211,58 @@ begin
 end;
 $$;
 
+-- 5. is_course_city_equal_or_similar_to_name -> normalize_location_whitespace
+create or replace function public.is_course_city_equal_or_similar_to_name(
+  p_name text,
+  p_city text
+)
+returns boolean
+language sql
+immutable
+as $$
+  with normalized as (
+    select
+      lower(public.normalize_location_whitespace(p_name)) as name_key,
+      lower(public.normalize_location_whitespace(p_city)) as city_key
+  )
+  select
+    n.city_key <> ''
+    and (
+      n.city_key = n.name_key
+      or (
+        n.city_key <> n.name_key
+        and (n.city_key like n.name_key || '%' or n.name_key like n.city_key || '%')
+        and (
+          n.city_key like '%golf%'
+          or n.name_key like '%golf%'
+          or n.city_key like '%country club%'
+          or n.name_key like '%country club%'
+        )
+      )
+    )
+  from normalized n;
+$$;
+
+-- 6. is_course_name_used_as_city -> is_course_city_equal_or_similar_to_name, parse_legacy_us_course_location
+create or replace function public.is_course_name_used_as_city(
+  p_name text,
+  p_city text
+)
+returns boolean
+language sql
+immutable
+as $$
+  select public.is_course_city_equal_or_similar_to_name(p_name, p_city)
+    and not exists (
+      select 1
+      from public.parse_legacy_us_course_location(p_city) pl
+      where pl.confidence = 'high'
+        and coalesce(pl.region, '') <> ''
+        and coalesce(pl.country, '') <> ''
+    );
+$$;
+
+-- 7. has_correct_member_submitted_location -> parse_legacy_us_course_location, normalize_*, is_course_city_equal_or_similar_to_name
 create or replace function public.has_correct_member_submitted_location(
   p_name text,
   p_city text,
@@ -273,6 +290,7 @@ as $$
     );
 $$;
 
+-- 8. best_parseable_round_location -> parse_legacy_us_course_location, normalize_location_whitespace, member_course_rounds
 create or replace function public.best_parseable_round_location(p_golf_course_id uuid)
 returns text
 language sql
@@ -293,6 +311,7 @@ as $$
   limit 1;
 $$;
 
+-- 9. propose_legacy_member_course_location_fix -> all helpers above
 create or replace function public.propose_legacy_member_course_location_fix(
   p_golf_course_id uuid,
   p_name text,
@@ -392,15 +411,15 @@ $$;
 revoke all on function public.normalize_location_whitespace(text) from public;
 revoke all on function public.normalize_us_country_label(text) from public;
 revoke all on function public.is_legacy_member_submitted_golf_course(boolean, text) from public;
+revoke all on function public.parse_legacy_us_course_location(text) from public;
 revoke all on function public.is_course_city_equal_or_similar_to_name(text, text) from public;
 revoke all on function public.is_course_name_used_as_city(text, text) from public;
-revoke all on function public.parse_legacy_us_course_location(text) from public;
 revoke all on function public.has_correct_member_submitted_location(text, text, text, text) from public;
 revoke all on function public.best_parseable_round_location(uuid) from public;
 revoke all on function public.propose_legacy_member_course_location_fix(uuid, text, text, text, text) from public;
 
 -- ---------------------------------------------------------------------------
--- Preview proposed changes (shown in migration output)
+-- Preview proposed changes (shown in migration output; pre-update snapshot)
 -- ---------------------------------------------------------------------------
 
 with member_courses as (
@@ -456,8 +475,10 @@ where cleanup_action = 'auto_update'
 order by course_name asc;
 
 -- ---------------------------------------------------------------------------
--- Apply one-time cleanup (golf_courses only)
+-- Apply one-time cleanup (golf_courses only, member-submitted rows)
 -- ---------------------------------------------------------------------------
+
+begin;
 
 with member_courses as (
   select
@@ -508,6 +529,8 @@ where gc.id = p.course_id
     or public.normalize_location_whitespace(coalesce(gc.region, '')) is distinct from public.normalize_location_whitespace(p.new_region)
     or public.normalize_us_country_label(coalesce(gc.country, '')) is distinct from public.normalize_us_country_label(p.new_country)
   );
+
+commit;
 
 -- ---------------------------------------------------------------------------
 -- Post-update report + manual-review queue
