@@ -315,6 +315,49 @@
   background: color-mix(in srgb, var(--et-bg-surface) 90%, var(--intro-gold-soft) 10%);
 }
 
+.et-introductions-empty--global {
+  gap: var(--et-space-2);
+  padding: var(--et-space-5);
+  text-align: center;
+  justify-items: center;
+  max-width: 32rem;
+}
+
+.et-introductions-empty-eyebrow {
+  margin: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--intro-gold-soft) 70%, white 30%);
+  color: var(--intro-forest);
+  font-size: 1.1rem;
+}
+
+.et-introductions-error {
+  display: grid;
+  gap: var(--et-space-2);
+  padding: var(--et-space-4);
+  border: 1px solid color-mix(in srgb, var(--intro-burgundy) 28%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--intro-burgundy) 6%, white 94%);
+  max-width: 36rem;
+}
+
+.et-introductions-error-title {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: 1.05rem;
+  color: var(--intro-burgundy);
+}
+
+.et-introductions-error-copy {
+  margin: 0;
+  color: var(--et-text-secondary);
+  line-height: 1.55;
+}
+
 .et-introductions-empty-title {
   margin: 0;
   font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);

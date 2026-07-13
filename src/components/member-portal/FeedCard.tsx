@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { FeedPost } from "../../data/portalSocial";
+import { useEffect, useState } from "react";
+import type { FeedPost, FeedPostComment } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { FEED_CARD_ICON_CLASSES } from "../../lib/feedCardScope";
@@ -7,6 +7,17 @@ import { resolveFeedCardBadgeLabel } from "../../lib/feedPostDisplay";
 import { canMemberEditFeedPost, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
+import {
+  applyLikeToggle,
+  applySaveToggle,
+  canDeleteFeedPostComment,
+  createFeedPostComment,
+  deleteFeedPostComment,
+  fetchFeedPostComments,
+  isPersistedFeedPostId,
+  toggleFeedPostLike,
+  toggleFeedPostSave,
+} from "../../lib/feedPostEngagement";
 import {
   badgeToneForPost,
   buildFeedMetaChips,
@@ -191,19 +202,53 @@ export function FeedCard({
   onViewAuthor,
   onPostUpdated,
 }: FeedCardProps) {
+  const isFounder = variant === "founder";
   const [editing, setEditing] = useState(false);
+  const engagementEnabled = !isFounder && isPersistedFeedPostId(post.id);
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [saved, setSaved] = useState(Boolean(post.isSaved));
+  const [likeCount, setLikeCount] = useState(post.likes);
   const [commentCount, setCommentCount] = useState(post.comments);
   const [showComments, setShowComments] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
-  const [comments, setComments] = useState(
-    post.commentPreview
-      ? [{ id: "preview", author: post.commentPreview.author, text: post.commentPreview.text }]
-      : [],
-  );
+  const [comments, setComments] = useState<FeedPostComment[]>(post.feedComments ?? []);
+  const [commentsLoaded, setCommentsLoaded] = useState(Boolean(post.feedComments?.length));
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [isTogglingSave, setIsTogglingSave] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
-  const isFounder = variant === "founder";
+  useEffect(() => {
+    setLiked(Boolean(post.isLiked));
+    setSaved(Boolean(post.isSaved));
+    setLikeCount(post.likes);
+    setCommentCount(post.comments);
+    if (post.feedComments) {
+      setComments(post.feedComments);
+      setCommentsLoaded(true);
+    }
+  }, [post.comments, post.feedComments, post.isLiked, post.isSaved, post.likes]);
+
+  async function loadComments() {
+    setIsLoadingComments(true);
+    setCommentsError(null);
+
+    const { data, error } = await fetchFeedPostComments(post.id);
+
+    if (error) {
+      console.error("[FeedCard] failed to load comments", error.message);
+      setCommentsError("Comments could not be loaded.");
+      setIsLoadingComments(false);
+      return;
+    }
+
+    setComments(data);
+    setCommentsLoaded(true);
+    setIsLoadingComments(false);
+  }
+
   const isCourseRound = !isFounder && isCourseRoundPost(post);
   const canEdit = !isFounder && canMemberEditFeedPost(post, currentUserId);
   const showEditedLabel = isFeedPostEdited(post.createdAt, post.updatedAt);
@@ -216,8 +261,17 @@ export function FeedCard({
   const badgeTone = badgeToneForPost(post);
   const entranceStyle = { animationDelay: `${Math.min(index, 9) * 55}ms` };
 
-  const baseLikeCount = post.likes - (post.isLiked ? 1 : 0);
-  const likeCount = baseLikeCount + (liked ? 1 : 0);
+  const previewComment = comments[0] ?? (post.commentPreview
+    ? {
+        id: "preview",
+        postId: post.id,
+        userId: "",
+        authorName: post.commentPreview.author,
+        body: post.commentPreview.text,
+        createdAt: "",
+        displayTimestamp: "",
+      }
+    : undefined);
 
   const authorUserId = post.author.id?.trim();
   const canViewAuthor = Boolean(onViewAuthor && authorUserId);
@@ -230,14 +284,50 @@ export function FeedCard({
     onViewAuthor(authorUserId, post.author.name);
   }
 
-  function toggleLike() {
-    setLiked((current) => !current);
+  async function toggleLike() {
+    if (!engagementEnabled || isTogglingLike) return;
+
+    const previousLiked = liked;
+    const previousCount = likeCount;
+    const optimistic = applyLikeToggle({ liked, likeCount });
+    setLiked(optimistic.liked);
+    setLikeCount(optimistic.likeCount);
+    setIsTogglingLike(true);
+
+    const { liked: nextLiked, error } = await toggleFeedPostLike(post.id, previousLiked);
+
+    setIsTogglingLike(false);
+
+    if (error) {
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
+      onToast?.("Like could not be saved. Try again.");
+      return;
+    }
+
+    setLiked(nextLiked);
   }
 
-  function toggleSave() {
-    const next = !saved;
-    setSaved(next);
-    onToast?.(next ? "Saved to your rounds" : "Removed from saved");
+  async function toggleSave() {
+    if (!engagementEnabled || isTogglingSave) return;
+
+    const previousSaved = saved;
+    const nextSaved = applySaveToggle(saved);
+    setSaved(nextSaved);
+    setIsTogglingSave(true);
+
+    const { saved: persistedSaved, error } = await toggleFeedPostSave(post.id, previousSaved);
+
+    setIsTogglingSave(false);
+
+    if (error) {
+      setSaved(previousSaved);
+      onToast?.("Save could not be updated. Try again.");
+      return;
+    }
+
+    setSaved(persistedSaved);
+    onToast?.(persistedSaved ? "Saved to your rounds" : "Removed from saved");
   }
 
   async function handleShare() {
@@ -261,16 +351,52 @@ export function FeedCard({
     onToast?.("Could not share this post. Try again.");
   }
 
-  function handleCommentSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCommentSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!commentDraft.trim()) return;
-    setComments((current) => [
-      ...current,
-      { id: `comment-${Date.now()}`, author: "You", text: commentDraft.trim() },
-    ]);
+    if (!commentDraft.trim() || !engagementEnabled || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    const { data, error } = await createFeedPostComment(post.id, commentDraft);
+
+    setIsSubmittingComment(false);
+
+    if (error || !data) {
+      onToast?.("Comment could not be posted. Try again.");
+      return;
+    }
+
+    setComments((current) => [...current, data]);
     setCommentCount((count) => count + 1);
     setCommentDraft("");
+    setCommentsLoaded(true);
     onToast?.("Comment added");
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!engagementEnabled || deletingCommentId) return;
+
+    setDeletingCommentId(commentId);
+    const { error } = await deleteFeedPostComment(commentId);
+    setDeletingCommentId(null);
+
+    if (error) {
+      onToast?.("Comment could not be deleted.");
+      return;
+    }
+
+    setComments((current) => current.filter((comment) => comment.id !== commentId));
+    setCommentCount((count) => Math.max(0, count - 1));
+    onToast?.("Comment removed");
+  }
+
+  function handleToggleComments() {
+    setShowComments((current) => {
+      const next = !current;
+      if (next && engagementEnabled && !commentsLoaded) {
+        void loadComments();
+      }
+      return next;
+    });
   }
 
   const ratingDisplay = formatCourseRatingDisplay(post.rating);
@@ -371,8 +497,9 @@ export function FeedCard({
           <button
             type="button"
             className={`feed-card-action${liked ? " is-active is-liked" : ""}`}
-            onClick={toggleLike}
+            onClick={() => void toggleLike()}
             aria-pressed={liked}
+            disabled={!engagementEnabled || isTogglingLike}
           >
             <HeartIcon filled={liked} />
             <span className="feed-card-action-count">{likeCount}</span>
@@ -381,8 +508,9 @@ export function FeedCard({
           <button
             type="button"
             className={`feed-card-action${showComments ? " is-active" : ""}`}
-            onClick={() => setShowComments((value) => !value)}
+            onClick={handleToggleComments}
             aria-expanded={showComments}
+            disabled={!engagementEnabled}
           >
             <CommentIcon />
             <span className="feed-card-action-count">{commentCount}</span>
@@ -391,8 +519,9 @@ export function FeedCard({
           <button
             type="button"
             className={`feed-card-action${saved ? " is-active is-saved" : ""}`}
-            onClick={toggleSave}
+            onClick={() => void toggleSave()}
             aria-pressed={saved}
+            disabled={!engagementEnabled || isTogglingSave}
           >
             <SaveIcon filled={saved} />
             <span className="feed-card-action-label">{saved ? "Saved" : "Save"}</span>
@@ -407,32 +536,78 @@ export function FeedCard({
           </button>
         </div>
 
-        {comments.length > 0 && !showComments ? (
+        {previewComment && !showComments ? (
           <div className="feed-card-comment-preview">
             <p className="feed-card-comment-preview-text">
-              <strong>{comments[0].author}</strong> {comments[0].text}
+              <strong>{previewComment.authorName}</strong> {previewComment.body}
             </p>
             <button
               type="button"
               className="feed-card-comment-link"
-              onClick={() => setShowComments(true)}
+              onClick={handleToggleComments}
             >
               {commentCount > 1 ? `View all ${commentCount} comments` : "View comment"}
             </button>
           </div>
         ) : null}
 
-        {comments.length > 0 && showComments ? (
-          <ul className="feed-card-comments">
-            {comments.map((comment) => (
-              <li key={comment.id}>
-                <strong>{comment.author}</strong> {comment.text}
-              </li>
-            ))}
-          </ul>
+        {showComments ? (
+          <div className="feed-card-comments-panel">
+            {isLoadingComments ? (
+              <p className="feed-card-comments-status" aria-live="polite">
+                Loading comments…
+              </p>
+            ) : null}
+
+            {commentsError ? (
+              <div className="feed-card-comments-status feed-card-comments-status--error" role="alert">
+                <p>{commentsError}</p>
+                <button type="button" className="feed-card-comment-link" onClick={() => void loadComments()}>
+                  Try again
+                </button>
+              </div>
+            ) : null}
+
+            {!isLoadingComments && !commentsError && comments.length === 0 ? (
+              <p className="feed-card-comments-empty">No comments yet. Start the conversation.</p>
+            ) : null}
+
+            {!isLoadingComments && !commentsError && comments.length > 0 ? (
+              <ul className="feed-card-comments">
+                {comments.map((comment) => (
+                  <li key={comment.id} className="feed-card-comment-item">
+                    <FeedAvatar
+                      name={comment.authorName}
+                      src={comment.authorAvatarUrl}
+                      size="sm"
+                    />
+                    <div className="feed-card-comment-body">
+                      <p className="feed-card-comment-meta">
+                        <strong>{comment.authorName}</strong>
+                        {comment.displayTimestamp ? (
+                          <time dateTime={comment.createdAt}>{comment.displayTimestamp}</time>
+                        ) : null}
+                      </p>
+                      <p className="feed-card-comment-text">{comment.body}</p>
+                    </div>
+                    {canDeleteFeedPostComment(comment.userId, currentUserId) ? (
+                      <button
+                        type="button"
+                        className="feed-card-comment-delete"
+                        onClick={() => void handleDeleteComment(comment.id)}
+                        disabled={deletingCommentId === comment.id}
+                      >
+                        {deletingCommentId === comment.id ? "Deleting…" : "Delete"}
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         ) : null}
 
-        {showComments ? (
+        {showComments && engagementEnabled ? (
           <form className="feed-card-comment-form" onSubmit={handleCommentSubmit}>
             <label className="visually-hidden" htmlFor={`feed-comment-${post.id}`}>
               Add a comment
@@ -443,9 +618,14 @@ export function FeedCard({
               value={commentDraft}
               onChange={(event) => setCommentDraft(event.target.value)}
               placeholder="Add a comment…"
+              disabled={isSubmittingComment}
             />
-            <button type="submit" className="feed-card-comment-submit">
-              Post
+            <button
+              type="submit"
+              className="feed-card-comment-submit"
+              disabled={isSubmittingComment || !commentDraft.trim()}
+            >
+              {isSubmittingComment ? "Posting…" : "Post"}
             </button>
           </form>
         ) : null}

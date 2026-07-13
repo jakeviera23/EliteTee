@@ -18,6 +18,7 @@ import {
   type CourseRoundPostEditInput,
 } from "./feedPostEditing";
 import { supabase } from "./supabase";
+import { attachFeedPostEngagement } from "./feedPostEngagement";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -331,7 +332,19 @@ export async function fetchMemberFeedPage({
   const hasMore = rows.length > limit;
   const pageRows = hasMore ? rows.slice(0, limit) : rows;
   const feedRows = pageRows.map((row) => rpcRowToFeedPostWithProfile(row));
-  const posts = await mapRowsToFeedPosts(feedRows);
+  let posts = await mapRowsToFeedPosts(feedRows);
+
+  const { userId } = await getCurrentAuthUserId();
+  const { data: postsWithEngagement, error: engagementError } = await attachFeedPostEngagement(
+    posts,
+    userId,
+  );
+  if (!engagementError) {
+    posts = postsWithEngagement;
+  } else {
+    console.error("[memberFeedPosts] failed to load engagement summaries", engagementError.message);
+  }
+
   const lastRow = pageRows[pageRows.length - 1];
   const nextCursor =
     hasMore && lastRow
@@ -374,8 +387,18 @@ export async function fetchMemberFeedPostsForUser(userId: string) {
     return { data: [] as FeedPost[], error };
   }
 
+  let posts = await mapRowsToFeedPosts((data ?? []) as MemberFeedPostWithProfile[]);
+  const { userId: viewerUserId } = await getCurrentAuthUserId();
+  const { data: postsWithEngagement, error: engagementError } = await attachFeedPostEngagement(
+    posts,
+    viewerUserId,
+  );
+  if (!engagementError) {
+    posts = postsWithEngagement;
+  }
+
   return {
-    data: await mapRowsToFeedPosts((data ?? []) as MemberFeedPostWithProfile[]),
+    data: posts,
     error: null,
   };
 }

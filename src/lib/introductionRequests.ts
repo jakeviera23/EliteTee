@@ -18,6 +18,9 @@ const UNLINKED_MEMBER_ERROR = "This member is not linked to a user account yet."
 const INTRODUCTION_REQUEST_UPDATE_DENIED_ERROR =
   "Unable to accept or decline this request. Only the receiving member can respond to a pending request. If you are the receiver and this keeps happening, database permissions may need to be updated in Supabase.";
 
+const INTRODUCTION_REQUEST_CANCEL_DENIED_ERROR =
+  "Unable to cancel this request. Only the sender can withdraw a pending request they sent.";
+
 export async function createIntroductionRequest({
   receiverMember,
   requestType,
@@ -135,7 +138,19 @@ export async function fetchIntroductionRequests() {
     return { data: null, error };
   }
 
-  const withNames = await attachProfileNames((data ?? []) as IntroductionRequestRow[]);
+  let withNames: IntroductionRequestRecord[];
+
+  try {
+    withNames = await attachProfileNames((data ?? []) as IntroductionRequestRow[]);
+  } catch (profileError) {
+    console.error("[introductionRequests] failed to attach profile names", profileError);
+    withNames = ((data ?? []) as IntroductionRequestRow[]).map((request) => ({
+      ...request,
+      sender_name: undefined,
+      receiver_name: undefined,
+    }));
+  }
+
   return { data: withNames, error: null };
 }
 
@@ -201,6 +216,49 @@ export async function updateIntroductionRequestStatus(
 
   if (!data) {
     return { data: null, error: new Error(INTRODUCTION_REQUEST_UPDATE_DENIED_ERROR) };
+  }
+
+  return { data, error: null };
+}
+
+export async function cancelIntroductionRequest(requestId: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+
+  if (sessionError) {
+    return { data: null, error: sessionError };
+  }
+
+  if (!userId) {
+    return { data: null, error: new Error("You must be signed in to cancel requests.") };
+  }
+
+  const { data, error } = await supabase
+    .from("introduction_requests")
+    .update({ status: "declined" })
+    .eq("id", requestId)
+    .eq("sender_id", userId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    const isRlsError =
+      error.code === "42501" ||
+      error.message.toLowerCase().includes("row-level security") ||
+      error.message.toLowerCase().includes("permission denied");
+
+    return {
+      data: null,
+      error: isRlsError ? new Error(INTRODUCTION_REQUEST_CANCEL_DENIED_ERROR) : error,
+    };
+  }
+
+  if (!data) {
+    return { data: null, error: new Error(INTRODUCTION_REQUEST_CANCEL_DENIED_ERROR) };
   }
 
   return { data, error: null };

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { introductionsCopy } from "../../data/portalSocial";
 import {
+  cancelIntroductionRequest,
   fetchIntroductionRequests,
   updateIntroductionRequestStatus,
 } from "../../lib/introductionRequests";
@@ -28,20 +29,8 @@ type PortalIntroductionRequestsProps = {
   onInitialTabConsumed?: () => void;
   onMessageMember: (userId: string, memberName: string) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
-  onPendingCountChange?: (count: number) => void;
+  onRequestsChange?: (requests: IntroductionRequestRecord[]) => void;
 };
-
-function countPendingIncoming(
-  requests: IntroductionRequestRecord[],
-  currentUserId: string | null,
-) {
-  if (!currentUserId) return 0;
-
-  return requests.filter(
-    (request) =>
-      request.status.toLowerCase() === "pending" && request.receiver_id === currentUserId,
-  ).length;
-}
 
 const TAB_LABELS: Record<IntroductionTab, string> = {
   incoming: introductionsCopy.incoming,
@@ -75,7 +64,7 @@ export function PortalIntroductionRequests({
   onInitialTabConsumed,
   onMessageMember,
   onViewMemberProfile,
-  onPendingCountChange,
+  onRequestsChange,
 }: PortalIntroductionRequestsProps) {
   const [requests, setRequests] = useState<IntroductionRequestRecord[]>([]);
   const [profilesByUserId, setProfilesByUserId] = useState<
@@ -87,53 +76,68 @@ export function PortalIntroductionRequests({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [acceptNotice, setAcceptNotice] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const onRequestsChangeRef = useRef(onRequestsChange);
+
+  useEffect(() => {
+    onRequestsChangeRef.current = onRequestsChange;
+  }, [onRequestsChange]);
 
   const loadRequests = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
 
-    const [{ userId }, { data, error }] = await Promise.all([
-      getCurrentAuthUserId(),
-      fetchIntroductionRequests(),
-    ]);
+    try {
+      const [{ userId }, { data, error }] = await Promise.all([
+        getCurrentAuthUserId(),
+        fetchIntroductionRequests(),
+      ]);
 
-    setCurrentUserId(userId ?? null);
+      setCurrentUserId(userId ?? null);
 
-    if (error) {
-      console.error("[PortalIntroductionRequests] failed to load requests", error.message);
-      setLoadError("Introduction requests could not be loaded right now.");
+      if (error) {
+        console.error("[PortalIntroductionRequests] failed to load requests", error.message);
+        setLoadError(introductionsCopy.loadErrorCopy);
+        setRequests([]);
+        setProfilesByUserId({});
+        return;
+      }
+
+      const nextRequests = data ?? [];
+      setRequests(nextRequests);
+      onRequestsChangeRef.current?.(nextRequests);
+
+      const participantIds = [
+        ...new Set(nextRequests.flatMap((request) => [request.sender_id, request.receiver_id])),
+      ];
+
+      if (participantIds.length > 0) {
+        try {
+          const { data: profiles } = await fetchApprovedMemberProfilesByUserIds(participantIds);
+          const nextProfiles: Record<string, ApprovedMemberDirectoryProfile> = {};
+          for (const profile of profiles ?? []) {
+            const profileUserId = profile.user_id?.trim();
+            if (profileUserId) {
+              nextProfiles[profileUserId] = profile;
+            }
+          }
+          setProfilesByUserId(nextProfiles);
+        } catch (profileError) {
+          console.error("[PortalIntroductionRequests] failed to load member profiles", profileError);
+          setProfilesByUserId({});
+        }
+      } else {
+        setProfilesByUserId({});
+      }
+    } catch (unexpectedError) {
+      console.error("[PortalIntroductionRequests] unexpected load failure", unexpectedError);
+      setLoadError(introductionsCopy.loadErrorCopy);
       setRequests([]);
       setProfilesByUserId({});
+    } finally {
       setIsLoading(false);
-      onPendingCountChange?.(0);
-      return;
     }
-
-    const nextRequests = data ?? [];
-    setRequests(nextRequests);
-    onPendingCountChange?.(countPendingIncoming(nextRequests, userId ?? null));
-
-    const participantIds = [
-      ...new Set(nextRequests.flatMap((request) => [request.sender_id, request.receiver_id])),
-    ];
-
-    if (participantIds.length > 0) {
-      const { data: profiles } = await fetchApprovedMemberProfilesByUserIds(participantIds);
-      const nextProfiles: Record<string, ApprovedMemberDirectoryProfile> = {};
-      for (const profile of profiles ?? []) {
-        const profileUserId = profile.user_id?.trim();
-        if (profileUserId) {
-          nextProfiles[profileUserId] = profile;
-        }
-      }
-      setProfilesByUserId(nextProfiles);
-    } else {
-      setProfilesByUserId({});
-    }
-
-    setIsLoading(false);
-  }, [onPendingCountChange]);
+  }, []);
 
   useEffect(() => {
     if (!isActive) return;
@@ -167,7 +171,7 @@ export function PortalIntroductionRequests({
   async function handleAccept(requestId: string) {
     setUpdatingRequestId(requestId);
     setActionError(null);
-    setAcceptNotice(null);
+    setActionNotice(null);
 
     const { error } = await updateIntroductionRequestStatus(requestId, "accepted");
 
@@ -178,7 +182,7 @@ export function PortalIntroductionRequests({
       return;
     }
 
-    setAcceptNotice(introductionsCopy.acceptSuccess);
+    setActionNotice(introductionsCopy.acceptSuccess);
     setActiveTab("accepted");
     await loadRequests();
   }
@@ -186,7 +190,7 @@ export function PortalIntroductionRequests({
   async function handleDecline(requestId: string) {
     setUpdatingRequestId(requestId);
     setActionError(null);
-    setAcceptNotice(null);
+    setActionNotice(null);
 
     const { error } = await updateIntroductionRequestStatus(requestId, "declined");
 
@@ -197,6 +201,25 @@ export function PortalIntroductionRequests({
       return;
     }
 
+    setActiveTab("declined");
+    await loadRequests();
+  }
+
+  async function handleCancel(requestId: string) {
+    setUpdatingRequestId(requestId);
+    setActionError(null);
+    setActionNotice(null);
+
+    const { error } = await cancelIntroductionRequest(requestId);
+
+    setUpdatingRequestId(null);
+
+    if (error) {
+      setActionError(memberFacingPortalError(error.message, "introduction"));
+      return;
+    }
+
+    setActionNotice(introductionsCopy.cancelSuccess);
     setActiveTab("declined");
     await loadRequests();
   }
@@ -215,7 +238,7 @@ export function PortalIntroductionRequests({
           {introductionsCopy.title}
         </h2>
         <p className="et-introductions-lead">{introductionsCopy.lead}</p>
-        {!isLoading && hasAnyRequests ? (
+        {!isLoading && !loadError && hasAnyRequests ? (
           <div className="et-introductions-summary">
             <span className="et-introductions-summary-pill">
               Incoming pending: <strong>{tabCounts.incoming}</strong>
@@ -227,36 +250,49 @@ export function PortalIntroductionRequests({
         ) : null}
       </header>
 
-      {loadError ? (
-        <p className="et-introductions-alert et-introductions-alert--warning" role="alert">
-          {loadError}
-        </p>
-      ) : null}
-
       {actionError ? (
         <p className="et-introductions-alert et-introductions-alert--error" role="alert">
           {actionError}
         </p>
       ) : null}
 
-      {acceptNotice ? (
+      {actionNotice ? (
         <p className="et-introductions-alert et-introductions-alert--success" role="status">
-          {acceptNotice}
+          {actionNotice}
         </p>
       ) : null}
 
       {isLoading ? (
-        <p className="et-introductions-loading">{introductionsCopy.loading}</p>
+        <p className="et-introductions-loading" aria-live="polite">
+          {introductionsCopy.loading}
+        </p>
       ) : null}
 
-      {!isLoading && !hasAnyRequests && !loadError ? (
-        <div className="et-introductions-empty">
+      {!isLoading && loadError ? (
+        <div className="et-introductions-error" role="alert">
+          <p className="et-introductions-error-title">{introductionsCopy.loadErrorTitle}</p>
+          <p className="et-introductions-error-copy">{loadError}</p>
+          <button
+            type="button"
+            className="et-btn et-btn--secondary et-btn--sm"
+            onClick={() => void loadRequests()}
+          >
+            {introductionsCopy.retryLoad}
+          </button>
+        </div>
+      ) : null}
+
+      {!isLoading && !loadError && !hasAnyRequests ? (
+        <div className="et-introductions-empty et-introductions-empty--global">
+          <p className="et-introductions-empty-eyebrow" aria-hidden="true">
+            ◎
+          </p>
           <p className="et-introductions-empty-title">{introductionsCopy.emptyAllTitle}</p>
           <p className="et-introductions-empty-copy">{introductionsCopy.emptyAllCopy}</p>
         </div>
       ) : null}
 
-      {!isLoading && hasAnyRequests ? (
+      {!isLoading && !loadError && hasAnyRequests ? (
         <>
           <div className="et-introductions-tabs" role="tablist" aria-label="Introduction request status">
             {(Object.keys(TAB_LABELS) as IntroductionTab[]).map((tab) => (
@@ -269,7 +305,7 @@ export function PortalIntroductionRequests({
                 aria-controls={`introduction-panel-${tab}`}
                 className={`et-introductions-tab${activeTab === tab ? " is-active" : ""}`}
                 onClick={() => {
-                  setAcceptNotice(null);
+                  setActionNotice(null);
                   setActiveTab(tab);
                 }}
               >
@@ -307,6 +343,7 @@ export function PortalIntroductionRequests({
                         updatingRequestId={updatingRequestId}
                         onAccept={handleAccept}
                         onDecline={handleDecline}
+                        onCancel={handleCancel}
                         onMessageMember={handleMessageMember}
                         onViewMemberProfile={onViewMemberProfile}
                       />

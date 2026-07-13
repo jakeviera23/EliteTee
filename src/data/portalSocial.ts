@@ -117,8 +117,11 @@ export const introductionsCopy = {
   incoming: "Incoming",
   sent: "Sent",
   accepted: "Accepted",
-  declined: "Declined",
+  declined: "Declined / Archived",
   loading: "Loading introduction requests…",
+  loadErrorTitle: "Introduction requests unavailable",
+  loadErrorCopy: "We could not load your introduction requests. Check your connection and try again.",
+  retryLoad: "Try again",
   requestType: "Introduction type",
   messageLabel: "Your message",
   messagePrompt: "Tell them why you'd like to connect.",
@@ -126,19 +129,21 @@ export const introductionsCopy = {
   submitRequest: "Submit Introduction Request",
   submittingRequest: "Submitting request…",
   cancel: "Cancel",
+  cancelRequest: "Cancel Request",
   accept: "Accept",
   decline: "Decline",
   messageMember: "Message Member",
   viewProfile: "View Profile",
   acceptSuccess: "Introduction accepted. You can continue the conversation in Messages.",
+  cancelSuccess: "Introduction request withdrawn.",
   emptyIncomingTitle: "No incoming requests",
   emptyIncomingCopy: "When a member requests an introduction to you, it will appear here.",
   emptySentTitle: "No sent requests",
   emptySentCopy: "Requests you send from Discover or member profiles will appear here.",
   emptyAcceptedTitle: "No accepted introductions yet",
   emptyAcceptedCopy: "Accepted introductions become direct Messages threads you can continue anytime.",
-  emptyDeclinedTitle: "No declined requests",
-  emptyDeclinedCopy: "Declined requests remain here for your records.",
+  emptyDeclinedTitle: "No declined or archived requests",
+  emptyDeclinedCopy: "Declined and withdrawn requests remain here for your records.",
   emptyAllTitle: "No introduction requests yet",
   emptyAllCopy: "Request a private introduction from Discover or a member profile to begin.",
   modalEyebrow: "Private Introduction",
@@ -268,6 +273,17 @@ export type PortalGolfer = {
   upcomingTravel?: string;
 };
 
+export type FeedPostComment = {
+  id: string;
+  postId: string;
+  userId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  body: string;
+  createdAt: string;
+  displayTimestamp: string;
+};
+
 export type FeedPost = {
   id: string;
   postType: PostType;
@@ -288,6 +304,8 @@ export type FeedPost = {
   isLiked?: boolean;
   isSaved?: boolean;
   commentPreview?: { author: string; text: string };
+  /** Loaded when the comment panel is expanded */
+  feedComments?: FeedPostComment[];
   /** Optional short badge (e.g. "Looking for Game"). Front-end only. */
   requestLabel?: string;
   /** Optional structured metadata rows (Destination, Dates, etc.). Front-end only. */
