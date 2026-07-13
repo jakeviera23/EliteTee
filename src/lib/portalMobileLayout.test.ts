@@ -5,6 +5,7 @@ import {
   PORTAL_MOBILE_COURSES_ADD_BTN_MIN_WIDTH,
   PORTAL_MOBILE_FEATURED_RAIL,
   PORTAL_MOBILE_LAYOUT_STYLESHEET,
+  PORTAL_MOBILE_MESSAGES_THREAD_LAYOUT,
 } from "./portalMobileLayout";
 
 describe("portal mobile layout structure", () => {
@@ -26,8 +27,13 @@ describe("portal mobile layout structure", () => {
     expect(PORTAL_MOBILE_FEATURED_RAIL).toEqual({
       overflowX: "auto",
       overscrollBehaviorInline: "contain",
-      cardFlexBasis: "min(84vw, 22rem)",
+      scrollPaddingInline: "var(--portal-mobile-gutter)",
+      cardFlexBasis: "min(calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem), 22rem)",
     });
+  });
+
+  it("pins mobile messages thread header without sticky overlap", () => {
+    expect(PORTAL_MOBILE_MESSAGES_THREAD_LAYOUT).toBe("grid-pinned");
   });
 
   it("drops desktop min-width on the courses add button for mobile", () => {

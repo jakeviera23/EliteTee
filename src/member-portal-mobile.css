@@ -164,7 +164,7 @@
     min-width: 0;
   }
 
-  /* Featured rails scroll internally — must not expand document width */
+  /* Featured rails scroll internally — align cards with page content margins */
   .portal-page.et-theme-portal .et-courses-grid--featured {
     display: flex;
     flex-wrap: nowrap;
@@ -172,12 +172,13 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    margin: 0;
-    padding: 0 0 0.35rem;
+    margin-inline: calc(-1 * var(--portal-mobile-gutter));
+    padding: 0 var(--portal-mobile-gutter) 0.35rem;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--portal-mobile-gutter);
     scrollbar-width: none;
     grid-auto-flow: unset;
     grid-auto-columns: unset;
@@ -189,9 +190,12 @@
   }
 
   .portal-page.et-theme-portal .et-courses-grid--featured > li {
-    flex: 0 0 min(84vw, 22rem);
-    width: min(84vw, 22rem);
-    max-width: min(84vw, 22rem);
+    flex: 0 0 min(
+      calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem),
+      22rem
+    );
+    width: min(calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem), 22rem);
+    max-width: min(calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem), 22rem);
     min-width: 0;
     scroll-snap-align: start;
   }

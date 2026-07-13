@@ -10,8 +10,12 @@ export const PORTAL_MOBILE_BOTTOM_NAV_LABELS = PORTAL_MOBILE_BOTTOM_TABS.map((ta
 export const PORTAL_MOBILE_FEATURED_RAIL = {
   overflowX: "auto" as const,
   overscrollBehaviorInline: "contain" as const,
-  cardFlexBasis: "min(84vw, 22rem)",
+  scrollPaddingInline: "var(--portal-mobile-gutter)",
+  cardFlexBasis: "min(calc(100vw - (2 * var(--portal-mobile-gutter)) - 1.25rem), 22rem)",
 };
+
+/** Mobile messages thread uses layout pinning instead of sticky overlap. */
+export const PORTAL_MOBILE_MESSAGES_THREAD_LAYOUT = "grid-pinned";
 
 /** Courses add button drops the desktop min-width on mobile. */
 export const PORTAL_MOBILE_COURSES_ADD_BTN_MIN_WIDTH = 0;
