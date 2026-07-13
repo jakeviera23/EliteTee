@@ -65,10 +65,12 @@
     flex-shrink: 0;
     min-width: 0;
     margin-left: auto;
+    overflow: visible;
   }
 
   .portal-page.et-theme-portal .portal-notifications-anchor {
     min-width: 0;
+    overflow: visible;
   }
 
   /* Bottom navigation — 5 equal columns, full labels */
@@ -404,13 +406,9 @@
   }
 
   .portal-page.et-theme-portal .portal-toast-stack {
-    max-width: min(20rem, calc(100% - 2rem));
+    max-width: min(20rem, calc(100vw - 2rem));
     right: 1rem;
     left: auto;
-  }
-
-  .portal-page.et-theme-portal .portal-notifications-panel {
-    width: min(22.5rem, calc(100% - 2rem));
   }
 }
 
