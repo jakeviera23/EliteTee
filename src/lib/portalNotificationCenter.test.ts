@@ -8,7 +8,7 @@ import {
   computePortalNotificationBadgeCountFromSources,
   groupPortalNotifications,
 } from "./portalNotificationCenter";
-import { getNotificationBadgeDisplay } from "./portalNotifications";
+import { getNotificationBadgeDisplay, PORTAL_NOTIFICATION_PANEL_WIDTH } from "./portalNotifications";
 
 function introductionRequest(
   overrides: Partial<IntroductionRequestRecord> & Pick<IntroductionRequestRecord, "id">,
@@ -213,5 +213,12 @@ describe("groupPortalNotifications", () => {
     expect(sections[0]?.id).toBe("messages");
     expect(sections[1]?.id).toBe("introductions");
     expect(sections.every((section) => section.showHeader)).toBe(true);
+  });
+});
+
+describe("PORTAL_NOTIFICATION_PANEL_WIDTH", () => {
+  it("uses viewport width so the dropdown does not collapse to the bell anchor", () => {
+    expect(PORTAL_NOTIFICATION_PANEL_WIDTH).toContain("100vw");
+    expect(PORTAL_NOTIFICATION_PANEL_WIDTH).not.toMatch(/calc\(100%\s*-/);
   });
 });
