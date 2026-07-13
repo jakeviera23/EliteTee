@@ -677,18 +677,47 @@
 
   .et-messages-panel.is-visible-mobile {
     position: fixed;
-    inset: 0 0 calc(3.5rem + env(safe-area-inset-bottom));
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
     z-index: 125;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: env(safe-area-inset-top, 0px);
     border-radius: 0;
     border: 0;
+    background: var(--msg-stone);
+  }
+
+  .et-messages-panel.is-visible-mobile .et-messages-thread-head {
+    position: relative;
+    top: auto;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .et-messages-panel.is-visible-mobile .et-messages-thread-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .et-messages-panel.is-visible-mobile .et-messages-compose {
+    position: relative;
+    bottom: auto;
+    z-index: 1;
+    flex-shrink: 0;
+    margin-top: 0;
+    padding-bottom: max(var(--et-space-3), env(safe-area-inset-bottom, 0px));
   }
 
   .et-messages-header .et-btn {
     width: 100%;
-  }
-
-  .et-messages-compose {
-    padding-bottom: max(var(--et-space-3), env(safe-area-inset-bottom));
   }
 }
 

@@ -3555,7 +3555,7 @@
     bottom: 0;
     z-index: 130;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0;
     padding: 0.25rem 0.15rem calc(0.25rem + env(safe-area-inset-bottom, 0px));
     background: rgba(9, 9, 8, 0.98);
@@ -3583,8 +3583,6 @@
 
   .portal-bottom-nav-btn > span:last-child {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -4378,7 +4376,7 @@
 
 @media (min-width: 768px) {
   .portal-golfer-stats--row {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
