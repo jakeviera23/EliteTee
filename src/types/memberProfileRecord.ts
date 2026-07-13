@@ -10,6 +10,8 @@ export type MemberProfileInsert = {
   business_interests: string[];
   current_request: string;
   traveling_to: string;
+  handicap?: string;
+  bucket_list_course_ids?: string[];
   club_logo_url?: string | null;
   cover_photo_url?: string | null;
   user_id: string;
@@ -19,11 +21,16 @@ export type MemberProfileInsert = {
   portal_access_enabled?: boolean;
 };
 
-export type MemberProfileRecord = Omit<MemberProfileInsert, "user_id"> & {
+export type MemberProfileRecord = Omit<
+  MemberProfileInsert,
+  "user_id" | "handicap" | "bucket_list_course_ids"
+> & {
   id: string;
   user_id: string | null;
   founding_member_number: string | null;
   portal_access_enabled: boolean;
   created_at: string;
   updated_at: string;
+  handicap: string;
+  bucket_list_course_ids: string[];
 };

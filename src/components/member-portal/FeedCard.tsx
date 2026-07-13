@@ -14,6 +14,7 @@ import {
   createFeedPostComment,
   deleteFeedPostComment,
   fetchFeedPostComments,
+  formatFeedEngagementError,
   isPersistedFeedPostId,
   toggleFeedPostLike,
   toggleFeedPostSave,
@@ -238,8 +239,8 @@ export function FeedCard({
     const { data, error } = await fetchFeedPostComments(post.id);
 
     if (error) {
-      console.error("[FeedCard] failed to load comments", error.message);
-      setCommentsError("Comments could not be loaded.");
+      console.error("[FeedCard] failed to load comments", error);
+      setCommentsError(formatFeedEngagementError(error));
       setIsLoadingComments(false);
       return;
     }
@@ -301,7 +302,7 @@ export function FeedCard({
     if (error) {
       setLiked(previousLiked);
       setLikeCount(previousCount);
-      onToast?.("Like could not be saved. Try again.");
+      onToast?.(formatFeedEngagementError(error));
       return;
     }
 
@@ -322,7 +323,7 @@ export function FeedCard({
 
     if (error) {
       setSaved(previousSaved);
-      onToast?.("Save could not be updated. Try again.");
+      onToast?.(formatFeedEngagementError(error));
       return;
     }
 
@@ -361,7 +362,7 @@ export function FeedCard({
     setIsSubmittingComment(false);
 
     if (error || !data) {
-      onToast?.("Comment could not be posted. Try again.");
+      onToast?.(formatFeedEngagementError(error ?? new Error("Comment could not be posted.")));
       return;
     }
 
@@ -380,7 +381,7 @@ export function FeedCard({
     setDeletingCommentId(null);
 
     if (error) {
-      onToast?.("Comment could not be deleted.");
+      onToast?.(formatFeedEngagementError(error));
       return;
     }
 

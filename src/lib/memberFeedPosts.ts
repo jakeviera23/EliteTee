@@ -342,7 +342,10 @@ export async function fetchMemberFeedPage({
   if (!engagementError) {
     posts = postsWithEngagement;
   } else {
-    console.error("[memberFeedPosts] failed to load engagement summaries", engagementError.message);
+    console.error(
+      "[memberFeedPosts] failed to load engagement summaries",
+      engagementError,
+    );
   }
 
   const lastRow = pageRows[pageRows.length - 1];

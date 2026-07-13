@@ -16,10 +16,8 @@ import {
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
   clearLegacySharedProfileExtras,
-  defaultPortalProfileExtras,
-  getPortalProfileExtras,
-  savePortalProfileExtras,
 } from "../lib/portalProfileExtras";
+import { fetchOwnMemberProfile, memberProfileToSelfUpdate, updateOwnMemberProfile } from "../lib/memberProfiles";
 import "../inside-elitetee.css";
 
 export function InviteSignup() {
@@ -149,12 +147,13 @@ export function InviteSignup() {
         } = await supabase.auth.getUser();
 
         if (user?.id && invite.handicap?.trim()) {
-          const existingExtras = getPortalProfileExtras(user.id);
-          savePortalProfileExtras(user.id, {
-            ...defaultPortalProfileExtras,
-            ...existingExtras,
-            handicap: invite.handicap.trim(),
-          });
+          const { data: profile } = await fetchOwnMemberProfile();
+          if (profile) {
+            await updateOwnMemberProfile({
+              ...memberProfileToSelfUpdate(profile),
+              handicap: invite.handicap.trim(),
+            });
+          }
         }
 
         if (import.meta.env.DEV) {

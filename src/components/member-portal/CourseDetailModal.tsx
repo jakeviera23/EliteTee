@@ -48,9 +48,10 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
   }
 
   function handleBucketList() {
-    const next = toggleBucketListCourse(course.id);
-    setBucketListed(next);
-    showToast(next ? "Course saved to your list" : "Removed from your list");
+    void toggleBucketListCourse(course.id).then((next) => {
+      setBucketListed(next);
+      showToast(next ? "Course saved to your list" : "Removed from your list");
+    });
   }
 
   return (

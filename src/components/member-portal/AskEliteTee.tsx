@@ -51,6 +51,8 @@ function toMemberProfileRecord(member: AskEliteTeeMemberResult): MemberProfileRe
     is_verified: member.is_verified,
     founding_member_number: member.founding_member_number,
     portal_access_enabled: true,
+    handicap: "",
+    bucket_list_course_ids: [],
     created_at: "",
     updated_at: "",
   };

@@ -3,8 +3,6 @@ import { earlyStageCopy } from "../../data/portalSocial";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import { resolveMemberProfileMedia } from "../../lib/memberProfileMedia";
-import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
-import { getBucketListCourseIds } from "../../lib/portalCourseState";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { MemberClubAvatar } from "./MemberClubAvatar";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -12,14 +10,12 @@ import { VerifiedBadge } from "./VerifiedBadge";
 export function MemberSnapshotCard() {
   const [display, setDisplay] = useState(() => buildGolferProfileDisplay(null));
   const [profile, setProfile] = useState<MemberProfileRecord | null>(null);
-  const bucketCount = getBucketListCourseIds().length;
 
   const loadSnapshot = useCallback(async () => {
     const { data } = await fetchOwnMemberProfile();
-    const extras = getPortalProfileExtras(data?.user_id);
     const media = await resolveMemberProfileMedia(data);
     setProfile(data);
-    setDisplay(buildGolferProfileDisplay(data, extras, media));
+    setDisplay(buildGolferProfileDisplay(data, undefined, media));
   }, []);
 
   useEffect(() => {
@@ -56,7 +52,7 @@ export function MemberSnapshotCard() {
         ) : null}
         <div>
           <dt>Courses saved</dt>
-          <dd>{bucketCount}</dd>
+          <dd>{profile?.bucket_list_course_ids.length ?? 0}</dd>
         </div>
         <div>
           <dt>Rounds shared</dt>

@@ -6,6 +6,7 @@ import {
   formatListForInput,
   updateOwnMemberProfile,
 } from "../../lib/memberProfiles";
+import { migrateLegacyPortalProfileExtrasIfNeeded } from "../../lib/portalProfileExtras";
 import {
   deleteMemberMediaPath,
   invalidateMemberMediaCache,
@@ -14,11 +15,7 @@ import {
   uploadMemberCoverPhoto,
 } from "../../lib/memberProfileMedia";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
-import {
-  getPortalProfileExtras,
-  savePortalProfileExtras,
-  type PortalProfileExtras,
-} from "../../lib/portalProfileExtras";
+import { hydrateBucketListCourseIds } from "../../lib/portalCourseState";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { earlyStageCopy } from "../../data/portalSocial";
 import { MemberClubAvatar } from "./MemberClubAvatar";
@@ -35,6 +32,7 @@ type ProfileFormState = {
   traveling_to: string;
   favorite_courses: string;
   connection_interests: string;
+  business_interests: string;
   bio: string;
   handicap: string;
 };
@@ -50,24 +48,18 @@ type PendingMediaState = {
 
 const NO_LINKED_PROFILE_MESSAGE = "No profile is linked to this account yet.";
 
-function profileToFormState(
-  profile: MemberProfileRecord,
-  extras: PortalProfileExtras,
-): ProfileFormState {
-  const useLocal = extras.has_local_snapshot;
-
+function profileToFormState(profile: MemberProfileRecord): ProfileFormState {
   return {
-    full_name: useLocal ? extras.full_name : profile.full_name ?? "",
-    headline: useLocal ? extras.headline : profile.industry ?? "",
-    based_in: useLocal ? extras.based_in : profile.based_in ?? "",
-    primary_club: useLocal ? extras.primary_club : profile.primary_club ?? "",
-    traveling_to: useLocal ? extras.traveling_to : profile.traveling_to ?? "",
-    favorite_courses: useLocal
-      ? extras.favorite_courses
-      : formatListForInput(profile.additional_clubs),
+    full_name: profile.full_name ?? "",
+    headline: profile.industry ?? "",
+    based_in: profile.based_in ?? "",
+    primary_club: profile.primary_club ?? "",
+    traveling_to: profile.traveling_to ?? "",
+    favorite_courses: formatListForInput(profile.additional_clubs),
     connection_interests: formatListForInput(profile.golf_interests),
-    bio: useLocal ? extras.bio : profile.current_request ?? "",
-    handicap: extras.handicap,
+    business_interests: formatListForInput(profile.business_interests),
+    bio: profile.current_request ?? "",
+    handicap: profile.handicap ?? "",
   };
 }
 
@@ -101,33 +93,24 @@ function buildProfileUpdates(
       initialFormValue: initialForm.connection_interests,
       existingValues: profile.golf_interests,
     }),
-    business_interests: profile.business_interests,
+    business_interests: buildListFieldUpdate({
+      formValue: form.business_interests,
+      initialFormValue: initialForm.business_interests,
+      existingValues: profile.business_interests,
+    }),
     current_request: buildTextFieldUpdate({
       formValue: form.bio,
       initialFormValue: initialForm.bio,
       existingValue: profile.current_request,
     }),
+    handicap: buildTextFieldUpdate({
+      formValue: form.handicap,
+      initialFormValue: initialForm.handicap,
+      existingValue: profile.handicap,
+    }),
+    bucket_list_course_ids: profile.bucket_list_course_ids,
     club_logo_url: media.clubLogoUrl,
     cover_photo_url: media.coverPhotoUrl,
-  };
-}
-
-function buildExtrasFromForm(form: ProfileFormState): PortalProfileExtras {
-  return {
-    cover_image_url: "",
-    handicap: form.handicap.trim(),
-    rounds_posted: "",
-    countries_played: "",
-    courses_played_count: "",
-    full_name: form.full_name.trim(),
-    headline: form.headline.trim(),
-    based_in: form.based_in.trim(),
-    primary_club: form.primary_club.trim(),
-    bio: form.bio.trim(),
-    traveling_to: form.traveling_to.trim(),
-    favorite_courses: form.favorite_courses.trim(),
-    profile_photo_url: "",
-    has_local_snapshot: true,
   };
 }
 
@@ -185,16 +168,18 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           return;
         }
 
-        const extras = getPortalProfileExtras(data.user_id);
-        const nextForm = profileToFormState(data, extras);
+        const { data: migratedProfile } = await migrateLegacyPortalProfileExtrasIfNeeded(data);
+        const profileRecord = migratedProfile ?? data;
+        hydrateBucketListCourseIds(profileRecord.bucket_list_course_ids);
+        const nextForm = profileToFormState(profileRecord);
         const [coverPreviewUrl, avatarPreviewUrl] = await Promise.all([
-          resolveMemberMediaUrl(data.cover_photo_url),
-          resolveMemberMediaUrl(data.club_logo_url),
+          resolveMemberMediaUrl(profileRecord.cover_photo_url),
+          resolveMemberMediaUrl(profileRecord.club_logo_url),
         ]);
 
         if (!active) return;
 
-        setProfile(data);
+        setProfile(profileRecord);
         setForm(nextForm);
         setInitialForm(nextForm);
         setMedia({
@@ -363,46 +348,41 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         coverPhotoUrl: nextCoverPhotoUrl,
         clubLogoUrl: nextClubLogoUrl,
       });
-      const extras = buildExtrasFromForm(form);
-
-      savePortalProfileExtras(profile.user_id, extras);
 
       const { error } = await updateOwnMemberProfile(updates);
 
-      if (!error) {
-        const refreshed = await fetchOwnMemberProfile();
-        if (refreshed.error) {
-          setErrorMessage(memberFacingPortalError(refreshed.error.message, "profile"));
-        } else if (!refreshed.data) {
-          setErrorMessage(NO_LINKED_PROFILE_MESSAGE);
-        } else {
-          const refreshedExtras = getPortalProfileExtras(refreshed.data.user_id);
-          const nextForm = profileToFormState(refreshed.data, refreshedExtras);
-          const [coverPreviewUrl, avatarPreviewUrl] = await Promise.all([
-            resolveMemberMediaUrl(refreshed.data.cover_photo_url),
-            resolveMemberMediaUrl(refreshed.data.club_logo_url),
-          ]);
-          setProfile(refreshed.data);
-          setForm(nextForm);
-          setInitialForm(nextForm);
-          setMedia({
-            coverFile: null,
-            coverPreviewUrl,
-            coverRemoved: false,
-            avatarFile: null,
-            avatarPreviewUrl,
-            avatarRemoved: false,
-          });
-        }
-      } else {
-        setErrorMessage(
-          "Your profile was saved locally, but could not sync to EliteTee. Try again shortly.",
-        );
+      if (error) {
+        setErrorMessage(memberFacingPortalError(error.message, "profile"));
+        return;
       }
 
-      setSuccessMessage("Your profile has been updated.");
-      showToast("Profile saved");
-      onSaved?.();
+      const refreshed = await fetchOwnMemberProfile();
+      if (refreshed.error) {
+        setErrorMessage(memberFacingPortalError(refreshed.error.message, "profile"));
+      } else if (!refreshed.data) {
+        setErrorMessage(NO_LINKED_PROFILE_MESSAGE);
+      } else {
+        hydrateBucketListCourseIds(refreshed.data.bucket_list_course_ids);
+        const nextForm = profileToFormState(refreshed.data);
+        const [coverPreviewUrl, avatarPreviewUrl] = await Promise.all([
+          resolveMemberMediaUrl(refreshed.data.cover_photo_url),
+          resolveMemberMediaUrl(refreshed.data.club_logo_url),
+        ]);
+        setProfile(refreshed.data);
+        setForm(nextForm);
+        setInitialForm(nextForm);
+        setMedia({
+          coverFile: null,
+          coverPreviewUrl,
+          coverRemoved: false,
+          avatarFile: null,
+          avatarPreviewUrl,
+          avatarRemoved: false,
+        });
+        setSuccessMessage("Your profile has been updated.");
+        showToast("Profile saved");
+        onSaved?.();
+      }
     } catch (unexpectedError) {
       setErrorMessage(
         unexpectedError instanceof Error
@@ -588,6 +568,21 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
                 value={form.traveling_to}
                 onChange={(event) => updateField("traveling_to", event.target.value)}
                 placeholder="Scotland — St Andrews, September"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="portal-profile-form-card et-profile-form-card">
+          <h3 className="portal-profile-form-card-title et-profile-form-card-title">Business</h3>
+          <div className="portal-profile-form-grid et-profile-form-grid">
+            <label className="portal-profile-field portal-profile-field--full">
+              <span>Business interests</span>
+              <textarea
+                rows={4}
+                value={form.business_interests}
+                onChange={(event) => updateField("business_interests", event.target.value)}
+                placeholder="Industry focus, professional interests, business golf goals"
               />
             </label>
           </div>

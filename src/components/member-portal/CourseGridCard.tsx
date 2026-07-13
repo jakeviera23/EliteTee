@@ -27,10 +27,11 @@ export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCar
   }
 
   function handleBucketList() {
-    const next = toggleBucketListCourse(course.id);
-    setBucketListed(next);
-    showToast(next ? "Added to your list" : "Removed from your list");
-    onStatusChange?.();
+    void toggleBucketListCourse(course.id).then((next) => {
+      setBucketListed(next);
+      showToast(next ? "Added to your list" : "Removed from your list");
+      onStatusChange?.();
+    });
   }
 
   return (
