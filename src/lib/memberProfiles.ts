@@ -18,6 +18,8 @@ export type MemberProfileSelfUpdate = {
   business_interests: string[];
   current_request: string;
   traveling_to: string;
+  handicap: string;
+  bucket_list_course_ids: string[];
   club_logo_url: string | null;
   cover_photo_url: string | null;
 };
@@ -106,6 +108,8 @@ export function normalizeMemberProfileRecord(row: Record<string, unknown>): Memb
     business_interests: asStringArray(row.business_interests),
     current_request: String(row.current_request ?? ""),
     traveling_to: String(row.traveling_to ?? ""),
+    handicap: String(row.handicap ?? ""),
+    bucket_list_course_ids: asStringArray(row.bucket_list_course_ids),
     club_logo_url: row.club_logo_url ? String(row.club_logo_url) : null,
     cover_photo_url: row.cover_photo_url ? String(row.cover_photo_url) : null,
     membership_status: String(row.membership_status ?? ""),
@@ -165,6 +169,25 @@ export function buildTextFieldUpdate({
 
 export function formatListForInput(value: string[] | null | undefined | unknown) {
   return asStringArray(value).join("\n");
+}
+
+export function memberProfileToSelfUpdate(profile: MemberProfileRecord): MemberProfileSelfUpdate {
+  return {
+    full_name: profile.full_name,
+    primary_club: profile.primary_club,
+    based_in: profile.based_in,
+    industry: profile.industry,
+    additional_clubs: profile.additional_clubs,
+    regions: profile.regions,
+    golf_interests: profile.golf_interests,
+    business_interests: profile.business_interests,
+    current_request: profile.current_request,
+    traveling_to: profile.traveling_to,
+    handicap: profile.handicap,
+    bucket_list_course_ids: profile.bucket_list_course_ids,
+    club_logo_url: profile.club_logo_url ?? null,
+    cover_photo_url: profile.cover_photo_url ?? null,
+  };
 }
 
 export { AUTH_USER_ID_LINKING_NOTE };
@@ -604,6 +627,49 @@ export async function updateOwnMemberProfile(updates: MemberProfileSelfUpdate) {
   }
 
   return { data: normalizeMemberProfileRecord(data as Record<string, unknown>), error: null };
+}
+
+export async function updateOwnBucketListCourseIds(courseIds: string[]) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+
+  if (sessionError || !userId) {
+    return {
+      data: null,
+      error: sessionError ?? new Error("You must be signed in to update your bucket list."),
+    };
+  }
+
+  const normalizedIds = [...new Set(courseIds.map((id) => id.trim()).filter(Boolean))];
+
+  const { data, error } = await supabase
+    .from("member_profiles")
+    .update({
+      bucket_list_course_ids: normalizedIds,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId)
+    .select("bucket_list_course_ids")
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  if (!data) {
+    return {
+      data: null,
+      error: new Error("Your bucket list could not be updated."),
+    };
+  }
+
+  return {
+    data: asStringArray(data.bucket_list_course_ids),
+    error: null,
+  };
 }
 
 export async function fetchMemberProfiles() {

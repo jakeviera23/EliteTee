@@ -1,10 +1,5 @@
 import { earlyStageCopy, emptyGolferDefaults, type PortalGolfer } from "../data/portalSocial";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
-import {
-  getPortalProfileExtras,
-  parseFavoriteCoursesFromExtras,
-  type PortalProfileExtras,
-} from "./portalProfileExtras";
 
 export type GolferProfileDisplay = {
   name: string;
@@ -35,63 +30,53 @@ function parseHandicap(value: string): number | undefined {
 
 export function buildGolferProfileDisplay(
   member: MemberProfileRecord | null,
-  extras?: PortalProfileExtras,
+  _extras?: unknown,
   mediaUrls?: GolferProfileMediaUrls,
 ): GolferProfileDisplay {
-  const userExtras = extras ?? getPortalProfileExtras(member?.user_id);
   const coverImage = mediaUrls?.coverImageUrl?.trim() ?? "";
   const avatarImage = mediaUrls?.avatarImageUrl?.trim() ?? "";
 
   if (!member) {
-    const useLocal = Boolean(userExtras.has_local_snapshot);
     return {
-      name: useLocal && userExtras.full_name.trim() ? userExtras.full_name : "Your profile",
-      title: useLocal ? userExtras.headline : "",
-      location: useLocal ? userExtras.based_in : "",
-      homeCourse: useLocal ? userExtras.primary_club : "",
-      bio: useLocal && userExtras.bio.trim() ? userExtras.bio : earlyStageCopy.profileOnboarding,
+      name: "Your profile",
+      title: "",
+      location: "",
+      homeCourse: "",
+      bio: earlyStageCopy.profileOnboarding,
       isVerified: false,
       avatarImage,
       coverImage,
-      favoriteCourses: useLocal
-        ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
-        : [],
-      upcomingTravel: useLocal ? userExtras.traveling_to : "",
+      favoriteCourses: [],
+      upcomingTravel: "",
       connectionInterests: [],
-      handicap: parseHandicap(userExtras.handicap),
+      handicap: undefined,
       isEmpty: true,
     };
   }
 
-  const useLocal = Boolean(userExtras.has_local_snapshot);
-
   return {
-    name: useLocal && userExtras.full_name.trim() ? userExtras.full_name : member.full_name,
-    title: useLocal ? userExtras.headline : member.industry || "",
-    location: useLocal ? userExtras.based_in : member.based_in,
-    homeCourse: useLocal ? userExtras.primary_club : member.primary_club,
-    bio: useLocal
-      ? userExtras.bio || earlyStageCopy.profileOnboarding
-      : member.current_request || earlyStageCopy.profileOnboarding,
+    name: member.full_name,
+    title: member.industry || "",
+    location: member.based_in,
+    homeCourse: member.primary_club,
+    bio: member.current_request || earlyStageCopy.profileOnboarding,
     isVerified: member.is_verified,
     avatarImage,
     coverImage,
-    favoriteCourses: useLocal
-      ? parseFavoriteCoursesFromExtras(userExtras.favorite_courses)
-      : member.additional_clubs,
-    upcomingTravel: useLocal ? userExtras.traveling_to : member.traveling_to || "",
+    favoriteCourses: member.additional_clubs,
+    upcomingTravel: member.traveling_to || "",
     connectionInterests: member.golf_interests,
-    handicap: parseHandicap(userExtras.handicap),
+    handicap: parseHandicap(member.handicap),
     isEmpty: false,
   };
 }
 
 export function buildComposerAuthor(
   member: MemberProfileRecord | null,
-  extras?: PortalProfileExtras,
+  _extras?: unknown,
   mediaUrls?: GolferProfileMediaUrls,
 ): PortalGolfer {
-  const display = buildGolferProfileDisplay(member, extras, mediaUrls);
+  const display = buildGolferProfileDisplay(member, undefined, mediaUrls);
 
   return {
     ...emptyGolferDefaults,

@@ -10,14 +10,14 @@ import {
   fetchApprovedMemberProfileByUserId,
   fetchOwnMemberProfile,
 } from "../../lib/memberProfiles";
-import { getBucketListCourseIds } from "../../lib/portalCourseState";
+import { getBucketListCourseIds, hydrateBucketListCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import {
   buildProfileExperienceStats,
   buildUniqueCoursesPlayed,
 } from "../../lib/profilePageDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
-import { getPortalProfileExtras } from "../../lib/portalProfileExtras";
+import { migrateLegacyPortalProfileExtrasIfNeeded } from "../../lib/portalProfileExtras";
 import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
@@ -166,7 +166,14 @@ export function GolferProfilePage({
       return;
     }
 
-    setMemberProfile({ ...profile, email: "" } as MemberProfileRecord);
+    let nextProfile = { ...profile, email: "" } as MemberProfileRecord;
+    if (!viewingOther) {
+      const { data: migratedProfile } = await migrateLegacyPortalProfileExtrasIfNeeded(nextProfile);
+      nextProfile = (migratedProfile ?? nextProfile) as MemberProfileRecord;
+      hydrateBucketListCourseIds(nextProfile.bucket_list_course_ids);
+    }
+
+    setMemberProfile(nextProfile);
     setFeedPosts(posts ?? []);
     setCourseRounds(rounds ?? []);
     setIsLoading(false);
@@ -179,12 +186,11 @@ export function GolferProfilePage({
   }, [isActive, profileVersion, loadProfile]);
 
   const display = useMemo(() => {
-    const extras = isViewingOther ? undefined : getPortalProfileExtras(memberProfile?.user_id);
-    return buildGolferProfileDisplay(memberProfile, extras, {
+    return buildGolferProfileDisplay(memberProfile, undefined, {
       coverImageUrl,
       avatarImageUrl,
     });
-  }, [avatarImageUrl, coverImageUrl, isViewingOther, memberProfile, profileVersion]);
+  }, [avatarImageUrl, coverImageUrl, memberProfile, profileVersion]);
 
   const uniqueCourses = useMemo(() => buildUniqueCoursesPlayed(courseRounds), [courseRounds]);
   const experienceStats = useMemo(
@@ -192,7 +198,9 @@ export function GolferProfilePage({
     [courseRounds, feedPosts.length],
   );
   const recentExperiences = useMemo(() => courseRounds, [courseRounds]);
-  const bucketListCount = isViewingOther ? 0 : getBucketListCourseIds().length;
+  const bucketListCount = isViewingOther
+    ? 0
+    : memberProfile?.bucket_list_course_ids.length ?? getBucketListCourseIds().length;
 
   const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
   const canMessage = isViewingOther && Boolean(onMessageMember && memberProfile?.user_id);
@@ -563,7 +571,7 @@ export function GolferProfilePage({
                     <p className="et-profile-bucket-copy">
                       Save courses from the library to build your list.
                       {bucketListCount > 0
-                        ? ` You currently have ${bucketListCount} legacy saved course${bucketListCount === 1 ? "" : "s"} on this device.`
+                        ? ` You currently have ${bucketListCount} saved course${bucketListCount === 1 ? "" : "s"}.`
                         : ""}
                     </p>
                   </div>

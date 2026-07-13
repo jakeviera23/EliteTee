@@ -23,6 +23,8 @@ function toIntroMember(profile: ApprovedMemberDirectoryProfile): MemberProfileRe
     ...profile,
     email: "",
     created_at: "",
+    handicap: "",
+    bucket_list_course_ids: [],
   };
 }
 
@@ -69,6 +71,8 @@ export function CourseDetailMembersPlayed({
               business_interests: [],
               current_request: "",
               traveling_to: "",
+              handicap: "",
+              bucket_list_course_ids: [],
               club_logo_url: null,
               cover_photo_url: null,
               membership_status: "",

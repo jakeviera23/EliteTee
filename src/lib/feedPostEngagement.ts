@@ -11,6 +11,61 @@ const UUID_PATTERN =
 
 const MAX_COMMENT_LENGTH = 1000;
 
+const ENGAGEMENT_MIGRATION = "043_feed_post_engagement.sql";
+
+export type FeedEngagementSupabaseError = {
+  code?: string;
+  message?: string;
+  details?: string | null;
+  hint?: string | null;
+};
+
+export function isMissingEngagementTableError(error: FeedEngagementSupabaseError | null | undefined) {
+  if (!error) return false;
+  if (error.code === "PGRST205") return true;
+  return error.message?.includes("Could not find the table") ?? false;
+}
+
+export function logFeedEngagementSupabaseError(context: string, error: unknown) {
+  if (!import.meta.env.DEV) return;
+  console.error(`[feedPostEngagement] ${context}`, error);
+}
+
+export function formatFeedEngagementError(error: unknown): string {
+  if (!error) return "Engagement request failed.";
+
+  if (error instanceof Error && !("code" in error)) {
+    return error.message;
+  }
+
+  const postgrestError = error as FeedEngagementSupabaseError;
+  const code = postgrestError.code?.trim();
+  const message = postgrestError.message?.trim() || "Engagement request failed.";
+
+  if (isMissingEngagementTableError(postgrestError)) {
+    return `Feed engagement tables are missing in Supabase (${code ?? "PGRST205"}). Apply migration ${ENGAGEMENT_MIGRATION}.`;
+  }
+
+  if (code === "42501") {
+    return `RLS blocked feed engagement (${code}): ${message}`;
+  }
+
+  if (code === "23503") {
+    return `Feed engagement foreign key failed (${code}): ${message}. user_id must match auth.uid() and exist in public.users.`;
+  }
+
+  if (code === "23505") {
+    return `Duplicate feed engagement (${code}): ${message}`;
+  }
+
+  return code ? `${code}: ${message}` : message;
+}
+
+function normalizeSupabaseError(error: unknown) {
+  logFeedEngagementSupabaseError("supabase error", error);
+  return error;
+}
+
 export type FeedPostEngagementSummary = {
   likeCount: number;
   commentCount: number;
@@ -275,7 +330,10 @@ export async function fetchFeedPostEngagementSummaries(
     null;
 
   if (firstError) {
-    return { summaries: new Map<string, FeedPostEngagementSummary>(), error: firstError };
+    return {
+      summaries: new Map<string, FeedPostEngagementSummary>(),
+      error: normalizeSupabaseError(firstError),
+    };
   }
 
   const commentRows = (commentsResult.data ?? []) as CommentRow[];
@@ -331,7 +389,7 @@ export async function fetchFeedPostComments(postId: string) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    return { data: [] as FeedPostComment[], error };
+    return { data: [] as FeedPostComment[], error: normalizeSupabaseError(error) };
   }
 
   const rows = (data ?? []) as CommentRow[];
@@ -367,7 +425,7 @@ export async function toggleFeedPostLike(postId: string, currentlyLiked: boolean
       .eq("post_id", postId)
       .eq("user_id", userId);
 
-    return { liked: false, error: error ?? null };
+    return { liked: false, error: error ? normalizeSupabaseError(error) : null };
   }
 
   const { error } = await supabase.from("feed_post_likes").insert({
@@ -379,7 +437,7 @@ export async function toggleFeedPostLike(postId: string, currentlyLiked: boolean
     return { liked: true, error: null };
   }
 
-  return { liked: !error, error: error ?? null };
+  return { liked: !error, error: error ? normalizeSupabaseError(error) : null };
 }
 
 export async function toggleFeedPostSave(postId: string, currentlySaved: boolean) {
@@ -406,7 +464,7 @@ export async function toggleFeedPostSave(postId: string, currentlySaved: boolean
       .eq("post_id", postId)
       .eq("user_id", userId);
 
-    return { saved: false, error: error ?? null };
+    return { saved: false, error: error ? normalizeSupabaseError(error) : null };
   }
 
   const { error } = await supabase.from("feed_post_saves").insert({
@@ -418,7 +476,7 @@ export async function toggleFeedPostSave(postId: string, currentlySaved: boolean
     return { saved: true, error: null };
   }
 
-  return { saved: !error, error: error ?? null };
+  return { saved: !error, error: error ? normalizeSupabaseError(error) : null };
 }
 
 export async function createFeedPostComment(postId: string, body: string) {
@@ -454,7 +512,10 @@ export async function createFeedPostComment(postId: string, body: string) {
     .single();
 
   if (error || !data) {
-    return { data: null, error: error ?? new Error("Comment could not be posted.") };
+    return {
+      data: null,
+      error: error ? normalizeSupabaseError(error) : new Error("Comment could not be posted."),
+    };
   }
 
   const authorsByUserId = await loadCommentAuthors([userId]);
@@ -485,7 +546,7 @@ export async function deleteFeedPostComment(commentId: string) {
     .maybeSingle();
 
   if (error) {
-    return { error };
+    return { error: normalizeSupabaseError(error) };
   }
 
   if (!data) {

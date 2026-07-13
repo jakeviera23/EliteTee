@@ -23,6 +23,8 @@ function member(
     business_interests: [],
     current_request: "",
     traveling_to: "",
+    handicap: "",
+    bucket_list_course_ids: [],
     club_logo_url: null,
     cover_photo_url: null,
     membership_status: "",

@@ -4,7 +4,9 @@ import {
   applySaveToggle,
   buildEngagementSummaryMap,
   canDeleteFeedPostComment,
+  formatFeedEngagementError,
   isDuplicateEngagementError,
+  isMissingEngagementTableError,
   isPersistedFeedPostId,
   mergeEngagementIntoFeedPost,
   validateFeedPostCommentBody,
@@ -43,6 +45,39 @@ function basePost(overrides: Partial<FeedPost> = {}): FeedPost {
     ...overrides,
   };
 }
+
+describe("isMissingEngagementTableError", () => {
+  it("detects PostgREST missing-table errors from localhost", () => {
+    expect(
+      isMissingEngagementTableError({
+        code: "PGRST205",
+        message: "Could not find the table 'public.feed_post_likes' in the schema cache",
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("formatFeedEngagementError", () => {
+  it("returns migration guidance for missing engagement tables", () => {
+    const message = formatFeedEngagementError({
+      code: "PGRST205",
+      message: "Could not find the table 'public.feed_post_comments' in the schema cache",
+    });
+
+    expect(message).toContain("PGRST205");
+    expect(message).toContain("043_feed_post_engagement.sql");
+  });
+
+  it("includes foreign-key guidance for public.users mismatches", () => {
+    const message = formatFeedEngagementError({
+      code: "23503",
+      message: 'insert or update on table "feed_post_likes" violates foreign key constraint',
+    });
+
+    expect(message).toContain("23503");
+    expect(message).toContain("public.users");
+  });
+});
 
 describe("isPersistedFeedPostId", () => {
   it("accepts member feed post UUIDs and rejects founder mock ids", () => {

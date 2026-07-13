@@ -1,11 +1,56 @@
-const BUCKET_KEY = "elitetee_bucket_list";
+import { updateOwnBucketListCourseIds } from "./memberProfiles";
+
+let bucketListCourseIds: string[] = [];
+let bucketListHydrated = false;
+
+export function hydrateBucketListCourseIds(courseIds: string[]) {
+  bucketListCourseIds = [...new Set(courseIds.map((id) => id.trim()).filter(Boolean))];
+  bucketListHydrated = true;
+}
+
+export function isBucketListHydrated() {
+  return bucketListHydrated;
+}
+
+export function getBucketListCourseIds(): string[] {
+  return [...bucketListCourseIds];
+}
+
+export function isCourseOnBucketList(courseId: string): boolean {
+  return bucketListCourseIds.includes(courseId);
+}
+
+export async function toggleBucketListCourse(courseId: string): Promise<boolean> {
+  const normalizedCourseId = courseId.trim();
+  if (!normalizedCourseId) return false;
+
+  const current = getBucketListCourseIds();
+  const next = current.includes(normalizedCourseId)
+    ? current.filter((id) => id !== normalizedCourseId)
+    : [...current, normalizedCourseId];
+
+  const { data, error } = await updateOwnBucketListCourseIds(next);
+
+  if (error) {
+    if (import.meta.env.DEV) {
+      console.error("[portalCourseState] bucket list update failed", error);
+    }
+    return current.includes(normalizedCourseId);
+  }
+
+  bucketListCourseIds = data ?? next;
+  bucketListHydrated = true;
+  window.dispatchEvent(new CustomEvent("elitetee:course-state-changed"));
+  return bucketListCourseIds.includes(normalizedCourseId);
+}
+
 const PLAYED_KEY = "elitetee_played_courses";
 
-function readList(key: string): string[] {
+function readPlayedList(): string[] {
   if (typeof window === "undefined") return [];
 
   try {
-    const raw = window.localStorage.getItem(key);
+    const raw = window.localStorage.getItem(PLAYED_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
@@ -14,35 +59,18 @@ function readList(key: string): string[] {
   }
 }
 
-function writeList(key: string, ids: string[]) {
+function writePlayedList(ids: string[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(ids));
+  window.localStorage.setItem(PLAYED_KEY, JSON.stringify(ids));
   window.dispatchEvent(new CustomEvent("elitetee:course-state-changed"));
 }
 
-export function getBucketListCourseIds(): string[] {
-  return readList(BUCKET_KEY);
-}
-
 export function getPlayedCourseIds(): string[] {
-  return readList(PLAYED_KEY);
-}
-
-export function isCourseOnBucketList(courseId: string): boolean {
-  return getBucketListCourseIds().includes(courseId);
+  return readPlayedList();
 }
 
 export function isCoursePlayed(courseId: string): boolean {
   return getPlayedCourseIds().includes(courseId);
-}
-
-export function toggleBucketListCourse(courseId: string): boolean {
-  const current = getBucketListCourseIds();
-  const next = current.includes(courseId)
-    ? current.filter((id) => id !== courseId)
-    : [...current, courseId];
-  writeList(BUCKET_KEY, next);
-  return next.includes(courseId);
 }
 
 export function togglePlayedCourse(courseId: string): boolean {
@@ -50,12 +78,11 @@ export function togglePlayedCourse(courseId: string): boolean {
   const next = current.includes(courseId)
     ? current.filter((id) => id !== courseId)
     : [...current, courseId];
-  writeList(PLAYED_KEY, next);
+  writePlayedList(next);
   return next.includes(courseId);
 }
 
 export function findCourseIdByName(courseName: string): string | null {
-  // Lazy import avoided — callers pass id when available; name fallback for feed posts
   return courseName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
