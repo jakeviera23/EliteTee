@@ -10,8 +10,10 @@ import {
 import { mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import { isAdminEmail } from "../../lib/admin";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
 import { resolveMemberProfileMedia } from "../../lib/memberProfileMedia";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { FeedCard } from "./FeedCard";
 import { FeedComposer } from "./FeedComposer";
@@ -33,6 +35,7 @@ export function PortalFeed({
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
   const [memberPosts, setMemberPosts] = useState<FeedPost[]>([]);
   const [nextCursor, setNextCursor] = useState<MemberFeedCursor | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -48,6 +51,14 @@ export function PortalFeed({
       getCurrentAuthUserId(),
     ]);
     setCurrentUserId(userId ?? null);
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      setViewerIsAdmin(isAdminEmail(sessionData.session?.user.email));
+    } else {
+      setViewerIsAdmin(false);
+    }
+
     const media = await resolveMemberProfileMedia(data);
     setComposerAuthor(buildComposerAuthor(data, undefined, media));
   }, []);
@@ -200,6 +211,7 @@ export function PortalFeed({
                 post={post}
                 index={index + 1}
                 currentUserId={currentUserId}
+                viewerIsAdmin={viewerIsAdmin}
                 onToast={showToast}
                 onViewAuthor={onViewMemberProfile}
                 onPostUpdated={handlePostUpdated}

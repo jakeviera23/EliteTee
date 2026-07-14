@@ -71,7 +71,6 @@ export function InsideEliteTee() {
 
   async function handleSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    console.log("submit clicked");
 
     setLoginError(null);
 
@@ -87,10 +86,8 @@ export function InsideEliteTee() {
         email: email.trim(),
         password,
       });
-      console.log("Supabase response", response);
 
       if (response.error) {
-        console.log("login error", response.error);
         setLoginError(response.error.message);
         return;
       }
@@ -100,10 +97,8 @@ export function InsideEliteTee() {
         return;
       }
 
-      console.log("Login successful");
       navigate("/member-portal", { replace: true });
     } catch (error) {
-      console.log("login error", error);
       setLoginError(error instanceof Error ? error.message : "Sign in failed. Please try again.");
     } finally {
       setIsSigningIn(false);

@@ -8,7 +8,7 @@ import type {
 } from "../types/memberFeedPost";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchOwnMemberProfile } from "./memberProfiles";
-import { fetchPhotosForRoundIds } from "./memberCourseRoundPhotos";
+import { fetchPhotosForRoundIds, fetchCoverPhotoIdsForRoundIds, buildRoundImageUrls } from "./memberCourseRoundPhotos";
 import { formatPlayedOnDate } from "./memberCourseRounds";
 import { formatCourseRatingDisplay, validateCourseRating } from "./courseRating";
 import {
@@ -19,6 +19,8 @@ import {
 } from "./feedPostEditing";
 import { supabase } from "./supabase";
 import { attachFeedPostEngagement } from "./feedPostEngagement";
+import { buildEditCourseRoundFeedPostRpcParams } from "./editCourseRoundFeedPostRpc";
+import { logSupabaseOperation } from "./supabaseOperationLog";
 
 const FEED_PAGE_SIZE = 20;
 
@@ -275,13 +277,23 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
   ];
 
   const { data: roundPhotos } = await fetchPhotosForRoundIds(roundIds);
-  const imagesByRoundId = new Map<string, string[]>();
+  const { data: coverPhotoIds } = await fetchCoverPhotoIdsForRoundIds(roundIds);
+  const photosByRoundId = new Map<string, typeof roundPhotos>();
 
   for (const photo of roundPhotos ?? []) {
-    if (!photo.signed_url) continue;
-    const existing = imagesByRoundId.get(photo.member_course_round_id) ?? [];
-    existing.push(photo.signed_url);
-    imagesByRoundId.set(photo.member_course_round_id, existing);
+    const existing = photosByRoundId.get(photo.member_course_round_id) ?? [];
+    existing.push(photo);
+    photosByRoundId.set(photo.member_course_round_id, existing);
+  }
+
+  const imagesByRoundId = new Map<string, string[]>();
+
+  for (const roundId of roundIds) {
+    const photos = photosByRoundId.get(roundId) ?? [];
+    imagesByRoundId.set(
+      roundId,
+      buildRoundImageUrls(photos, coverPhotoIds?.get(roundId)),
+    );
   }
 
   return records.map((record) => {
@@ -467,10 +479,14 @@ export async function createMemberFeedPost(
 
   let imageUrls: string[] = [];
   if (record.member_course_round_id) {
-    const { data: photos } = await fetchPhotosForRoundIds([record.member_course_round_id]);
-    imageUrls = (photos ?? [])
-      .map((photo) => photo.signed_url)
-      .filter((url): url is string => Boolean(url));
+    const [{ data: photos }, { data: coverPhotoIds }] = await Promise.all([
+      fetchPhotosForRoundIds([record.member_course_round_id]),
+      fetchCoverPhotoIdsForRoundIds([record.member_course_round_id]),
+    ]);
+    imageUrls = buildRoundImageUrls(
+      photos ?? [],
+      coverPhotoIds?.get(record.member_course_round_id),
+    );
   }
 
   return {
@@ -541,10 +557,14 @@ async function mapEditedFeedPostRow(
 
   let imageUrls: string[] = [];
   if (record.member_course_round_id) {
-    const { data: photos } = await fetchPhotosForRoundIds([record.member_course_round_id]);
-    imageUrls = (photos ?? [])
-      .map((photo) => photo.signed_url)
-      .filter((url): url is string => Boolean(url));
+    const [{ data: photos }, { data: coverPhotoIds }] = await Promise.all([
+      fetchPhotosForRoundIds([record.member_course_round_id]),
+      fetchCoverPhotoIdsForRoundIds([record.member_course_round_id]),
+    ]);
+    imageUrls = buildRoundImageUrls(
+      photos ?? [],
+      coverPhotoIds?.get(record.member_course_round_id),
+    );
   }
 
   return memberFeedPostToFeedPost(record, authorProfile, imageUrls);
@@ -590,6 +610,7 @@ export async function updateMemberFeedPostCaption(postId: string, message: strin
   });
 
   if (error) {
+    logSupabaseOperation("edit_member_feed_post", error, { postId });
     return { data: null, error };
   }
 
@@ -635,19 +656,15 @@ export async function updateCourseRoundFeedPost(postId: string, input: CourseRou
     return { data: null, error: new Error(ratingResult.message) };
   }
 
-  const { data, error } = await supabase.rpc("edit_course_round_feed_post", {
-    p_post_id: postId,
-    p_message: payload.message.trim(),
-    p_course_rating: ratingResult.value,
-    p_played_on: payload.playedOn,
-    p_would_play_again: payload.wouldPlayAgain,
-    p_location: payload.location.trim(),
-    p_city: payload.city ?? null,
-    p_region: payload.region ?? null,
-    p_country: payload.country ?? null,
-  });
+  const rpcParams = buildEditCourseRoundFeedPostRpcParams(postId, payload, ratingResult.value);
+
+  const { data, error } = await supabase.rpc("edit_course_round_feed_post", rpcParams);
 
   if (error) {
+    logSupabaseOperation("edit_course_round_feed_post", error, {
+      postId,
+      rpcParamKeys: Object.keys(rpcParams),
+    });
     return { data: null, error };
   }
 

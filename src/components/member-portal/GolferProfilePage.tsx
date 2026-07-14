@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { earlyStageCopy, type FeedPost } from "../../data/portalSocial";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import { isAdminEmail } from "../../lib/admin";
+import { mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import {
   loadBucketListCourseSummaries,
   type BucketListCourseSummary,
@@ -23,6 +25,7 @@ import {
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { migrateLegacyPortalProfileExtrasIfNeeded } from "../../lib/portalProfileExtras";
 import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { FeedCard } from "./FeedCard";
@@ -97,6 +100,7 @@ export function GolferProfilePage({
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
   const [memberProfile, setMemberProfile] = useState<MemberProfileRecord | null>(null);
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [courseRounds, setCourseRounds] = useState<MemberCourseRoundRecord[]>([]);
@@ -112,6 +116,13 @@ export function GolferProfilePage({
   useEffect(() => {
     if (!isActive) return;
     void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
+    if (!isSupabaseConfigured || !supabase) {
+      setViewerIsAdmin(false);
+      return;
+    }
+    void supabase.auth.getSession().then(({ data }) => {
+      setViewerIsAdmin(isAdminEmail(data.session?.user.email));
+    });
   }, [isActive]);
 
   const loadProfile = useCallback(async () => {
@@ -508,7 +519,18 @@ export function GolferProfilePage({
                         key={post.id}
                         post={post}
                         index={index}
+                        currentUserId={currentUserId}
+                        viewerIsAdmin={viewerIsAdmin}
                         onViewAuthor={onViewMemberProfile}
+                        onPostUpdated={(updatedPost) => {
+                          setFeedPosts((current) =>
+                            current.map((entry) =>
+                              entry.id === updatedPost.id
+                                ? mergeFeedPostAfterEdit(entry, updatedPost)
+                                : entry,
+                            ),
+                          );
+                        }}
                       />
                     ))}
                   </div>

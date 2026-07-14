@@ -78,9 +78,56 @@ function bottomNavIcon(tab: PortalTab) {
   }
 }
 
+function PortalTopBarBellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13.73 21a2 2 0 0 1-3.46 0"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PortalTopBarEnvelopeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect
+        x="2"
+        y="4"
+        width="20"
+        height="16"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function MemberPortalContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isCoursesRoute = location.pathname === "/courses";
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
@@ -105,6 +152,7 @@ function MemberPortalContent() {
   );
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
+  const resolvedView: PortalTab = isCoursesRoute ? "courses" : activeView;
 
   const notificationBadgeCount = useMemo(
     () =>
@@ -268,7 +316,11 @@ function MemberPortalContent() {
       case "ask":
         return { type: "portal", tab: "ask", label: "Back to Ask EliteTee" };
       case "courses":
-        return { type: "portal", tab: "courses", label: "Back to Courses" };
+        return {
+          type: "route",
+          path: isCoursesRoute ? `/courses${location.search}` : "/courses",
+          label: "Back to Courses",
+        };
       case "messages":
         return { type: "portal", tab: "messages", label: "Back to Messages" };
       case "introductions":
@@ -307,6 +359,16 @@ function MemberPortalContent() {
   }
 
   function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
+    if (view === "courses") {
+      navigate("/courses");
+      setActiveView("courses");
+      return;
+    }
+
+    if (isCoursesRoute) {
+      navigate("/member-portal");
+    }
+
     if (view === activeView && !options?.scrollToComposer) return;
 
     if (options?.scrollToComposer) {
@@ -329,12 +391,26 @@ function MemberPortalContent() {
 
   function handleMobileNav(tab: PortalTab) {
     if (tab === "compose") {
+      if (isCoursesRoute) {
+        navigate("/member-portal");
+      }
       setActiveView("feed");
       window.scrollTo({ top: 0, behavior: "auto" });
       requestAnimationFrame(() => {
         document.getElementById(FEED_COMPOSER_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       return;
+    }
+
+    if (tab === "courses") {
+      navigate("/courses");
+      setActiveView("courses");
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+
+    if (isCoursesRoute) {
+      navigate("/member-portal");
     }
 
     if (tab === activeView) return;
@@ -423,7 +499,9 @@ function MemberPortalContent() {
                   aria-haspopup="dialog"
                   onClick={toggleNotificationsPanel}
                 >
-                  <span aria-hidden="true">🔔</span>
+                  <span className="portal-icon-btn-glyph" aria-hidden="true">
+                    <PortalTopBarBellIcon />
+                  </span>
                   <span className="portal-icon-btn-label">Notifications</span>
                   {getNotificationBadgeDisplay(notificationBadgeCount) === "dot" ? (
                     <span className="portal-icon-badge-dot" aria-hidden="true" />
@@ -455,7 +533,9 @@ function MemberPortalContent() {
                 }
                 onClick={() => transitionTo("messages")}
               >
-                <span aria-hidden="true">✉</span>
+                <span className="portal-icon-btn-glyph" aria-hidden="true">
+                  <PortalTopBarEnvelopeIcon />
+                </span>
                 <span className="portal-icon-btn-label">Messages</span>
                 {unreadMessageCount > 0 ? (
                   <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
@@ -479,9 +559,9 @@ function MemberPortalContent() {
               <button
                 key={tab.id}
                 type="button"
-                className={`portal-tab${activeView === tab.id ? " is-active" : ""}`}
+                className={`portal-tab${resolvedView === tab.id ? " is-active" : ""}`}
                 onClick={() => transitionTo(tab.id)}
-                aria-current={activeView === tab.id ? "page" : undefined}
+                aria-current={resolvedView === tab.id ? "page" : undefined}
               >
                 <span className="portal-tab-label">{tab.label}</span>
               </button>
@@ -492,15 +572,15 @@ function MemberPortalContent() {
 
       <main className={`portal-main portal-main--social${isInitialLoading ? " is-loading" : ""}`}>
         <div className="portal-shell">
-          <div hidden={activeView !== "feed"}>
+          <div hidden={resolvedView !== "feed"}>
             <PortalFeed
               showComposer
               composerId={FEED_COMPOSER_ID}
-              isActive={activeView === "feed"}
+              isActive={resolvedView === "feed"}
               onViewMemberProfile={handleViewMemberProfile}
             />
           </div>
-          {activeView === "discover" ? (
+          {resolvedView === "discover" ? (
             <PortalDiscover
               onViewCourse={handleViewCourse}
               onNavigate={(tab) => transitionTo(tab)}
@@ -508,21 +588,21 @@ function MemberPortalContent() {
               onMessageMember={handleMessageMember}
             />
           ) : null}
-          {activeView === "ask" ? (
+          {resolvedView === "ask" ? (
             <AskEliteTee
-              isActive={activeView === "ask"}
+              isActive={resolvedView === "ask"}
               initialQuestion={pendingAskQuestion}
               onInitialQuestionConsumed={() => setPendingAskQuestion(null)}
               onViewMemberProfile={handleViewMemberProfile}
             />
           ) : null}
-          {activeView === "compose" ? (
+          {resolvedView === "compose" ? (
             <PortalCompose onPosted={() => transitionTo("feed")} />
           ) : null}
-          {activeView === "courses" ? <PortalCourses /> : null}
-          {activeView === "introductions" ? (
+          {resolvedView === "courses" ? <PortalCourses /> : null}
+          {resolvedView === "introductions" ? (
             <PortalIntroductionRequests
-              isActive={activeView === "introductions"}
+              isActive={resolvedView === "introductions"}
               initialTab={pendingIntroductionTab}
               onInitialTabConsumed={() => setPendingIntroductionTab(null)}
               onMessageMember={handleMessageMember}
@@ -530,7 +610,7 @@ function MemberPortalContent() {
               onRequestsChange={handleIntroductionRequestsChange}
             />
           ) : null}
-          {activeView === "messages" ? (
+          {resolvedView === "messages" ? (
             <PortalMessages
               unreadCount={unreadMessageCount}
               initialConversation={pendingConversation}
@@ -538,14 +618,14 @@ function MemberPortalContent() {
               onViewMemberProfile={handleViewMemberProfile}
             />
           ) : null}
-          {activeView === "profile" ? (
+          {resolvedView === "profile" ? (
             <GolferProfilePage
-              isActive={activeView === "profile"}
+              isActive={resolvedView === "profile"}
               onViewMemberProfile={handleViewMemberProfile}
             />
           ) : null}
 
-          {activeView !== "introductions" ? (
+          {resolvedView !== "introductions" ? (
             <section className="portal-privacy">
               <p>{privacyCopy}</p>
             </section>
@@ -558,9 +638,9 @@ function MemberPortalContent() {
           <button
             key={tab.id}
             type="button"
-            className={`portal-bottom-nav-btn${activeView === tab.id ? " is-active" : ""}`}
+            className={`portal-bottom-nav-btn${resolvedView === tab.id ? " is-active" : ""}`}
             onClick={() => handleMobileNav(tab.id)}
-            aria-current={activeView === tab.id ? "page" : undefined}
+            aria-current={resolvedView === tab.id ? "page" : undefined}
           >
             <span className="portal-bottom-nav-icon" aria-hidden="true">
               {bottomNavIcon(tab.id)}

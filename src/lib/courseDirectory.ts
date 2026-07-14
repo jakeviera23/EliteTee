@@ -19,12 +19,19 @@ export type CourseDirectoryFilters = {
 export type CourseGeoRegionGroup = {
   region: string;
   courses: GolfCourseSearchResult[];
+  totalCourseCount: number;
 };
 
 export type CourseGeoCountryGroup = {
   country: string;
   regions: CourseGeoRegionGroup[];
   courseCount: number;
+};
+
+export type CourseGeoCountRow = {
+  country: string;
+  region: string;
+  course_count: number;
 };
 
 export type CourseFilterOptions = {
@@ -118,6 +125,25 @@ export function sortCourses(
       sorted.sort((a, b) => compareStrings(a.name, b.name));
       break;
   }
+
+  return sorted;
+}
+
+export function sortCoursesByLocationActivity(
+  courses: GolfCourseSearchResult[],
+): GolfCourseSearchResult[] {
+  const sorted = [...courses];
+
+  sorted.sort((a, b) => {
+    const roundDiff = (b.round_count ?? 0) - (a.round_count ?? 0);
+    if (roundDiff !== 0) return roundDiff;
+
+    const timeA = a.latest_activity_at ? new Date(a.latest_activity_at).getTime() : 0;
+    const timeB = b.latest_activity_at ? new Date(b.latest_activity_at).getTime() : 0;
+    if (timeB !== timeA) return timeB - timeA;
+
+    return compareStrings(a.name, b.name);
+  });
 
   return sorted;
 }
@@ -224,41 +250,122 @@ export function groupCoursesGeographically(
         .map(([region, regionCourses]) => ({
           region,
           courses: regionCourses,
+          totalCourseCount: regionCourses.length,
         }));
 
       return {
         country,
         regions,
-        courseCount: regions.reduce((total, group) => total + group.courses.length, 0),
+        courseCount: regions.reduce((total, group) => total + group.totalCourseCount, 0),
       };
     });
+}
+
+function geoCountKey(country: string, region: string): string {
+  return `${country}|${region}`;
+}
+
+export function buildGeoCountLookup(counts: CourseGeoCountRow[]): Map<string, number> {
+  const lookup = new Map<string, number>();
+
+  for (const row of counts) {
+    const country = normalizeCountry(row.country);
+    const region = normalizeRegion(
+      normalizeRegionLabel(row.country, row.region) || row.region,
+    );
+    const key = geoCountKey(country, region);
+    lookup.set(key, (lookup.get(key) ?? 0) + Number(row.course_count ?? 0));
+  }
+
+  return lookup;
+}
+
+export function applyGeoCountsToGroups(
+  groups: CourseGeoCountryGroup[],
+  counts: CourseGeoCountRow[],
+): CourseGeoCountryGroup[] {
+  const lookup = buildGeoCountLookup(counts);
+
+  return groups.map((group) => {
+    const regions = group.regions.map((regionGroup) => ({
+      ...regionGroup,
+      totalCourseCount:
+        lookup.get(geoCountKey(group.country, regionGroup.region)) ??
+        regionGroup.totalCourseCount,
+    }));
+
+    const courseCount = regions.reduce(
+      (total, regionGroup) => total + regionGroup.totalCourseCount,
+      0,
+    );
+
+    return {
+      ...group,
+      regions,
+      courseCount: courseCount || group.courseCount,
+    };
+  });
+}
+
+export function dedupeCoursesForDirectory(
+  courses: GolfCourseSearchResult[],
+): GolfCourseSearchResult[] {
+  const byIdentity = new Map<string, GolfCourseSearchResult>();
+
+  for (const course of courses) {
+    const country = normalizeCountry(course.country);
+    const region = normalizeRegion(
+      normalizeRegionLabel(course.country, course.region) || course.region,
+    );
+    const city = normalizeCity(course.city).toLowerCase();
+    const name = course.name.trim().toLowerCase();
+    const key = `${name}|${city}|${country}|${region}`;
+
+    const existing = byIdentity.get(key);
+    if (!existing) {
+      byIdentity.set(key, course);
+      continue;
+    }
+
+    const existingScore =
+      (existing.round_count ?? 0) * 1000 + (existing.avg_rating ?? 0);
+    const nextScore = (course.round_count ?? 0) * 1000 + (course.avg_rating ?? 0);
+    if (nextScore > existingScore) {
+      byIdentity.set(key, course);
+    }
+  }
+
+  return [...byIdentity.values()];
 }
 
 export function buildFeaturedSections({
   popular,
   pool,
-  limit = 5,
+  limit = 6,
 }: {
   popular: GolfCourseSearchResult[];
   pool: GolfCourseSearchResult[];
   limit?: number;
 }) {
-  const seen = new Set<string>();
-
-  function takeUnique(courses: GolfCourseSearchResult[]) {
+  function takeUniqueInCategory(courses: GolfCourseSearchResult[]) {
+    const seen = new Set<string>();
     const result: GolfCourseSearchResult[] = [];
+
     for (const course of courses) {
       if (seen.has(course.id)) continue;
       seen.add(course.id);
       result.push(course);
       if (result.length >= limit) break;
     }
+
     return result;
   }
 
-  const highestRated = takeUnique(
+  const featuredPool = dedupeCoursesForDirectory([...popular, ...pool]);
+
+  const highestRated = takeUniqueInCategory(
     sortCourses(
-      pool.filter(
+      featuredPool.filter(
         (course) =>
           (course.avg_rating ?? 0) > 0 &&
           (course.round_count ?? 0) > 0,
@@ -267,18 +374,18 @@ export function buildFeaturedSections({
     ),
   );
 
-  const recentlyReviewed = takeUnique(
+  const recentlyReviewed = takeUniqueInCategory(
     sortCourses(
-      pool.filter((course) => Boolean(course.latest_activity_at)),
+      featuredPool.filter((course) => Boolean(course.latest_activity_at)),
       "recently-reviewed",
     ),
   );
 
-  const popularSection = takeUnique(popular);
+  const popularSection = takeUniqueInCategory(popular);
 
-  const featuredRegions = takeUnique(
+  const featuredRegions = takeUniqueInCategory(
     sortCourses(
-      pool.filter((course) => normalizeRegion(course.region) !== UNSPECIFIED_REGION),
+      featuredPool.filter((course) => normalizeRegion(course.region) !== UNSPECIFIED_REGION),
       "most-played",
     ).slice(0, limit),
   );

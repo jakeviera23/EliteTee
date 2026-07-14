@@ -1,4 +1,4 @@
-const US_STATE_CANONICAL: Record<string, string> = {
+export const US_STATE_CANONICAL: Record<string, string> = {
   NY: "New York",
   "NEW YORK": "New York",
   NJ: "New Jersey",
@@ -42,6 +42,29 @@ const US_STATE_CANONICAL: Record<string, string> = {
   TN: "Tennessee",
   TENNESSEE: "Tennessee",
 };
+
+const US_STATE_SEARCH_TOKEN = Object.entries(US_STATE_CANONICAL).reduce<Record<string, string>>(
+  (lookup, [rawKey, canonicalName]) => {
+    if (rawKey.length === 2) {
+      lookup[canonicalName] = rawKey;
+    }
+    return lookup;
+  },
+  {},
+);
+
+function isUnitedStatesCountry(country: string | null | undefined): boolean {
+  const normalized = country?.trim().toLowerCase() ?? "";
+  return normalized === "united states" || normalized === "usa" || normalized === "us";
+}
+
+export function getUsStateSearchToken(
+  country: string | null | undefined,
+  canonicalRegion: string,
+): string | null {
+  if (!isUnitedStatesCountry(country)) return null;
+  return US_STATE_SEARCH_TOKEN[canonicalRegion] ?? null;
+}
 
 export function normalizeRegionLabel(country: string | null | undefined, region: string | null | undefined) {
   const trimmed = region?.trim();

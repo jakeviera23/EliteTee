@@ -7,16 +7,40 @@ import {
   MAX_ROUND_PHOTOS,
 } from "../../lib/courseRoundImageProcessing";
 import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
+import { RoundPhotoCoverGrid } from "./RoundPhotoCoverGrid";
 
 type RoundPhotoPickerProps = {
   drafts: CourseRoundPhotoDraft[];
   onChange: (drafts: CourseRoundPhotoDraft[]) => void;
+  coverDraftId: string | null;
+  onCoverDraftIdChange: (id: string) => void;
   disabled?: boolean;
 };
 
-export function RoundPhotoPicker({ drafts, onChange, disabled = false }: RoundPhotoPickerProps) {
+function syncCoverDraftId(
+  drafts: CourseRoundPhotoDraft[],
+  coverDraftId: string | null,
+  onCoverDraftIdChange: (id: string) => void,
+) {
+  if (drafts.length === 0) return;
+  if (coverDraftId && drafts.some((draft) => draft.id === coverDraftId)) return;
+  onCoverDraftIdChange(drafts[0].id);
+}
+
+export function RoundPhotoPicker({
+  drafts,
+  onChange,
+  coverDraftId,
+  onCoverDraftIdChange,
+  disabled = false,
+}: RoundPhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pickerError, setPickerError] = useState<string | null>(null);
+
+  function updateDrafts(nextDrafts: CourseRoundPhotoDraft[]) {
+    onChange(nextDrafts);
+    syncCoverDraftId(nextDrafts, coverDraftId, onCoverDraftIdChange);
+  }
 
   function addFiles(fileList: FileList | null) {
     if (!fileList || disabled) return;
@@ -58,7 +82,11 @@ export function RoundPhotoPicker({ drafts, onChange, disabled = false }: RoundPh
     }
 
     if (nextDrafts.length > 0) {
-      onChange([...drafts, ...nextDrafts]);
+      const merged = [...drafts, ...nextDrafts];
+      updateDrafts(merged);
+      if (!coverDraftId && merged.length > 0) {
+        onCoverDraftIdChange(merged[0].id);
+      }
     }
 
     if (inputRef.current) {
@@ -75,7 +103,7 @@ export function RoundPhotoPicker({ drafts, onChange, disabled = false }: RoundPh
     const next = drafts
       .filter((draft) => draft.id !== id)
       .map((draft, index) => ({ ...draft, sortOrder: index }));
-    onChange(next);
+    updateDrafts(next);
     setPickerError(null);
   }
 
@@ -91,7 +119,7 @@ export function RoundPhotoPicker({ drafts, onChange, disabled = false }: RoundPh
     const next = [...drafts];
     const [moved] = next.splice(index, 1);
     next.splice(targetIndex, 0, moved);
-    onChange(next.map((draft, sortOrder) => ({ ...draft, sortOrder })));
+    updateDrafts(next.map((draft, sortOrder) => ({ ...draft, sortOrder })));
   }
 
   return (
@@ -104,57 +132,69 @@ export function RoundPhotoPicker({ drafts, onChange, disabled = false }: RoundPh
       </div>
       <p className="round-photo-picker-help">
         Add up to {MAX_ROUND_PHOTOS} JPEG, PNG, or WebP photos (12 MB each). Images are resized before
-        upload.
+        upload. Choose one as the cover photo for the feed.
       </p>
 
       {drafts.length > 0 ? (
-        <ul className="round-photo-picker-list">
-          {drafts.map((draft, index) => (
-            <li key={draft.id} className="round-photo-picker-item">
-              <img src={draft.previewUrl} alt="" className="round-photo-picker-thumb" loading="lazy" />
-              <div className="round-photo-picker-item-body">
-                <label className="portal-profile-field portal-profile-field--full">
-                  <span>Caption (optional)</span>
-                  <input
-                    type="text"
-                    value={draft.caption}
-                    onChange={(event) => updateCaption(draft.id, event.target.value)}
-                    disabled={disabled}
-                    maxLength={200}
-                  />
-                </label>
-                <div className="round-photo-picker-item-actions">
-                  <button
-                    type="button"
-                    className="round-photo-picker-move"
-                    onClick={() => moveDraft(draft.id, -1)}
-                    disabled={disabled || index === 0}
-                    aria-label="Move photo earlier"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="round-photo-picker-move"
-                    onClick={() => moveDraft(draft.id, 1)}
-                    disabled={disabled || index === drafts.length - 1}
-                    aria-label="Move photo later"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="round-photo-picker-remove"
-                    onClick={() => removeDraft(draft.id)}
-                    disabled={disabled}
-                  >
-                    Remove
-                  </button>
+        <>
+          <RoundPhotoCoverGrid
+            items={drafts.map((draft) => ({
+              id: draft.id,
+              previewUrl: draft.previewUrl,
+            }))}
+            coverId={coverDraftId}
+            onCoverIdChange={onCoverDraftIdChange}
+            disabled={disabled}
+          />
+
+          <ul className="round-photo-picker-list">
+            {drafts.map((draft, index) => (
+              <li key={draft.id} className="round-photo-picker-item">
+                <img src={draft.previewUrl} alt="" className="round-photo-picker-thumb" loading="lazy" />
+                <div className="round-photo-picker-item-body">
+                  <label className="portal-profile-field portal-profile-field--full">
+                    <span>Caption (optional)</span>
+                    <input
+                      type="text"
+                      value={draft.caption}
+                      onChange={(event) => updateCaption(draft.id, event.target.value)}
+                      disabled={disabled}
+                      maxLength={200}
+                    />
+                  </label>
+                  <div className="round-photo-picker-item-actions">
+                    <button
+                      type="button"
+                      className="round-photo-picker-move"
+                      onClick={() => moveDraft(draft.id, -1)}
+                      disabled={disabled || index === 0}
+                      aria-label="Move photo earlier"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="round-photo-picker-move"
+                      onClick={() => moveDraft(draft.id, 1)}
+                      disabled={disabled || index === drafts.length - 1}
+                      aria-label="Move photo later"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className="round-photo-picker-remove"
+                      onClick={() => removeDraft(draft.id)}
+                      disabled={disabled}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : null}
 
       {drafts.length < MAX_ROUND_PHOTOS ? (

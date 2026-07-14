@@ -3,7 +3,7 @@ import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { searchGolfCourses } from "../../lib/golfCourses";
 import { createCourseRoundFeedPost } from "../../lib/memberFeedPosts";
-import { uploadCourseRoundPhotos } from "../../lib/memberCourseRoundPhotos";
+import { uploadCourseRoundPhotos, setRoundCoverPhoto } from "../../lib/memberCourseRoundPhotos";
 import { submitMemberCourseRound } from "../../lib/memberCourseRounds";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { formatGolfCourseLocation } from "../../types/golfCourse";
@@ -141,6 +141,7 @@ export function AddCoursePlayedModal({
   const [isSearching, setIsSearching] = useState(false);
   const debouncedCourseName = useDebouncedValue(form.course_name, 250);
   const [photoDrafts, setPhotoDrafts] = useState<CourseRoundPhotoDraft[]>([]);
+  const [coverDraftId, setCoverDraftId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoWarning, setPhotoWarning] = useState<string | null>(null);
@@ -291,6 +292,24 @@ export function AddCoursePlayedModal({
         setSubmitted(true);
         onSubmitted?.();
         return;
+      }
+
+      const coverDraft =
+        photoDrafts.find((draft) => draft.id === coverDraftId) ?? photoDrafts[0] ?? null;
+      const coverPhoto =
+        uploadResult?.uploaded.find((photo) => photo.sort_order === coverDraft?.sortOrder) ??
+        uploadResult?.uploaded[0];
+
+      if (coverPhoto) {
+        const { error: coverError } = await setRoundCoverPhoto(roundData.id, coverPhoto.id);
+        if (coverError) {
+          setPhotoWarning(
+            `${feedWarning ? `${feedWarning} ` : ""}Your experience was saved, but the cover photo could not be set.`,
+          );
+          setSubmitted(true);
+          onSubmitted?.();
+          return;
+        }
       }
 
       const uploadedCount = uploadResult?.uploaded.length ?? 0;
@@ -558,7 +577,13 @@ export function AddCoursePlayedModal({
               title={experienceCopy.photographyTitle}
               description={experienceCopy.photographyLead}
             >
-              <RoundPhotoPicker drafts={photoDrafts} onChange={setPhotoDrafts} disabled={submitting} />
+              <RoundPhotoPicker
+                drafts={photoDrafts}
+                onChange={setPhotoDrafts}
+                coverDraftId={coverDraftId}
+                onCoverDraftIdChange={setCoverDraftId}
+                disabled={submitting}
+              />
             </ExperienceSection>
 
             <ExperienceSection

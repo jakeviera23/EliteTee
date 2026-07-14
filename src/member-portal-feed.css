@@ -1386,6 +1386,7 @@
 }
 
 .feed-edit-field span,
+.feed-edit-field-label,
 .feed-edit-choice legend {
   font-size: 0.75rem;
   letter-spacing: 0.06em;

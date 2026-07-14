@@ -2,9 +2,14 @@ import type {
   CourseRoundPhotoUploadResult,
   MemberCourseRoundPhotoRecord,
 } from "../types/memberCourseRoundPhoto";
+import {
+  orderPhotosWithCoverFirst,
+  photoUrlsFromOrderedPhotos,
+} from "./courseRoundCoverPhoto";
 import type { ProcessedCourseRoundImage } from "./courseRoundImageProcessing";
 import { processCourseRoundImage } from "./courseRoundImageProcessing";
 import { getCurrentAuthUserId } from "./authUserLinking";
+import { logSupabaseOperation } from "./supabaseOperationLog";
 import { supabase } from "./supabase";
 
 export const COURSE_ROUND_PHOTOS_BUCKET = "course-round-photos";
@@ -382,7 +387,10 @@ export function signedUrlsToPhotoRecords(
   }));
 }
 
-export function groupPhotosByRoundId(photos: MemberCourseRoundPhotoRecord[]) {
+export function groupPhotosByRoundId(
+  photos: MemberCourseRoundPhotoRecord[],
+  coverPhotoIdsByRoundId?: Map<string, string | null>,
+) {
   const grouped = new Map<string, MemberCourseRoundPhotoRecord[]>();
 
   for (const photo of photos) {
@@ -394,9 +402,87 @@ export function groupPhotosByRoundId(photos: MemberCourseRoundPhotoRecord[]) {
   for (const [roundId, roundPhotos] of grouped) {
     grouped.set(
       roundId,
-      [...roundPhotos].sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at)),
+      orderPhotosWithCoverFirst(roundPhotos, coverPhotoIdsByRoundId?.get(roundId)),
     );
   }
 
   return grouped;
+}
+
+export async function fetchCoverPhotoIdsForRoundIds(roundIds: string[]) {
+  if (!supabase) {
+    return {
+      data: null as Map<string, string | null> | null,
+      error: new Error("Supabase is not configured."),
+    };
+  }
+
+  if (roundIds.length === 0) {
+    return { data: new Map<string, string | null>(), error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("member_course_rounds")
+    .select("id, cover_photo_id")
+    .in("id", roundIds);
+
+  if (error) {
+    const message = (error.message ?? "").toLowerCase();
+    if (error.code === "42703" || message.includes("cover_photo_id")) {
+      return { data: new Map<string, string | null>(), error: null };
+    }
+    return { data: null, error };
+  }
+
+  const coverIdsByRoundId = new Map<string, string | null>(
+    (data ?? []).map((row) => [String(row.id), row.cover_photo_id ? String(row.cover_photo_id) : null]),
+  );
+
+  return { data: coverIdsByRoundId, error: null };
+}
+
+export async function setRoundCoverPhoto(roundId: string, photoId: string) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedRoundId = roundId.trim();
+  const normalizedPhotoId = photoId.trim();
+
+  if (!normalizedRoundId || !normalizedPhotoId) {
+    return { data: null, error: new Error("Cover photo could not be updated.") };
+  }
+
+  const { data, error } = await supabase.rpc("set_member_course_round_cover_photo", {
+    p_round_id: normalizedRoundId,
+    p_photo_id: normalizedPhotoId,
+  });
+
+  if (error) {
+    logSupabaseOperation("set_member_course_round_cover_photo", error, {
+      roundId: normalizedRoundId,
+      photoId: normalizedPhotoId,
+    });
+    return { data: null, error };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { data: null, error: new Error("Cover photo could not be updated.") };
+  }
+
+  return {
+    data: {
+      roundId: String((row as { id?: string }).id ?? normalizedRoundId),
+      coverPhotoId: String((row as { cover_photo_id?: string }).cover_photo_id ?? normalizedPhotoId),
+    },
+    error: null,
+  };
+}
+
+export function buildRoundImageUrls(
+  photos: MemberCourseRoundPhotoRecord[],
+  coverPhotoId?: string | null,
+) {
+  return photoUrlsFromOrderedPhotos(orderPhotosWithCoverFirst(photos, coverPhotoId));
 }

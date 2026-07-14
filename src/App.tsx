@@ -11,6 +11,7 @@ import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
 import { InviteSignup } from "./pages/InviteSignup";
+import { NotFound } from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -75,6 +76,14 @@ export default function App() {
         }
       />
       <Route
+        path="/courses"
+        element={
+          <ProtectedRoute>
+            <MemberPortal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/courses/:slug"
         element={
           <ProtectedRoute>
@@ -92,6 +101,7 @@ export default function App() {
       />
       <Route path="/directory" element={<MemberDirectory />} />
       <Route path="/request-introduction" element={<RequestIntroductionPage />} />
+      <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );

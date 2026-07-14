@@ -4,15 +4,23 @@ import type {
 } from "../types/memberCourseRound";
 import { findOrCreateMemberGolfCourse } from "./golfCourses";
 import { getCurrentAuthUserId } from "./authUserLinking";
-import { fetchPhotosForRoundIds, groupPhotosByRoundId } from "./memberCourseRoundPhotos";
+import { fetchPhotosForRoundIds, fetchCoverPhotoIdsForRoundIds, groupPhotosByRoundId } from "./memberCourseRoundPhotos";
 import { normalizeCourseRating, validateCourseRating } from "./courseRating";
 import { supabase } from "./supabase";
 
 const MEMBER_COURSE_ROUND_RLS_ERROR =
   "Your round could not be saved because database permissions blocked the insert.";
 
-const ROUND_SELECT =
+const ROUND_SELECT_BASE =
   "id, member_user_id, golf_course_id, course_name, location, played_on, note, would_play_again, course_rating, created_at";
+
+const ROUND_SELECT =
+  `${ROUND_SELECT_BASE}, cover_photo_id`;
+
+function isMissingCoverPhotoColumnError(error: { message?: string; code?: string }) {
+  const message = (error.message ?? "").toLowerCase();
+  return error.code === "42703" || message.includes("cover_photo_id");
+}
 
 function normalizeRound(row: Record<string, unknown>): MemberCourseRoundRecord {
   return {
@@ -25,6 +33,7 @@ function normalizeRound(row: Record<string, unknown>): MemberCourseRoundRecord {
     note: String(row.note ?? ""),
     would_play_again: Boolean(row.would_play_again),
     course_rating: normalizeCourseRating(Number(row.course_rating ?? 10)),
+    cover_photo_id: row.cover_photo_id ? String(row.cover_photo_id) : null,
     created_at: String(row.created_at ?? ""),
     member_name: row.member_name ? String(row.member_name) : undefined,
   };
@@ -59,12 +68,15 @@ async function attachPhotosToRounds(
   if (rounds.length === 0) return rounds;
 
   const roundIds = rounds.map((round) => round.id);
-  const { data: photos } = await fetchPhotosForRoundIds(roundIds);
+  const [{ data: photos }, { data: coverPhotoIds }] = await Promise.all([
+    fetchPhotosForRoundIds(roundIds),
+    fetchCoverPhotoIdsForRoundIds(roundIds),
+  ]);
   if (!photos || photos.length === 0) {
     return rounds.map((round) => ({ ...round, photos: [] }));
   }
 
-  const photosByRoundId = groupPhotosByRoundId(photos);
+  const photosByRoundId = groupPhotosByRoundId(photos, coverPhotoIds ?? undefined);
   return rounds.map((round) => ({
     ...round,
     photos: photosByRoundId.get(round.id) ?? [],
@@ -81,11 +93,19 @@ export async function fetchMemberCourseRoundById(roundId: string) {
     return { data: null, error: new Error("Course round not found.") };
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("member_course_rounds")
     .select(ROUND_SELECT)
     .eq("id", normalizedRoundId)
     .maybeSingle();
+
+  if (error && isMissingCoverPhotoColumnError(error)) {
+    ({ data, error } = await supabase
+      .from("member_course_rounds")
+      .select(ROUND_SELECT_BASE)
+      .eq("id", normalizedRoundId)
+      .maybeSingle());
+  }
 
   if (error) {
     return { data: null, error };

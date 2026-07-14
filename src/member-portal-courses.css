@@ -165,7 +165,8 @@
 }
 
 .et-courses-featured,
-.et-courses-directory {
+.et-courses-directory,
+.et-courses-featured-discovery {
   display: grid;
   gap: var(--et-space-4);
 }
@@ -220,6 +221,53 @@
   overflow-x: auto;
   padding-bottom: 0.35rem;
   scroll-snap-type: x mandatory;
+}
+
+.et-courses-grid--featured-compact {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .et-courses-grid--featured-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .et-courses-grid--featured-compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.et-courses-featured-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.et-courses-featured-tab {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 999px;
+  background: var(--et-bg-surface);
+  color: var(--courses-slate);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.et-courses-featured-tab.is-active,
+.et-courses-featured-tab:hover,
+.et-courses-featured-tab:focus-visible {
+  border-color: var(--courses-forest);
+  background: var(--courses-forest-soft);
+  color: var(--courses-forest);
+  outline: none;
+}
+
+.et-courses-featured-panel {
+  display: grid;
+  gap: var(--et-space-3);
 }
 
 .et-courses-grid--featured > li {
@@ -608,4 +656,147 @@
   .et-course-card:hover {
     transform: none;
   }
+}
+
+.et-courses-location {
+  display: grid;
+  gap: var(--et-space-4);
+}
+
+.et-courses-location-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--et-space-3);
+}
+
+.et-courses-location-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.et-courses-location-action {
+  min-height: 2.75rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 999px;
+  background: var(--et-bg-surface);
+  color: var(--courses-forest);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.et-courses-location-action:hover,
+.et-courses-location-action:focus-visible {
+  border-color: var(--courses-forest);
+  background: var(--courses-forest-soft);
+  outline: none;
+}
+
+.et-courses-breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.et-courses-breadcrumbs li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--et-text-tertiary);
+  font-size: 0.875rem;
+}
+
+.et-courses-breadcrumbs li:not(:last-child)::after {
+  content: "›";
+  color: var(--et-text-tertiary);
+}
+
+.et-courses-breadcrumb {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--courses-slate);
+  font-size: 0.875rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.et-courses-breadcrumb--current {
+  color: var(--et-text-primary);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: default;
+}
+
+.et-courses-location-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--et-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 40rem) {
+  .et-courses-location-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .et-courses-location-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.et-courses-location-card {
+  display: flex;
+  width: 100%;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--et-space-3);
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.85rem;
+  background: var(--et-bg-surface);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.et-courses-location-card:hover,
+.et-courses-location-card:focus-visible {
+  border-color: var(--et-border-accent);
+  box-shadow: var(--et-shadow-xs);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.et-courses-location-card-name {
+  font-family: var(--et-font-serif, var(--serif));
+  font-size: 1.05rem;
+  color: var(--et-text-primary);
+}
+
+.et-courses-location-card-count {
+  font-size: 0.75rem;
+  color: var(--et-text-tertiary);
+  white-space: nowrap;
+}
+
+.et-courses-location-summary {
+  margin: 0;
+  color: var(--et-text-secondary);
+  font-size: 0.9375rem;
 }

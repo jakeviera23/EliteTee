@@ -11,6 +11,7 @@ export type MemberCourseRoundRecord = {
   would_play_again: boolean;
   course_rating: number;
   created_at: string;
+  cover_photo_id?: string | null;
   member_name?: string;
   member_slug?: string;
   course_slug?: string;

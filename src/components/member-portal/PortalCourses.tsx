@@ -1,24 +1,41 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import {
   buildFeaturedSections,
   countActiveFilters,
+  dedupeCoursesForDirectory,
   DEFAULT_COURSE_FILTERS,
   extractFilterOptions,
   filterCourses,
-  groupCoursesGeographically,
   sortCourses,
+  sortCoursesByLocationActivity,
   type CourseDirectoryFilters,
+  type CourseGeoCountRow,
   type CourseSortOption,
 } from "../../lib/courseDirectory";
 import {
+  buildCoursesLocationPath,
+  buildLocationBrowseCountries,
+  buildLocationBrowseRegions,
+  courseMatchesSelectedLocation,
+  filterCoursesForSelectedLocation,
+  getLocationBrowseStep,
+  getLocationRegionCourseCount,
+  getLocationSearchQuery,
+  parseCoursesLocationSearchParams,
+  shouldShowLocationEmptyState,
+  type CoursesLocationState,
+  type LocationBrowseStep,
+} from "../../lib/courseDirectoryLocation";
+import {
+  fetchGolfCourseDirectoryGeoCounts,
   fetchPopularGolfCourses,
   searchGolfCourses,
   SEARCH_PAGE_SIZE,
 } from "../../lib/golfCourses";
-import { appendUniqueCourses } from "../../lib/courseResultsAppend";
+import { appendUniqueCourses, restoreScrollAfterPaging } from "../../lib/courseResultsAppend";
 import {
   ensureBucketListHydrated,
   getBucketListCourseIds,
@@ -29,16 +46,24 @@ import { CourseDirectoryCard } from "./CourseDirectoryCard";
 import { CourseFeaturedSections } from "./CourseFeaturedSections";
 import { CourseFilterDrawer } from "./CourseFilterDrawer";
 import { CourseFiltersBar } from "./CourseFiltersBar";
-import { CourseGeoDirectory } from "./CourseGeoDirectory";
+import { CourseLocationBrowse } from "./CourseLocationBrowse";
 
-const POPULAR_COURSE_LIMIT = 5;
+const FEATURED_COURSE_LIMIT = 6;
 
 export function PortalCourses() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const loadMoreButtonRef = useRef<HTMLButtonElement | null>(null);
+  const locationState = useMemo(
+    () => parseCoursesLocationSearchParams(searchParams),
+    [searchParams],
+  );
+  const locationStep = getLocationBrowseStep(locationState);
+
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 300);
-  const [directoryPool, setDirectoryPool] = useState<GolfCourseSearchResult[]>([]);
+  const [featuredPool, setFeaturedPool] = useState<GolfCourseSearchResult[]>([]);
+  const [locationResults, setLocationResults] = useState<GolfCourseSearchResult[]>([]);
   const [searchResults, setSearchResults] = useState<GolfCourseSearchResult[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -47,6 +72,8 @@ export function PortalCourses() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [popularCourses, setPopularCourses] = useState<GolfCourseSearchResult[]>([]);
   const [popularLoading, setPopularLoading] = useState(true);
+  const [geoCounts, setGeoCounts] = useState<CourseGeoCountRow[]>([]);
+  const [geoCountsLoading, setGeoCountsLoading] = useState(true);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [directoryRefreshKey, setDirectoryRefreshKey] = useState(0);
   const [filters, setFilters] = useState<CourseDirectoryFilters>(DEFAULT_COURSE_FILTERS);
@@ -58,65 +85,121 @@ export function PortalCourses() {
 
   const isSearchMode = debouncedQuery.trim().length > 0;
   const hasClientFilters = countActiveFilters(filters) > 0;
+  const showLocationResults = !isSearchMode && !hasClientFilters && (locationStep === "courses" || locationStep === "all");
+  const showLocationBrowse = !isSearchMode && !hasClientFilters;
+
+  const updateLocationState = useCallback(
+    (next: CoursesLocationState) => {
+      const nextPath = buildCoursesLocationPath(next);
+      navigate(nextPath, { replace: false });
+    },
+    [navigate],
+  );
 
   const loadPopular = useCallback(async () => {
     setPopularLoading(true);
-    const { data } = await fetchPopularGolfCourses(POPULAR_COURSE_LIMIT);
+    const { data } = await fetchPopularGolfCourses(FEATURED_COURSE_LIMIT);
     setPopularCourses(data ?? []);
     setPopularLoading(false);
   }, []);
 
-  const loadDirectoryPage = useCallback(async (searchQuery: string, searchOffset: number) => {
-    if (searchOffset === 0) {
-      setIsLoading(true);
-    } else {
-      setIsPaging(true);
-    }
-    setLoadError(null);
-
-    const { data, error } = await searchGolfCourses({
-      query: searchQuery,
-      limit: SEARCH_PAGE_SIZE,
-      offset: searchOffset,
-    });
-
+  const loadGeoCounts = useCallback(async () => {
+    setGeoCountsLoading(true);
+    const { data, error } = await fetchGolfCourseDirectoryGeoCounts("");
     if (error) {
-      console.error("[PortalCourses] directory load failed", error.message);
-      setLoadError("Course search is unavailable right now.");
+      console.error("[PortalCourses] geo counts failed", error.message);
+      setGeoCounts([]);
+    } else {
+      setGeoCounts(data ?? []);
+    }
+    setGeoCountsLoading(false);
+  }, []);
+
+  const loadFeaturedSnapshot = useCallback(async () => {
+    const { data } = await searchGolfCourses({
+      query: "",
+      limit: SEARCH_PAGE_SIZE,
+      offset: 0,
+    });
+    setFeaturedPool(data ?? []);
+  }, []);
+
+  const loadLocationPage = useCallback(
+    async (
+      searchQuery: string,
+      searchOffset: number,
+      location: CoursesLocationState,
+      browseStep: LocationBrowseStep,
+    ) => {
       if (searchOffset === 0) {
-        setDirectoryPool([]);
-        setSearchResults([]);
+        setIsLoading(true);
+      } else {
+        setIsPaging(true);
       }
-      setHasMore(false);
+      setLoadError(null);
+
+      const scrollY = window.scrollY;
+      const { data, error } = await searchGolfCourses({
+        query: searchQuery,
+        limit: SEARCH_PAGE_SIZE,
+        offset: searchOffset,
+      });
+
+      if (error) {
+        console.error("[PortalCourses] directory load failed", error.message);
+        setLoadError("Course search is unavailable right now.");
+        if (searchOffset === 0) {
+          setLocationResults([]);
+          setSearchResults([]);
+        }
+        setHasMore(false);
+        setIsLoading(false);
+        setIsPaging(false);
+        return;
+      }
+
+      const rows = (data ?? []) as GolfCourseSearchResult[];
+      const searching = debouncedQuery.trim().length > 0;
+      const locationFiltered =
+        browseStep === "courses"
+          ? filterCoursesForSelectedLocation(rows, location)
+          : rows;
+
+      if (searching) {
+        if (searchOffset === 0) {
+          setSearchResults(rows);
+        } else {
+          setSearchResults((current) => appendUniqueCourses(current, rows));
+        }
+      } else if (browseStep === "courses" || browseStep === "all") {
+        if (searchOffset === 0) {
+          setLocationResults(locationFiltered);
+        } else {
+          setLocationResults((current) =>
+            appendUniqueCourses(current, locationFiltered),
+          );
+        }
+      } else if (searchOffset === 0) {
+        setLocationResults([]);
+      }
+
+      setOffset(searchOffset);
+      setHasMore(rows.length === SEARCH_PAGE_SIZE);
       setIsLoading(false);
       setIsPaging(false);
-      return;
-    }
 
-    const rows = data ?? [];
-    const searching = searchQuery.trim().length > 0;
-
-    if (searching) {
-      if (searchOffset === 0) {
-        setSearchResults(rows);
-      } else {
-        setSearchResults((current) => appendUniqueCourses(current, rows));
+      if (searchOffset > 0) {
+        restoreScrollAfterPaging(scrollY);
       }
-    } else if (searchOffset === 0) {
-      setDirectoryPool(rows);
-    } else {
-      setDirectoryPool((current) => appendUniqueCourses(current, rows));
-    }
-
-    setOffset(searchOffset);
-    setHasMore(rows.length === SEARCH_PAGE_SIZE);
-    setIsLoading(false);
-    setIsPaging(false);
-  }, []);
+    },
+    [debouncedQuery],
+  );
 
   useEffect(() => {
     void loadPopular();
-  }, [loadPopular]);
+    void loadGeoCounts();
+    void loadFeaturedSnapshot();
+  }, [loadFeaturedSnapshot, loadGeoCounts, loadPopular]);
 
   useEffect(() => {
     let active = true;
@@ -140,12 +223,45 @@ export function PortalCourses() {
   }, []);
 
   useEffect(() => {
-    void loadDirectoryPage(debouncedQuery, 0);
-  }, [debouncedQuery, directoryRefreshKey, loadDirectoryPage]);
+    if (isSearchMode) {
+      setOffset(0);
+      void loadLocationPage(debouncedQuery, 0, locationState, locationStep);
+      return;
+    }
+
+    if (!showLocationResults) {
+      setLocationResults([]);
+      setHasMore(false);
+      setOffset(0);
+      setIsLoading(false);
+      return;
+    }
+
+    const locationQuery =
+      locationStep === "courses"
+        ? getLocationSearchQuery(locationState.country, locationState.region)
+        : "";
+
+    setOffset(0);
+    void loadLocationPage(locationQuery, 0, locationState, locationStep);
+  }, [
+    debouncedQuery,
+    directoryRefreshKey,
+    isSearchMode,
+    loadLocationPage,
+    locationState,
+    locationStep,
+    showLocationResults,
+  ]);
 
   async function loadMore() {
     const nextOffset = offset + SEARCH_PAGE_SIZE;
-    await loadDirectoryPage(debouncedQuery, nextOffset);
+    const locationQuery = isSearchMode
+      ? debouncedQuery
+      : locationStep === "courses"
+        ? getLocationSearchQuery(locationState.country, locationState.region)
+        : "";
+    await loadLocationPage(locationQuery, nextOffset, locationState, locationStep);
   }
 
   function openCourse(slug: string) {
@@ -154,60 +270,116 @@ export function PortalCourses() {
 
   const bucketListCourseIdSet = useMemo(() => new Set(bucketListCourseIds), [bucketListCourseIds]);
 
+  const locationBrowseCountries = useMemo(
+    () => buildLocationBrowseCountries(geoCounts),
+    [geoCounts],
+  );
+
+  const locationBrowseRegions = useMemo(
+    () =>
+      locationState.country
+        ? buildLocationBrowseRegions(geoCounts, locationState.country)
+        : [],
+    [geoCounts, locationState.country],
+  );
+
+  const regionCourseCount = useMemo(() => {
+    if (!locationState.country || !locationState.region) return 0;
+    return getLocationRegionCourseCount(
+      geoCounts,
+      locationState.country,
+      locationState.region,
+    );
+  }, [geoCounts, locationState.country, locationState.region]);
+
+  const locationCourses = useMemo(() => {
+    const deduped = dedupeCoursesForDirectory(locationResults);
+    const sorted = sortCoursesByLocationActivity(deduped);
+    return locationStep === "courses"
+      ? sorted.filter((course) => courseMatchesSelectedLocation(course, locationState))
+      : sorted;
+  }, [locationResults, locationState, locationStep]);
+
   const workingSet = useMemo(() => {
-    const base = isSearchMode ? searchResults : directoryPool;
-    const filtered = hasClientFilters ? filterCourses(base, filters) : base;
-    return sortCourses(filtered, sortBy);
-  }, [directoryPool, filters, hasClientFilters, isSearchMode, searchResults, sortBy]);
+    if (isSearchMode) {
+      const filtered = hasClientFilters ? filterCourses(searchResults, filters) : searchResults;
+      return sortCourses(dedupeCoursesForDirectory(filtered), sortBy);
+    }
+
+    if (showLocationResults) {
+      if (locationStep === "all") {
+        return sortCoursesByLocationActivity(dedupeCoursesForDirectory(locationResults));
+      }
+      return locationCourses;
+    }
+
+    return [];
+  }, [
+    filters,
+    hasClientFilters,
+    isSearchMode,
+    locationCourses,
+    locationResults,
+    locationStep,
+    searchResults,
+    showLocationResults,
+    sortBy,
+  ]);
 
   const filterOptions = useMemo(
-    () => extractFilterOptions(isSearchMode ? searchResults : directoryPool, filters),
-    [directoryPool, filters, isSearchMode, searchResults],
+    () =>
+      extractFilterOptions(
+        isSearchMode ? searchResults : locationResults,
+        filters,
+      ),
+    [filters, isSearchMode, locationResults, searchResults],
   );
 
-  const geoGroups = useMemo(
-    () => (isSearchMode || hasClientFilters ? [] : groupCoursesGeographically(workingSet)),
-    [hasClientFilters, isSearchMode, workingSet],
-  );
-
-  const featuredSections = useMemo(() => {
-    if (isSearchMode || hasClientFilters) return [];
+  const featuredDiscovery = useMemo(() => {
+    if (isSearchMode || hasClientFilters || locationStep !== "countries") {
+      return null;
+    }
 
     const featured = buildFeaturedSections({
       popular: popularCourses,
-      pool: directoryPool,
-      limit: POPULAR_COURSE_LIMIT,
+      pool: featuredPool,
+      limit: FEATURED_COURSE_LIMIT,
     });
 
-    return [
-      {
-        id: "popular",
-        title: "Popular in EliteTee",
-        description: "Courses with the most member rounds and activity.",
-        courses: featured.popular,
-      },
-      {
-        id: "highest-rated",
-        title: "Highest Rated",
-        description: "Top-rated destinations based on member reviews.",
-        courses: featured.highestRated,
-      },
-      {
-        id: "recently-reviewed",
-        title: "Recently Reviewed",
-        description: "Courses with the latest member round activity.",
-        courses: featured.recentlyReviewed,
-      },
-    ];
-  }, [directoryPool, hasClientFilters, isSearchMode, popularCourses]);
+    return {
+      popular: featured.popular,
+      "highest-rated": featured.highestRated,
+      "recently-reviewed": featured.recentlyReviewed,
+    };
+  }, [
+    featuredPool,
+    hasClientFilters,
+    isSearchMode,
+    locationStep,
+    popularCourses,
+  ]);
 
-  const showFeatured = !isSearchMode && !hasClientFilters && !popularLoading;
-  const showGeoDirectory = !isSearchMode && !hasClientFilters && workingSet.length > 0;
-  const showFlatResults = (isSearchMode || hasClientFilters) && workingSet.length > 0;
+  const showFeatured =
+    featuredDiscovery !== null &&
+    !popularLoading &&
+    Object.values(featuredDiscovery).some((courses) => courses.length > 0);
+  const showFlatResults = (isSearchMode || hasClientFilters || showLocationResults) && workingSet.length > 0;
   const showEmptyState =
-    !isLoading && !loadError && workingSet.length === 0 && (isSearchMode || hasClientFilters);
-  const showEmptyDirectory =
-    !isLoading && !loadError && directoryPool.length === 0 && !isSearchMode && !hasClientFilters;
+    !loadError &&
+    (isSearchMode || hasClientFilters
+      ? !isLoading && !isPaging && workingSet.length === 0
+      : shouldShowLocationEmptyState({
+          workingSetLength: workingSet.length,
+          isLoading,
+          isPaging,
+          showLocationResults,
+        }));
+  const showEmptyBrowse =
+    !geoCountsLoading &&
+    !isSearchMode &&
+    !hasClientFilters &&
+    locationStep === "countries" &&
+    locationBrowseCountries.length === 0;
 
   return (
     <section className="et-courses" aria-labelledby="courses-heading">
@@ -263,47 +435,57 @@ export function PortalCourses() {
           </div>
         ) : null}
 
-        {isLoading && workingSet.length === 0 ? (
+        {isLoading && workingSet.length === 0 && (isSearchMode || showLocationResults) ? (
           <div className="et-loading et-courses-loading" aria-live="polite" aria-busy="true">
             <div className="et-loading__mark" aria-hidden="true" />
             <p className="et-loading__text">Loading course library</p>
           </div>
         ) : null}
 
-        {showFeatured ? (
-          <CourseFeaturedSections
-            sections={featuredSections}
-            onOpen={openCourse}
-            bucketListCourseIdSet={bucketListCourseIdSet}
+        {showLocationBrowse ? (
+          <CourseLocationBrowse
+            step={locationStep}
+            countries={locationBrowseCountries}
+            regions={locationBrowseRegions}
+            selectedCountry={locationState.country}
+            selectedRegion={locationState.region}
+            regionCourseCount={regionCourseCount}
+            onSelectCountry={(country) =>
+              updateLocationState({ country, region: "", viewAll: false })
+            }
+            onSelectRegion={(region) =>
+              updateLocationState({
+                country: locationState.country,
+                region,
+                viewAll: false,
+              })
+            }
+            onNavigateBreadcrumb={updateLocationState}
+            onViewAllCourses={() =>
+              updateLocationState({ country: "", region: "", viewAll: true })
+            }
+            onClearLocation={() =>
+              updateLocationState({ country: "", region: "", viewAll: false })
+            }
           />
-        ) : null}
-
-        {showGeoDirectory ? (
-          <section className="et-courses-directory" aria-labelledby="course-directory-heading">
-            <div className="et-courses-directory-head">
-              <h3 id="course-directory-heading" className="et-h3">
-                Browse by destination
-              </h3>
-              <p className="et-body-sm et-courses-directory-copy">
-                Courses grouped by country and region from member and library data.
-              </p>
-            </div>
-            <CourseGeoDirectory
-              groups={geoGroups}
-              onOpen={openCourse}
-              bucketListCourseIdSet={bucketListCourseIdSet}
-            />
-          </section>
         ) : null}
 
         {showFlatResults ? (
           <section aria-labelledby="course-search-results-heading">
             <div className="et-courses-directory-head">
               <h3 id="course-search-results-heading" className="et-h3">
-                {isSearchMode ? "Search results" : "Filtered courses"}
+                {isSearchMode
+                  ? "Search results"
+                  : hasClientFilters
+                    ? "Filtered courses"
+                    : locationStep === "all"
+                      ? "All courses"
+                      : `${locationState.region}, ${locationState.country}`}
               </h3>
               <p className="et-body-sm et-courses-directory-copy">
-                {workingSet.length} {workingSet.length === 1 ? "course" : "courses"} found
+                {locationStep === "courses" && regionCourseCount > 0
+                  ? `${regionCourseCount} ${regionCourseCount === 1 ? "course" : "courses"} in this region`
+                  : `${workingSet.length} ${workingSet.length === 1 ? "course" : "courses"} shown`}
               </p>
             </div>
             <ul className="et-courses-grid">
@@ -322,21 +504,21 @@ export function PortalCourses() {
 
         {showEmptyState ? (
           <div className="et-courses-empty">
-            <p className="et-courses-empty-title">No courses match your search or filters</p>
+            <p className="et-courses-empty-title">No courses match this location yet</p>
             <p className="et-body-sm">
-              Try a different name or location, or add a round manually.
+              Try another region, view all courses, or add a round manually.
             </p>
           </div>
         ) : null}
 
-        {showEmptyDirectory ? (
+        {showEmptyBrowse ? (
           <div className="et-courses-empty">
             <p className="et-courses-empty-title">No courses are in the library yet</p>
             <p className="et-body-sm">Member rounds will begin populating the directory soon.</p>
           </div>
         ) : null}
 
-        {hasMore ? (
+        {showLocationResults && hasMore ? (
           <button
             type="button"
             className="et-btn et-btn--secondary et-courses-load-more"
@@ -349,6 +531,14 @@ export function PortalCourses() {
             {isPaging ? "Loading more courses…" : "Load more courses"}
           </button>
         ) : null}
+
+        {showFeatured && featuredDiscovery ? (
+          <CourseFeaturedSections
+            categories={featuredDiscovery}
+            onOpen={openCourse}
+            bucketListCourseIdSet={bucketListCourseIdSet}
+          />
+        ) : null}
       </div>
 
       {showAddCourseModal ? (
@@ -357,6 +547,8 @@ export function PortalCourses() {
           onSubmitted={() => {
             setDirectoryRefreshKey((current) => current + 1);
             void loadPopular();
+            void loadGeoCounts();
+            void loadFeaturedSnapshot();
           }}
         />
       ) : null}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FeedPost } from "../data/portalSocial";
 import {
   canMemberEditFeedPost,
+  canShowFeedPostEditMenu,
   deriveCourseRoundEditDefaults,
   getFeedPostEditMode,
   isFeedPostEdited,
@@ -51,6 +52,34 @@ function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
   };
 }
 
+describe("canShowFeedPostEditMenu", () => {
+  it("shows owner edit action on feed posts", () => {
+    expect(canShowFeedPostEditMenu(makePost(), { userId: "user-1" })).toBe(true);
+  });
+
+  it("shows owner edit action on profile posts using the same helper", () => {
+    expect(
+      canShowFeedPostEditMenu(makePost({ authorUserId: "user-1" }), { userId: "user-1" }),
+    ).toBe(true);
+  });
+
+  it("hides edit action for non-owners on feed and profile", () => {
+    expect(canShowFeedPostEditMenu(makePost(), { userId: "user-2" })).toBe(false);
+    expect(
+      canShowFeedPostEditMenu(makePost({ authorUserId: "user-1" }), { userId: "user-2" }),
+    ).toBe(false);
+  });
+
+  it("allows admins to edit course experiences they do not own", () => {
+    expect(
+      canShowFeedPostEditMenu(makePost({ authorUserId: "user-1" }), {
+        userId: "admin-user",
+        isAdmin: true,
+      }),
+    ).toBe(true);
+  });
+});
+
 describe("canMemberEditFeedPost", () => {
   it("allows owner to see edit", () => {
     expect(canMemberEditFeedPost(makePost(), "user-1")).toBe(true);
@@ -58,6 +87,25 @@ describe("canMemberEditFeedPost", () => {
 
   it("does not allow non-owner to see edit", () => {
     expect(canMemberEditFeedPost(makePost(), "user-2")).toBe(false);
+  });
+
+  it("allows admins to edit course-round posts for cover changes", () => {
+    expect(canMemberEditFeedPost(makePost(), "admin-user", { isAdmin: true })).toBe(true);
+  });
+
+  it("does not allow admins to edit general posts they do not own", () => {
+    expect(
+      canMemberEditFeedPost(
+        makePost({
+          postType: "played-today",
+          memberCourseRoundId: undefined,
+          rating: undefined,
+          details: [{ label: "Dates", value: "Next week" }],
+        }),
+        "admin-user",
+        { isAdmin: true },
+      ),
+    ).toBe(false);
   });
 
   it("does not allow editing founder welcome post", () => {

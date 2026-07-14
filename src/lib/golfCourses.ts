@@ -246,4 +246,27 @@ export async function adminUpdateGolfCourseLocation(input: {
   };
 }
 
+export async function fetchGolfCourseDirectoryGeoCounts(query = "") {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("golf_course_directory_geo_counts", {
+    p_query: query.trim(),
+  });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return {
+    data: (data ?? []).map((row: Record<string, unknown>) => ({
+      country: String(row.country ?? ""),
+      region: String(row.region ?? ""),
+      course_count: Number(row.course_count ?? 0),
+    })),
+    error: null,
+  };
+}
+
 export { SEARCH_PAGE_SIZE };

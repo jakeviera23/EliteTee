@@ -30,11 +30,23 @@ export type FeedPostEditValidationResult =
 export function canMemberEditFeedPost(
   post: FeedPost,
   currentUserId: string | null | undefined,
+  options?: { isAdmin?: boolean },
 ): boolean {
-  if (!currentUserId) return false;
+  return canShowFeedPostEditMenu(post, {
+    userId: currentUserId,
+    isAdmin: options?.isAdmin,
+  });
+}
+
+export function canShowFeedPostEditMenu(
+  post: FeedPost,
+  viewer: { userId?: string | null; isAdmin?: boolean },
+): boolean {
+  if (!viewer.userId) return false;
   if (post.id === FOUNDER_WELCOME_POST_ID) return false;
   if (!post.authorUserId) return false;
-  return post.authorUserId === currentUserId;
+  if (post.authorUserId === viewer.userId) return true;
+  return Boolean(viewer.isAdmin && isCourseRoundPost(post));
 }
 
 export function getFeedPostEditMode(post: FeedPost): FeedPostEditMode {

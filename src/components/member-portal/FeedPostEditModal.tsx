@@ -10,8 +10,20 @@ import {
   updateCourseRoundFeedPost,
   updateMemberFeedPostCaption,
 } from "../../lib/memberFeedPosts";
-import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
+import { memberFacingCoverPhotoError, memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { fetchMemberCourseRoundById } from "../../lib/memberCourseRounds";
+import {
+  buildRoundImageUrls,
+  fetchCoverPhotoIdsForRoundIds,
+  fetchPhotosForRoundIds,
+  setRoundCoverPhoto,
+} from "../../lib/memberCourseRoundPhotos";
+import {
+  buildExperienceEditPhotoRecords,
+  mapActivePhotosForExperienceEdit,
+  resolveExperienceEditCoverPhotoId,
+  type ExperienceEditPhoto,
+} from "../../lib/experienceEditPhotos";
 import { fetchGolfCourseById } from "../../lib/golfCourses";
 import {
   canMemberEditMemberSubmittedCourseLocation,
@@ -20,14 +32,21 @@ import {
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { CourseRatingPicker } from "./CourseRatingPicker";
+import { RoundPhotoCoverGrid } from "./RoundPhotoCoverGrid";
 
 type FeedPostEditModalProps = {
   post: FeedPost;
+  viewerIsAdmin?: boolean;
   onClose: () => void;
   onSaved: (post: FeedPost) => void;
 };
 
-export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalProps) {
+export function FeedPostEditModal({
+  post,
+  viewerIsAdmin = false,
+  onClose,
+  onSaved,
+}: FeedPostEditModalProps) {
   const formId = useId();
   const editMode = getFeedPostEditMode(post);
   const [message, setMessage] = useState(post.caption ?? "");
@@ -43,6 +62,13 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
   const [isLoadingRound, setIsLoadingRound] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [roundPhotos, setRoundPhotos] = useState<ExperienceEditPhoto[]>([]);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  const [initialCoverPhotoId, setInitialCoverPhotoId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const isOwner = Boolean(currentUserId && post.authorUserId === currentUserId);
+  const canEditDetails = isOwner;
+  const coverChanged = coverPhotoId !== initialCoverPhotoId;
 
   useEffect(() => {
     if (editMode !== "course-round") return;
@@ -56,57 +82,80 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
 
     if (!post.memberCourseRoundId) return;
 
+    const roundId = post.memberCourseRoundId;
     let active = true;
     setIsLoadingRound(true);
+    setRoundPhotos([]);
+    setCoverPhotoId(null);
+    setInitialCoverPhotoId(null);
 
     void (async () => {
-      const [{ data: round, error: roundError }, { userId }] = await Promise.all([
-        fetchMemberCourseRoundById(post.memberCourseRoundId as string),
-        getCurrentAuthUserId(),
-      ]);
+      const [{ data: round, error: roundError }, { userId }, { data: photos }, { data: coverIds }] =
+        await Promise.all([
+          fetchMemberCourseRoundById(roundId),
+          getCurrentAuthUserId(),
+          fetchPhotosForRoundIds([roundId]),
+          fetchCoverPhotoIdsForRoundIds([roundId]),
+        ]);
 
       if (!active) return;
 
-      if (roundError || !round) {
-        setIsLoadingRound(false);
-        return;
-      }
+      setCurrentUserId(userId ?? null);
 
-      setMessage(round.note || defaults.message);
-      setLocation(round.location);
-      setPlayedOn(round.played_on);
-      setWouldPlayAgain(round.would_play_again);
-      setCourseRating(round.course_rating);
+      const editablePhotos = mapActivePhotosForExperienceEdit(photos ?? []);
+      setRoundPhotos(editablePhotos);
 
-      if (!round.golf_course_id) {
-        const parsed = resolveEditableCourseLocation({ roundLocation: round.location });
+      const resolvedCoverId = resolveExperienceEditCoverPhotoId(
+        coverIds?.get(roundId) ?? round?.cover_photo_id,
+        editablePhotos,
+      );
+      setCoverPhotoId(resolvedCoverId);
+      setInitialCoverPhotoId(resolvedCoverId);
+
+      if (round) {
+        setMessage(round.note || defaults.message);
+        setLocation(round.location);
+        setPlayedOn(round.played_on);
+        setWouldPlayAgain(round.would_play_again);
+        setCourseRating(round.course_rating);
+
+        if (!round.golf_course_id) {
+          const parsed = resolveEditableCourseLocation({ roundLocation: round.location });
+          setCity(parsed.city);
+          setRegion(parsed.region);
+          setCountry(parsed.country || "United States");
+          setShowStructuredLocation(false);
+          setIsLoadingRound(false);
+          return;
+        }
+
+        const { data: course } = await fetchGolfCourseById(round.golf_course_id);
+        if (!active) return;
+
+        setLinkedCourse(course);
+        const canEditStructured = canMemberEditMemberSubmittedCourseLocation({
+          course,
+          roundOwnerUserId: round.member_user_id,
+          currentUserId: userId,
+        });
+        setShowStructuredLocation(canEditStructured);
+
+        const parsed = resolveEditableCourseLocation({
+          course,
+          roundLocation: round.location,
+        });
         setCity(parsed.city);
         setRegion(parsed.region);
         setCountry(parsed.country || "United States");
-        setShowStructuredLocation(false);
+        setLocation(parsed.city || parsed.region || parsed.country ? round.location : defaults.location);
         setIsLoadingRound(false);
         return;
       }
 
-      const { data: course } = await fetchGolfCourseById(round.golf_course_id);
-      if (!active) return;
+      if (roundError && import.meta.env.DEV) {
+        console.warn("[FeedPostEditModal] round metadata load failed", roundError.message);
+      }
 
-      setLinkedCourse(course);
-      const canEditStructured = canMemberEditMemberSubmittedCourseLocation({
-        course,
-        roundOwnerUserId: round.member_user_id,
-        currentUserId: userId,
-      });
-      setShowStructuredLocation(canEditStructured);
-
-      const parsed = resolveEditableCourseLocation({
-        course,
-        roundLocation: round.location,
-      });
-      setCity(parsed.city);
-      setRegion(parsed.region);
-      setCountry(parsed.country || "United States");
-      setLocation(parsed.city || parsed.region || parsed.country ? round.location : defaults.location);
       setIsLoadingRound(false);
     })();
 
@@ -126,6 +175,14 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSaving, onClose]);
 
+  function buildUpdatedImageUrls(nextCoverPhotoId: string | null) {
+    if (!post.memberCourseRoundId) return post.images;
+    return buildRoundImageUrls(
+      buildExperienceEditPhotoRecords(roundPhotos, post.memberCourseRoundId),
+      nextCoverPhotoId,
+    );
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSaving) return;
@@ -133,6 +190,11 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
     setError(null);
 
     if (editMode === "text") {
+      if (!canEditDetails) {
+        setError("Only the post owner can edit this post.");
+        return;
+      }
+
       const validation = validateTextPostEditInput({ message });
       if (!validation.ok) {
         setError(validation.message);
@@ -154,6 +216,30 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
 
     if (courseRating == null) {
       setError("Please enter a rating from 1.0 to 10.0.");
+      return;
+    }
+
+    if (!canEditDetails && !coverChanged) {
+      setError("Choose a different cover photo to save changes.");
+      return;
+    }
+
+    if (!canEditDetails) {
+      if (!post.memberCourseRoundId || !coverPhotoId || !coverChanged) {
+        setError("Choose a different cover photo to save changes.");
+        return;
+      }
+
+      setIsSaving(true);
+      const { error: coverError } = await setRoundCoverPhoto(post.memberCourseRoundId, coverPhotoId);
+      setIsSaving(false);
+
+      if (coverError) {
+        setError(memberFacingCoverPhotoError(coverError.message));
+        return;
+      }
+
+      onSaved({ ...post, images: buildUpdatedImageUrls(coverPhotoId) });
       return;
     }
 
@@ -184,14 +270,30 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
       region: showStructuredLocation ? region : undefined,
       country: showStructuredLocation ? country : undefined,
     });
-    setIsSaving(false);
 
     if (saveError || !data) {
+      setIsSaving(false);
       setError(memberFacingPortalError(saveError?.message ?? "unknown", "feed"));
       return;
     }
 
-    onSaved(data);
+    let savedPost = data;
+    let coverWarning: string | null = null;
+
+    if (coverChanged && post.memberCourseRoundId && coverPhotoId) {
+      const { error: coverError } = await setRoundCoverPhoto(post.memberCourseRoundId, coverPhotoId);
+      if (coverError) {
+        coverWarning = memberFacingCoverPhotoError(coverError.message);
+      } else {
+        savedPost = { ...savedPost, images: buildUpdatedImageUrls(coverPhotoId) };
+      }
+    }
+
+    setIsSaving(false);
+    onSaved(savedPost);
+    if (coverWarning) {
+      setError(coverWarning);
+    }
   }
 
   return (
@@ -225,6 +327,28 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
             </p>
           ) : null}
 
+          {!canEditDetails && viewerIsAdmin ? (
+            <p className="feed-edit-field-hint">
+              As an admin, you can change the cover photo only. Other experience details stay with the
+              member who posted it.
+            </p>
+          ) : null}
+
+          {editMode === "course-round" && roundPhotos.length > 0 ? (
+            <div className="feed-edit-field feed-edit-field--wide">
+              <span className="feed-edit-field-label">Change cover photo</span>
+              <RoundPhotoCoverGrid
+                items={roundPhotos.map((photo) => ({
+                  id: photo.id,
+                  previewUrl: photo.previewUrl,
+                }))}
+                coverId={coverPhotoId}
+                onCoverIdChange={setCoverPhotoId}
+                disabled={isSaving || isLoadingRound}
+              />
+            </div>
+          ) : null}
+
           <label className="feed-edit-field feed-edit-field--wide">
             <span>{editMode === "course-round" ? "Review" : "Post"}</span>
             <textarea
@@ -232,7 +356,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               required
-              disabled={isSaving || isLoadingRound}
+              disabled={isSaving || isLoadingRound || !canEditDetails}
             />
           </label>
 
@@ -251,7 +375,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
                       value={city}
                       onChange={(event) => setCity(event.target.value)}
                       required
-                      disabled={isSaving || isLoadingRound}
+                      disabled={isSaving || isLoadingRound || !canEditDetails}
                     />
                   </label>
                   <label className="feed-edit-field">
@@ -261,7 +385,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
                       value={region}
                       onChange={(event) => setRegion(event.target.value)}
                       required
-                      disabled={isSaving || isLoadingRound}
+                      disabled={isSaving || isLoadingRound || !canEditDetails}
                     />
                   </label>
                   <label className="feed-edit-field">
@@ -271,7 +395,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
                       value={country}
                       onChange={(event) => setCountry(event.target.value)}
                       required
-                      disabled={isSaving || isLoadingRound}
+                      disabled={isSaving || isLoadingRound || !canEditDetails}
                     />
                   </label>
                 </>
@@ -283,7 +407,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
                     required
-                    disabled={isSaving || isLoadingRound}
+                    disabled={isSaving || isLoadingRound || !canEditDetails}
                   />
                 </label>
               )}
@@ -296,7 +420,7 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
                   max={new Date().toISOString().slice(0, 10)}
                   onChange={(event) => setPlayedOn(event.target.value)}
                   required
-                  disabled={isSaving || isLoadingRound}
+                  disabled={isSaving || isLoadingRound || !canEditDetails}
                 />
               </label>
 
@@ -304,12 +428,15 @@ export function FeedPostEditModal({ post, onClose, onSaved }: FeedPostEditModalP
                 <CourseRatingPicker
                   value={courseRating}
                   onChange={setCourseRating}
-                  disabled={isSaving || isLoadingRound}
+                  disabled={isSaving || isLoadingRound || !canEditDetails}
                   error={error && courseRating == null ? error : null}
                 />
               </div>
 
-              <fieldset className="feed-edit-choice" disabled={isSaving || isLoadingRound}>
+              <fieldset
+                className="feed-edit-choice"
+                disabled={isSaving || isLoadingRound || !canEditDetails}
+              >
                 <legend>Would play again?</legend>
                 <div className="feed-edit-choice-options">
                   <label className="feed-edit-choice-option">

@@ -14,12 +14,14 @@ function RegionGroup({
   country,
   region,
   courses,
+  totalCourseCount,
   onOpen,
   bucketListCourseIdSet,
 }: {
   country: string;
   region: string;
   courses: CourseGeoCountryGroup["regions"][number]["courses"];
+  totalCourseCount: number;
   onOpen: (slug: string) => void;
   bucketListCourseIdSet?: Set<string>;
 }) {
@@ -41,7 +43,7 @@ function RegionGroup({
       >
         <span className="et-courses-region-name">{region}</span>
         <span className="et-courses-region-count">
-          {courses.length} {courses.length === 1 ? "course" : "courses"}
+          {totalCourseCount} {totalCourseCount === 1 ? "course" : "courses"}
         </span>
       </button>
 
@@ -119,6 +121,7 @@ export function CourseGeoDirectory({
                     country={group.country}
                     region={regionGroup.region}
                     courses={regionGroup.courses}
+                    totalCourseCount={regionGroup.totalCourseCount}
                     onOpen={onOpen}
                     bucketListCourseIdSet={bucketListCourseIdSet}
                   />

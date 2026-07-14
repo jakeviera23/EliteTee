@@ -218,6 +218,8 @@
 .portal-page.et-theme-portal .portal-icon-btn {
   min-width: 44px;
   min-height: 44px;
+  justify-content: center;
+  padding: 0.625rem;
 }
 
 .portal-page.et-theme-portal .portal-icon-btn-label {

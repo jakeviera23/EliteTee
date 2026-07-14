@@ -97,7 +97,8 @@ export const publicEarlyStageCopy = {
   earlyCommunity: "Early community",
   memberAccessSoon: "Member access opening soon",
   applicationsReviewed: "Applications reviewed thoughtfully",
-  activityGrows: "Course and member activity will grow as members join.",
+  activityGrows:
+    "A private golf network built around trusted experience, meaningful connections, and the game.",
 } as const;
 
 export const featureHeroes: FeatureHero[] = [

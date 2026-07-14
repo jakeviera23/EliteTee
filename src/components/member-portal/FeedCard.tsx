@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FeedPost, FeedPostComment } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { FEED_CARD_ICON_CLASSES } from "../../lib/feedCardScope";
 import { resolveFeedCardBadgeLabel } from "../../lib/feedPostDisplay";
-import { canMemberEditFeedPost, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
+import { canShowFeedPostEditMenu, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
 import {
@@ -36,6 +36,7 @@ type FeedCardProps = {
   index?: number;
   variant?: "default" | "founder";
   currentUserId?: string | null;
+  viewerIsAdmin?: boolean;
   onToast?: (message: string) => void;
   onViewAuthor?: (userId: string, memberName: string) => void;
   onPostUpdated?: (post: FeedPost) => void;
@@ -199,6 +200,7 @@ export function FeedCard({
   index = 0,
   variant = "default",
   currentUserId = null,
+  viewerIsAdmin = false,
   onToast,
   onViewAuthor,
   onPostUpdated,
@@ -251,13 +253,19 @@ export function FeedCard({
   }
 
   const isCourseRound = !isFounder && isCourseRoundPost(post);
-  const canEdit = !isFounder && canMemberEditFeedPost(post, currentUserId);
+  const canEdit =
+    !isFounder &&
+    canShowFeedPostEditMenu(post, { userId: currentUserId, isAdmin: viewerIsAdmin });
   const showEditedLabel = isFeedPostEdited(post.createdAt, post.updatedAt);
   const roundLabel = resolveFeedCardBadgeLabel(post) || postTypeLabels[post.postType];
   const hasImages = (post.images?.length ?? 0) > 0;
-  const photoRecords = hasImages
-    ? signedUrlsToPhotoRecords(post.images, post.memberCourseRoundId ?? "")
-    : [];
+  const photoRecords = useMemo(
+    () =>
+      hasImages
+        ? signedUrlsToPhotoRecords(post.images, post.memberCourseRoundId ?? "")
+        : [],
+    [hasImages, post.images, post.memberCourseRoundId],
+  );
   const metaChips = buildFeedMetaChips(post);
   const badgeTone = badgeToneForPost(post);
   const entranceStyle = { animationDelay: `${Math.min(index, 9) * 55}ms` };
@@ -635,6 +643,7 @@ export function FeedCard({
       {editing ? (
         <FeedPostEditModal
           post={post}
+          viewerIsAdmin={viewerIsAdmin}
           onClose={() => setEditing(false)}
           onSaved={(updatedPost) => {
             onPostUpdated?.(mergeFeedPostAfterEdit(post, updatedPost));

@@ -119,6 +119,7 @@ export function FeedCardHeroMedia({
 
       {lightboxIndex !== null ? (
         <RoundPhotoLightbox
+          key={`feed-lightbox-${lightboxIndex}`}
           photos={visiblePhotos}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}

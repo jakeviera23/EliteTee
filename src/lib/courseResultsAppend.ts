@@ -12,3 +12,9 @@ export function appendUniqueCourses(
   return additions.length > 0 ? [...current, ...additions] : [...current];
 }
 
+export function restoreScrollAfterPaging(scrollY: number) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: scrollY, behavior: "auto" });
+  });
+}
+
