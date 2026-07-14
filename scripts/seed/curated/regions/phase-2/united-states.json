@@ -1,0 +1,934 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "United States",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Spyglass Hill Golf Course",
+      "slug": "spyglass-hill-golf-course",
+      "city": "Pebble Beach",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.pebblebeach.com/golf/spyglass-hill-golf-course",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "championship",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "featured",
+      "architect": "Robert Trent Jones Sr.",
+      "year_opened": 1966,
+      "holes": 18,
+      "par": 72,
+      "yardage": 7041,
+      "description": "Public Robert Trent Jones Sr. course at Pebble Beach, opening through forest before reaching the coast.",
+      "latitude": 36.5833,
+      "longitude": -121.95
+    },
+    {
+      "name": "The Links at Spanish Bay",
+      "slug": "the-links-at-spanish-bay",
+      "city": "Pebble Beach",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.pebblebeach.com/golf/the-links-at-spanish-bay",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "resort",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Monterey Peninsula Country Club — Dunes Course",
+      "slug": "monterey-peninsula-country-club-dunes-course",
+      "city": "Pebble Beach",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.mpcc.org",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "links",
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The Olympic Club — Ocean Course",
+      "slug": "the-olympic-club-ocean-course",
+      "city": "San Francisco",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.olyclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "California Golf Club of San Francisco",
+      "slug": "california-golf-club-of-san-francisco",
+      "city": "South San Francisco",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.calclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "San Francisco Golf Club",
+      "slug": "san-francisco-golf-club",
+      "city": "San Francisco",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.sfgolfclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bel-Air Country Club",
+      "slug": "bel-air-country-club",
+      "city": "Los Angeles",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.belaircc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Torrey Pines Golf Course — North Course",
+      "slug": "torrey-pines-north-course",
+      "city": "La Jolla",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.torreypinesgolfcourse.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Winged Foot Golf Club — West Course",
+      "slug": "winged-foot-golf-club-west-course",
+      "city": "Mamaroneck",
+      "region": "New York",
+      "country": "United States",
+      "website": "https://www.wfgc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Sleepy Hollow Country Club",
+      "slug": "sleepy-hollow-country-club",
+      "city": "Scarborough",
+      "region": "New York",
+      "country": "United States",
+      "website": "https://www.sleepyhollowcc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Maidstone Club",
+      "slug": "maidstone-club",
+      "city": "East Hampton",
+      "region": "New York",
+      "country": "United States",
+      "website": "https://www.maidstoneclub.org",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Friar's Head",
+      "slug": "friars-head",
+      "city": "Baiting Hollow",
+      "region": "New York",
+      "country": "United States",
+      "website": "https://www.friarshead.com",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "architecturally_significant",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Nantucket Golf Club",
+      "slug": "nantucket-golf-club",
+      "city": "Siasconset",
+      "region": "Massachusetts",
+      "country": "United States",
+      "website": "https://www.nantucketgolfclub.com",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Philadelphia Cricket Club — Wissahickon Course",
+      "slug": "philadelphia-cricket-club-wissahickon-course",
+      "city": "Flourtown",
+      "region": "Pennsylvania",
+      "country": "United States",
+      "website": "https://www.philadelphiacricketclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bob O'Link Golf Club",
+      "slug": "bob-o-link-golf-club",
+      "city": "Highland Park",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.bobolink.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Old Town Club",
+      "slug": "old-town-club",
+      "city": "Winston-Salem",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.oldtownclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Camargo Club",
+      "slug": "camargo-club",
+      "city": "Indian Hill",
+      "region": "Ohio",
+      "country": "United States",
+      "website": "https://www.camargoclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Moraine Country Club",
+      "slug": "moraine-country-club",
+      "city": "Kettering",
+      "region": "Ohio",
+      "country": "United States",
+      "website": "https://www.morainecc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Kinloch Golf Club",
+      "slug": "kinloch-golf-club",
+      "city": "Manakin-Sabot",
+      "region": "Virginia",
+      "country": "United States",
+      "website": "https://www.kinlochgolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The Honors Course",
+      "slug": "the-honors-course",
+      "city": "Ooltewah",
+      "region": "Tennessee",
+      "country": "United States",
+      "website": "https://www.thehonorscourse.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Interlachen Country Club",
+      "slug": "interlachen-country-club",
+      "city": "Edina",
+      "region": "Minnesota",
+      "country": "United States",
+      "website": "https://www.interlachencc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Minikahda Club",
+      "slug": "minikahda-club",
+      "city": "Minneapolis",
+      "region": "Minnesota",
+      "country": "United States",
+      "website": "https://www.minikahda.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Milwaukee Country Club",
+      "slug": "milwaukee-country-club",
+      "city": "River Hills",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.milwaukeecountryclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Shoreacres",
+      "slug": "shoreacres",
+      "city": "Lake Bluff",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.shoreacres.net",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Oakland Hills Country Club — North Course",
+      "slug": "oakland-hills-country-club-north-course",
+      "city": "Bloomfield Hills",
+      "region": "Michigan",
+      "country": "United States",
+      "website": "https://www.oaklandhillscc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Medinah Country Club — Course No. 1",
+      "slug": "medinah-country-club-course-no-1",
+      "city": "Medinah",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.medinahcc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Ridgewood Country Club",
+      "slug": "ridgewood-country-club",
+      "city": "Paramus",
+      "region": "New Jersey",
+      "country": "United States",
+      "website": "https://www.ridgewoodcc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Wilmington Country Club",
+      "slug": "wilmington-country-club",
+      "city": "Wilmington",
+      "region": "Delaware",
+      "country": "United States",
+      "website": "https://www.wilmingtoncc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Cherry Hills Country Club",
+      "slug": "cherry-hills-country-club",
+      "city": "Cherry Hills Village",
+      "region": "Colorado",
+      "country": "United States",
+      "website": "https://www.chcc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bellerive Country Club",
+      "slug": "bellerive-country-club",
+      "city": "Town and Country",
+      "region": "Missouri",
+      "country": "United States",
+      "website": "https://www.bellerivecc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Canterbury Golf Club",
+      "slug": "canterbury-golf-club",
+      "city": "Beachwood",
+      "region": "Ohio",
+      "country": "United States",
+      "website": "https://www.canterburygc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Olympia Fields Country Club — North Course",
+      "slug": "olympia-fields-country-club-north-course",
+      "city": "Olympia Fields",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.ofcc.info",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Whistling Straits — Irish Course",
+      "slug": "whistling-straits-irish-course",
+      "city": "Sheboygan",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.whistlingstraits.com/irish/",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "resort",
+        "public_access",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Blackwolf Run — River Course",
+      "slug": "blackwolf-run-river-course",
+      "city": "Kohler",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.destinationkohler.com/golf/blackwolf-run",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Sand Valley Golf Resort — Lester's Tees",
+      "slug": "sand-valley-golf-resort-lesters-tees",
+      "city": "Nekoosa",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.sandvalley.com/golf/lesters-tees",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Sand Valley Golf Resort — Sedge Valley",
+      "slug": "sand-valley-golf-resort-sedge-valley",
+      "city": "Nekoosa",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.sandvalley.com/golf/sedge-valley",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Streamsong Resort — Black Course",
+      "slug": "streamsong-resort-black-course",
+      "city": "Bowling Green",
+      "region": "Florida",
+      "country": "United States",
+      "website": "https://www.streamsongresort.com/golf/black-course",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Forest Dunes Golf Club",
+      "slug": "forest-dunes-golf-club",
+      "city": "Roscommon",
+      "region": "Michigan",
+      "country": "United States",
+      "website": "https://www.forestdunes.com",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Arcadia Bluffs Golf Club",
+      "slug": "arcadia-bluffs-golf-club",
+      "city": "Arcadia",
+      "region": "Michigan",
+      "country": "United States",
+      "website": "https://www.arcadiabluffs.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Harbor Shores Golf Club",
+      "slug": "harbor-shores-golf-club",
+      "city": "Benton Harbor",
+      "region": "Michigan",
+      "country": "United States",
+      "website": "https://www.harborshoresgolf.com",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 1",
+      "slug": "pinehurst-resort-no-1",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-1",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "historic",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 3",
+      "slug": "pinehurst-resort-no-3",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-3",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 5",
+      "slug": "pinehurst-resort-no-5",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-5",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 6",
+      "slug": "pinehurst-resort-no-6",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-6",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 7",
+      "slug": "pinehurst-resort-no-7",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-7",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 9",
+      "slug": "pinehurst-resort-no-9",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-9",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Pinehurst Resort — No. 10",
+      "slug": "pinehurst-resort-no-10",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-10",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Long Cove Club",
+      "slug": "long-cove-club",
+      "city": "Hilton Head Island",
+      "region": "South Carolina",
+      "country": "United States",
+      "website": "https://www.longcoveclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Sea Island — Retreat Course",
+      "slug": "sea-island-retreat-course",
+      "city": "St. Simons Island",
+      "region": "Georgia",
+      "country": "United States",
+      "website": "https://www.seaisland.com/golf/retreat-course",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Caledonia Golf & Fish Club",
+      "slug": "caledonia-golf-and-fish-club",
+      "city": "Pawleys Island",
+      "region": "South Carolina",
+      "country": "United States",
+      "website": "https://www.caledoniagolfandfishclub.com",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "TPC Scottsdale — Stadium Course",
+      "slug": "tpc-scottsdale-stadium-course",
+      "city": "Scottsdale",
+      "region": "Arizona",
+      "country": "United States",
+      "website": "https://tpc.com/scottsdale/",
+      "course_type": "desert",
+      "access_type": "semi_private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Troon North Golf Club — Monument Course",
+      "slug": "troon-north-golf-club-monument-course",
+      "city": "Scottsdale",
+      "region": "Arizona",
+      "country": "United States",
+      "website": "https://www.troonnorthgolf.com",
+      "course_type": "desert",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Grayhawk Golf Club — Talon Course",
+      "slug": "grayhawk-golf-club-talon-course",
+      "city": "Scottsdale",
+      "region": "Arizona",
+      "country": "United States",
+      "website": "https://grayhawk.com",
+      "course_type": "desert",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Kapalua Plantation Course",
+      "slug": "kapalua-plantation-course",
+      "city": "Lahaina",
+      "region": "Hawaii",
+      "country": "United States",
+      "website": "https://golfatkapalua.com/plantation-course",
+      "course_type": "mountain",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Mauna Kea Golf Course",
+      "slug": "mauna-kea-golf-course",
+      "city": "Kamuela",
+      "region": "Hawaii",
+      "country": "United States",
+      "website": "https://www.maunakearesort.com/golf",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

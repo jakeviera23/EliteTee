@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Other destination golf",
+  "phase": "phase-0",
+  "courses": [
+    {
+      "name": "Gary Player Country Club",
+      "slug": "gary-player-country-club",
+      "city": "Sun City",
+      "region": "North West",
+      "country": "South Africa",
+      "course_type": "parkland",
+      "access_type": "public",
+      "architect": "Gary Player",
+      "year_opened": 1979,
+      "holes": 18,
+      "par": 72,
+      "yardage": 7263,
+      "website": "https://www.suninternational.com/sun-city/golf",
+      "description": "Public Gary Player course at Sun City, South Africa, host of the Nedbank Golf Challenge.",
+      "latitude": -25.3389,
+      "longitude": 27.0981
+    },
+    {
+      "name": "Fancourt — Outeniqua Course",
+      "slug": "fancourt-outeniqua-course",
+      "city": "George",
+      "region": "Western Cape",
+      "country": "South Africa",
+      "course_type": "parkland",
+      "access_type": "public",
+      "architect": "Gary Player",
+      "year_opened": 1993,
+      "holes": 18,
+      "par": 72,
+      "website": "https://www.fancourt.com",
+      "description": "Public Gary Player parkland course at the Fancourt resort in George, South Africa.",
+      "latitude": -33.9667,
+      "longitude": 22.4167
+    }
+  ]
+}

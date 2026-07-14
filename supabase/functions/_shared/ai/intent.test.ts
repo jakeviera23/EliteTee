@@ -4,6 +4,7 @@ import {
   extractCourseNameFromQuestion,
   extractMemberSearchQuery,
   buildRetrievalFilters,
+  buildCourseDirectoryFilters,
 } from "./intent.ts";
 
 describe("classifyIntent", () => {
@@ -42,6 +43,33 @@ describe("buildRetrievalFilters", () => {
     expect(buildRetrievalFilters("Find Ryan Konrad", "find_members").memberFilters.query).toBe(
       "Ryan Konrad",
     );
+  });
+
+  it("uses New York for Show me courses in New York", () => {
+    const filters = buildRetrievalFilters("Show me courses in New York", "find_courses");
+    expect(filters.courseQuery).toBe("New York");
+    expect(filters.courseDirectoryFilters.locationQuery).toBe("New York");
+  });
+
+  it("uses New Jersey for What courses are in New Jersey?", () => {
+    const filters = buildRetrievalFilters("What courses are in New Jersey?", "find_courses");
+    expect(filters.courseQuery).toBe("New Jersey");
+  });
+});
+
+describe("buildCourseDirectoryFilters", () => {
+  it("extracts access and course type modifiers", () => {
+    const filters = buildCourseDirectoryFilters("Find private courses in Florida");
+    expect(filters.locationQuery).toBe("Florida");
+    expect(filters.accessType).toBe("private");
+    expect(filters.courseType).toBeNull();
+  });
+
+  it("extracts links and public modifiers for Scotland", () => {
+    const filters = buildCourseDirectoryFilters("Show public links courses in Scotland");
+    expect(filters.locationQuery).toBe("Scotland");
+    expect(filters.accessType).toBe("public");
+    expect(filters.courseType).toBe("links");
   });
 });
 

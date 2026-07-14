@@ -19,6 +19,8 @@ function normalizeCourseRow(row: Record<string, unknown>): GolfCourseSearchResul
     course_type: row.course_type ? String(row.course_type) : null,
     access_type: row.access_type ? String(row.access_type) : null,
     holes: row.holes === null || row.holes === undefined ? null : Number(row.holes),
+    par: row.par === null || row.par === undefined ? null : Number(row.par),
+    yardage: row.yardage === null || row.yardage === undefined ? null : Number(row.yardage),
     description: row.description ? String(row.description) : null,
     image_url: row.image_url ? String(row.image_url) : null,
     thumbnail_url: row.thumbnail_url ? String(row.thumbnail_url) : null,
@@ -28,6 +30,9 @@ function normalizeCourseRow(row: Record<string, unknown>): GolfCourseSearchResul
     image_updated_at: row.image_updated_at ? String(row.image_updated_at) : null,
     source_name: row.source_name ? String(row.source_name) : null,
     submitted_by_member: Boolean(row.submitted_by_member),
+    architect: row.architect ? String(row.architect) : null,
+    year_opened:
+      row.year_opened === null || row.year_opened === undefined ? null : Number(row.year_opened),
     round_count: row.round_count === undefined ? undefined : Number(row.round_count ?? 0),
     member_count: row.member_count === undefined ? undefined : Number(row.member_count ?? 0),
     recommend_pct:
@@ -137,6 +142,42 @@ export async function fetchGolfCourseBySlug(slug: string) {
 
   return {
     data: normalizeCourseRow(row as Record<string, unknown>) as GolfCourseRecord,
+    error: null,
+  };
+}
+
+export async function fetchGolfCoursesByIds(courseIds: string[]) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedIds = [...new Set(courseIds.map((id) => id.trim()).filter(Boolean))];
+  if (normalizedIds.length === 0) {
+    return { data: [] as GolfCourseSearchResult[], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("golf_courses")
+    .select(
+      "id, external_id, name, slug, city, region, country, latitude, longitude, website_url, course_type, access_type, holes, description, image_url, thumbnail_url, image_source, image_attribution, image_license, image_updated_at, source_name, submitted_by_member",
+    )
+    .in("id", normalizedIds);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const rowsById = new Map(
+    (data ?? []).map((row) => [
+      String((row as { id: string }).id),
+      normalizeCourseRow(row as Record<string, unknown>),
+    ]),
+  );
+
+  return {
+    data: normalizedIds
+      .map((id) => rowsById.get(id))
+      .filter((course): course is GolfCourseSearchResult => Boolean(course)),
     error: null,
   };
 }

@@ -1,0 +1,900 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "United States",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Pine Valley Golf Club",
+      "slug": "pine-valley-golf-club",
+      "city": "Pine Valley",
+      "region": "New Jersey",
+      "country": "United States",
+      "website": "https://www.pinevalleygolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "historic",
+        "architecturally_significant",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "architect": "George Crump; H.S. Colt",
+      "year_opened": 1918,
+      "holes": 18,
+      "par": 70,
+      "yardage": 7057,
+      "description": "Private New Jersey course widely regarded as one of the most exacting tests in world golf.",
+      "latitude": 39.7856,
+      "longitude": -74.9781
+    },
+    {
+      "name": "Los Angeles Country Club",
+      "slug": "los-angeles-country-club",
+      "city": "Los Angeles",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.lacountryclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "championship",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "architect": "Herbert Fowler; George C. Thomas Jr.",
+      "year_opened": 1911,
+      "holes": 18,
+      "par": 71,
+      "yardage": 7387,
+      "description": "Private North Course in Los Angeles, a Golden Age layout that hosted the 2023 U.S. Open.",
+      "latitude": 34.0481,
+      "longitude": -118.4219
+    },
+    {
+      "name": "Chicago Golf Club",
+      "slug": "chicago-golf-club",
+      "city": "Wheaton",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.chicagogolfclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "historic",
+        "architecturally_significant",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "architect": "Charles Blair Macdonald",
+      "year_opened": 1895,
+      "holes": 18,
+      "par": 70,
+      "yardage": 6903,
+      "description": "Private Charles Blair Macdonald course in Wheaton, Illinois, and the first 18-hole club in America.",
+      "latitude": 41.8481,
+      "longitude": -88.1381
+    },
+    {
+      "name": "Crystal Downs Golf Club",
+      "slug": "crystal-downs-golf-club",
+      "city": "Frankfort",
+      "region": "Michigan",
+      "country": "United States",
+      "website": "https://www.crystaldowns.org",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "architecturally_significant",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "architect": "Alister MacKenzie",
+      "year_opened": 1929,
+      "holes": 18,
+      "par": 70,
+      "yardage": 6742,
+      "description": "Private Alister MacKenzie and Perry Maxwell course on Michigan's Lake Michigan bluffs near Frankfort.",
+      "latitude": 44.6267,
+      "longitude": -86.2333
+    },
+    {
+      "name": "Monterey Peninsula Country Club — Shore Course",
+      "slug": "monterey-peninsula-country-club-shore-course",
+      "city": "Pebble Beach",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.mpcc.org",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "championship",
+        "links",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "The Olympic Club — Lake Course",
+      "slug": "the-olympic-club-lake-course",
+      "city": "San Francisco",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.olyclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "championship",
+        "historic",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "year_opened": 1912
+    },
+    {
+      "name": "Pasatiempo Golf Club",
+      "slug": "pasatiempo-golf-club",
+      "city": "Santa Cruz",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.pasatiempo.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "architecturally_significant",
+        "historic",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Medinah Country Club — Course No. 3",
+      "slug": "medinah-country-club-course-no-3",
+      "city": "Medinah",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.medinahcc.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Oakland Hills Country Club — South Course",
+      "slug": "oakland-hills-country-club-south-course",
+      "city": "Bloomfield Hills",
+      "region": "Michigan",
+      "country": "United States",
+      "website": "https://www.oaklandhillscc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Quail Hollow Club",
+      "slug": "quail-hollow-club",
+      "city": "Charlotte",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.quailhollowclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Aronimink Golf Club",
+      "slug": "aronimink-golf-club",
+      "city": "Newtown Square",
+      "region": "Pennsylvania",
+      "country": "United States",
+      "website": "https://www.aronimink.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard",
+      "architect": "Donald Ross",
+      "year_opened": 1928
+    },
+    {
+      "name": "The Country Club — Brookline",
+      "slug": "the-country-club-brookline",
+      "city": "Brookline",
+      "region": "Massachusetts",
+      "country": "United States",
+      "website": "https://www.tcc1882.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard",
+      "year_opened": 1882
+    },
+    {
+      "name": "Newport Country Club",
+      "slug": "newport-country-club",
+      "city": "Newport",
+      "region": "Rhode Island",
+      "country": "United States",
+      "website": "https://www.newportcc.org",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Garden City Golf Club",
+      "slug": "garden-city-golf-club",
+      "city": "Garden City",
+      "region": "New York",
+      "country": "United States",
+      "website": "https://www.gardencitygolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "architecturally_significant",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Myopia Hunt Club",
+      "slug": "myopia-hunt-club",
+      "city": "Hamilton",
+      "region": "Massachusetts",
+      "country": "United States",
+      "website": "https://www.myopiahuntclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Somerset Hills Country Club",
+      "slug": "somerset-hills-country-club",
+      "city": "Bernardsville",
+      "region": "New Jersey",
+      "country": "United States",
+      "website": "https://www.shcc1894.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Palmetto Golf Club",
+      "slug": "palmetto-golf-club",
+      "city": "Aiken",
+      "region": "South Carolina",
+      "country": "United States",
+      "website": "https://www.palmettogolfclub.net",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Leeds and James Mackrell",
+      "year_opened": 1892
+    },
+    {
+      "name": "Yale Golf Course",
+      "slug": "yale-golf-course",
+      "city": "New Haven",
+      "region": "Connecticut",
+      "country": "United States",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "architecturally_significant",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Burning Tree Club",
+      "slug": "burning-tree-club",
+      "city": "Bethesda",
+      "region": "Maryland",
+      "country": "United States",
+      "website": "https://www.burningtreeclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Old Elm Club",
+      "slug": "old-elm-club",
+      "city": "Highland Park",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.oldelmclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Butler National Golf Club",
+      "slug": "butler-national-golf-club",
+      "city": "Oak Brook",
+      "region": "Illinois",
+      "country": "United States",
+      "website": "https://www.butlernational.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Scioto Country Club",
+      "slug": "scioto-country-club",
+      "city": "Columbus",
+      "region": "Ohio",
+      "country": "United States",
+      "website": "https://www.sciotocc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Donald Ross"
+    },
+    {
+      "name": "Inverness Club",
+      "slug": "inverness-club",
+      "city": "Toledo",
+      "region": "Ohio",
+      "country": "United States",
+      "website": "https://www.invernessclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard",
+      "architect": "Donald Ross",
+      "year_opened": 1903
+    },
+    {
+      "name": "Shadow Creek Golf Course",
+      "slug": "shadow-creek-golf-course",
+      "city": "North Las Vegas",
+      "region": "Nevada",
+      "country": "United States",
+      "website": "https://www.mgmresorts.com/en/casinos/shadow-creek.html",
+      "course_type": "desert",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "resort",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bandon Dunes Golf Resort — Pacific Dunes",
+      "slug": "bandon-dunes-golf-resort-pacific-dunes",
+      "city": "Bandon",
+      "region": "Oregon",
+      "country": "United States",
+      "website": "https://bandondunesgolf.com/golf/golf-courses/pacific-dunes-golf-course/",
+      "course_type": "links",
+      "access_type": "resort",
+      "architect": "Tom Doak",
+      "year_opened": 2001,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "latitude": 43.18793,
+      "longitude": -124.39018,
+      "holes": 18
+    },
+    {
+      "name": "Bandon Dunes Golf Resort — Bandon Trails",
+      "slug": "bandon-dunes-golf-resort-bandon-trails",
+      "city": "Bandon",
+      "region": "Oregon",
+      "country": "United States",
+      "website": "https://bandondunesgolf.com/golf/golf-courses/bandon-trails-golf-course/",
+      "course_type": "links",
+      "access_type": "resort",
+      "architect": "Bill Coore; Ben Crenshaw",
+      "year_opened": 2005,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "latitude": 43.18793,
+      "longitude": -124.39018,
+      "holes": 18
+    },
+    {
+      "name": "Bandon Dunes Golf Resort — Old Macdonald",
+      "slug": "bandon-dunes-golf-resort-old-macdonald",
+      "city": "Bandon",
+      "region": "Oregon",
+      "country": "United States",
+      "website": "https://bandondunesgolf.com/golf/golf-courses/old-macdonald-golf-course/",
+      "course_type": "links",
+      "access_type": "resort",
+      "architect": "Tom Doak; Jim Urbina",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "latitude": 43.18793,
+      "longitude": -124.39018,
+      "holes": 18
+    },
+    {
+      "name": "Bandon Dunes Golf Resort — Sheep Ranch",
+      "slug": "bandon-dunes-golf-resort-sheep-ranch",
+      "city": "Bandon",
+      "region": "Oregon",
+      "country": "United States",
+      "website": "https://bandondunesgolf.com/golf/golf-courses/sheep-ranch-golf-course/",
+      "course_type": "links",
+      "access_type": "resort",
+      "architect": "Bill Coore; Ben Crenshaw",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "latitude": 43.18793,
+      "longitude": -124.39018,
+      "holes": 18
+    },
+    {
+      "name": "Streamsong Resort — Red Course",
+      "slug": "streamsong-resort-red-course",
+      "city": "Bowling Green",
+      "region": "Florida",
+      "country": "United States",
+      "website": "https://www.streamsongresort.com/golf/streamsong-red/",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Bill Coore; Ben Crenshaw",
+      "year_opened": 2012
+    },
+    {
+      "name": "Streamsong Resort — Blue Course",
+      "slug": "streamsong-resort-blue-course",
+      "city": "Bowling Green",
+      "region": "Florida",
+      "country": "United States",
+      "website": "https://www.streamsongresort.com/golf/streamsong-blue/",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Tom Doak",
+      "year_opened": 2012
+    },
+    {
+      "name": "Sand Valley Golf Resort — Sand Valley",
+      "slug": "sand-valley-golf-resort-sand-valley",
+      "city": "Nekoosa",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.sandvalley.com/golf-courses/sand-valley",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "latitude": 44.171732,
+      "longitude": -89.855516,
+      "holes": 18,
+      "architect": "Bill Coore; Ben Crenshaw",
+      "year_opened": 2017
+    },
+    {
+      "name": "Sand Valley Golf Resort — Mammoth Dunes",
+      "slug": "sand-valley-golf-resort-mammoth-dunes",
+      "city": "Nekoosa",
+      "region": "Wisconsin",
+      "country": "United States",
+      "website": "https://www.sandvalley.com/golf-courses/mammoth-dunes",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "latitude": 44.171732,
+      "longitude": -89.855516,
+      "holes": 18,
+      "architect": "David McLay Kidd",
+      "year_opened": 2018
+    },
+    {
+      "name": "Harbour Town Golf Links",
+      "slug": "harbour-town-golf-links",
+      "city": "Hilton Head Island",
+      "region": "South Carolina",
+      "country": "United States",
+      "website": "https://www.seapines.com/golf/courses/harbour-town-golf-links",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Pete Dye; Jack Nicklaus"
+    },
+    {
+      "name": "Pinehurst Resort — No. 4",
+      "slug": "pinehurst-resort-no-4",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-4",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Gil Hanse",
+      "year_opened": 1919
+    },
+    {
+      "name": "Pinehurst Resort — No. 8",
+      "slug": "pinehurst-resort-no-8",
+      "city": "Pinehurst",
+      "region": "North Carolina",
+      "country": "United States",
+      "website": "https://www.pinehurst.com/golf/courses/no-8",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Tom Fazio",
+      "year_opened": 1996
+    },
+    {
+      "name": "TPC Southwind",
+      "slug": "tpc-southwind",
+      "city": "Memphis",
+      "region": "Tennessee",
+      "country": "United States",
+      "website": "https://tpc.com/southwind/",
+      "course_type": "parkland",
+      "access_type": "semi_private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Ron Prichard"
+    },
+    {
+      "name": "East Lake Golf Club",
+      "slug": "east-lake-golf-club",
+      "city": "Atlanta",
+      "region": "Georgia",
+      "country": "United States",
+      "website": "https://www.eastlakegolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Donald Ross",
+      "year_opened": 1908
+    },
+    {
+      "name": "Firestone Country Club — South Course",
+      "slug": "firestone-country-club-south-course",
+      "city": "Akron",
+      "region": "Ohio",
+      "country": "United States",
+      "website": "https://www.invitedclubs.com/clubs/firestone-country-club",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Bert Way; Robert Trent Jones Sr.",
+      "year_opened": 1929
+    },
+    {
+      "name": "Colonial Country Club",
+      "slug": "colonial-country-club",
+      "city": "Fort Worth",
+      "region": "Texas",
+      "country": "United States",
+      "website": "https://www.colonialcc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard",
+      "architect": "Gordon Lewis",
+      "holes": 18
+    },
+    {
+      "name": "Valhalla Golf Club",
+      "slug": "valhalla-golf-club",
+      "city": "Louisville",
+      "region": "Kentucky",
+      "country": "United States",
+      "website": "https://www.valhallagolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard",
+      "architect": "Jack Nicklaus"
+    },
+    {
+      "name": "Harding Park Golf Course",
+      "slug": "harding-park-golf-course",
+      "city": "San Francisco",
+      "region": "California",
+      "country": "United States",
+      "website": "https://tpc.com/hardingpark/",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Willie Watson; Sam Whiting",
+      "year_opened": 1925
+    },
+    {
+      "name": "Atlanta Athletic Club — Highlands Course",
+      "slug": "atlanta-athletic-club-highlands-course",
+      "city": "Johns Creek",
+      "region": "Georgia",
+      "country": "United States",
+      "website": "https://www.atlantaathletic.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Hazeltine National Golf Club",
+      "slug": "hazeltine-national-golf-club",
+      "city": "Chaska",
+      "region": "Minnesota",
+      "country": "United States",
+      "website": "https://www.hazeltinenational.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Robert Trent Jones",
+      "year_opened": 1962
+    },
+    {
+      "name": "Worcester Country Club",
+      "slug": "worcester-country-club",
+      "city": "Worcester",
+      "region": "Massachusetts",
+      "country": "United States",
+      "website": "https://www.worcestercc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "historic",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Calusa Pines Golf Club",
+      "slug": "calusa-pines-golf-club",
+      "city": "Naples",
+      "region": "Florida",
+      "country": "United States",
+      "website": "https://www.calusapines.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The Quarry at La Quinta",
+      "slug": "the-quarry-at-la-quinta",
+      "city": "La Quinta",
+      "region": "California",
+      "country": "United States",
+      "website": "https://www.thequarryatlaquinta.com",
+      "course_type": "desert",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Wolf Creek Golf Club",
+      "slug": "wolf-creek-golf-club",
+      "city": "Mesquite",
+      "region": "Nevada",
+      "country": "United States",
+      "website": "https://www.golfwolfcreek.com",
+      "course_type": "desert",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "PGA National Resort — Champion Course",
+      "slug": "pga-national-resort-champion-course",
+      "city": "Palm Beach Gardens",
+      "region": "Florida",
+      "country": "United States",
+      "website": "https://www.pgaresort.com/golf/courses/champion",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard",
+      "holes": 18,
+      "architect": "Tom Fazio; George Fazio; Jack Nicklaus"
+    }
+  ]
+}

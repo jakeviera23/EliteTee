@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Asia",
+  "expansion": {
+    "status": "planning",
+    "regional_goal": 45,
+    "phase_0_verified": 2,
+    "expansion_slots_remaining": 43,
+    "notes": "Japan, Korea, China, Thailand, Singapore, and other Asian golf destinations."
+  },
+  "courses": []
+}

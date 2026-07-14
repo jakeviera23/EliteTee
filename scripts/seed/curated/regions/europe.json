@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Europe",
+  "expansion": {
+    "status": "planning",
+    "regional_goal": 92,
+    "phase_0_verified": 2,
+    "expansion_slots_remaining": 90,
+    "notes": "Continental Europe excluding UK & Ireland. Verify country and region per course."
+  },
+  "courses": []
+}

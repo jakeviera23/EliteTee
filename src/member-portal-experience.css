@@ -151,6 +151,18 @@
   background: var(--et-bg-inset);
 }
 
+.et-experience-location-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--et-space-3);
+}
+
+@media (min-width: 40rem) {
+  .et-experience-location-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .et-experience-suggestion {
   display: grid;
   gap: 0.15rem;

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Europe",
+  "phase": "phase-0",
+  "courses": [
+    {
+      "name": "Le Golf National",
+      "slug": "le-golf-national",
+      "city": "Saint-Quentin-en-Yvelines",
+      "region": "Île-de-France",
+      "country": "France",
+      "course_type": "parkland",
+      "access_type": "public",
+      "architect": "Hubert Chesneau; Robert von Hagge",
+      "year_opened": 1990,
+      "holes": 18,
+      "par": 71,
+      "yardage": 7255,
+      "website": "https://www.legolf-national.com",
+      "description": "Public Albatros Course west of Paris, built for the 1991 Ryder Cup and 2018 Ryder Cup host.",
+      "latitude": 48.7717,
+      "longitude": 2.0717
+    },
+    {
+      "name": "Club de Golf Valderrama",
+      "slug": "club-de-golf-valderrama",
+      "city": "Sotogrande",
+      "region": "Andalusia",
+      "country": "Spain",
+      "course_type": "parkland",
+      "access_type": "private",
+      "architect": "Robert Trent Jones Sr.",
+      "year_opened": 1991,
+      "holes": 18,
+      "par": 71,
+      "yardage": 6749,
+      "website": "https://www.valderrama.com",
+      "description": "Private Robert Trent Jones Sr. course at Sotogrande, Spain, host of the 1997 Ryder Cup.",
+      "latitude": 36.2917,
+      "longitude": -5.3167
+    }
+  ]
+}

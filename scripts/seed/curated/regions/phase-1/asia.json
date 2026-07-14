@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Asia",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Royal Calcutta Golf Club",
+      "slug": "royal-calcutta-golf-club",
+      "city": "Kolkata",
+      "region": "West Bengal",
+      "country": "India",
+      "website": "https://rcgc.in/service/golf-course/",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "year_opened": 1829,
+      "par": 72,
+      "description": "Private club in Kolkata, India, founded in 1829 as the oldest golf club outside the British Isles.",
+      "latitude": 22.5417,
+      "longitude": 88.3417
+    },
+    {
+      "name": "Kasumigaseki Country Club — East Course",
+      "slug": "kasumigaseki-country-club-east-course",
+      "city": "Kawagoe",
+      "region": "Saitama",
+      "country": "Japan",
+      "website": "https://www.kasumigasekicc.or.jp/english/history/01.html",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Kinya Fujita and Shiro Akaboshi",
+      "year_opened": 1929,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "par": 72,
+      "description": "Private East Course in Saitama Prefecture, Japan, and host of the 2020 Olympic golf competition.",
+      "latitude": 35.9167,
+      "longitude": 139.4833
+    },
+    {
+      "name": "Blue Canyon Country Club — Canyon Course",
+      "slug": "blue-canyon-country-club-canyon-course",
+      "city": "Thalang",
+      "region": "Phuket",
+      "country": "Thailand",
+      "website": "https://www.bluecanyonphuket.com/bc-golf-course/canyon-course/",
+      "course_type": "parkland",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Yoshikazu Kato",
+      "year_opened": 1991,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Sentosa Golf Club — Tanjong Course",
+      "slug": "sentosa-golf-club-tanjong-course",
+      "city": "Singapore",
+      "region": "Singapore",
+      "country": "Singapore",
+      "website": "https://www.sentosagolf.com/the-tanjong/",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Sheshan International Golf Club",
+      "slug": "sheshan-international-golf-club",
+      "city": "Shanghai",
+      "region": "Shanghai",
+      "country": "China",
+      "website": "https://www.sheshangolf.com/golfclub-qc.html",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Nelson & Haworth",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Kawana Hotel Golf Course — Fuji Course",
+      "slug": "kawana-hotel-golf-course-fuji-course",
+      "city": "Ito",
+      "region": "Shizuoka",
+      "country": "Japan",
+      "website": "https://www.princehotels.com/en/golf/kawana/fuji/",
+      "course_type": "parkland",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "C.H. Alison",
+      "year_opened": 1936,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

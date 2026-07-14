@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Australia & New Zealand",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Royal Melbourne Golf Club — East Course",
+      "slug": "royal-melbourne-golf-club-east-course",
+      "city": "Black Rock",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.royalmelbourne.com.au/courses/the-east-course/",
+      "course_type": "heathland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Alex Russell",
+      "year_opened": 1932,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "architecturally_significant",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "par": 72,
+      "description": "Private Alex Russell East Course on Melbourne's sandbelt, companion to the club's West Course.",
+      "latitude": -37.9681,
+      "longitude": 145.0319
+    },
+    {
+      "name": "Barnbougle Dunes",
+      "slug": "barnbougle-dunes",
+      "city": "Bridport",
+      "region": "Tasmania",
+      "country": "Australia",
+      "website": "https://barnbougle.com.au/play/the-dunes/",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Tom Doak and Mike Clayton",
+      "year_opened": 2004,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "links",
+        "resort",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "featured",
+      "par": 72,
+      "yardage": 6725,
+      "description": "Public Tom Doak links on Tasmania's northeast coast, set on remote coastal dunes.",
+      "latitude": -40.9833,
+      "longitude": 147.4833
+    },
+    {
+      "name": "Victoria Golf Club",
+      "slug": "victoria-golf-club",
+      "city": "Cheltenham",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://victoriagolf.com.au",
+      "course_type": "heathland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Alister MacKenzie",
+      "year_opened": 1927,
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "architecturally_significant",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "New South Wales Golf Club",
+      "slug": "new-south-wales-golf-club",
+      "city": "La Perouse",
+      "region": "New South Wales",
+      "country": "Australia",
+      "website": "https://www.nswgolfclub.com.au/cms/welcome/",
+      "course_type": "links",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Alister MacKenzie",
+      "year_opened": 1928,
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Ellerston Golf Club",
+      "slug": "ellerston-golf-club",
+      "country": "Australia",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Barnbougle Lost Farm",
+      "slug": "barnbougle-lost-farm",
+      "city": "Bridport",
+      "region": "Tasmania",
+      "country": "Australia",
+      "website": "https://barnbougle.com.au/play/lost-farm/",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 20,
+      "architect": "Coore & Crenshaw",
+      "year_opened": 2010,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "resort",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Cape Wickham Links",
+      "slug": "cape-wickham-links",
+      "city": "King Island",
+      "region": "Tasmania",
+      "country": "Australia",
+      "website": "https://www.capewickham.com.au/tour/",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Mike DeVries and Darius Oliver",
+      "year_opened": 2015,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Kauri Cliffs",
+      "slug": "kauri-cliffs",
+      "city": "Matauri Bay",
+      "region": "Northland",
+      "country": "New Zealand",
+      "website": "https://www.robertsonlodges.com/kauri-cliffs/the-course",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "David Harman",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Tara Iti",
+      "slug": "tara-iti",
+      "region": "Auckland",
+      "country": "New Zealand",
+      "website": "https://taraiti.com/about/",
+      "course_type": "links",
+      "access_type": "private",
+      "architect": "Tom Doak",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { CourseImage } from "./CourseImage";
 type CourseDirectoryCardProps = {
   course: GolfCourseSearchResult;
   onOpen: (slug: string) => void;
+  isOnBucketList?: boolean;
 };
 
 function formatRecommendLabel(value: number | null | undefined, roundCount: number) {
@@ -19,8 +20,9 @@ function formatRecommendLabel(value: number | null | undefined, roundCount: numb
   return `${Math.round(value)}% would play again`;
 }
 
-export function CourseDirectoryCard({ course, onOpen }: CourseDirectoryCardProps) {
+export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: CourseDirectoryCardProps) {
   const location = formatGolfCourseLocation(course);
+  const hasOfficialImage = Boolean(course.image_url?.trim() || course.thumbnail_url?.trim());
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
   const ratingDisplay =
@@ -32,22 +34,34 @@ export function CourseDirectoryCard({ course, onOpen }: CourseDirectoryCardProps
   const showCommunityBadge = shouldShowCommunityAddedBadge(course);
 
   return (
-    <article className="et-course-card">
-      <div className="et-course-card-media">
-        <CourseImage
-          name={course.name}
-          city={course.city}
-          region={course.region}
-          country={course.country}
-          imageUrl={course.image_url}
-          thumbnailUrl={course.thumbnail_url}
-          golfCourseId={course.id}
-          variant="card"
-          className="et-course-card-image"
-        />
+    <article className={`et-course-card${hasOfficialImage ? "" : " et-course-card--no-image"}`}>
+      <div className={`et-course-card-media${hasOfficialImage ? "" : " et-course-card-media--no-image"}`}>
+        {hasOfficialImage ? (
+          <CourseImage
+            name={course.name}
+            city={course.city}
+            region={course.region}
+            country={course.country}
+            imageUrl={course.image_url}
+            thumbnailUrl={course.thumbnail_url}
+            golfCourseId={course.id}
+            variant="card"
+            className="et-course-card-image"
+          />
+        ) : (
+          <div className="et-course-card-branded" aria-hidden="true">
+            <span className="et-course-card-branded-label">EliteTee Course</span>
+            <span className="et-course-card-branded-name">{course.name}</span>
+          </div>
+        )}
         {ratingDisplay ? (
           <span className="et-course-card-rating" aria-label={`Average rating ${ratingDisplay} out of 10.0`}>
             {ratingDisplay}
+          </span>
+        ) : null}
+        {isOnBucketList ? (
+          <span className="et-course-card-bucket" aria-label="On your bucket list">
+            Bucket list
           </span>
         ) : null}
       </div>

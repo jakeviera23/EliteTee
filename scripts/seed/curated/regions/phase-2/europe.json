@@ -1,0 +1,534 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Europe",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Royal Antwerp Golf Club",
+      "slug": "royal-antwerp-golf-club",
+      "city": "Kapellen",
+      "region": "Antwerp",
+      "country": "Belgium",
+      "website": "https://www.royalantwerpgolf.be",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic",
+        "championship"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Royal Zoute Golf Club",
+      "slug": "royal-zoute-golf-club",
+      "city": "Knokke-Heist",
+      "region": "West Flanders",
+      "country": "Belgium",
+      "website": "https://www.rzgc.be",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Real Club de Golf El Prat",
+      "slug": "real-club-de-golf-el-prat",
+      "city": "El Prat de Llobregat",
+      "region": "Catalonia",
+      "country": "Spain",
+      "website": "https://www.rcgelprat.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Real Club de Campo Villa de Madrid — Campo Oeste",
+      "slug": "real-club-de-campo-de-madrid-campo-oeste",
+      "city": "Madrid",
+      "region": "Community of Madrid",
+      "country": "Spain",
+      "website": "https://www.rcdcmadrid.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Centro Nacional de Golf",
+      "slug": "centro-nacional-de-golf",
+      "city": "Madrid",
+      "region": "Community of Madrid",
+      "country": "Spain",
+      "website": "https://www.centronacionalgolf.com",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Real Sociedad Hipica Club de Campo",
+      "slug": "real-sociedad-hipica-club-de-campo",
+      "city": "San Sebastián",
+      "region": "Basque Country",
+      "country": "Spain",
+      "website": "https://www.rshcc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Real Club de Golf Las Brisas",
+      "slug": "real-club-de-golf-las-brisas",
+      "city": "Marbella",
+      "region": "Andalusia",
+      "country": "Spain",
+      "website": "https://www.lasbrisas.net",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Real Club Sevilla Golf",
+      "slug": "real-club-sevilla-golf",
+      "city": "Seville",
+      "region": "Andalusia",
+      "country": "Spain",
+      "website": "https://www.rcsevillagolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Arabella Golf Mallorca — Son Muntaner",
+      "slug": "arabella-golf-mallorca-son-muntaner",
+      "city": "Palma",
+      "region": "Balearic Islands",
+      "country": "Spain",
+      "website": "https://www.arabellagolfmallorca.com/en/golf/son-muntaner",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Golf Club Gut Lärchenhof",
+      "slug": "golf-club-gut-larchenhof",
+      "city": "Cologne",
+      "region": "North Rhine-Westphalia",
+      "country": "Germany",
+      "website": "https://www.gut-laerchenhof.de",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Diamond Country Club",
+      "slug": "diamond-country-club",
+      "city": "Atzenbrugg",
+      "region": "Lower Austria",
+      "country": "Austria",
+      "website": "https://www.diamond.at",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Fontana Golf Club",
+      "slug": "fontana-golf-club",
+      "city": "St. Pölten",
+      "region": "Lower Austria",
+      "country": "Austria",
+      "website": "https://www.golf.at/en/clubs/fontana-golf-club",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Falkenstein Golf Club",
+      "slug": "falkenstein-golf-club",
+      "city": "Hamburg",
+      "region": "Hamburg",
+      "country": "Germany",
+      "website": "https://www.falkenstein.de",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Les Bordes Golf Club — Old Course",
+      "slug": "les-bordes-golf-club-old-course",
+      "city": "Saint-Laurent-Nouan",
+      "region": "Centre-Val de Loire",
+      "country": "France",
+      "website": "https://www.lesbordes.com/golf/old-course",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Golf du Médoc Resort — Château Medoc",
+      "slug": "golf-du-medoc-resort-chateau-medoc",
+      "city": "Saint-Seurin-de-Cadourne",
+      "region": "Nouvelle-Aquitaine",
+      "country": "France",
+      "website": "https://www.golfdu-medoc.com/en/chateau-medoc",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Golf de Saint-Nom-la-Bretèche",
+      "slug": "golf-de-saint-nom-la-breteche",
+      "city": "Saint-Nom-la-Bretèche",
+      "region": "Île-de-France",
+      "country": "France",
+      "website": "https://www.golfsaintnomlabreteche.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Domaine Imperial Golf Club",
+      "slug": "domaine-imperial-golf-club",
+      "city": "Gimel",
+      "region": "Vaud",
+      "country": "Switzerland",
+      "website": "https://www.domaine-imperial.ch",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Crans-sur-Sierre Golf Club",
+      "slug": "crans-sur-sierre-golf-club",
+      "city": "Crans-Montana",
+      "region": "Valais",
+      "country": "Switzerland",
+      "website": "https://www.golfclubcrans.ch",
+      "course_type": "mountain",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Quinta do Lago — South Course",
+      "slug": "quinta-do-lago-south-course",
+      "city": "Almancil",
+      "region": "Algarve",
+      "country": "Portugal",
+      "website": "https://www.quintadolago.com/golf/south-course",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Vale do Lobo — Royal Course",
+      "slug": "vale-do-lobo-royal-course",
+      "city": "Almancil",
+      "region": "Algarve",
+      "country": "Portugal",
+      "website": "https://www.valedolobo.com/en/golf/royal-course",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Oitavos Dunes",
+      "slug": "oitavos-dunes",
+      "city": "Cascais",
+      "region": "Lisbon",
+      "country": "Portugal",
+      "website": "https://www.oitavosdunes.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "West Cliffs Golf Links",
+      "slug": "west-cliffs-golf-links",
+      "city": "Óbidos",
+      "region": "Centro",
+      "country": "Portugal",
+      "website": "https://www.westcliffs.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Monte Rei Golf & Country Club",
+      "slug": "monte-rei-golf-and-country-club",
+      "city": "Vila Nova da Baronia",
+      "region": "Algarve",
+      "country": "Portugal",
+      "website": "https://www.monte-rei.com",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Praia D'El Rey Golf & Beach Resort",
+      "slug": "praia-del-rey-golf-beach-resort",
+      "city": "Óbidos",
+      "region": "Centro",
+      "country": "Portugal",
+      "website": "https://www.praia-del-rey.com",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "San Lorenzo Golf Course",
+      "slug": "san-lorenzo-golf-course",
+      "city": "Almancil",
+      "region": "Algarve",
+      "country": "Portugal",
+      "website": "https://www.sanlorenzogolf.com",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Penina Hotel & Golf Resort — Championship Course",
+      "slug": "penina-hotel-golf-resort-championship-course",
+      "city": "Portimão",
+      "region": "Algarve",
+      "country": "Portugal",
+      "website": "https://www.penina.com/golf/championship-course",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "resort",
+        "historic",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bro Hof Slott Golf Club — Stadium Course",
+      "slug": "bro-hof-slott-golf-club-stadium-course",
+      "city": "Upplands-Bro",
+      "region": "Stockholm County",
+      "country": "Sweden",
+      "website": "https://www.brohofslott.se",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Falsterbo Golf Club",
+      "slug": "falsterbo-golf-club",
+      "city": "Falsterbo",
+      "region": "Skåne",
+      "country": "Sweden",
+      "website": "https://www.falsterbogk.com",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Copenhagen Golf Club",
+      "slug": "royal-copenhagen-golf-club",
+      "city": "Copenhagen",
+      "region": "Capital Region",
+      "country": "Denmark",
+      "website": "https://www.rkgc.dk",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Hirsala Golf",
+      "slug": "hirsala-golf",
+      "city": "Kirkkonummi",
+      "region": "Uusimaa",
+      "country": "Finland",
+      "website": "https://www.hirsalagolf.fi",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Golf Club de Sotogrande — Old Course",
+      "slug": "golf-club-de-sotogrande-old-course",
+      "city": "San Roque",
+      "region": "Andalusia",
+      "country": "Spain",
+      "website": "https://www.gc-sotogrande.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "historic",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Golf Club Adolf Hölzel",
+      "slug": "golf-club-adolf-hoelzel",
+      "city": "Stuttgart",
+      "region": "Baden-Württemberg",
+      "country": "Germany",
+      "website": "https://www.golfclub-adolf-hoelzel.de",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "member_course",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

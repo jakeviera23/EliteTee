@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Asia",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Tokyo Golf Club — Asaka Course",
+      "slug": "tokyo-golf-club",
+      "city": "Asaka",
+      "region": "Saitama",
+      "country": "Japan",
+      "website": "https://www.tokyogolfclub.co.jp",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship",
+        "historic"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Yokohama Country Club — West Course",
+      "slug": "yokohama-country-club-west-course",
+      "city": "Yokohama",
+      "region": "Kanagawa",
+      "country": "Japan",
+      "website": "https://www.yokohamacc.co.jp",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Naruo Golf Club",
+      "slug": "naruo-golf-club",
+      "city": "Nishinomiya",
+      "region": "Hyogo",
+      "country": "Japan",
+      "website": "https://www.naruogolfclub.co.jp",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Taiheiyo Club — Gotemba Course",
+      "slug": "taiheiyo-club-gotemba-course",
+      "city": "Gotemba",
+      "region": "Shizuoka",
+      "country": "Japan",
+      "website": "https://www.taiheiyoclub.co.jp/course/gotemba",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Kawana Hotel Golf Course — Ocean Course",
+      "slug": "kawana-hotel-golf-course-ocean-course",
+      "city": "Ito",
+      "region": "Shizuoka",
+      "country": "Japan",
+      "website": "https://www.princehotels.com/golf/kawana/ocean/",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Nine Bridges Golf Club",
+      "slug": "nine-bridges-golf-club",
+      "city": "Yeoju",
+      "region": "Gyeonggi",
+      "country": "South Korea",
+      "website": "https://www.ninebridges.co.kr",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "championship",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Jack Nicklaus Golf Club Korea",
+      "slug": "jack-nicklaus-golf-club-korea",
+      "city": "Incheon",
+      "region": "Incheon",
+      "country": "South Korea",
+      "website": "https://www.jngckorea.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Blackstone Golf Club",
+      "slug": "blackstone-golf-club",
+      "city": "Shanghai",
+      "region": "Shanghai",
+      "country": "China",
+      "website": "https://www.blackstonegolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Laguna Golf Lang Co",
+      "slug": "laguna-golf-lang-co",
+      "city": "Lang Co",
+      "region": "Thua Thien Hue",
+      "country": "Vietnam",
+      "website": "https://www.lagunagolf.com/lang-co",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Black Mountain Golf Club",
+      "slug": "black-mountain-golf-club",
+      "city": "Hua Hin",
+      "region": "Prachuap Khiri Khan",
+      "country": "Thailand",
+      "website": "https://www.blackmountain-golf.com",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Alpine Golf Club Bangkok",
+      "slug": "alpine-golf-club-bangkok",
+      "city": "Bangkok",
+      "region": "Bangkok",
+      "country": "Thailand",
+      "website": "https://www.alpinegolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Hong Kong Golf Club — Fanling Old Course",
+      "slug": "hong-kong-golf-club-fanling-old-course",
+      "city": "Fanling",
+      "region": "New Territories",
+      "country": "Hong Kong",
+      "website": "https://www.hkgolfclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "historic",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Delhi Golf Club",
+      "slug": "delhi-golf-club",
+      "city": "New Delhi",
+      "region": "Delhi",
+      "country": "India",
+      "website": "https://www.delhigolfclub.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Onomichi Golf Links",
+      "slug": "onomichi-golf-links",
+      "city": "Onomichi",
+      "region": "Hiroshima",
+      "country": "Japan",
+      "website": "https://www.onomichigolf.co.jp",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

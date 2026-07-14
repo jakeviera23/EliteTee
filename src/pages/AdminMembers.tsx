@@ -17,6 +17,7 @@ import {
   fetchMemberProfilesForAdmin,
   fetchPortalActiveMemberCount,
   filterAdminMembers,
+  logAdminQueryError,
 } from "../lib/adminDashboard";
 import { fetchAiAdminDashboard } from "../lib/askEliteTee";
 import {
@@ -165,19 +166,19 @@ export function AdminMembers() {
     setPortalActiveMembers(portalActive);
 
     if (members.error) {
-      console.error("[AdminMembers] failed to fetch member profiles", members.error);
+      logAdminQueryError("refreshAdminData.memberProfiles", members.error);
       setLoadError(adminCopy.loadError);
     }
 
     if (pending.error) {
-      console.error("[AdminMembers] failed to fetch pending applications", pending.error);
+      logAdminQueryError("refreshAdminData.pendingApplications", pending.error);
       setPendingLoadWarning(
         "Pending applications could not be loaded. Check Supabase permissions or console errors.",
       );
     }
 
     if (approved.error) {
-      console.error("[AdminMembers] failed to fetch approved applications", approved.error);
+      logAdminQueryError("refreshAdminData.approvedApplications", approved.error);
       setApprovedLoadWarning(
         "Approved applications could not be loaded. Check Supabase permissions or console errors.",
       );

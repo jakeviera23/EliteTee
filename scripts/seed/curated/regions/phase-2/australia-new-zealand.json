@@ -1,0 +1,334 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Australia & New Zealand",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Commonwealth Golf Club",
+      "slug": "commonwealth-golf-club",
+      "city": "Oakleigh South",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.commonwealthgolf.com.au",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship",
+        "architecturally_significant"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Metropolitan Golf Club",
+      "slug": "metropolitan-golf-club",
+      "city": "Oakleigh South",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.metropolitangolf.com.au",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Huntingdale Golf Club",
+      "slug": "huntingdale-golf-club",
+      "city": "Oakleigh South",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.huntingdalegolf.com.au",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Peninsula Kingswood Golf Club — North Course",
+      "slug": "peninsula-kingswood-golf-club",
+      "city": "Frankston",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.peninsulakingswood.com.au",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The National Golf Club — Ocean Course",
+      "slug": "the-national-golf-club-ocean-course",
+      "city": "Cape Schanck",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.nationalgolf.com.au/ocean-course",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The National Golf Club — Moonah Course",
+      "slug": "the-national-golf-club-moonah-course",
+      "city": "Cape Schanck",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.nationalgolf.com.au/moonah-course",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Sydney Golf Club",
+      "slug": "royal-sydney-golf-club",
+      "city": "Rose Bay",
+      "region": "New South Wales",
+      "country": "Australia",
+      "website": "https://www.royalsydney.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The Lakes Golf Club",
+      "slug": "the-lakes-golf-club",
+      "city": "Eastlake",
+      "region": "New South Wales",
+      "country": "Australia",
+      "website": "https://www.thelakes.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Queensland Golf Club",
+      "slug": "royal-queensland-golf-club",
+      "city": "Brisbane",
+      "region": "Queensland",
+      "country": "Australia",
+      "website": "https://www.rqgc.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Moonah Links — Open Course",
+      "slug": "moonah-links-open-course",
+      "city": "Fingal",
+      "region": "Victoria",
+      "country": "Australia",
+      "website": "https://www.moonahlinks.com.au",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bonnie Doon Golf Club",
+      "slug": "bonnie-doon-golf-club",
+      "city": "Pagewood",
+      "region": "New South Wales",
+      "country": "Australia",
+      "website": "https://www.bonniedoongolfclub.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "member_course",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Paraparaumu Beach Golf Club",
+      "slug": "paraparaumu-beach-golf-club",
+      "city": "Paraparaumu Beach",
+      "region": "Wellington",
+      "country": "New Zealand",
+      "website": "https://www.paraparaumugolf.co.nz",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Millbrook Resort",
+      "slug": "millbrook-resort",
+      "city": "Arrowtown",
+      "region": "Otago",
+      "country": "New Zealand",
+      "website": "https://www.millbrook.co.nz/golf",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Jack's Point Golf Course",
+      "slug": "jacks-point-golf-course",
+      "city": "Queenstown",
+      "region": "Otago",
+      "country": "New Zealand",
+      "website": "https://www.jackspoint.com/golf",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The Hills Golf Club",
+      "slug": "the-hills-golf-club",
+      "city": "Arrowtown",
+      "region": "Otago",
+      "country": "New Zealand",
+      "website": "https://www.thehills.co.nz",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Clearwater Resort",
+      "slug": "clearwater-resort",
+      "city": "Christchurch",
+      "region": "Canterbury",
+      "country": "New Zealand",
+      "website": "https://www.clearwater.co.nz/golf",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Gailes Golf Club",
+      "slug": "gailes-golf-club",
+      "city": "Brisbane",
+      "region": "Queensland",
+      "country": "Australia",
+      "website": "https://www.gailesgolfclub.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "member_course",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Hobart Golf Club",
+      "slug": "royal-hobart-golf-club",
+      "city": "Seven Mile Beach",
+      "region": "Tasmania",
+      "country": "Australia",
+      "website": "https://www.royalhobartgolfclub.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The Grange Golf Club — West Course",
+      "slug": "the-grange-golf-club-west-course",
+      "city": "Grange",
+      "region": "South Australia",
+      "country": "Australia",
+      "website": "https://www.grangegolf.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Canberra Golf Club",
+      "slug": "royal-canberra-golf-club",
+      "city": "Yarralumla",
+      "region": "Australian Capital Territory",
+      "country": "Australia",
+      "website": "https://www.royalcanberra.com.au",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EliteTeeCuratedGolfCourseSeed",
+  "type": "object",
+  "required": ["courses"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Seed file format version."
+    },
+    "source_name": {
+      "type": "string",
+      "const": "elitetee_curated"
+    },
+    "region": {
+      "type": ["string", "null"],
+      "description": "Optional region label for this file."
+    },
+    "courses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "country"],
+        "additionalProperties": false,
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "description": "Stable EliteTee curated ID. Defaults to elitetee-curated-{slug}."
+          },
+          "legacy_external_id": {
+            "type": "string",
+            "description": "Optional existing external_id (for example elitetee-seed-pebble) used to enrich legacy rows."
+          },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "city": { "type": ["string", "null"] },
+          "region": { "type": ["string", "null"] },
+          "country": { "type": "string" },
+          "latitude": { "type": ["number", "string", "null"] },
+          "longitude": { "type": ["number", "string", "null"] },
+          "website": { "type": ["string", "null"] },
+          "course_type": { "type": ["string", "null"] },
+          "access_type": { "type": ["string", "null"] },
+          "holes": { "type": ["integer", "string", "null"] },
+          "par": { "type": ["integer", "string", "null"] },
+          "yardage": { "type": ["integer", "string", "null"] },
+          "description": { "type": ["string", "null"] },
+          "architect": { "type": ["string", "null"] },
+          "year_opened": { "type": ["integer", "string", "null"] },
+          "elite_tier": {
+            "type": ["string", "null"],
+            "enum": [
+              "global_icon",
+              "elite_private",
+              "destination",
+              "notable",
+              "member_course",
+              null
+            ]
+          },
+          "curated_tags": {
+            "type": ["array", "string", "null"],
+            "items": {
+              "type": "string",
+              "enum": [
+                "historic",
+                "championship",
+                "links",
+                "resort",
+                "architecturally_significant",
+                "bucket_list",
+                "private",
+                "public_access"
+              ]
+            }
+          },
+          "featured_status": {
+            "type": ["string", "null"],
+            "enum": ["featured", "standard", null]
+          }
+        }
+      }
+    }
+  }
+}

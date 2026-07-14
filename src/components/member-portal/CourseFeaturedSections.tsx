@@ -11,9 +11,14 @@ type FeaturedSection = {
 type CourseFeaturedSectionsProps = {
   sections: FeaturedSection[];
   onOpen: (slug: string) => void;
+  bucketListCourseIdSet?: Set<string>;
 };
 
-export function CourseFeaturedSections({ sections, onOpen }: CourseFeaturedSectionsProps) {
+export function CourseFeaturedSections({
+  sections,
+  onOpen,
+  bucketListCourseIdSet,
+}: CourseFeaturedSectionsProps) {
   const visibleSections = sections.filter((section) => section.courses.length > 0);
   if (visibleSections.length === 0) return null;
 
@@ -30,7 +35,11 @@ export function CourseFeaturedSections({ sections, onOpen }: CourseFeaturedSecti
           <ul className="et-courses-grid et-courses-grid--featured">
             {section.courses.map((course) => (
               <li key={`${section.id}-${course.id}`}>
-                <CourseDirectoryCard course={course} onOpen={onOpen} />
+                <CourseDirectoryCard
+                  course={course}
+                  onOpen={onOpen}
+                  isOnBucketList={bucketListCourseIdSet?.has(course.id) ?? false}
+                />
               </li>
             ))}
           </ul>

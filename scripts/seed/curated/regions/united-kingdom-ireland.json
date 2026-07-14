@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "United Kingdom & Ireland",
+  "expansion": {
+    "status": "planning",
+    "regional_goal": 60,
+    "phase_0_verified": 15,
+    "expansion_slots_remaining": 45,
+    "notes": "Includes England, Scotland, Wales, Northern Ireland, and Republic of Ireland."
+  },
+  "courses": []
+}

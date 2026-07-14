@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Canada",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Cabot Cape Breton — Cabot Links",
+      "slug": "cabot-cape-breton-cabot-links",
+      "city": "Inverness",
+      "region": "Nova Scotia",
+      "country": "Canada",
+      "website": "https://www.cabotcapebreton.com/golf/cabot-links",
+      "course_type": "links",
+      "access_type": "resort",
+      "holes": 18,
+      "architect": "Rod Whitman",
+      "year_opened": 2012,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "resort",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "featured",
+      "par": 72,
+      "yardage": 6762,
+      "description": "Public Rod Whitman links at Inverness, Nova Scotia, along the Gulf of St. Lawrence.",
+      "latitude": 46.2167,
+      "longitude": -61.1167
+    },
+    {
+      "name": "Hamilton Golf and Country Club",
+      "slug": "hamilton-golf-and-country-club",
+      "city": "Ancaster",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://hgcc.ca",
+      "course_type": "parkland",
+      "access_type": "private",
+      "architect": "Harry Colt",
+      "year_opened": 1916,
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "St. George's Golf and Country Club",
+      "slug": "st-georges-golf-and-country-club",
+      "city": "Toronto",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.stgeorgesgolfandcountryclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Stanley Thompson",
+      "year_opened": 1929,
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Capilano Golf and Country Club",
+      "slug": "capilano-golf-and-country-club",
+      "city": "West Vancouver",
+      "region": "British Columbia",
+      "country": "Canada",
+      "website": "https://www.capilanogolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "architect": "Stanley Thompson",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "National Golf Club of Canada",
+      "slug": "national-golf-club-of-canada",
+      "city": "Woodbridge",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://nationalgolf.ca",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Fairmont Banff Springs Golf Course",
+      "slug": "fairmont-banff-springs-golf-course",
+      "city": "Banff",
+      "region": "Alberta",
+      "country": "Canada",
+      "website": "https://www.fairmont.com/banff-springs/golf/",
+      "course_type": "mountain",
+      "access_type": "resort",
+      "holes": 18,
+      "architect": "Stanley Thompson",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "bucket_list",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Jasper Park Lodge Golf Course",
+      "slug": "jasper-park-lodge-golf-course",
+      "city": "Jasper",
+      "region": "Alberta",
+      "country": "Canada",
+      "website": "https://www.fairmont.com/jasper/golf/the-fairmont-jasper-park-lodge-golf/",
+      "course_type": "mountain",
+      "access_type": "resort",
+      "architect": "Stanley Thompson",
+      "year_opened": 1925,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "architecturally_significant",
+        "public_access",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Glen Abbey Golf Club",
+      "slug": "glen-abbey-golf-club",
+      "city": "Oakville",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://glenabbey.clublink.ca",
+      "course_type": "parkland",
+      "access_type": "public",
+      "architect": "Jack Nicklaus",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { MembershipApplicationRecord } from "../types/membershipApplication";
 import type { AdminMemberRow } from "./memberProfiles";
 import {
@@ -7,6 +7,7 @@ import {
   getApplicationInviteStatus,
   describeMemberOperationalState,
   filterAdminMembers,
+  logAdminQueryError,
   truncateAdminText,
 } from "./adminDashboard";
 
@@ -159,5 +160,26 @@ describe("getApplicationInviteStatus", () => {
       ),
     ).toBe("redeemed");
     expect(getApplicationInviteStatus(application({ id: "3" }))).toBe("missing");
+  });
+});
+
+describe("logAdminQueryError", () => {
+  it("logs structured Supabase error fields for development", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    logAdminQueryError("fetchMemberProfilesForAdmin", {
+      message: "column member_profiles.created_at does not exist",
+      code: "42703",
+      hint: 'Perhaps you meant to reference the column "member_profiles.updated_at".',
+    });
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[Admin] fetchMemberProfilesForAdmin",
+      expect.objectContaining({
+        code: "42703",
+        message: "column member_profiles.created_at does not exist",
+      }),
+    );
+
+    errorSpy.mockRestore();
   });
 });

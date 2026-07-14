@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { PortalToastProvider } from "./components/member-portal/PortalToastProvider";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { InsideEliteTee } from "./pages/InsideEliteTee";
@@ -20,27 +21,29 @@ function CourseDetailRoute() {
   const { slug = "" } = useParams();
 
   return (
-    <CourseDetailPage
-      onMessageMember={(userId, memberName) => {
-        navigate("/member-portal", {
-          state: { openMessagesWith: { userId, memberName } },
-        });
-      }}
-      onViewMemberProfile={(userId, memberName) => {
-        const returnTo: ProfileReturnContext = {
-          type: "route",
-          path: `/courses/${slug}`,
-          label: "Back to Course",
-        };
+    <PortalToastProvider>
+      <CourseDetailPage
+        onMessageMember={(userId, memberName) => {
+          navigate("/member-portal", {
+            state: { openMessagesWith: { userId, memberName } },
+          });
+        }}
+        onViewMemberProfile={(userId, memberName) => {
+          const returnTo: ProfileReturnContext = {
+            type: "route",
+            path: `/courses/${slug}`,
+            label: "Back to Course",
+          };
 
-        navigate(`/members/${userId}`, {
-          state: {
-            returnTo,
-            memberName,
-          },
-        });
-      }}
-    />
+          navigate(`/members/${userId}`, {
+            state: {
+              returnTo,
+              memberName,
+            },
+          });
+        }}
+      />
+    </PortalToastProvider>
   );
 }
 

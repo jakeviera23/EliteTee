@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Middle East",
+  "expansion": {
+    "status": "planning",
+    "regional_goal": 15,
+    "phase_0_verified": 1,
+    "expansion_slots_remaining": 14,
+    "notes": "UAE, Saudi Arabia, Qatar, Bahrain, Oman, and other Gulf destinations."
+  },
+  "courses": []
+}

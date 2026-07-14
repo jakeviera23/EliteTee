@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { earlyStageCopy, type FeedPost } from "../../data/portalSocial";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import {
+  loadBucketListCourseSummaries,
+  type BucketListCourseSummary,
+} from "../../lib/bucketListCourses";
 import { fetchMemberFeedPostsForCurrentUser, fetchMemberFeedPostsForUser } from "../../lib/memberFeedPosts";
 import {
   fetchMemberCourseRoundsForCurrentUser,
@@ -10,7 +14,7 @@ import {
   fetchApprovedMemberProfileByUserId,
   fetchOwnMemberProfile,
 } from "../../lib/memberProfiles";
-import { getBucketListCourseIds, hydrateBucketListCourseIds } from "../../lib/portalCourseState";
+import { hydrateBucketListCourseIds } from "../../lib/portalCourseState";
 import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
 import {
   buildProfileExperienceStats,
@@ -26,6 +30,7 @@ import { FEED_CARD_SCOPE_CLASS } from "../../lib/feedCardScope";
 import { MemberActivityList } from "./MemberActivityList";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileDossier } from "./ProfileDossier";
+import { ProfileBucketList } from "./profile/ProfileBucketList";
 import { ProfileCoursesPlayed } from "./profile/ProfileCoursesPlayed";
 import { ProfileMemberAvatar } from "./profile/ProfileMemberAvatar";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -95,6 +100,8 @@ export function GolferProfilePage({
   const [memberProfile, setMemberProfile] = useState<MemberProfileRecord | null>(null);
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [courseRounds, setCourseRounds] = useState<MemberCourseRoundRecord[]>([]);
+  const [bucketListCourses, setBucketListCourses] = useState<BucketListCourseSummary[]>([]);
+  const [isBucketListLoading, setIsBucketListLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -124,6 +131,7 @@ export function GolferProfilePage({
       setMemberProfile(data);
       setFeedPosts([]);
       setCourseRounds([]);
+      setBucketListCourses([]);
       setIsLoading(false);
       return;
     }
@@ -153,6 +161,7 @@ export function GolferProfilePage({
       setMemberProfile(null);
       setFeedPosts([]);
       setCourseRounds([]);
+      setBucketListCourses([]);
       setIsLoading(false);
       return;
     }
@@ -162,6 +171,7 @@ export function GolferProfilePage({
       setMemberProfile(null);
       setFeedPosts([]);
       setCourseRounds([]);
+      setBucketListCourses([]);
       setIsLoading(false);
       return;
     }
@@ -185,6 +195,52 @@ export function GolferProfilePage({
     void loadProfile();
   }, [isActive, profileVersion, loadProfile]);
 
+  useEffect(() => {
+    if (!isActive || isViewingOther || !memberProfile) {
+      setBucketListCourses([]);
+      setIsBucketListLoading(false);
+      return;
+    }
+
+    let active = true;
+    const courseIds = memberProfile.bucket_list_course_ids;
+
+    async function loadBucketList() {
+      setIsBucketListLoading(true);
+
+      const { data, error } = await loadBucketListCourseSummaries(courseIds);
+
+      if (!active) return;
+
+      if (error && import.meta.env.DEV) {
+        console.error("[GolferProfilePage] bucket list load failed", error);
+      }
+
+      setBucketListCourses(data ?? []);
+      setIsBucketListLoading(false);
+    }
+
+    void loadBucketList();
+
+    return () => {
+      active = false;
+    };
+  }, [isActive, isViewingOther, memberProfile]);
+
+  useEffect(() => {
+    if (!isActive || isViewingOther) return;
+
+    function handleBucketListChanged() {
+      setProfileVersion((current) => current + 1);
+    }
+
+    window.addEventListener("elitetee:course-state-changed", handleBucketListChanged);
+
+    return () => {
+      window.removeEventListener("elitetee:course-state-changed", handleBucketListChanged);
+    };
+  }, [isActive, isViewingOther]);
+
   const display = useMemo(() => {
     return buildGolferProfileDisplay(memberProfile, undefined, {
       coverImageUrl,
@@ -198,9 +254,7 @@ export function GolferProfilePage({
     [courseRounds, feedPosts.length],
   );
   const recentExperiences = useMemo(() => courseRounds, [courseRounds]);
-  const bucketListCount = isViewingOther
-    ? 0
-    : memberProfile?.bucket_list_course_ids.length ?? getBucketListCourseIds().length;
+  const bucketListCount = bucketListCourses.length;
 
   const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
   const canMessage = isViewingOther && Boolean(onMessageMember && memberProfile?.user_id);
@@ -565,16 +619,15 @@ export function GolferProfilePage({
               </ProfileSection>
 
               {!isViewingOther ? (
-                <ProfileSection title="Bucket list" description="Courses you want to play next.">
-                  <div className="et-profile-bucket">
-                    <p className="et-profile-bucket-label">Bucket list</p>
-                    <p className="et-profile-bucket-copy">
-                      Save courses from the library to build your list.
-                      {bucketListCount > 0
-                        ? ` You currently have ${bucketListCount} saved course${bucketListCount === 1 ? "" : "s"}.`
-                        : ""}
-                    </p>
-                  </div>
+                <ProfileSection
+                  title="Bucket list"
+                  description={
+                    bucketListCount > 0
+                      ? `${bucketListCount} course${bucketListCount === 1 ? "" : "s"} you want to play next.`
+                      : "Courses you want to play next."
+                  }
+                >
+                  <ProfileBucketList courses={bucketListCourses} isLoading={isBucketListLoading} />
                 </ProfileSection>
               ) : null}
             </aside>

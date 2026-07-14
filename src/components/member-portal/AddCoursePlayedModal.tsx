@@ -34,6 +34,63 @@ const emptyForm: Omit<MemberCourseRoundInsert, "course_rating"> & { course_ratin
   course_rating: null,
 };
 
+const US_STATES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
+] as const;
+
+function buildStructuredLocation(city: string, region: string, country: string) {
+  return [city.trim(), region.trim(), country.trim()].filter(Boolean).join(", ");
+}
+
 function ExperienceSection({
   step,
   title,
@@ -75,6 +132,11 @@ export function AddCoursePlayedModal({
       : emptyForm,
   );
   const [manualEntry, setManualEntry] = useState(!initialCourse);
+  const [structuredLocation, setStructuredLocation] = useState(() => ({
+    city: "",
+    region: "",
+    country: "United States",
+  }));
   const [suggestions, setSuggestions] = useState<GolfCourseSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const debouncedCourseName = useDebouncedValue(form.course_name, 250);
@@ -136,12 +198,40 @@ export function AddCoursePlayedModal({
     setManualEntry(true);
     setForm((current) => ({ ...current, golf_course_id: null }));
     setSuggestions([]);
+    setStructuredLocation({ city: "", region: "", country: "United States" });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.course_name.trim() || !form.location.trim() || !form.played_on) {
+    const usingStructured = manualEntry && !form.golf_course_id;
+    const normalizedLocation = usingStructured
+      ? buildStructuredLocation(
+          structuredLocation.city,
+          structuredLocation.region,
+          structuredLocation.country,
+        )
+      : form.location.trim();
+
+    if (!form.course_name.trim() || !normalizedLocation || !form.played_on) {
       return;
+    }
+
+    if (usingStructured) {
+      const country = structuredLocation.country.trim();
+      const city = structuredLocation.city.trim();
+      const region = structuredLocation.region.trim();
+      if (!country) {
+        setError("Country is required.");
+        return;
+      }
+      if (!city) {
+        setError("City is required.");
+        return;
+      }
+      if (country === "United States" && !region) {
+        setError("State is required for United States courses.");
+        return;
+      }
     }
 
     const ratingResult = validateCourseRating(form.course_rating);
@@ -156,6 +246,7 @@ export function AddCoursePlayedModal({
 
     const { data: roundData, error: submitError } = await submitMemberCourseRound({
       ...form,
+      location: normalizedLocation,
       course_rating: ratingResult.value,
     });
 
@@ -320,17 +411,89 @@ export function AddCoursePlayedModal({
                 {experienceCopy.manualEntry}
               </button>
 
-              <label className="portal-profile-field portal-profile-field--full">
-                <span>Location</span>
-                <input
-                  type="text"
-                  value={form.location}
-                  onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
-                  placeholder="City, region, or country"
-                  required
-                  autoComplete="off"
-                />
-              </label>
+              {manualEntry && !form.golf_course_id ? (
+                <div className="et-experience-location-grid">
+                  <label className="portal-profile-field portal-profile-field--full">
+                    <span>City</span>
+                    <input
+                      type="text"
+                      value={structuredLocation.city}
+                      onChange={(event) =>
+                        setStructuredLocation((current) => ({ ...current, city: event.target.value }))
+                      }
+                      required
+                      autoComplete="off"
+                    />
+                  </label>
+
+                  <label className="portal-profile-field portal-profile-field--full">
+                    <span>Country</span>
+                    <select
+                      value={structuredLocation.country}
+                      onChange={(event) =>
+                        setStructuredLocation((current) => ({
+                          ...current,
+                          country: event.target.value,
+                          region: event.target.value === "United States" ? current.region : current.region,
+                        }))
+                      }
+                      required
+                    >
+                      <option value="United States">United States</option>
+                      <option value="Canada">Canada</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Ireland">Ireland</option>
+                      <option value="Australia">Australia</option>
+                      <option value="New Zealand">New Zealand</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </label>
+
+                  {structuredLocation.country === "United States" ? (
+                    <label className="portal-profile-field portal-profile-field--full">
+                      <span>State</span>
+                      <select
+                        value={structuredLocation.region}
+                        onChange={(event) =>
+                          setStructuredLocation((current) => ({ ...current, region: event.target.value }))
+                        }
+                        required
+                      >
+                        <option value="">Select a state</option>
+                        {US_STATES.map((state) => (
+                          <option key={state} value={state}>
+                            {state}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <label className="portal-profile-field portal-profile-field--full">
+                      <span>State / province / region</span>
+                      <input
+                        type="text"
+                        value={structuredLocation.region}
+                        onChange={(event) =>
+                          setStructuredLocation((current) => ({ ...current, region: event.target.value }))
+                        }
+                        autoComplete="off"
+                      />
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <label className="portal-profile-field portal-profile-field--full">
+                  <span>Location</span>
+                  <input
+                    type="text"
+                    value={form.location}
+                    onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
+                    placeholder="City, region, or country"
+                    required
+                    autoComplete="off"
+                  />
+                </label>
+              )}
             </ExperienceSection>
 
             <ExperienceSection
