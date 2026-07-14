@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Middle East",
+  "phase": "phase-0",
+  "courses": [
+    {
+      "name": "Emirates Golf Club — Majlis Course",
+      "slug": "emirates-golf-club-majlis-course",
+      "city": "Dubai",
+      "region": "Dubai",
+      "country": "United Arab Emirates",
+      "course_type": "parkland",
+      "access_type": "public",
+      "architect": "Karl Litten",
+      "year_opened": 1988,
+      "holes": 18,
+      "par": 72,
+      "yardage": 7300,
+      "website": "https://www.dubaigolf.com/emirates-golf-club",
+      "description": "Public desert course in Dubai and longtime host of the DP World Tour Championship.",
+      "latitude": 25.085,
+      "longitude": 55.1567
+    }
+  ]
+}

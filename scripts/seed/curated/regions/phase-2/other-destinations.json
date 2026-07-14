@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Other destination golf",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Punta Espada Golf Club",
+      "slug": "punta-espada-golf-club",
+      "city": "Cap Cana",
+      "region": "La Altagracia",
+      "country": "Dominican Republic",
+      "website": "https://www.puntaespada.com",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "championship",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Mid Ocean Club",
+      "slug": "mid-ocean-club",
+      "city": "Tucker's Town",
+      "region": "Hamilton Parish",
+      "country": "Bermuda",
+      "website": "https://www.themidoceanclubbermuda.com",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Costa Navarino — Dunes Course",
+      "slug": "navarino-dunes-course",
+      "city": "Messenia",
+      "region": "Peloponnese",
+      "country": "Greece",
+      "website": "https://www.costanavarino.com/golf/dunes-course",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "championship",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Cabo del Sol — Desert Course",
+      "slug": "cabo-del-sol-desert-course",
+      "city": "San José del Cabo",
+      "region": "Baja California Sur",
+      "country": "Mexico",
+      "website": "https://www.cabodelsol.com/desert-course",
+      "course_type": "desert",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Casa de Campo — Dye Fore",
+      "slug": "casa-de-campo-dye-fore",
+      "city": "La Romana",
+      "region": "La Romana",
+      "country": "Dominican Republic",
+      "website": "https://www.casadecampo.com.do/golf/dye-fore/",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Bahia Beach Resort & Golf Club",
+      "slug": "bahia-beach-resort-and-golf-club",
+      "city": "Río Grande",
+      "region": "Puerto Rico",
+      "country": "Puerto Rico",
+      "website": "https://www.bahia-beach.com/golf",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Port Royal Golf Course",
+      "slug": "port-royal-golf-course-bermuda",
+      "city": "Southampton",
+      "region": "Bermuda",
+      "country": "Bermuda",
+      "website": "https://www.portroyal.bm",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

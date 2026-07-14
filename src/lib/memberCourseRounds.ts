@@ -139,6 +139,14 @@ function buildInsertError(error: Error) {
   return error;
 }
 
+function buildMemberFacingCourseLinkError(error: Error) {
+  const message = error.message || "";
+  if (message.includes('column reference "slug" is ambiguous')) {
+    return new Error("Your experience could not be saved due to a course-linking error. Please try again.");
+  }
+  return error;
+}
+
 export async function fetchMemberCourseRounds(limit = 20) {
   if (!supabase) {
     return { data: null, error: new Error("Supabase is not configured.") };
@@ -253,9 +261,15 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     );
 
     if (linkError || !linkedCourse?.id) {
+      if (linkError) {
+        console.error("[submitMemberCourseRound] course link failed", linkError.message);
+      }
       return {
         data: null,
-        error: linkError ?? new Error("This course could not be added to the EliteTee directory."),
+        error:
+          linkError
+            ? buildMemberFacingCourseLinkError(linkError)
+            : new Error("This course could not be added to the EliteTee directory."),
       };
     }
 

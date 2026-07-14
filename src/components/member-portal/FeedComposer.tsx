@@ -8,6 +8,7 @@ import {
   earlyStageCopy,
 } from "../../data/portalSocial";
 import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
+import { getFeedComposerValidation } from "../../lib/feedComposerValidation";
 import { createMemberFeedPost } from "../../lib/memberFeedPosts";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { CourseRatingPicker } from "./CourseRatingPicker";
@@ -154,13 +155,23 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
     setPhotoPreview(file ? URL.createObjectURL(file) : null);
   }
 
-  const messageMissing = !values.message?.trim();
-  const primaryMissing = config.primaryKey
-    ? !values[config.primaryKey]?.trim()
-    : false;
-  const ratingMissing =
-    postType === "round-review" && !validateCourseRating(values.rating ?? "").ok;
-  const canSubmit = !messageMissing && !primaryMissing && !ratingMissing && !isSubmitting;
+  const primaryField = config.primaryKey
+    ? config.fields.find((field) => field.key === config.primaryKey)
+    : undefined;
+
+  const validation = getFeedComposerValidation({
+    message: values.message ?? "",
+    primaryFieldValue: config.primaryKey ? values[config.primaryKey] : undefined,
+    primaryFieldLabel: primaryField?.label,
+    requiresPrimaryField: Boolean(config.primaryKey),
+    ratingValue: values.rating,
+    requiresRating: postType === "round-review",
+  });
+
+  const canSubmit = validation.canSubmit && !isSubmitting;
+  const composerMessageMetaId = id ? `${id}-message-meta` : "feed-composer-message-meta";
+  const composerBlockerId = id ? `${id}-blocker` : "feed-composer-blocker";
+  const composerCounterId = id ? `${id}-counter` : "feed-composer-counter";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -306,8 +317,24 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
               placeholder={composerPostTypePlaceholders[postType]}
               required
               autoFocus
+              aria-describedby={`${composerMessageMetaId}${validation.blockerMessage ? ` ${composerBlockerId}` : ""} ${composerCounterId}`}
             />
           </label>
+
+          <div className="feed-composer-message-meta" id={composerMessageMetaId}>
+            {validation.blockerMessage ? (
+              <p className="feed-composer-helper" id={composerBlockerId}>
+                {validation.blockerMessage}
+              </p>
+            ) : null}
+            <p
+              className={`feed-composer-char-count${validation.canSubmit ? " is-ready" : ""}`}
+              id={composerCounterId}
+              aria-live="polite"
+            >
+              {validation.characterCounterLabel}
+            </p>
+          </div>
 
           {submitError ? (
             <p className="feed-composer-error" role="alert">
@@ -346,10 +373,18 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
               </button>
               <button
                 type="submit"
-                className="et-btn et-btn--forest feed-composer-submit"
-                disabled={!canSubmit}
+                className={`et-btn et-btn--forest feed-composer-submit${validation.canSubmit ? " feed-composer-submit--ready" : ""}${isSubmitting ? " feed-composer-submit--posting" : ""}`}
+                disabled={!canSubmit || isSubmitting}
+                aria-busy={isSubmitting}
               >
-                {isSubmitting ? "Posting…" : "Post to Feed"}
+                {isSubmitting ? (
+                  <>
+                    <span className="feed-composer-submit-spinner" aria-hidden="true" />
+                    Posting…
+                  </>
+                ) : (
+                  "Post to Feed"
+                )}
               </button>
             </div>
           </div>

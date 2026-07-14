@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Canada",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Kananaskis Country Golf Course",
+      "slug": "kananaskis-country-golf-course",
+      "city": "Kananaskis",
+      "region": "Alberta",
+      "country": "Canada",
+      "website": "https://www.kananaskisgolf.com",
+      "course_type": "mountain",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "bucket_list",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Beacon Hall Golf Club",
+      "slug": "beacon-hall-golf-club",
+      "city": "Aurora",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.beaconhall.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Lambton Golf and Country Club",
+      "slug": "lambton-golf-and-country-club",
+      "city": "Toronto",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.lambtongolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Toronto Golf Club",
+      "slug": "toronto-golf-club",
+      "city": "Mississauga",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.torontogolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Mississauga Golf and Country Club",
+      "slug": "mississauga-golf-and-country-club",
+      "city": "Mississauga",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.mississaugagolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Oakdale Golf and Country Club",
+      "slug": "oakdale-golf-and-country-club",
+      "city": "Toronto",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.oakdalegolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Rosedale Golf Club",
+      "slug": "rosedale-golf-club",
+      "city": "Toronto",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.rosedalegolf.org",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Scarboro Golf and Country Club",
+      "slug": "scarboro-golf-and-country-club",
+      "city": "Scarborough",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.scarborogolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Montreal Golf Club — Blue Course",
+      "slug": "royal-montreal-golf-club-blue-course",
+      "city": "Île Bizard",
+      "region": "Quebec",
+      "country": "Canada",
+      "website": "https://www.rmgc.ca",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Vancouver Golf Club",
+      "slug": "vancouver-golf-club",
+      "city": "Coquitlam",
+      "region": "British Columbia",
+      "country": "Canada",
+      "website": "https://www.vancouvergolfclub.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Shaughnessy Golf and Country Club",
+      "slug": "shaughnessy-golf-and-country-club",
+      "city": "Vancouver",
+      "region": "British Columbia",
+      "country": "Canada",
+      "website": "https://www.shaughnessygolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Stewart Creek Golf Club",
+      "slug": "stewart-creek-golf-club",
+      "city": "Canmore",
+      "region": "Alberta",
+      "country": "Canada",
+      "website": "https://www.stewartcreekgolf.com",
+      "course_type": "mountain",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Greywolf Golf Course",
+      "slug": "greywolf-golf-course",
+      "city": "Panorama",
+      "region": "British Columbia",
+      "country": "Canada",
+      "website": "https://www.greywolfgolf.com",
+      "course_type": "mountain",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Fairmont Chateau Whistler Golf",
+      "slug": "fairmont-chateau-whistler-golf",
+      "city": "Whistler",
+      "region": "British Columbia",
+      "country": "Canada",
+      "website": "https://www.fairmont.com/whistler/golf/",
+      "course_type": "mountain",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Dundarave Golf Course",
+      "slug": "dundarave-golf-course",
+      "city": "Brackley Beach",
+      "region": "Prince Edward Island",
+      "country": "Canada",
+      "website": "https://www.dundaravegolf.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Fox Harb'r Golf Resort",
+      "slug": "fox-harbr-golf-resort",
+      "city": "Wallace",
+      "region": "Nova Scotia",
+      "country": "Canada",
+      "website": "https://www.foxharbr.com/golf",
+      "course_type": "links",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Ottawa Golf Club",
+      "slug": "royal-ottawa-golf-club",
+      "city": "Gatineau",
+      "region": "Quebec",
+      "country": "Canada",
+      "website": "https://www.royalottawagolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Summit Golf and Country Club",
+      "slug": "summit-golf-and-country-club",
+      "city": "Richmond Hill",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.summitgcc.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Cataraqui Golf and Country Club",
+      "slug": "cataraqui-golf-and-country-club",
+      "city": "Kingston",
+      "region": "Ontario",
+      "country": "Canada",
+      "website": "https://www.cataraquigolf.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Big Sky Golf and Country Club",
+      "slug": "big-sky-golf-and-country-club",
+      "city": "Pemberton",
+      "region": "British Columbia",
+      "country": "Canada",
+      "website": "https://www.bigskygolf.com",
+      "course_type": "mountain",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Crowbush Cove Golf Course",
+      "slug": "crowbush-cove-golf-course",
+      "city": "Morell",
+      "region": "Prince Edward Island",
+      "country": "Canada",
+      "website": "https://www.crowbushcove.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

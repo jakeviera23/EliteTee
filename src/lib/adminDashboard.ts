@@ -148,6 +148,22 @@ export function truncateAdminText(value: string, maxLength = 140) {
   return `${trimmed.slice(0, maxLength - 1).trim()}…`;
 }
 
+/** Dev-only structured logging for admin Supabase failures. */
+export function logAdminQueryError(context: string, error: unknown) {
+  if (!error || typeof error !== "object") {
+    console.error(`[Admin] ${context}`, error);
+    return;
+  }
+
+  const row = error as { message?: string; code?: string; details?: string; hint?: string };
+  console.error(`[Admin] ${context}`, {
+    message: row.message ?? String(error),
+    code: row.code ?? null,
+    details: row.details ?? null,
+    hint: row.hint ?? null,
+  });
+}
+
 export async function fetchPortalActiveMemberCount(): Promise<number | null> {
   if (!supabase) return null;
 
@@ -189,6 +205,7 @@ export async function fetchMemberProfilesForAdmin(options: { search?: string; li
   const { data, error } = await query;
 
   if (error) {
+    logAdminQueryError("fetchMemberProfilesForAdmin", error);
     return { data: [] as AdminMemberRow[], error };
   }
 

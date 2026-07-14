@@ -5,15 +5,19 @@ import { CourseDetailGallery } from "../components/member-portal/course-detail/C
 import { CourseDetailMembersPlayed } from "../components/member-portal/course-detail/CourseDetailMembersPlayed";
 import { CourseDetailReviewCards } from "../components/member-portal/course-detail/CourseDetailReviewCards";
 import { AddCoursePlayedModal } from "../components/member-portal/AddCoursePlayedModal";
+import { EditMemberSubmittedCourseModal } from "../components/member-portal/EditMemberSubmittedCourseModal";
+import { BucketListToggleButton } from "../components/member-portal/BucketListToggleButton";
 import { CourseDirectoryCard } from "../components/member-portal/CourseDirectoryCard";
 import { CourseImage } from "../components/member-portal/CourseImage";
 import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
+import { usePortalToast } from "../components/member-portal/PortalToastProvider";
 import {
   buildCourseAskPrompts,
   buildCourseGalleryPhotos,
   buildMemberPlaySummaries,
   formatLatestActivityAt,
 } from "../lib/courseDetail";
+import { buildCourseDetailFacts, formatArchitectYearLine } from "../lib/courseDetailFacts";
 import {
   formatCourseRatingDisplay,
   formatMemberRatingSummary,
@@ -27,6 +31,7 @@ import {
   fetchApprovedMemberProfilesByUserIds,
   type ApprovedMemberDirectoryProfile,
 } from "../lib/memberProfiles";
+import { ensureBucketListHydrated, getBucketListCourseIds } from "../lib/portalCourseState";
 import type { GolfCourseRecord, GolfCourseSearchResult } from "../types/golfCourse";
 import { formatGolfCourseLocation, isMemberSubmittedCourse } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
@@ -59,6 +64,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   const navigate = useNavigate();
   const { slug = "" } = useParams();
   const membersSectionRef = useRef<HTMLElement | null>(null);
+  const { showToast } = usePortalToast();
 
   const [course, setCourse] = useState<GolfCourseRecord | null>(null);
   const [rounds, setRounds] = useState<MemberCourseRoundRecord[]>([]);
@@ -66,8 +72,14 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   const [relatedCourses, setRelatedCourses] = useState<GolfCourseSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditCourseModal, setShowEditCourseModal] = useState(false);
+  const [canEditSubmittedCourse, setCanEditSubmittedCourse] = useState(false);
   const [introMember, setIntroMember] = useState<MemberProfileRecord | null>(null);
+  const [bucketListCourseIds, setBucketListCourseIds] = useState<string[]>(() =>
+    getBucketListCourseIds(),
+  );
 
   const loadCourse = useCallback(async () => {
     if (!slug.trim()) {
@@ -78,20 +90,35 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
 
     setIsLoading(true);
     setNotFound(false);
+    setLoadError(null);
 
     const { data, error } = await fetchGolfCourseBySlug(slug);
 
-    if (error || !data) {
+    if (error) {
+      setCourse(null);
+      setRounds([]);
+      setMemberProfiles([]);
+      setRelatedCourses([]);
+      setNotFound(false);
+      setLoadError(error.message || "Course could not be loaded.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!data) {
       setCourse(null);
       setRounds([]);
       setMemberProfiles([]);
       setRelatedCourses([]);
       setNotFound(true);
+      setLoadError(null);
       setIsLoading(false);
       return;
     }
 
     setCourse(data);
+    // Edit button is only for member-submitted courses; permission is enforced server-side.
+    setCanEditSubmittedCourse(false);
 
     const [{ data: courseRounds }, related] = await Promise.all([
       fetchMemberCourseRoundsForCourse({ golfCourseId: data.id }),
@@ -116,6 +143,50 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   useEffect(() => {
     void loadCourse();
   }, [loadCourse]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadEditPermission() {
+      if (!course?.id) return;
+      if (!(course.source_name === "member_submitted" || course.submitted_by_member)) {
+        setCanEditSubmittedCourse(false);
+        return;
+      }
+
+      const { canEditMemberSubmittedCourse } = await import("../lib/memberSubmittedCourses");
+      const { data, error } = await canEditMemberSubmittedCourse(course.id);
+      if (!active) return;
+
+      if (error) {
+        console.error("[CourseDetailPage] edit permission check failed", error.message);
+        setCanEditSubmittedCourse(false);
+        showToast("Could not verify edit permissions for this course.");
+        return;
+      }
+
+      setCanEditSubmittedCourse(Boolean(data));
+    }
+    void loadEditPermission();
+    return () => {
+      active = false;
+    };
+  }, [course?.id, course?.source_name, course?.submitted_by_member, showToast]);
+
+  useEffect(() => {
+    void ensureBucketListHydrated().then(() => {
+      setBucketListCourseIds(getBucketListCourseIds());
+    });
+
+    function handleBucketListChanged() {
+      setBucketListCourseIds(getBucketListCourseIds());
+    }
+
+    window.addEventListener("elitetee:course-state-changed", handleBucketListChanged);
+
+    return () => {
+      window.removeEventListener("elitetee:course-state-changed", handleBucketListChanged);
+    };
+  }, []);
 
   const profilesByUserId = useMemo(() => {
     const map: Record<string, ApprovedMemberDirectoryProfile> = {};
@@ -165,8 +236,12 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
         <main className="portal-main portal-main--social">
           <div className="portal-shell">
             <section className="portal-social-page">
-              <h2>Course not found</h2>
-              <p>This course is not in the EliteTee library yet.</p>
+              <h2>{loadError ? "Course unavailable" : "Course not found"}</h2>
+              {loadError ? (
+                <p>We couldn’t load this course right now. Please try again.</p>
+              ) : (
+                <p>This course is not in the EliteTee library yet.</p>
+              )}
               <Link
                 to="/member-portal"
                 state={{ restorePortalTab: "courses" }}
@@ -185,6 +260,9 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
   const isMemberSubmitted = isMemberSubmittedCourse(course);
+  const hasHeroImage = Boolean(course.image_url?.trim());
+  const architectYear = formatArchitectYearLine(course.architect, course.year_opened);
+  const courseDetailFacts = buildCourseDetailFacts(course);
   const memberRating =
     course.avg_rating !== null && course.avg_rating !== undefined && roundCount > 0
       ? formatMemberRatingSummary(course.avg_rating, roundCount)
@@ -210,21 +288,25 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
               ← Back to Courses
             </button>
 
-            <header className="et-course-detail-hero">
-              <div className="et-course-detail-hero-media">
-                <CourseImage
-                  name={course.name}
-                  city={course.city}
-                  region={course.region}
-                  country={course.country}
-                  imageUrl={course.image_url}
-                  thumbnailUrl={course.thumbnail_url}
-                  golfCourseId={course.id}
-                  variant="hero"
-                  overlay
-                  loading="eager"
-                />
-              </div>
+            <header
+              className={`et-course-detail-hero${hasHeroImage ? "" : " et-course-detail-hero--no-image"}`}
+            >
+              {hasHeroImage ? (
+                <div className="et-course-detail-hero-media">
+                  <CourseImage
+                    name={course.name}
+                    city={course.city}
+                    region={course.region}
+                    country={course.country}
+                    imageUrl={course.image_url}
+                    thumbnailUrl={course.thumbnail_url}
+                    golfCourseId={course.id}
+                    variant="hero"
+                    overlay
+                    loading="eager"
+                  />
+                </div>
+              ) : null}
               <div className="et-course-detail-hero-body">
                 <p className="et-course-detail-eyebrow">Course Profile</p>
                 <h1 id="course-detail-heading" className="et-course-detail-title">
@@ -235,6 +317,9 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                 ) : (
                   <p className="et-course-detail-location">Location details not available</p>
                 )}
+                {architectYear ? (
+                  <p className="et-course-detail-architect-year">{architectYear}</p>
+                ) : null}
 
                 <div className="et-course-detail-hero-meta">
                   {isMemberSubmitted ? (
@@ -279,6 +364,16 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
               >
                 {experienceCopy.shareTitle}
               </button>
+              <BucketListToggleButton courseId={course.id} variant="et-secondary" />
+              {canEditSubmittedCourse ? (
+                <button
+                  type="button"
+                  className="et-btn et-btn--ghost"
+                  onClick={() => setShowEditCourseModal(true)}
+                >
+                  Edit course
+                </button>
+              ) : null}
               {memberSummaries.length > 0 ? (
                 <button type="button" className="et-btn et-btn--secondary" onClick={scrollToMembers}>
                   View Members Who Played
@@ -417,6 +512,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                           <CourseDirectoryCard
                             course={related}
                             onOpen={(relatedSlug) => navigate(`/courses/${relatedSlug}`)}
+                            isOnBucketList={bucketListCourseIds.includes(related.id)}
                           />
                         </li>
                       ))}
@@ -426,6 +522,33 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
               </div>
 
               <aside className="et-course-detail-aside">
+                {courseDetailFacts.length > 0 ? (
+                  <section
+                    className="et-course-detail-section"
+                    aria-labelledby="course-details-heading"
+                  >
+                    <h2 id="course-details-heading" className="et-course-detail-section-title">
+                      Course details
+                    </h2>
+                    <dl className="et-course-detail-facts">
+                      {courseDetailFacts.map((fact) => (
+                        <div key={fact.label}>
+                          <dt>{fact.label}</dt>
+                          <dd>
+                            {fact.label === "Website" ? (
+                              <a href={fact.value} target="_blank" rel="noreferrer noopener">
+                                Visit course website
+                              </a>
+                            ) : (
+                              fact.value
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ) : null}
+
                 <section className="et-course-detail-section" aria-labelledby="course-location-heading">
                   <h2 id="course-location-heading" className="et-course-detail-section-title">
                     Location & classification
@@ -451,20 +574,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                       <dt>Access</dt>
                       <dd>{course.access_type?.trim() || "Not specified"}</dd>
                     </div>
-                    {course.holes ? (
-                      <div>
-                        <dt>Holes</dt>
-                        <dd>{course.holes}</dd>
-                      </div>
-                    ) : null}
                   </dl>
-                  {course.website_url ? (
-                    <p className="et-course-detail-website">
-                      <a href={course.website_url} target="_blank" rel="noreferrer noopener">
-                        Visit course website
-                      </a>
-                    </p>
-                  ) : null}
                 </section>
 
                 <section className="et-course-detail-section" aria-labelledby="course-ask-heading">
@@ -509,6 +619,17 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
           }}
           onClose={() => setShowAddModal(false)}
           onSubmitted={() => {
+            void loadCourse();
+          }}
+        />
+      ) : null}
+
+      {showEditCourseModal ? (
+        <EditMemberSubmittedCourseModal
+          course={course}
+          onClose={() => setShowEditCourseModal(false)}
+          onSaved={() => {
+            showToast("Refreshing course…");
             void loadCourse();
           }}
         />

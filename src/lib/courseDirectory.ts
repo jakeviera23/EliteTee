@@ -1,4 +1,5 @@
 import type { GolfCourseSearchResult } from "../types/golfCourse";
+import { normalizeRegionLabel } from "./courseLocationNormalization";
 
 export type CourseSortOption =
   | "most-played"
@@ -134,8 +135,11 @@ export function extractFilterOptions(
   for (const course of courses) {
     countries.add(normalizeCountry(course.country));
     if (!active.country || normalizeCountry(course.country) === active.country) {
-      regions.add(normalizeRegion(course.region));
-      if (!active.region || normalizeRegion(course.region) === active.region) {
+      const normalizedRegion = normalizeRegion(
+        normalizeRegionLabel(course.country, course.region) || course.region,
+      );
+      regions.add(normalizedRegion);
+      if (!active.region || normalizedRegion === active.region) {
         const city = normalizeCity(course.city);
         if (city) cities.add(city);
       }
@@ -164,7 +168,10 @@ export function filterCourses(
     if (filters.country && normalizeCountry(course.country) !== filters.country) {
       return false;
     }
-    if (filters.region && normalizeRegion(course.region) !== filters.region) {
+    const normalizedRegion = normalizeRegion(
+      normalizeRegionLabel(course.country, course.region) || course.region,
+    );
+    if (filters.region && normalizedRegion !== filters.region) {
       return false;
     }
     if (filters.city && normalizeCity(course.city) !== filters.city) {
@@ -187,7 +194,7 @@ export function groupCoursesGeographically(
 
   for (const course of courses) {
     const country = normalizeCountry(course.country);
-    const region = normalizeRegion(course.region);
+    const region = normalizeRegion(normalizeRegionLabel(course.country, course.region) || course.region);
 
     if (!countryMap.has(country)) {
       countryMap.set(country, new Map());

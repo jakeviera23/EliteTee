@@ -1,4 +1,6 @@
+import { normalizeCourseLocationQuery } from "./course-location.ts";
 import type { AiIntent } from "./types.ts";
+import type { CourseDirectoryFilters } from "./course-directory-answer.ts";
 
 const COURSE_HINTS = [
   "course",
@@ -123,11 +125,48 @@ export function extractMemberSearchQuery(question: string): string {
   return "";
 }
 
+export function buildCourseDirectoryFilters(question: string): CourseDirectoryFilters {
+  const lower = question.toLowerCase();
+
+  const locationMatch =
+    lower.match(/\bin\s+([a-z\s'.-]+?)(?:\?|$|\.|,| who| with| interested| that)/i)?.[1]?.trim() ??
+    "";
+
+  let accessType: string | null = null;
+  if (/\bprivate\b/i.test(lower)) accessType = "private";
+  else if (/\bpublic\b/i.test(lower)) accessType = "public";
+
+  let courseType: string | null = null;
+  if (/\blinks\b/i.test(lower)) courseType = "links";
+
+  let locationQuery = locationMatch;
+  if (!locationQuery) {
+    locationQuery = question
+      .replace(/show me\s+/gi, "")
+      .replace(/find\s+/gi, "")
+      .replace(/what courses are\s+/gi, "")
+      .replace(/highly rated\s+/gi, "")
+      .replace(/highest-rated\s+/gi, "")
+      .replace(/highest rated\s+/gi, "")
+      .replace(/\b(private|public)\s+/gi, "")
+      .replace(/\blinks\s+/gi, "")
+      .replace(/\bcourses?\b/gi, "")
+      .replace(/^in\s+/i, "")
+      .trim();
+  }
+
+  return {
+    locationQuery: normalizeCourseLocationQuery(locationQuery),
+    accessType,
+    courseType,
+  };
+}
+
 export function buildRetrievalFilters(question: string, intent: AiIntent) {
   const lower = question.toLowerCase();
 
   const locationMatch =
-    lower.match(/\bin\s+([a-z\s]+?)(?:\?|$| who| with| interested| that)/i)?.[1]?.trim() ??
+    lower.match(/\bin\s+([a-z\s'.-]+?)(?:\?|$|\.|,| who| with| interested| that)/i)?.[1]?.trim() ??
     "";
 
   const interestMatch =
@@ -136,23 +175,18 @@ export function buildRetrievalFilters(question: string, intent: AiIntent) {
 
   const travelMatch = lower.includes("travel") ? lower.replace(/.*travel/i, "travel").trim() : "";
 
-  const courseQuery = question
-    .replace(/show me\s+/i, "")
-    .replace(/find\s+/i, "")
-    .replace(/highly rated\s+/i, "")
-    .replace(/highest-rated\s+/i, "")
-    .replace(/courses?\s+/i, "")
-    .trim();
-
   if (intent === "find_courses") {
+    const directoryFilters = buildCourseDirectoryFilters(question);
     return {
-      courseQuery: courseQuery || question,
+      courseQuery: directoryFilters.locationQuery || question.trim(),
+      courseDirectoryFilters: directoryFilters,
       memberFilters: {},
     };
   }
 
   return {
     courseQuery: "",
+    courseDirectoryFilters: buildCourseDirectoryFilters(""),
     memberFilters: {
       query: extractMemberSearchQuery(question),
       location: locationMatch,

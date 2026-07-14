@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Middle East",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Yas Links",
+      "slug": "yas-links",
+      "city": "Abu Dhabi",
+      "region": "Abu Dhabi",
+      "country": "United Arab Emirates",
+      "website": "https://www.viyagolf.com/yaslinks/golf-course/",
+      "course_type": "links",
+      "access_type": "public",
+      "architect": "Kyle Phillips",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Abu Dhabi Golf Club — National Course",
+      "slug": "abu-dhabi-golf-club-national-course",
+      "city": "Abu Dhabi",
+      "region": "Abu Dhabi",
+      "country": "United Arab Emirates",
+      "website": "https://www.abudhabigolfclub.abudhabi/course-details",
+      "course_type": "parkland",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Peter Harradine",
+      "year_opened": 2000,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

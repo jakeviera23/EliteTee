@@ -1,0 +1,27 @@
+[
+  {
+    "id": "fixture-clean-001",
+    "name": "Northwood Hills Golf Club",
+    "city": "Dallas",
+    "state": "TX",
+    "country": "US",
+    "holes": 18,
+    "course_type": "public",
+    "access_type": "public",
+    "latitude": 32.9,
+    "longitude": -96.8,
+    "website": "https://example.com/northwood-hills"
+  },
+  {
+    "id": "fixture-duplicate-001",
+    "name": "Pebble Beach Golf Links",
+    "city": "Pebble Beach",
+    "state": "CA",
+    "country": "United States"
+  },
+  {
+    "id": "fixture-missing-country",
+    "name": "Mystery Links",
+    "city": "Nowhere"
+  }
+]

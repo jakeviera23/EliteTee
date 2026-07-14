@@ -2,16 +2,18 @@
 
 EliteTee's course library lives in `public.golf_courses`. Browser clients can **read** courses via RLS; only server-side imports may **write**.
 
+Imports use the **staged pipeline** (`course_import_batches` + `course_import_records`) from migration 045/046. New provider courses are inserted as `lifecycle_status = 'draft'` until reviewed and published.
+
 ## Environment variables
 
 Set these in `.env.local` for local import runs (never commit secrets):
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `SUPABASE_URL` | Yes | Same project URL as production |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | **Server only.** Never `VITE_*` |
-| `GOLF_COURSE_PROVIDER_URL` | When importing | Provider REST base URL |
-| `GOLF_COURSE_PROVIDER_API_KEY` | When importing | Provider API key |
+| `SUPABASE_URL` | Yes (live runs) | Same project URL as production |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes (live runs) | **Server only.** Never `VITE_*` |
+| `GOLF_COURSE_PROVIDER_URL` | When using a provider | Provider REST base URL |
+| `GOLF_COURSE_PROVIDER_API_KEY` | When using a provider | Provider API key |
 | `GOLF_COURSE_PROVIDER_PAGE_SIZE` | No | Default `100` |
 | `GOLF_COURSE_PROVIDER_RATE_MS` | No | Delay between pages, default `500` |
 | `GOLF_COURSE_PROVIDER_NAME` | No | Stored in `source_name`, default `external_provider` |
@@ -20,32 +22,36 @@ The Vite app only needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 ## Before first import
 
-1. Run migration `025_golf_courses_library.sql` in Supabase SQL Editor.
+1. Run migrations `025`, `045`, and `046` in Supabase SQL Editor.
 2. Confirm `member_course_rounds` rows are intact (Ryan's reviews unchanged).
-3. Configure your provider contract and API access.
+3. Configure your provider contract and API access when ready.
 
 ## Adapt the normalizer
 
-Edit `normalizeProviderCourse()` in `scripts/import-golf-courses.mjs` to match your provider's JSON schema. The default expects generic fields like `name`, `city`, `state`, `country`, `lat`, `lng`.
+Edit `normalizeProviderCourse()` in `scripts/lib/courseImportShared.mjs` to match your provider's JSON schema. The default expects generic fields like `name`, `city`, `state`, `country`, `lat`, `lng`.
 
 ## Commands
 
 ```bash
-# Preview without writing
-node scripts/import-golf-courses.mjs --dry-run
+# Preview without writing (fixture mode — no provider required)
+node scripts/import-golf-courses.mjs --dry-run --fixture=scripts/fixtures/golf-courses-sample.json
 
-# Full import
-node scripts/import-golf-courses.mjs
+# Staged import from fixture (no external provider connected yet)
+node scripts/import-golf-courses.mjs --fixture=scripts/fixtures/golf-courses-sample.json --provider=fixture_provider
 
-# Limit pages while testing
-node scripts/import-golf-courses.mjs --max-pages=5
+# Provider import when configured
+node scripts/import-golf-courses.mjs --max-pages=5 --provider=my_provider
 ```
 
-## Upsert behavior
+## Staged import behavior
 
-- Rows upsert by `external_id` (unique).
-- Slug collisions append a short suffix.
-- `source_updated_at` records provider freshness.
+1. Create `course_import_batches` row (`pending` → `processing` → `completed`)
+2. Fetch provider or fixture records
+3. Normalize and stage rows in `course_import_records`
+4. Process each record: validate, duplicate detection, insert draft or safe update
+5. Update batch counters: `processed_count`, `success_count`, `inserted_count`, `updated_count`, `duplicate_count`, `error_count`
+
+Provider-owned fields may be updated on existing courses. Editorial enrichment, aliases, architect, and admin-curated images are preserved.
 
 ## Rate limits
 

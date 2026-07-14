@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "United Kingdom & Ireland",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Royal Aberdeen Golf Club — Balgownie Course",
+      "slug": "royal-aberdeen-golf-club-balgownie-course",
+      "city": "Aberdeen",
+      "region": "Aberdeenshire",
+      "country": "Scotland",
+      "website": "https://www.royalaberdeengolf.com",
+      "course_type": "links",
+      "access_type": "private",
+      "architect": "Archie and Robert Simpson",
+      "year_opened": 1888,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "championship",
+        "links",
+        "historic",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Royal Porthcawl Golf Club",
+      "slug": "royal-porthcawl-golf-club",
+      "city": "Porthcawl",
+      "region": "Wales",
+      "country": "United Kingdom",
+      "website": "https://www.royalporthcawl.com",
+      "course_type": "links",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Ramsay Hunter",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "championship",
+        "links",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Loch Lomond Golf Club",
+      "slug": "loch-lomond-golf-club",
+      "city": "Luss",
+      "region": "Dunbartonshire",
+      "country": "Scotland",
+      "website": "https://www.lochlomond.com",
+      "course_type": "parkland",
+      "access_type": "private",
+      "architect": "Tom Weiskopf",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "bucket_list",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Renaissance Club",
+      "slug": "renaissance-club",
+      "city": "North Berwick",
+      "region": "East Lothian",
+      "country": "Scotland",
+      "website": "https://trcaa.com",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Kingsbarns Golf Links",
+      "slug": "kingsbarns-golf-links",
+      "city": "Kingsbarns",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.kingsbarns.com",
+      "course_type": "links",
+      "access_type": "public",
+      "architect": "Kyle Phillips",
+      "year_opened": 2000,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Castle Stuart Golf Links",
+      "slug": "castle-stuart-golf-links",
+      "city": "Inverness",
+      "region": "Highland",
+      "country": "Scotland",
+      "website": "https://cabot.com/highlands/golf/castle-stuart/",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Gil Hanse and Mark Parsinen",
+      "year_opened": 2009,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Cruden Bay Golf Club",
+      "slug": "cruden-bay-golf-club",
+      "city": "Cruden Bay",
+      "region": "Aberdeenshire",
+      "country": "Scotland",
+      "website": "https://www.crudenbaygolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "architect": "Old Tom Morris",
+      "year_opened": 1899,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Tralee Golf Club",
+      "slug": "tralee-golf-club",
+      "city": "Tralee",
+      "region": "County Kerry",
+      "country": "Ireland",
+      "website": "https://www.traleegolfclub.com",
+      "course_type": "links",
+      "access_type": "public",
+      "architect": "Arnold Palmer",
+      "year_opened": 1984,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Waterville Golf Links",
+      "slug": "waterville-golf-links",
+      "city": "Waterville",
+      "region": "County Kerry",
+      "country": "Ireland",
+      "website": "https://www.watervillegolflinks.ie",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Eddie Hackett and Tom Fazio",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Portmarnock Golf Club",
+      "slug": "portmarnock-golf-club",
+      "city": "Portmarnock",
+      "region": "County Dublin",
+      "country": "Ireland",
+      "website": "https://www.portmarnockgolfclub.ie",
+      "course_type": "links",
+      "access_type": "private",
+      "architect": "Mungo Park",
+      "year_opened": 1894,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "The European Club",
+      "slug": "the-european-club",
+      "city": "Brittas Bay",
+      "region": "County Wicklow",
+      "country": "Ireland",
+      "website": "https://www.theeuropeanclub.com",
+      "course_type": "links",
+      "access_type": "private",
+      "architect": "Pat Ruddy",
+      "year_opened": 1993,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Adare Manor Golf Club",
+      "slug": "adare-manor-golf-club",
+      "city": "Adare",
+      "region": "County Limerick",
+      "country": "Ireland",
+      "website": "https://www.adaremanor.com/golf/",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "holes": 18,
+      "architect": "Tom Fazio",
+      "year_opened": 2017,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "bucket_list",
+        "public_access",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Gleneagles Hotel — King's Course",
+      "slug": "gleneagles-hotel-kings-course",
+      "city": "Auchterarder",
+      "region": "Perth and Kinross",
+      "country": "Scotland",
+      "website": "https://www.gleneagles.com/golf",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "holes": 18,
+      "architect": "James Braid",
+      "year_opened": 1919,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "historic",
+        "public_access",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "North Berwick Golf Club — West Links",
+      "slug": "north-berwick-golf-club-west-links",
+      "city": "North Berwick",
+      "region": "East Lothian",
+      "country": "Scotland",
+      "website": "https://www.northberwickgolfclub.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "historic",
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Prestwick Golf Club",
+      "slug": "prestwick-golf-club",
+      "city": "Prestwick",
+      "region": "South Ayrshire",
+      "country": "Scotland",
+      "website": "https://www.prestwickgc.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "architect": "Old Tom Morris",
+      "year_opened": 1851,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Cinque Ports Golf Club",
+      "slug": "royal-cinque-ports-golf-club",
+      "city": "Deal",
+      "region": "Kent",
+      "country": "England",
+      "website": "https://www.royalcinqueports.com",
+      "course_type": "links",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Harry Hunter",
+      "year_opened": 1899,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Nairn Golf Club",
+      "slug": "nairn-golf-club",
+      "city": "Nairn",
+      "region": "Highland",
+      "country": "Scotland",
+      "website": "https://nairngolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "architect": "Andrew Simpson",
+      "year_opened": 1887,
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "historic"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

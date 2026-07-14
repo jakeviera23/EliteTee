@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Europe",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Golf de Morfontaine",
+      "slug": "golf-de-morfontaine",
+      "city": "Mortefontaine",
+      "region": "Hauts-de-France",
+      "country": "France",
+      "website": "https://www.golfdemorfontaine.fr/en/",
+      "course_type": "heathland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Tom Simpson",
+      "year_opened": 1927,
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "architecturally_significant",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "featured",
+      "par": 71,
+      "description": "Private Tom Simpson heathland course north of Paris in the Forest of Chantilly.",
+      "latitude": 49.1167,
+      "longitude": 2.6167
+    },
+    {
+      "name": "Golf Club München Eichenried",
+      "slug": "golf-club-munchen-eichenried",
+      "city": "Eichenried",
+      "region": "Bavaria",
+      "country": "Germany",
+      "website": "https://www.gc-eichenried.de/",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Kurt Roßknecht",
+      "year_opened": 1989,
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "PGA Catalunya Resort — Stadium Course",
+      "slug": "pga-catalunya-resort-stadium-course",
+      "city": "Girona",
+      "region": "Catalonia",
+      "country": "Spain",
+      "website": "https://www.camiral.com/en/golf/stadium-course",
+      "course_type": "parkland",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Neil Coles and Ángel Gallardo",
+      "year_opened": 1999,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Finca Cortesín Golf Club",
+      "slug": "finca-cortesin-golf-club",
+      "city": "Casares",
+      "region": "Andalusia",
+      "country": "Spain",
+      "website": "https://fincacortesin.com/golf-costa-sol/",
+      "course_type": "parkland",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Cabell B. Robinson",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Terre Blanche Hotel Spa Golf Resort",
+      "slug": "terre-blanche-hotel-spa-golf-resort",
+      "city": "Tourrettes",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "country": "France",
+      "website": "https://www.terre-blanche.com/en/golf-resort-var",
+      "course_type": "parkland",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Dave Thomas",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Thracian Cliffs Golf & Beach Resort",
+      "slug": "thracian-cliffs-golf-and-beach-resort",
+      "city": "Kavarna",
+      "region": "Dobrich",
+      "country": "Bulgaria",
+      "website": "https://thraciancliffs.com/golf/",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Gary Player",
+      "year_opened": 2011,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

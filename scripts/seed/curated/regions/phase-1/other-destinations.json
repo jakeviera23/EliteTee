@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Other destination golf",
+  "phase": 1,
+  "courses": [
+    {
+      "name": "Leopard Creek Country Club",
+      "slug": "leopard-creek-country-club",
+      "city": "Malalane",
+      "region": "Mpumalanga",
+      "country": "South Africa",
+      "website": "https://leopardcreek.co.za/leopard-creek-course/",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "private",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Durban Country Club",
+      "slug": "durban-country-club",
+      "city": "Durban",
+      "region": "KwaZulu-Natal",
+      "country": "South Africa",
+      "website": "https://durbancountryclub.co.za/",
+      "course_type": "links",
+      "access_type": "private",
+      "holes": 18,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Teeth of the Dog",
+      "slug": "teeth-of-the-dog",
+      "city": "La Romana",
+      "region": "La Romana",
+      "country": "Dominican Republic",
+      "website": "https://www.casadecampo.com.do/golf/teeth-of-the-dog/",
+      "course_type": "links",
+      "access_type": "public",
+      "holes": 18,
+      "architect": "Pete Dye",
+      "year_opened": 1971,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "resort",
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Johannesburg & Kensington Golf Club",
+      "slug": "royal-johannesburg-and-kensington-golf-club",
+      "city": "Johannesburg",
+      "region": "Gauteng",
+      "country": "South Africa",
+      "website": "https://royaljk.co.za/",
+      "course_type": "parkland",
+      "access_type": "private",
+      "holes": 18,
+      "architect": "Robert Grimsdell",
+      "year_opened": 1939,
+      "elite_tier": "destination",
+      "curated_tags": [
+        "historic",
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

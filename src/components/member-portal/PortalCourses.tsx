@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
@@ -18,6 +18,11 @@ import {
   searchGolfCourses,
   SEARCH_PAGE_SIZE,
 } from "../../lib/golfCourses";
+import { appendUniqueCourses } from "../../lib/courseResultsAppend";
+import {
+  ensureBucketListHydrated,
+  getBucketListCourseIds,
+} from "../../lib/portalCourseState";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { AddCoursePlayedModal } from "./AddCoursePlayedModal";
 import { CourseDirectoryCard } from "./CourseDirectoryCard";
@@ -30,6 +35,7 @@ const POPULAR_COURSE_LIMIT = 5;
 
 export function PortalCourses() {
   const navigate = useNavigate();
+  const loadMoreButtonRef = useRef<HTMLButtonElement | null>(null);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 300);
   const [directoryPool, setDirectoryPool] = useState<GolfCourseSearchResult[]>([]);
@@ -37,6 +43,7 @@ export function PortalCourses() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPaging, setIsPaging] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [popularCourses, setPopularCourses] = useState<GolfCourseSearchResult[]>([]);
   const [popularLoading, setPopularLoading] = useState(true);
@@ -45,6 +52,9 @@ export function PortalCourses() {
   const [filters, setFilters] = useState<CourseDirectoryFilters>(DEFAULT_COURSE_FILTERS);
   const [sortBy, setSortBy] = useState<CourseSortOption>("most-played");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [bucketListCourseIds, setBucketListCourseIds] = useState<string[]>(() =>
+    getBucketListCourseIds(),
+  );
 
   const isSearchMode = debouncedQuery.trim().length > 0;
   const hasClientFilters = countActiveFilters(filters) > 0;
@@ -57,7 +67,11 @@ export function PortalCourses() {
   }, []);
 
   const loadDirectoryPage = useCallback(async (searchQuery: string, searchOffset: number) => {
-    setIsLoading(true);
+    if (searchOffset === 0) {
+      setIsLoading(true);
+    } else {
+      setIsPaging(true);
+    }
     setLoadError(null);
 
     const { data, error } = await searchGolfCourses({
@@ -75,6 +89,7 @@ export function PortalCourses() {
       }
       setHasMore(false);
       setIsLoading(false);
+      setIsPaging(false);
       return;
     }
 
@@ -85,22 +100,44 @@ export function PortalCourses() {
       if (searchOffset === 0) {
         setSearchResults(rows);
       } else {
-        setSearchResults((current) => [...current, ...rows]);
+        setSearchResults((current) => appendUniqueCourses(current, rows));
       }
     } else if (searchOffset === 0) {
       setDirectoryPool(rows);
     } else {
-      setDirectoryPool((current) => [...current, ...rows]);
+      setDirectoryPool((current) => appendUniqueCourses(current, rows));
     }
 
     setOffset(searchOffset);
     setHasMore(rows.length === SEARCH_PAGE_SIZE);
     setIsLoading(false);
+    setIsPaging(false);
   }, []);
 
   useEffect(() => {
     void loadPopular();
   }, [loadPopular]);
+
+  useEffect(() => {
+    let active = true;
+
+    void ensureBucketListHydrated().then(() => {
+      if (active) {
+        setBucketListCourseIds(getBucketListCourseIds());
+      }
+    });
+
+    function handleBucketListChanged() {
+      setBucketListCourseIds(getBucketListCourseIds());
+    }
+
+    window.addEventListener("elitetee:course-state-changed", handleBucketListChanged);
+
+    return () => {
+      active = false;
+      window.removeEventListener("elitetee:course-state-changed", handleBucketListChanged);
+    };
+  }, []);
 
   useEffect(() => {
     void loadDirectoryPage(debouncedQuery, 0);
@@ -114,6 +151,8 @@ export function PortalCourses() {
   function openCourse(slug: string) {
     navigate(`/courses/${slug}`);
   }
+
+  const bucketListCourseIdSet = useMemo(() => new Set(bucketListCourseIds), [bucketListCourseIds]);
 
   const workingSet = useMemo(() => {
     const base = isSearchMode ? searchResults : directoryPool;
@@ -232,7 +271,11 @@ export function PortalCourses() {
         ) : null}
 
         {showFeatured ? (
-          <CourseFeaturedSections sections={featuredSections} onOpen={openCourse} />
+          <CourseFeaturedSections
+            sections={featuredSections}
+            onOpen={openCourse}
+            bucketListCourseIdSet={bucketListCourseIdSet}
+          />
         ) : null}
 
         {showGeoDirectory ? (
@@ -245,7 +288,11 @@ export function PortalCourses() {
                 Courses grouped by country and region from member and library data.
               </p>
             </div>
-            <CourseGeoDirectory groups={geoGroups} onOpen={openCourse} />
+            <CourseGeoDirectory
+              groups={geoGroups}
+              onOpen={openCourse}
+              bucketListCourseIdSet={bucketListCourseIdSet}
+            />
           </section>
         ) : null}
 
@@ -262,7 +309,11 @@ export function PortalCourses() {
             <ul className="et-courses-grid">
               {workingSet.map((course) => (
                 <li key={course.id}>
-                  <CourseDirectoryCard course={course} onOpen={openCourse} />
+                  <CourseDirectoryCard
+                    course={course}
+                    onOpen={openCourse}
+                    isOnBucketList={bucketListCourseIdSet.has(course.id)}
+                  />
                 </li>
               ))}
             </ul>
@@ -290,9 +341,12 @@ export function PortalCourses() {
             type="button"
             className="et-btn et-btn--secondary et-courses-load-more"
             onClick={() => void loadMore()}
-            disabled={isLoading}
+            onMouseDown={(event) => event.preventDefault()}
+            onPointerDown={(event) => event.preventDefault()}
+            disabled={isPaging}
+            ref={loadMoreButtonRef}
           >
-            {isLoading ? "Loading more courses…" : "Load more courses"}
+            {isPaging ? "Loading more courses…" : "Load more courses"}
           </button>
         ) : null}
       </div>

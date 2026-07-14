@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "description": "Phase 0 verified curated library. Import only after review.",
+  "files": [
+    "foundation.json",
+    "regions/phase-0/united-states.json",
+    "regions/phase-0/united-kingdom-ireland.json",
+    "regions/phase-0/canada.json",
+    "regions/phase-0/australia-new-zealand.json",
+    "regions/phase-0/europe.json",
+    "regions/phase-0/asia.json",
+    "regions/phase-0/middle-east.json",
+    "regions/phase-0/other-destinations.json"
+  ]
+}

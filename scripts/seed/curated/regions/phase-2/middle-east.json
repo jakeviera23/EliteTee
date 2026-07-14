@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Middle East",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Jumeirah Golf Estates — Earth Course",
+      "slug": "jumeirah-golf-estates-earth-course",
+      "city": "Dubai",
+      "region": "Dubai",
+      "country": "United Arab Emirates",
+      "website": "https://www.jumeirahgolfestates.com/earth-course",
+      "course_type": "desert",
+      "access_type": "semi_private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "featured"
+    },
+    {
+      "name": "Dubai Creek Golf & Yacht Club — Championship Course",
+      "slug": "dubai-creek-golf-and-yacht-club-championship-course",
+      "city": "Dubai",
+      "region": "Dubai",
+      "country": "United Arab Emirates",
+      "website": "https://www.dubaigolf.com/dubai-creek",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Saadiyat Beach Golf Club",
+      "slug": "saadiyat-beach-golf-club",
+      "city": "Abu Dhabi",
+      "region": "Abu Dhabi",
+      "country": "United Arab Emirates",
+      "website": "https://www.saadiyatbeachgolfclub.ae",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Greens Golf & Country Club",
+      "slug": "royal-greens-golf-and-country-club",
+      "city": "King Abdullah Economic City",
+      "region": "Makkah",
+      "country": "Saudi Arabia",
+      "website": "https://www.royalgreensgolf.com",
+      "course_type": "parkland",
+      "access_type": "semi_private",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Address Montgomerie Golf Club",
+      "slug": "address-montgomerie-golf-club",
+      "city": "Dubai",
+      "region": "Dubai",
+      "country": "United Arab Emirates",
+      "website": "https://www.dubaigolf.com/address-montgomerie",
+      "course_type": "desert",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

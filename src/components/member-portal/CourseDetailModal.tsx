@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
 import type { CourseListing } from "../../data/portalSocial";
 import { earlyStageCopy, getPostsForCourse } from "../../data/portalSocial";
-import {
-  isCourseOnBucketList,
-  isCoursePlayed,
-  toggleBucketListCourse,
-  togglePlayedCourse,
-} from "../../lib/portalCourseState";
+import { isCoursePlayed, togglePlayedCourse } from "../../lib/portalCourseState";
+import { BucketListToggleButton } from "./BucketListToggleButton";
 import { FeedPostCard } from "./FeedPostCard";
 import { usePortalToast } from "./PortalToastProvider";
 
@@ -18,12 +14,10 @@ type CourseDetailModalProps = {
 export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
   const { showToast } = usePortalToast();
   const [played, setPlayed] = useState(() => isCoursePlayed(course.id));
-  const [bucketListed, setBucketListed] = useState(() => isCourseOnBucketList(course.id));
   const posts = getPostsForCourse(course.name);
 
   useEffect(() => {
     setPlayed(isCoursePlayed(course.id));
-    setBucketListed(isCourseOnBucketList(course.id));
   }, [course.id]);
 
   useEffect(() => {
@@ -45,13 +39,6 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
     const next = togglePlayedCourse(course.id);
     setPlayed(next);
     showToast(next ? "Added to played courses" : "Removed from played courses");
-  }
-
-  function handleBucketList() {
-    void toggleBucketListCourse(course.id).then((next) => {
-      setBucketListed(next);
-      showToast(next ? "Course saved to your list" : "Removed from your list");
-    });
   }
 
   return (
@@ -94,14 +81,7 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
           <p className="portal-course-card-note">{earlyStageCopy.memberActivityGrowing}</p>
 
           <div className="portal-course-card-actions">
-            <button
-              type="button"
-              className={`portal-btn portal-btn--outline${bucketListed ? " is-active" : ""}`}
-              onClick={handleBucketList}
-              aria-pressed={bucketListed}
-            >
-              {bucketListed ? "Saved ✓" : "Save"}
-            </button>
+            <BucketListToggleButton courseId={course.id} />
             <button
               type="button"
               className={`portal-btn portal-btn--outline${played ? " is-active" : ""}`}

@@ -537,6 +537,18 @@
   line-height: 1.55;
 }
 
+.et-profile-bucket-list {
+  display: grid;
+  gap: var(--et-space-3);
+}
+
+.et-profile-bucket-count {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--profile-gold);
+}
+
 .et-profile-aside-block {
   display: grid;
   gap: 0.65rem;

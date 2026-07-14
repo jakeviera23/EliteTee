@@ -1,0 +1,783 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "United Kingdom & Ireland",
+  "phase": 2,
+  "courses": [
+    {
+      "name": "Machrihanish Golf Club",
+      "slug": "machrihanish-golf-club",
+      "city": "Machrihanish",
+      "region": "Argyll and Bute",
+      "country": "Scotland",
+      "website": "https://www.machgolf.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "global_icon",
+      "curated_tags": [
+        "links",
+        "historic",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "featured",
+      "architect": "Old Tom Morris",
+      "year_opened": 1879,
+      "holes": 18,
+      "par": 70,
+      "yardage": 6241,
+      "description": "Public links on Scotland's Kintyre Peninsula, opening with a drive across the beach from the first tee.",
+      "latitude": 55.4333,
+      "longitude": -5.75
+    },
+    {
+      "name": "Machrihanish Dunes",
+      "slug": "machrihanish-dunes",
+      "city": "Machrihanish",
+      "region": "Argyll and Bute",
+      "country": "Scotland",
+      "website": "https://www.machdunes.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Gullane Golf Club — No. 1 Course",
+      "slug": "gullane-golf-club-no-1",
+      "city": "Gullane",
+      "region": "East Lothian",
+      "country": "Scotland",
+      "website": "https://www.gullane.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Elie Golf Links",
+      "slug": "elie-golf-links",
+      "city": "Elie",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.eliegolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "historic",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Gleneagles Hotel — Queen's Course",
+      "slug": "gleneagles-hotel-queens-course",
+      "city": "Auchterarder",
+      "region": "Perth and Kinross",
+      "country": "Scotland",
+      "website": "https://www.gleneagles.com/golf/queens-course",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "historic",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Gleneagles Hotel — PGA Centenary Course",
+      "slug": "gleneagles-hotel-pga-centenary-course",
+      "city": "Auchterarder",
+      "region": "Perth and Kinross",
+      "country": "Scotland",
+      "website": "https://www.gleneagles.com/golf/pga-centenary-course",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "St Andrews Links — New Course",
+      "slug": "st-andrews-links-new-course",
+      "city": "St Andrews",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.standrews.com/courses/new",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "historic",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "St Andrews Links — Jubilee Course",
+      "slug": "st-andrews-links-jubilee-course",
+      "city": "St Andrews",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.standrews.com/courses/jubilee",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "St Andrews Links — Castle Course",
+      "slug": "st-andrews-links-castle-course",
+      "city": "St Andrews",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.standrews.com/courses/castle",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Dundonald Links",
+      "slug": "dundonald-links",
+      "city": "Irvine",
+      "region": "Ayrshire",
+      "country": "Scotland",
+      "website": "https://www.dundonaldlinks.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Dumbarnie Links",
+      "slug": "dumbarnie-links",
+      "city": "Leven",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.dumbarnielinks.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Brora Golf Club",
+      "slug": "brora-golf-club",
+      "city": "Brora",
+      "region": "Highland",
+      "country": "Scotland",
+      "website": "https://www.broragolf.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "historic",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Moray Golf Club — Old Course",
+      "slug": "moray-golf-club",
+      "city": "Lossiemouth",
+      "region": "Moray",
+      "country": "Scotland",
+      "website": "https://www.moraygolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Burgess Golf Society",
+      "slug": "royal-burgess-golf-society",
+      "city": "Edinburgh",
+      "region": "Edinburgh",
+      "country": "Scotland",
+      "website": "https://www.royalburgess.co.uk",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "member_course",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Panmure Golf Club",
+      "slug": "panmure-golf-club",
+      "city": "Barry",
+      "region": "Angus",
+      "country": "Scotland",
+      "website": "https://www.panmuregolf.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Monifieth Golf Links — Medal Course",
+      "slug": "monifieth-golf-links",
+      "city": "Monifieth",
+      "region": "Angus",
+      "country": "Scotland",
+      "website": "https://www.monifiethgolf.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Montrose Golf Links — Medal Course",
+      "slug": "montrose-golf-links",
+      "city": "Montrose",
+      "region": "Angus",
+      "country": "Scotland",
+      "website": "https://www.montroselinks.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "historic",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Fraserburgh Golf Club — Corbiehill Course",
+      "slug": "fraserburgh-golf-club",
+      "city": "Fraserburgh",
+      "region": "Aberdeenshire",
+      "country": "Scotland",
+      "website": "https://www.fraserburghgolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Ladybank Golf Club",
+      "slug": "ladybank-golf-club",
+      "city": "Ladybank",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.ladybankgolf.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "member_course",
+      "curated_tags": [
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Scotscraig Golf Club",
+      "slug": "scotscraig-golf-club",
+      "city": "Tayport",
+      "region": "Fife",
+      "country": "Scotland",
+      "website": "https://www.scotscraiggolf.com",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "St George's Hill Golf Club",
+      "slug": "st-georges-hill-golf-club",
+      "city": "Weybridge",
+      "region": "Surrey",
+      "country": "England",
+      "website": "https://www.stgeorgeshillgolf.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Walton Heath Golf Club — Old Course",
+      "slug": "walton-heath-golf-club",
+      "city": "Tadworth",
+      "region": "Surrey",
+      "country": "England",
+      "website": "https://www.waltonheath.com",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "championship",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Woodhall Spa Golf Club — Hotchkin Course",
+      "slug": "woodhall-spa-golf-club-hotchkin-course",
+      "city": "Woodhall Spa",
+      "region": "Lincolnshire",
+      "country": "England",
+      "website": "https://www.woodhallspagolf.com",
+      "course_type": "heathland",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "bucket_list",
+        "public_access",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Hankley Common Golf Club",
+      "slug": "hankley-common-golf-club",
+      "city": "Farnham",
+      "region": "Surrey",
+      "country": "England",
+      "website": "https://www.hankleycommon.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Swinley Forest Golf Club",
+      "slug": "swinley-forest-golf-club",
+      "city": "Ascot",
+      "region": "Berkshire",
+      "country": "England",
+      "website": "https://www.swinleyforest.com",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Woking Golf Club",
+      "slug": "woking-golf-club",
+      "city": "Woking",
+      "region": "Surrey",
+      "country": "England",
+      "website": "https://www.wokinggolfclub.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "private",
+        "historic",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Formby Golf Club",
+      "slug": "formby-golf-club",
+      "city": "Formby",
+      "region": "Merseyside",
+      "country": "England",
+      "website": "https://www.formbygolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Hillside Golf Club",
+      "slug": "hillside-golf-club",
+      "city": "Southport",
+      "region": "Merseyside",
+      "country": "England",
+      "website": "https://www.hillsidegolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Ganton Golf Club",
+      "slug": "ganton-golf-club",
+      "city": "Ganton",
+      "region": "North Yorkshire",
+      "country": "England",
+      "website": "https://www.gantongolfclub.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "championship",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal West Norfolk Golf Club",
+      "slug": "royal-west-norfolk-golf-club",
+      "city": "Brancaster",
+      "region": "Norfolk",
+      "country": "England",
+      "website": "https://www.royalwestnorfolk.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal St David's Golf Club",
+      "slug": "royal-st-davids-golf-club",
+      "city": "Harlech",
+      "region": "Wales",
+      "country": "United Kingdom",
+      "website": "https://www.stdavidsgolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "historic",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Southerndown Golf Club",
+      "slug": "southerndown-golf-club",
+      "city": "Bridgend",
+      "region": "Wales",
+      "country": "United Kingdom",
+      "website": "https://www.southerndowngolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Portstewart Golf Club — Strand Course",
+      "slug": "portstewart-golf-club-strand-course",
+      "city": "Portstewart",
+      "region": "Northern Ireland",
+      "country": "United Kingdom",
+      "website": "https://www.portstewartgolfclub.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Castlerock Golf Club — Mussenden Course",
+      "slug": "castlerock-golf-club-mussenden-course",
+      "city": "Castlerock",
+      "region": "Northern Ireland",
+      "country": "United Kingdom",
+      "website": "https://www.castlerockgolfclub.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Carne Golf Links",
+      "slug": "carne-golf-links",
+      "city": "Belmullet",
+      "region": "County Mayo",
+      "country": "Ireland",
+      "website": "https://www.carnegolflinks.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Old Head Golf Links",
+      "slug": "old-head-golf-links",
+      "city": "Kinsale",
+      "region": "County Cork",
+      "country": "Ireland",
+      "website": "https://www.oldhead.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "bucket_list",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Enniscrone Golf Club",
+      "slug": "enniscrone-golf-club",
+      "city": "Enniscrone",
+      "region": "County Sligo",
+      "country": "Ireland",
+      "website": "https://www.enniscronegolf.com",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "bucket_list"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Mount Juliet Estate",
+      "slug": "mount-juliet-estate",
+      "city": "Thomastown",
+      "region": "County Kilkenny",
+      "country": "Ireland",
+      "website": "https://www.mountjuliet.ie/golf",
+      "course_type": "parkland",
+      "access_type": "resort",
+      "elite_tier": "destination",
+      "curated_tags": [
+        "resort",
+        "championship",
+        "public_access"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Rye Golf Club",
+      "slug": "rye-golf-club",
+      "city": "Rye",
+      "region": "East Sussex",
+      "country": "England",
+      "website": "https://www.ryegolfclub.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "elite_private",
+      "curated_tags": [
+        "links",
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Alwoodley Golf Club",
+      "slug": "alwoodley-golf-club",
+      "city": "Leeds",
+      "region": "West Yorkshire",
+      "country": "England",
+      "website": "https://www.alwoodley.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "architecturally_significant"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Moortown Golf Club",
+      "slug": "moortown-golf-club",
+      "city": "Leeds",
+      "region": "West Yorkshire",
+      "country": "England",
+      "website": "https://www.moortowngolf.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Lindrick Golf Club",
+      "slug": "lindrick-golf-club",
+      "city": "Worksop",
+      "region": "Nottinghamshire",
+      "country": "England",
+      "website": "https://www.lindrickgolfclub.co.uk",
+      "course_type": "heathland",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "private",
+        "championship",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Hunstanton Golf Club",
+      "slug": "hunstanton-golf-club",
+      "city": "Hunstanton",
+      "region": "Norfolk",
+      "country": "England",
+      "website": "https://www.hunstanton-golf-club.co.uk",
+      "course_type": "links",
+      "access_type": "private",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "private"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Aberdovey Golf Club",
+      "slug": "aberdovey-golf-club",
+      "city": "Aberdovey",
+      "region": "Wales",
+      "country": "United Kingdom",
+      "website": "https://www.aberdoveygolf.co.uk",
+      "course_type": "links",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "links",
+        "public_access",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Royal Mid-Surrey Golf Club",
+      "slug": "royal-mid-surrey-golf-club",
+      "city": "Richmond",
+      "region": "Surrey",
+      "country": "England",
+      "website": "https://www.rmsgc.co.uk",
+      "course_type": "parkland",
+      "access_type": "private",
+      "elite_tier": "member_course",
+      "curated_tags": [
+        "private",
+        "historic"
+      ],
+      "featured_status": "standard"
+    },
+    {
+      "name": "Woburn Golf Club — Marquess Course",
+      "slug": "woburn-golf-club-marquess-course",
+      "city": "Milton Keynes",
+      "region": "Bedfordshire",
+      "country": "England",
+      "website": "https://www.woburngolf.co.uk",
+      "course_type": "parkland",
+      "access_type": "public",
+      "elite_tier": "notable",
+      "curated_tags": [
+        "public_access",
+        "championship"
+      ],
+      "featured_status": "standard"
+    }
+  ]
+}

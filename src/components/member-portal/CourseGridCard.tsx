@@ -1,11 +1,7 @@
 import { useState } from "react";
 import type { CourseListing } from "../../data/portalSocial";
-import {
-  isCourseOnBucketList,
-  isCoursePlayed,
-  toggleBucketListCourse,
-  togglePlayedCourse,
-} from "../../lib/portalCourseState";
+import { isCoursePlayed, togglePlayedCourse } from "../../lib/portalCourseState";
+import { BucketListToggleButton } from "./BucketListToggleButton";
 import { usePortalToast } from "./PortalToastProvider";
 
 type CourseGridCardProps = {
@@ -17,21 +13,12 @@ type CourseGridCardProps = {
 export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCardProps) {
   const { showToast } = usePortalToast();
   const [played, setPlayed] = useState(() => isCoursePlayed(course.id));
-  const [bucketListed, setBucketListed] = useState(() => isCourseOnBucketList(course.id));
 
   function handlePlayed() {
     const next = togglePlayedCourse(course.id);
     setPlayed(next);
     showToast(next ? "Marked as played" : "Removed from played courses");
     onStatusChange?.();
-  }
-
-  function handleBucketList() {
-    void toggleBucketListCourse(course.id).then((next) => {
-      setBucketListed(next);
-      showToast(next ? "Added to your list" : "Removed from your list");
-      onStatusChange?.();
-    });
   }
 
   return (
@@ -63,14 +50,7 @@ export function CourseGridCard({ course, onView, onStatusChange }: CourseGridCar
           <button type="button" className="portal-btn portal-btn--gold" onClick={onView}>
             View Course
           </button>
-          <button
-            type="button"
-            className={`portal-btn portal-btn--outline${bucketListed ? " is-active" : ""}`}
-            onClick={handleBucketList}
-            aria-pressed={bucketListed}
-          >
-            {bucketListed ? "Saved ✓" : "Save"}
-          </button>
+          <BucketListToggleButton courseId={course.id} onToggled={() => onStatusChange?.()} />
           <button
             type="button"
             className={`portal-btn portal-btn--outline${played ? " is-active" : ""}`}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "description": "Expansion planning manifest. Courses array must be populated and verified before import.",
+  "library_target": 500,
+  "phase_0_count": 58,
+  "expansion_slots_target": 442,
+  "status": "planning",
+  "files": [
+    "regions/united-states.json",
+    "regions/united-kingdom-ireland.json",
+    "regions/canada.json",
+    "regions/australia-new-zealand.json",
+    "regions/europe.json",
+    "regions/asia.json",
+    "regions/middle-east.json",
+    "regions/other-destinations.json"
+  ]
+}

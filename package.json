@@ -13,7 +13,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:supabase": "node scripts/test-supabase-connection.mjs",
-    "import:golf-courses": "node scripts/import-golf-courses.mjs",
+    "import:golf-courses": "node --experimental-strip-types scripts/import-golf-courses.mjs",
+    "import:curated-golf-courses": "npx tsx scripts/import-curated-golf-courses.mjs",
+    "audit:curated-courses": "node scripts/seed/curated/audit-course-metadata.mjs",
+    "enrich:curated-courses": "node scripts/seed/curated/apply-verified-enrichments.mjs",
     "update:golf-course-image": "node scripts/update-golf-course-image.mjs"
   },
   "engines": {

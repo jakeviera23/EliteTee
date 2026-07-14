@@ -7,6 +7,7 @@ const INITIAL_REGION_VISIBLE = 6;
 type CourseGeoDirectoryProps = {
   groups: CourseGeoCountryGroup[];
   onOpen: (slug: string) => void;
+  bucketListCourseIdSet?: Set<string>;
 };
 
 function RegionGroup({
@@ -14,11 +15,13 @@ function RegionGroup({
   region,
   courses,
   onOpen,
+  bucketListCourseIdSet,
 }: {
   country: string;
   region: string;
   courses: CourseGeoCountryGroup["regions"][number]["courses"];
   onOpen: (slug: string) => void;
+  bucketListCourseIdSet?: Set<string>;
 }) {
   const regionId = `${country}-${region}`.replace(/\s+/g, "-").toLowerCase();
   const [expanded, setExpanded] = useState(true);
@@ -47,7 +50,11 @@ function RegionGroup({
           <ul className="et-courses-grid">
             {visibleCourses.map((course) => (
               <li key={course.id}>
-                <CourseDirectoryCard course={course} onOpen={onOpen} />
+                <CourseDirectoryCard
+                  course={course}
+                  onOpen={onOpen}
+                  isOnBucketList={bucketListCourseIdSet?.has(course.id) ?? false}
+                />
               </li>
             ))}
           </ul>
@@ -66,7 +73,11 @@ function RegionGroup({
   );
 }
 
-export function CourseGeoDirectory({ groups, onOpen }: CourseGeoDirectoryProps) {
+export function CourseGeoDirectory({
+  groups,
+  onOpen,
+  bucketListCourseIdSet,
+}: CourseGeoDirectoryProps) {
   const [collapsedCountries, setCollapsedCountries] = useState<Record<string, boolean>>({});
 
   return (
@@ -109,6 +120,7 @@ export function CourseGeoDirectory({ groups, onOpen }: CourseGeoDirectoryProps) 
                     region={regionGroup.region}
                     courses={regionGroup.courses}
                     onOpen={onOpen}
+                    bucketListCourseIdSet={bucketListCourseIdSet}
                   />
                 ))}
               </div>

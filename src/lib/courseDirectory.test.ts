@@ -112,11 +112,11 @@ describe("filterCourses", () => {
     });
 
     expect(groupCoursesGeographically([before])[0]?.regions[0]?.region).toBe(UNSPECIFIED_REGION);
-    expect(groupCoursesGeographically([after])[0]?.regions[0]?.region).toBe("NY");
+    expect(groupCoursesGeographically([after])[0]?.regions[0]?.region).toBe("New York");
 
     const filtered = filterCourses([after], {
       country: "United States",
-      region: "NY",
+      region: "New York",
       city: "Southampton",
       courseType: "",
       accessType: "",

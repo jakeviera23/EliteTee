@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Australia & New Zealand",
+  "expansion": {
+    "status": "planning",
+    "regional_goal": 40,
+    "phase_0_verified": 4,
+    "expansion_slots_remaining": 36,
+    "notes": "Prioritize sandbelt, championship, and bucket-list public access courses."
+  },
+  "courses": []
+}

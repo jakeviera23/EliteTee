@@ -1,7 +1,13 @@
-import { updateOwnBucketListCourseIds } from "./memberProfiles";
+import { fetchOwnMemberProfile, updateOwnBucketListCourseIds } from "./memberProfiles";
 
 let bucketListCourseIds: string[] = [];
 let bucketListHydrated = false;
+let bucketListHydrationPromise: Promise<void> | null = null;
+
+export type BucketListToggleResult = {
+  isOnBucketList: boolean;
+  error: Error | null;
+};
 
 export function hydrateBucketListCourseIds(courseIds: string[]) {
   bucketListCourseIds = [...new Set(courseIds.map((id) => id.trim()).filter(Boolean))];
@@ -17,15 +23,37 @@ export function getBucketListCourseIds(): string[] {
 }
 
 export function isCourseOnBucketList(courseId: string): boolean {
-  return bucketListCourseIds.includes(courseId);
+  return bucketListCourseIds.includes(courseId.trim());
 }
 
-export async function toggleBucketListCourse(courseId: string): Promise<boolean> {
+export async function ensureBucketListHydrated() {
+  if (bucketListHydrated) return;
+
+  if (!bucketListHydrationPromise) {
+    bucketListHydrationPromise = (async () => {
+      const { data } = await fetchOwnMemberProfile();
+      if (data) {
+        hydrateBucketListCourseIds(data.bucket_list_course_ids);
+      }
+    })().finally(() => {
+      bucketListHydrationPromise = null;
+    });
+  }
+
+  await bucketListHydrationPromise;
+}
+
+export async function toggleBucketListCourse(courseId: string): Promise<BucketListToggleResult> {
   const normalizedCourseId = courseId.trim();
-  if (!normalizedCourseId) return false;
+  if (!normalizedCourseId) {
+    return { isOnBucketList: false, error: new Error("Course id is required.") };
+  }
+
+  await ensureBucketListHydrated();
 
   const current = getBucketListCourseIds();
-  const next = current.includes(normalizedCourseId)
+  const wasOnBucketList = current.includes(normalizedCourseId);
+  const next = wasOnBucketList
     ? current.filter((id) => id !== normalizedCourseId)
     : [...current, normalizedCourseId];
 
@@ -35,13 +63,24 @@ export async function toggleBucketListCourse(courseId: string): Promise<boolean>
     if (import.meta.env.DEV) {
       console.error("[portalCourseState] bucket list update failed", error);
     }
-    return current.includes(normalizedCourseId);
+    return { isOnBucketList: wasOnBucketList, error };
   }
 
   bucketListCourseIds = data ?? next;
   bucketListHydrated = true;
-  window.dispatchEvent(new CustomEvent("elitetee:course-state-changed"));
-  return bucketListCourseIds.includes(normalizedCourseId);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("elitetee:course-state-changed"));
+  }
+  return {
+    isOnBucketList: bucketListCourseIds.includes(normalizedCourseId),
+    error: null,
+  };
+}
+
+export function resetBucketListStateForTests() {
+  bucketListCourseIds = [];
+  bucketListHydrated = false;
+  bucketListHydrationPromise = null;
 }
 
 const PLAYED_KEY = "elitetee_played_courses";

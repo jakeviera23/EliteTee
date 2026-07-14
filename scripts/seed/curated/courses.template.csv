@@ -1,0 +1,2 @@
+# EliteTee curated seed CSV template. Leave unknown fields empty.
+external_id,legacy_external_id,name,slug,city,region,country,latitude,longitude,website,course_type,access_type,holes,architect,year_opened,elite_tier,curated_tags,featured_status

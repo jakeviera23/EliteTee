@@ -93,6 +93,10 @@
   padding: var(--et-space-4);
 }
 
+.et-course-detail-hero--no-image .et-course-detail-hero-body {
+  gap: 0.65rem;
+}
+
 @media (min-width: 48rem) {
   .et-course-detail-hero-body {
     padding: var(--et-space-5);
@@ -105,6 +109,12 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--cd-gold);
+}
+
+.et-course-detail-architect-year {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--et-text-secondary);
 }
 
 .et-course-detail-title {
@@ -148,6 +158,8 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (min-width: 40rem) {
@@ -178,6 +190,7 @@
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--et-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .et-course-detail-hero-stat--rating dd {
@@ -232,6 +245,13 @@
 
 .et-btn--secondary:hover {
   background: var(--cd-forest-soft);
+}
+
+.et-btn--secondary.is-active,
+.et-btn--secondary[aria-pressed="true"] {
+  border-color: var(--cd-gold);
+  color: var(--cd-forest);
+  background: color-mix(in srgb, var(--cd-gold-soft) 55%, white 45%);
 }
 
 .et-btn--ghost {

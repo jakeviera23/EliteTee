@@ -257,8 +257,40 @@
 
 .et-course-card-media {
   position: relative;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
   background: var(--et-bg-inset);
+}
+
+.et-course-card-media--no-image {
+  aspect-ratio: auto;
+  padding: 0.85rem 0.95rem;
+  min-height: 4.75rem;
+  display: grid;
+  align-content: center;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--et-bg-inset) 82%, var(--courses-gold-soft) 18%),
+    var(--et-bg-inset)
+  );
+}
+
+.et-course-card-branded {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.et-course-card-branded-label {
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--courses-gold);
+}
+
+.et-course-card-branded-name {
+  font-family: var(--et-font-serif, var(--serif));
+  font-size: 0.95rem;
+  line-height: 1.2;
+  color: var(--et-text-primary);
 }
 
 .et-course-card-image,
@@ -301,6 +333,25 @@
   font-weight: 500;
   color: var(--et-text-secondary);
   background: color-mix(in srgb, var(--et-bg-surface) 88%, transparent);
+}
+
+.et-course-card-bucket {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--courses-gold-soft) 82%, white 18%);
+  color: var(--courses-forest);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, var(--courses-gold) 35%, transparent);
+  box-shadow: var(--et-shadow-xs);
 }
 
 .et-course-card-body {

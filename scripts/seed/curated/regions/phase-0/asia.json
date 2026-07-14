@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "region": "Asia",
+  "phase": "phase-0",
+  "courses": [
+    {
+      "name": "Hirono Golf Club",
+      "slug": "hirono-golf-club",
+      "city": "Kato",
+      "region": "Hyogo",
+      "country": "Japan",
+      "course_type": "parkland",
+      "access_type": "private",
+      "architect": "Charles H. Alison",
+      "year_opened": 1932,
+      "holes": 18,
+      "par": 72,
+      "yardage": 6840,
+      "description": "Private Charles Alison course in Hyogo Prefecture, Japan, considered among the finest classic courses in Asia.",
+      "latitude": 34.9167,
+      "longitude": 134.95
+    },
+    {
+      "name": "Mission Hills Golf Club — World Cup Course",
+      "slug": "mission-hills-world-cup-course",
+      "city": "Shenzhen",
+      "region": "Guangdong",
+      "country": "China",
+      "course_type": "parkland",
+      "access_type": "public",
+      "architect": "Jack Nicklaus",
+      "year_opened": 1994,
+      "holes": 18,
+      "par": 72,
+      "description": "Public Jack Nicklaus course at Mission Hills Shenzhen, built to host the World Cup of Golf.",
+      "latitude": 22.7333,
+      "longitude": 114.0833
+    }
+  ]
+}

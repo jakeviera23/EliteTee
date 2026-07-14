@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { classifyIntent, buildRetrievalFilters, extractCourseNameFromQuestion, isSelfIdentityQuestion } from "../_shared/ai/intent.ts";
+import {
+  buildCourseDirectoryAnswer,
+  buildNoCourseDirectoryResultsAnswer,
+  filterCoursesByDirectoryFilters,
+} from "../_shared/ai/course-directory-answer.ts";
 import { getProviderForTask } from "../_shared/ai/provider-registry.ts";
 import { rankMembers, sanitizeUntrustedText } from "../_shared/ai/scoring.ts";
 import {
@@ -256,11 +261,69 @@ Deno.serve(async (req) => {
     if (courseError) {
       console.error("ai_search_golf_courses failed:", courseError.message);
     }
-    courses = (courseRows ?? []) as RetrievedCourse[];
+    const retrieved = (courseRows ?? []) as RetrievedCourse[];
+    courses = filterCoursesByDirectoryFilters(retrieved, filters.courseDirectoryFilters);
     sources.push("Course directory");
     if (courses.some((course) => (course.avg_rating ?? 0) > 0 || (course.round_count ?? 0) > 0)) {
       sources.push("Member reviews");
     }
+
+    if (courses.length === 0) {
+      const noResultsAnswer = buildNoCourseDirectoryResultsAnswer(filters.courseDirectoryFilters.locationQuery);
+      const noResultsResponse: AskEliteTeeResponse = {
+        status: "ok",
+        intent: "find_courses",
+        answer: noResultsAnswer,
+        sources: ["Course directory"],
+        members: [],
+        courses: [],
+        reasons: [],
+        query_id: null,
+      };
+
+      const { data: queryRow } = await supabase
+        .from("ai_queries")
+        .insert({
+          user_id: user.id,
+          intent: "find_courses",
+          status: "ok",
+          latency_ms: Date.now() - started,
+          model: "deterministic",
+          error_code: retrieved.length > 0 ? "FILTERED_NO_MATCHES" : "NO_DIRECTORY_MATCHES",
+        })
+        .select("id")
+        .maybeSingle();
+
+      noResultsResponse.query_id = queryRow?.id ? String(queryRow.id) : null;
+      return jsonResponse(noResultsResponse);
+    }
+
+    const directoryAnswer = buildCourseDirectoryAnswer(courses, filters.courseDirectoryFilters);
+    const directoryResponse: AskEliteTeeResponse = {
+      status: "ok",
+      intent: "find_courses",
+      answer: directoryAnswer,
+      sources: [...new Set(sources)],
+      members: [],
+      courses: courses.slice(0, 8),
+      reasons: [],
+      query_id: null,
+    };
+
+    const { data: directoryQueryRow } = await supabase
+      .from("ai_queries")
+      .insert({
+        user_id: user.id,
+        intent: "find_courses",
+        status: "ok",
+        latency_ms: Date.now() - started,
+        model: "deterministic",
+      })
+      .select("id")
+      .maybeSingle();
+
+    directoryResponse.query_id = directoryQueryRow?.id ? String(directoryQueryRow.id) : null;
+    return jsonResponse(directoryResponse);
   } else {
     const { data: memberRows, error: memberError } = await supabase.rpc("ai_search_portal_members", {
       p_filters: filters.memberFilters,

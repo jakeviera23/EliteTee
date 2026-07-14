@@ -1,3 +1,10 @@
+import type {
+  GolfCourseCuratedTag,
+  GolfCourseEliteTier,
+  GolfCourseFeaturedStatus,
+} from "./golfCourseCurated";
+import { normalizeRegionLabel } from "../lib/courseLocationNormalization";
+
 export type GolfCourseRecord = {
   id: string;
   external_id?: string | null;
@@ -12,6 +19,8 @@ export type GolfCourseRecord = {
   course_type?: string | null;
   access_type?: string | null;
   holes?: number | null;
+  par?: number | null;
+  yardage?: number | null;
   description?: string | null;
   image_url?: string | null;
   thumbnail_url?: string | null;
@@ -21,6 +30,18 @@ export type GolfCourseRecord = {
   image_updated_at?: string | null;
   source_name?: string | null;
   submitted_by_member?: boolean;
+  created_by_user_id?: string | null;
+  lifecycle_status?: string | null;
+  aliases?: string[];
+  architect?: string | null;
+  year_opened?: number | null;
+  course_style?: string | null;
+  editorial_summary?: string | null;
+  enrichment_status?: string | null;
+  enrichment_version?: string | null;
+  elite_tier?: GolfCourseEliteTier | null;
+  curated_tags?: GolfCourseCuratedTag[];
+  featured_status?: GolfCourseFeaturedStatus | null;
   round_count?: number;
   member_count?: number;
   recommend_pct?: number | null;
@@ -48,7 +69,8 @@ export function shouldShowCommunityAddedBadge(
 }
 
 export function formatGolfCourseLocation(course: Pick<GolfCourseRecord, "city" | "region" | "country">) {
-  return [course.city, course.region, course.country].filter(Boolean).join(", ");
+  const normalizedRegion = normalizeRegionLabel(course.country, course.region) || course.region;
+  return [course.city, normalizedRegion, course.country].filter(Boolean).join(", ");
 }
 
 export function getGolfCourseInitials(name: string) {

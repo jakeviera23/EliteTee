@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "source_name": "elitetee_curated",
+  "description": "Phase 1 curated expansion batch (100 courses). Import after editorial review.",
+  "phase": 1,
+  "course_count": 100,
+  "files": [
+    "regions/phase-1/united-states.json",
+    "regions/phase-1/united-kingdom-ireland.json",
+    "regions/phase-1/canada.json",
+    "regions/phase-1/australia-new-zealand.json",
+    "regions/phase-1/europe.json",
+    "regions/phase-1/asia.json",
+    "regions/phase-1/middle-east.json",
+    "regions/phase-1/other-destinations.json"
+  ]
+}

@@ -71,6 +71,98 @@
   min-width: 8.5rem;
 }
 
+.feed-composer-submit-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid color-mix(in srgb, var(--et-text-inverse) 35%, transparent);
+  border-top-color: var(--et-text-inverse);
+  border-radius: var(--et-radius-full);
+  animation: et-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+.et-feed .feed-composer-message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin: -0.35rem 0 0.15rem;
+  padding-inline: 0.15rem;
+}
+
+.et-feed .feed-composer-helper {
+  margin: 0;
+  flex: 1 1 14rem;
+  font-size: var(--et-text-body-sm);
+  line-height: 1.45;
+  color: var(--feed-text-secondary);
+}
+
+.et-feed .feed-composer-char-count {
+  margin: 0 0 0 auto;
+  font-size: var(--et-text-caption);
+  letter-spacing: var(--et-tracking-wide);
+  color: var(--feed-stone);
+  transition: color var(--et-duration-base) var(--et-ease-out);
+}
+
+.et-feed .feed-composer-char-count.is-ready {
+  color: var(--feed-forest);
+}
+
+.et-feed .feed-composer-submit.et-btn--forest {
+  opacity: 1;
+  color: #3d3d3a;
+  background: #ececea;
+  border: 1px solid #c8c8c4;
+  transition:
+    color var(--et-duration-base) var(--et-ease-out),
+    background var(--et-duration-base) var(--et-ease-out),
+    border-color var(--et-duration-base) var(--et-ease-out),
+    box-shadow var(--et-duration-base) var(--et-ease-out);
+}
+
+.et-feed .feed-composer-submit.et-btn--forest.feed-composer-submit--ready:not(:disabled) {
+  color: var(--et-text-inverse);
+  background: var(--feed-forest);
+  border-color: var(--feed-forest);
+}
+
+.et-feed .feed-composer-submit.et-btn--forest.feed-composer-submit--ready:hover:not(:disabled) {
+  color: var(--et-text-inverse);
+  background: #2d5a48;
+  border-color: #2d5a48;
+}
+
+.et-feed .feed-composer-submit.et-btn--forest:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--feed-forest-soft);
+}
+
+.et-feed .feed-composer-submit.et-btn--forest:disabled:not(.feed-composer-submit--posting) {
+  opacity: 1;
+  color: #3d3d3a;
+  background: #ececea;
+  border-color: #c8c8c4;
+  cursor: not-allowed;
+}
+
+.et-feed .feed-composer-submit.et-btn--forest.feed-composer-submit--posting:disabled {
+  opacity: 1;
+  color: var(--et-text-inverse);
+  background: var(--feed-forest);
+  border-color: var(--feed-forest);
+  cursor: wait;
+}
+
+@media (hover: none) {
+  .et-feed .feed-composer-submit.et-btn--forest.feed-composer-submit--ready:active:not(:disabled) {
+    background: color-mix(in srgb, var(--feed-forest) 82%, black 18%);
+    border-color: color-mix(in srgb, var(--feed-forest) 82%, black 18%);
+  }
+}
+
 .et-feed .feed-composer {
   padding: 0;
   background: var(--et-bg-surface);
