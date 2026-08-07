@@ -1,8 +1,11 @@
 import { Navbar } from "../components/Navbar";
-import { EditorialSpread } from "../components/EditorialSpread";
-import { HowMembershipWorks } from "../components/HowMembershipWorks";
-import { MemberStandards } from "../components/MemberStandards";
+import { Hero } from "../components/Hero";
+import { HomeWhatEliteTeeDoes } from "../components/HomeWhatEliteTeeDoes";
+import { HomeInsideEliteTee } from "../components/HomeInsideEliteTee";
+import { HomeWhyItExists } from "../components/HomeWhyItExists";
+import { HomeEarlyNetwork } from "../components/HomeEarlyNetwork";
 import { RequestIntroduction } from "../components/RequestIntroduction";
+import { HomeCtaBand } from "../components/HomeCtaBand";
 import { Footer } from "../components/Footer";
 
 export function Home() {
@@ -10,10 +13,13 @@ export function Home() {
     <>
       <Navbar />
       <main>
-        <EditorialSpread />
-        <MemberStandards />
-        <HowMembershipWorks />
+        <Hero />
+        <HomeWhatEliteTeeDoes />
+        <HomeInsideEliteTee />
+        <HomeWhyItExists />
+        <HomeEarlyNetwork />
         <RequestIntroduction />
+        <HomeCtaBand />
       </main>
       <Footer />
     </>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { navLinks } from "../data/content";
+import { navApplyLink, navLinks } from "../data/content";
 
 function scrollToSection(hash: string) {
   const id = hash.replace("#", "");
@@ -111,6 +111,11 @@ export function Navbar() {
                 className={l.className}
               />
             ))}
+            <NavItem
+              href={navApplyLink.href}
+              label={navApplyLink.label}
+              className={navApplyLink.className}
+            />
           </nav>
 
           <button
@@ -142,6 +147,12 @@ export function Navbar() {
               onNavigate={() => setOpen(false)}
             />
           ))}
+          <NavItem
+            href={navApplyLink.href}
+            label={navApplyLink.label}
+            className={`${navApplyLink.className} mobile-menu-apply`}
+            onNavigate={() => setOpen(false)}
+          />
         </nav>
       )}
     </>

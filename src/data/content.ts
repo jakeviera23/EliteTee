@@ -120,21 +120,122 @@ export const featureHeroes: FeatureHero[] = [
   },
 ];
 
-export const memberStandardsLead =
-  "EliteTee is built on respect for the game, authentic sharing, and trusted relationships.";
+export type MemberStandard = {
+  title: string;
+  description: string;
+};
 
-export const memberStandards: string[] = [
-  "Share golf experiences in good faith — rounds, travel, courses, and the culture of the game.",
-  "Treat fellow members with the courtesy expected on and off the course.",
-  "Optional verification supports trust within a curated community of serious golfers.",
-  "Connect to play together and build relationships through shared golf experiences.",
+export const insideEliteTeeLead =
+  "The member platform for rounds, courses, introductions, and private messaging.";
+
+export const homeEditorialQuote = "Golf has always been about who you meet along the way.";
+
+export const standardsBandTitle = "Built around the game.";
+
+export const memberStandards: MemberStandard[] = [
+  {
+    title: "Respect the game",
+    description: "Honor the courses, culture, and traditions of golf.",
+  },
+  {
+    title: "Share honestly",
+    description: "Post rounds and travel in good faith.",
+  },
+  {
+    title: "Build real relationships",
+    description: "Find people worth playing with.",
+  },
+];
+
+export type WhyGolfersJoinCard = {
+  id: string;
+  title: string;
+  description: string;
+};
+
+export type MembershipJourneyStep = {
+  step: string;
+  title: string;
+  description: string;
+};
+
+export type SocialProofItem = {
+  id: string;
+  label: string;
+  detail: string;
+};
+
+export const whyGolfersJoinLead =
+  "Four ways members get more from golf — beyond the scorecard and the scroll.";
+
+export const whyGolfersJoinCards: WhyGolfersJoinCard[] = [
+  {
+    id: "share",
+    title: "Share Your Rounds",
+    description:
+      "Post photos and stories from the courses you play — with members who understand the game.",
+  },
+  {
+    id: "discover",
+    title: "Discover Great Courses",
+    description:
+      "Explore destinations through member reviews, ratings, and firsthand round histories.",
+  },
+  {
+    id: "connect",
+    title: "Connect With Serious Golfers",
+    description:
+      "Find members by club, location, travel plans, and the interests you actually share.",
+  },
+  {
+    id: "relationships",
+    title: "Build Trusted Relationships",
+    description:
+      "Request introductions, message privately, and find partners for your next round.",
+  },
+];
+
+export const membershipJourneyLead =
+  "Membership is selective to protect quality and keep the experience golf-first.";
+
+export const membershipJourneySteps: MembershipJourneyStep[] = [
+  {
+    step: "01",
+    title: "Request membership",
+    description: "Tell us where you play and why you want to join.",
+  },
+  {
+    step: "02",
+    title: "Thoughtful review",
+    description: "Applications are reviewed to maintain a curated community.",
+  },
+  {
+    step: "03",
+    title: "Join the network",
+    description: "Get access to the feed, courses, discover, and messaging.",
+  },
+  {
+    step: "04",
+    title: "Play and connect",
+    description: "Share rounds, find games, and build trusted relationships.",
+  },
+];
+
+export const socialProofItems: SocialProofItem[] = [
+  { id: "curated", label: "Curated membership", detail: "Selective by design" },
+  { id: "golf-first", label: "Golf-first community", detail: "Built around the game" },
+  { id: "trust", label: "Trusted connections", detail: "Quality over volume" },
+  { id: "private", label: "Private network", detail: "Members only" },
 ];
 
 export const navLinks = [
-  { href: "#society", label: "Society" },
-  { href: "#feed-preview", label: "Feed" },
-  { href: "#discover-preview", label: "Discover" },
-  { href: "#community", label: "Community" },
-  { href: "#membership", label: "Membership" },
+  { href: "#product", label: "Inside EliteTee" },
+  { href: "#apply", label: "Membership" },
   { href: "/login", label: "Sign In", className: "nav-link--login" },
 ];
+
+export const navApplyLink = {
+  href: "#apply",
+  label: "Request Membership",
+  className: "nav-link--apply",
+};

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { membershipApplicationIntro } from "../data/homePage";
 import { submitMembershipApplication } from "../lib/membershipApplications";
 
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
@@ -79,13 +80,9 @@ export function RequestIntroduction() {
       aria-labelledby="request-heading"
     >
       <div className="layout request-layout request-layout--membership">
-        <header className="section-intro request-intro request-intro--membership">
-          <span className="request-logo-mark" aria-hidden="true" />
-          <h2 id="request-heading">Request Membership</h2>
-          <p className="section-lead request-lead">
-            EliteTee is a curated golf community for serious golfers to share rounds, discover
-            courses, and build trusted relationships through the game.
-          </p>
+        <header className="request-intro request-intro--minimal">
+          <h2 id="request-heading">{membershipApplicationIntro.title}</h2>
+          <p className="request-lead">{membershipApplicationIntro.body}</p>
         </header>
 
         <div className="request-panel">
@@ -130,12 +127,12 @@ export function RequestIntroduction() {
 
               <label className="request-form-wide">
                 <span>What do you love most about golf?</span>
-                <textarea name="golfLove" rows={3} required />
+                <textarea name="golfLove" rows={2} required />
               </label>
 
               <label className="request-form-wide">
                 <span>Why do you want to join EliteTee?</span>
-                <textarea name="whyJoin" rows={4} required />
+                <textarea name="whyJoin" rows={3} required />
               </label>
 
               <div className="request-form-actions">

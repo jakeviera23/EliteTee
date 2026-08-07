@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { MouseEvent } from "react";
 import { photos } from "../assets/photos";
-import { publicEarlyStageCopy } from "../data/content";
+import { homeHeroCopy } from "../data/homePage";
 
 function scrollToApply(event: MouseEvent<HTMLAnchorElement>) {
   if (window.location.pathname !== "/") return;
@@ -16,7 +16,7 @@ function scrollToApply(event: MouseEvent<HTMLAnchorElement>) {
 
 export function Hero() {
   return (
-    <section className="hero-cinematic" aria-labelledby="hero-heading">
+    <section className="hero-cinematic hero-cinematic--credible" aria-labelledby="hero-heading">
       <img
         className="hero-cinematic-bg"
         src={photos.heroCoastal}
@@ -29,26 +29,20 @@ export function Hero() {
       <div className="hero-cinematic-overlay" aria-hidden />
       <div className="hero-cinematic-inner layout">
         <div className="hero-cinematic-copy">
-          <p className="hero-cinematic-eyebrow">Curated golf community</p>
+          <p className="hero-cinematic-eyebrow">{homeHeroCopy.eyebrow}</p>
           <h1 id="hero-heading" className="hero-cinematic-title">
-            Golf&apos;s Highest-Quality Social Community.
+            {homeHeroCopy.title}
           </h1>
-          <p className="hero-cinematic-desc">
-            A curated golf community for serious golfers to share rounds, discover courses, and
-            build trusted relationships through the game.
-          </p>
+          <p className="hero-cinematic-desc">{homeHeroCopy.description}</p>
           <div className="hero-actions hero-cinematic-actions">
             <a href="/#apply" className="btn-hero btn-hero--primary" onClick={scrollToApply}>
-              Join EliteTee
+              {homeHeroCopy.primaryCta}
             </a>
             <Link to="/login" className="btn-hero btn-hero--ghost">
-              Sign In
+              {homeHeroCopy.signIn}
             </Link>
           </div>
-          <p className="hero-cinematic-note">
-            Not the biggest golf community — the highest-quality one. {publicEarlyStageCopy.earlyCommunity}
-            . {publicEarlyStageCopy.applicationsReviewed}.
-          </p>
+          <p className="hero-cinematic-trust">{homeHeroCopy.trustLine}</p>
         </div>
       </div>
     </section>
