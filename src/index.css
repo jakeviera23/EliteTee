@@ -26,13 +26,8 @@
   --et-logo-header-mark-h: calc(36px * var(--et-logo-scale-header));
   --et-logo-header-mark-h-lg: calc(42px * var(--et-logo-scale-header));
   --et-logo-header-wordmark-size: calc(1.0625rem * var(--et-logo-scale-header));
-  --et-logo-inside-mark-h: calc(30px * var(--et-logo-scale-header));
-  --et-logo-inside-wordmark-size: calc(1.0625rem * var(--et-logo-scale-header));
-  --et-logo-portal-header-mark-h: calc(56px * var(--et-logo-scale-header));
-  --et-logo-portal-header-mark-h-md: calc(52px * var(--et-logo-scale-header));
-  --et-logo-portal-header-mark-h-sm: calc(44px * var(--et-logo-scale-header));
   --et-logo-request-mark-h: calc(80px * var(--et-logo-scale-header));
-  --et-logo-loader-mark-h: clamp(9rem, 20vw, 14rem);
+  --et-logo-loader-mark-h: clamp(11.25rem, 25vw, 17.5rem);
 }
 
 *,
@@ -251,19 +246,7 @@ button {
 }
 
 .logo-mark {
-  display: block;
-  height: var(--et-logo-header-mark-h);
-  width: calc(var(--et-logo-header-mark-h) * var(--et-logo-mark-aspect));
-  flex-shrink: 0;
   background-color: var(--logo-hero);
-  -webkit-mask-image: url(/elitetee-logo-mark.png);
-  mask-image: url(/elitetee-logo-mark.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
   transition: background-color 0.35s var(--ease);
 }
 
@@ -274,13 +257,6 @@ button {
 
 .nav.is-scrolled .logo-mark {
   background-color: var(--logo-scrolled);
-}
-
-@media (min-width: 900px) {
-  .logo-mark {
-    height: var(--et-logo-header-mark-h-lg);
-    width: calc(var(--et-logo-header-mark-h-lg) * var(--et-logo-mark-aspect));
-  }
 }
 
 .logo-wordmark {
@@ -2008,34 +1984,9 @@ button {
 }
 
 .request-logo-mark {
-  display: block;
-  height: var(--et-logo-request-mark-h);
-  width: calc(var(--et-logo-request-mark-h) * var(--et-logo-mark-aspect));
   margin: 0 auto 1.5rem;
-  flex-shrink: 0;
   background-color: var(--logo-scrolled);
   opacity: 0.88;
-  -webkit-mask-image: url(/elitetee-logo-mark.png);
-  mask-image: url(/elitetee-logo-mark.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-
-@keyframes et-logo-breathe {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
 }
 
 .page-loading {
@@ -2046,20 +1997,7 @@ button {
 }
 
 .page-loading-logo {
-  display: block;
-  height: var(--et-logo-loader-mark-h);
-  width: calc(var(--et-logo-loader-mark-h) * var(--et-logo-mark-aspect));
-  flex-shrink: 0;
   background-color: var(--logo-scrolled);
-  -webkit-mask-image: url(/elitetee-logo-mark.png);
-  mask-image: url(/elitetee-logo-mark.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  animation: et-logo-breathe 1.8s ease-in-out infinite;
 }
 
 .request-desk-line {

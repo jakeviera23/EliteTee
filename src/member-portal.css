@@ -31,9 +31,7 @@
 }
 
 .portal-loader-logo {
-  height: var(--et-logo-loader-mark-h);
-  width: calc(var(--et-logo-loader-mark-h) * var(--et-logo-mark-aspect));
-  animation: et-logo-breathe 1.8s ease-in-out infinite;
+  background-color: var(--inside-gold);
 }
 
 /* Top bar */
@@ -61,8 +59,7 @@
 }
 
 .portal-logo-mark {
-  height: var(--et-logo-portal-header-mark-h);
-  width: calc(var(--et-logo-portal-header-mark-h) * var(--et-logo-mark-aspect));
+  background-color: var(--inside-gold);
 }
 
 .portal-signout {
@@ -1934,11 +1931,6 @@
 @media (max-width: 639px) {
   .portal-top {
     padding-block: 0.7rem;
-  }
-
-  .portal-logo-mark {
-    height: var(--et-logo-portal-header-mark-h-md);
-    width: calc(var(--et-logo-portal-header-mark-h-md) * var(--et-logo-mark-aspect));
   }
 
   .portal-signout {
@@ -7290,11 +7282,6 @@
     min-height: 44px;
     justify-content: center;
     padding: 0.625rem;
-  }
-
-  .portal-logo-mark {
-    height: var(--et-logo-portal-header-mark-h-sm);
-    width: calc(var(--et-logo-portal-header-mark-h-sm) * var(--et-logo-mark-aspect));
   }
 
   .portal-top {

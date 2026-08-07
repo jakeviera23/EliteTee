@@ -386,7 +386,7 @@ export function AdminMembers() {
     <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
       <header className="portal-top portal-chrome">
         <Link to="/member-portal" className="portal-logo-link" aria-label="EliteTee member portal">
-          <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
+          <span className="portal-logo-mark" aria-hidden="true" />
         </Link>
         <button
           type="button"

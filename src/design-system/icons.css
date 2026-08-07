@@ -75,25 +75,9 @@
   outline-offset: 2px;
 }
 
-/* Logo mark container */
+/* Logo mark container — color variants; sizing in logo.css */
 .et-logo-mark {
-  display: block;
-  height: calc(2rem * var(--et-logo-scale-header, 1.3));
-  width: calc(calc(2rem * var(--et-logo-scale-header, 1.3)) * var(--et-logo-mark-aspect, calc(1024 / 682)));
   background-color: var(--et-accent);
-  -webkit-mask-image: url(/elitetee-logo-mark.png);
-  mask-image: url(/elitetee-logo-mark.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-
-.et-logo-mark--lg {
-  height: calc(2.625rem * var(--et-logo-scale-header, 1.3));
-  width: calc(calc(2.625rem * var(--et-logo-scale-header, 1.3)) * var(--et-logo-mark-aspect, calc(1024 / 682)));
 }
 
 .et-logo-mark--hero {

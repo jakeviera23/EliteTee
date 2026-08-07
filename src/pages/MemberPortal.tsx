@@ -665,7 +665,7 @@ function MemberPortalContent() {
           className={`portal-loader${isInitialLoading || isTransitioning ? "" : " is-fading"}`}
           aria-hidden="true"
         >
-          <span className="inside-logo-mark portal-loader-logo" />
+          <span className="portal-loader-logo" />
         </div>
       ) : null}
 
@@ -678,7 +678,7 @@ function MemberPortalContent() {
               aria-label="EliteTee home"
               onClick={() => (isMobileLayout ? handleMobileNav("feed") : transitionTo("feed"))}
             >
-              <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
+              <span className="portal-logo-mark" aria-hidden="true" />
             </button>
 
             <div className="portal-top-actions">

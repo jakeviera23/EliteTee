@@ -60,24 +60,13 @@
   gap: 0.65rem;
   flex-shrink: 0;
   font-family: var(--serif);
-  font-size: var(--et-logo-inside-wordmark-size);
+  font-size: var(--et-logo-header-wordmark-size);
   letter-spacing: 0.04em;
   color: var(--inside-text);
 }
 
 .inside-logo-mark {
-  display: block;
-  height: var(--et-logo-inside-mark-h);
-  width: calc(var(--et-logo-inside-mark-h) * var(--et-logo-mark-aspect));
   background-color: var(--inside-gold);
-  -webkit-mask-image: url(/elitetee-logo-mark.png);
-  mask-image: url(/elitetee-logo-mark.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
 }
 
 .inside-topnav-links {
