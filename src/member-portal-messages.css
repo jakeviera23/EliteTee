@@ -530,6 +530,24 @@
   background: color-mix(in srgb, var(--et-bg-surface) 90%, var(--msg-gold-soft) 10%);
 }
 
+.et-messages-empty {
+  align-content: center;
+  min-height: 18rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border-style: solid;
+  text-align: center;
+}
+
+.et-messages-empty .et-messages-empty-action {
+  justify-self: center;
+}
+
+.et-messages-panel-placeholder {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(184, 149, 90, 0.08), transparent 35%),
+    var(--et-bg-surface);
+}
+
 .et-messages-empty-title,
 .et-messages-thread-empty-title {
   margin: 0;
@@ -544,6 +562,11 @@
   color: var(--et-text-secondary);
   line-height: 1.55;
   font-size: 0.9375rem;
+}
+
+.et-messages-empty-action {
+  width: fit-content;
+  margin-top: var(--et-space-2);
 }
 
 .et-messages-thread-error {
@@ -677,14 +700,14 @@
 
   .et-messages-panel.is-visible-mobile {
     position: fixed;
-    top: 0;
+    top: var(--et-message-viewport-top, 0px);
     right: 0;
     left: 0;
-    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: auto;
     z-index: 125;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
-    height: auto;
+    height: var(--et-message-viewport-height, calc(100dvh - 3.5rem - env(safe-area-inset-bottom, 0px)));
     min-height: 0;
     overflow: hidden;
     padding-top: env(safe-area-inset-top, 0px);
@@ -721,6 +744,30 @@
   }
 }
 
+@media (min-width: 768px) and (max-width: 899px) and (orientation: landscape) {
+  .et-messages-panel.is-visible-mobile {
+    position: fixed;
+    top: var(--et-message-viewport-top, 0px);
+    right: 0;
+    left: 0;
+    z-index: 125;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: var(--et-message-viewport-height, calc(100dvh - 3.5rem - env(safe-area-inset-bottom, 0px)));
+    min-height: 0;
+    overflow: hidden;
+    padding-top: env(safe-area-inset-top, 0px);
+    border: 0;
+    border-radius: 0;
+    background: var(--msg-stone);
+  }
+
+  .et-messages-panel.is-visible-mobile .et-messages-thread-scroll {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
 @media (min-width: 900px) {
   .et-messages-back {
     display: none;
@@ -734,5 +781,56 @@
 @media (prefers-reduced-motion: reduce) {
   .et-messages-conversation {
     transition: none;
+  }
+}
+/* Golf-specific relationship context stays concise so the thread remains the focus. */
+.et-messages-context {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--et-border-hairline, rgba(46, 59, 49, 0.1));
+  background: rgba(184, 149, 90, 0.06);
+  overflow-x: auto;
+}
+
+.et-messages-context-label {
+  flex: 0 0 auto;
+  color: var(--et-text-tertiary, #768078);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.et-messages-context-items {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.et-messages-context-item {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid rgba(46, 59, 49, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--et-text-secondary, #4d5a52);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.et-messages-context-item--contribution {
+  border-color: rgba(184, 149, 90, 0.26);
+  background: rgba(184, 149, 90, 0.11);
+  color: #6f552b;
+}
+
+@media (max-width: 767px) {
+  .et-messages-context {
+    align-items: flex-start;
+    padding-inline: 0.8rem;
+  }
+
+  .et-messages-context-label {
+    padding-top: 0.35rem;
   }
 }

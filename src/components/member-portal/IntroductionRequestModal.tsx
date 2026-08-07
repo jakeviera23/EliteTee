@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { introductionsCopy } from "../../data/portalSocial";
 import { createIntroductionRequest } from "../../lib/introductionRequests";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
@@ -18,6 +19,8 @@ export function IntroductionRequestModal({
   onClose,
   onSubmitted,
 }: IntroductionRequestModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -52,6 +55,7 @@ export function IntroductionRequestModal({
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal et-introductions-modal"
         role="dialog"
         aria-labelledby="introduction-request-title"

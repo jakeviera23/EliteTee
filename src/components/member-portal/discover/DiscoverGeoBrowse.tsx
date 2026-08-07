@@ -6,20 +6,14 @@ type DiscoverGeoBrowseProps = {
 };
 
 export function DiscoverGeoBrowse({ groups, onApplyFilter }: DiscoverGeoBrowseProps) {
-  if (groups.length === 0) return null;
+  const featuredGroups = groups.slice(0, 5);
+  if (featuredGroups.length === 0) return null;
 
   return (
-    <section className="et-discover-geo" aria-labelledby="discover-geo-heading">
-      <div className="et-discover-geo-head">
-        <h3 id="discover-geo-heading" className="et-discover-section-title">
-          Browse by location
-        </h3>
-        <p className="et-discover-section-lead">
-          Explore members by city, region, country, and travel plans.
-        </p>
-      </div>
+    <section className="et-discover-geo" aria-label="Popular member locations">
+      <p className="et-discover-geo-label">Explore places</p>
       <ul className="et-discover-geo-list">
-        {groups.map((group) => (
+        {featuredGroups.map((group) => (
           <li key={`${group.filterKey}:${group.filterValue}`}>
             <button
               type="button"
@@ -34,7 +28,7 @@ export function DiscoverGeoBrowse({ groups, onApplyFilter }: DiscoverGeoBrowsePr
                 })
               }
             >
-              <span>{group.label}</span>
+              <span>{group.label.replace(/^(City|Region|Country|Travel):\s*/, "")}</span>
               <span className="et-discover-geo-count">{group.count}</span>
             </button>
           </li>

@@ -66,7 +66,7 @@ export const privacyPoints: string[] = [
   "Every application is reviewed individually",
   "Optional verification supports trust within a curated community",
   "Contact details are never publicly visible",
-  "Mutual consent before member messaging",
+  "Direct messages stay inside the approved member community",
   "Respect for the game and fellow golfers at all times",
 ];
 

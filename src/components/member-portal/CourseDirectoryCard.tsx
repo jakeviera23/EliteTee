@@ -6,6 +6,7 @@ import {
 } from "../../types/golfCourse";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { CourseImage } from "./CourseImage";
+import { ClubMark } from "./ClubMark";
 
 type CourseDirectoryCardProps = {
   course: GolfCourseSearchResult;
@@ -22,7 +23,6 @@ function formatRecommendLabel(value: number | null | undefined, roundCount: numb
 
 export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: CourseDirectoryCardProps) {
   const location = formatGolfCourseLocation(course);
-  const hasOfficialImage = Boolean(course.image_url?.trim() || course.thumbnail_url?.trim());
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
   const ratingDisplay =
@@ -34,26 +34,19 @@ export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: 
   const showCommunityBadge = shouldShowCommunityAddedBadge(course);
 
   return (
-    <article className={`et-course-card${hasOfficialImage ? "" : " et-course-card--no-image"}`}>
-      <div className={`et-course-card-media${hasOfficialImage ? "" : " et-course-card-media--no-image"}`}>
-        {hasOfficialImage ? (
-          <CourseImage
-            name={course.name}
-            city={course.city}
-            region={course.region}
-            country={course.country}
-            imageUrl={course.image_url}
-            thumbnailUrl={course.thumbnail_url}
-            golfCourseId={course.id}
-            variant="card"
-            className="et-course-card-image"
-          />
-        ) : (
-          <div className="et-course-card-branded" aria-hidden="true">
-            <span className="et-course-card-branded-label">EliteTee Course</span>
-            <span className="et-course-card-branded-name">{course.name}</span>
-          </div>
-        )}
+    <article className="et-course-card">
+      <div className="et-course-card-media">
+        <CourseImage
+          name={course.name}
+          city={course.city}
+          region={course.region}
+          country={course.country}
+          imageUrl={course.image_url}
+          thumbnailUrl={course.thumbnail_url}
+          golfCourseId={course.id}
+          variant="card"
+          className="et-course-card-image"
+        />
         {ratingDisplay ? (
           <span className="et-course-card-rating" aria-label={`Average rating ${ratingDisplay} out of 10.0`}>
             {ratingDisplay}
@@ -68,6 +61,7 @@ export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: 
 
       <div className="et-course-card-body">
         <div className="et-course-card-head">
+          <ClubMark name={course.name} size="sm" />
           <div className="et-course-card-copy">
             <h3 className="et-course-card-title">{course.name}</h3>
             {location ? (
@@ -92,20 +86,17 @@ export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: 
           ) : null}
         </div>
 
-        <dl className="et-course-card-stats">
-          <div>
-            <dt>Members played</dt>
-            <dd>{memberCount > 0 ? memberCount : "None yet"}</dd>
-          </div>
-          <div>
-            <dt>Rounds shared</dt>
-            <dd>{roundCount > 0 ? roundCount : "No rounds shared yet"}</dd>
-          </div>
-          <div className="et-course-card-stats-wide">
-            <dt>Recommend</dt>
-            <dd>{formatRecommendLabel(course.recommend_pct ?? null, roundCount)}</dd>
-          </div>
-        </dl>
+        {roundCount > 0 ? (
+          <p className="et-course-card-proof">
+            {memberCount} {memberCount === 1 ? "member" : "members"}
+            <span aria-hidden="true"> · </span>
+            {roundCount} {roundCount === 1 ? "round" : "rounds"}
+            <span aria-hidden="true"> · </span>
+            {formatRecommendLabel(course.recommend_pct ?? null, roundCount)}
+          </p>
+        ) : (
+          <p className="et-course-card-no-activity">Not yet reviewed by EliteTee members</p>
+        )}
 
         <button
           type="button"

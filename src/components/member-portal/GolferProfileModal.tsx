@@ -11,14 +11,18 @@ type GolferProfileModalProps = {
 };
 
 export function GolferProfileModal({ golfer, onClose }: GolferProfileModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const { showComingSoon } = useComingSoon();
   const isExample = golfer.name.toLowerCase().includes("example");
 
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal portal-modal--golfer"
         role="dialog"
+        aria-modal="true"
         aria-labelledby="golfer-modal-name"
         onClick={(event) => event.stopPropagation()}
       >
@@ -106,3 +110,5 @@ export function GolferProfileModal({ golfer, onClose }: GolferProfileModalProps)
     </div>
   );
 }
+import { useRef } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";

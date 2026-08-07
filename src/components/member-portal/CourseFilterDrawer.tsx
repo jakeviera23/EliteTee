@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useRef } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type { CourseDirectoryFilters, CourseFilterOptions, CourseSortOption } from "../../lib/courseDirectory";
 import { COURSE_SORT_LABELS, countActiveFilters } from "../../lib/courseDirectory";
 
@@ -49,17 +50,8 @@ export function CourseFilterDrawer({
   sortBy,
   onSortChange,
 }: CourseFilterDrawerProps) {
-  useEffect(() => {
-    if (!open) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus({ active: open, dialogRef, onEscape: onClose });
   if (!open) return null;
 
   function updateFilter<Key extends keyof CourseDirectoryFilters>(
@@ -79,6 +71,7 @@ export function CourseFilterDrawer({
   return (
     <div className="et-courses-drawer-backdrop" role="presentation" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="et-courses-drawer"
         role="dialog"
         aria-modal="true"

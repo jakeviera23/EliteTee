@@ -48,7 +48,7 @@ import { CourseFilterDrawer } from "./CourseFilterDrawer";
 import { CourseFiltersBar } from "./CourseFiltersBar";
 import { CourseLocationBrowse } from "./CourseLocationBrowse";
 
-const FEATURED_COURSE_LIMIT = 6;
+const FEATURED_COURSE_LIMIT = 3;
 
 export function PortalCourses() {
   const navigate = useNavigate();
@@ -383,37 +383,39 @@ export function PortalCourses() {
 
   return (
     <section className="et-courses" aria-labelledby="courses-heading">
-      <header className="et-courses-header">
-        <div className="et-courses-header-row">
-          <div className="et-courses-header-copy">
-            <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Course Library</p>
-            <h2 id="courses-heading" className="et-h2">
-              Courses
-            </h2>
-            <p className="et-body et-courses-lead">
-              Browse private clubs, destinations, and member-played courses across EliteTee.
-            </p>
+      <div className="et-courses-intro">
+        <header className="et-courses-header">
+          <div className="et-courses-header-row">
+            <div className="et-courses-header-copy">
+              <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">The Course Edit</p>
+              <h2 id="courses-heading" className="et-h2">
+                The world’s great courses.
+              </h2>
+              <p className="et-body et-courses-lead">
+                Member-reviewed clubs, memorable rounds, and destinations worth traveling for.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="et-btn et-btn--primary et-courses-add-btn"
+              onClick={() => setShowAddCourseModal(true)}
+            >
+              {experienceCopy.shareTitle}
+            </button>
           </div>
-          <button
-            type="button"
-            className="et-btn et-btn--primary et-courses-add-btn"
-            onClick={() => setShowAddCourseModal(true)}
-          >
-            {experienceCopy.shareTitle}
-          </button>
-        </div>
-      </header>
+        </header>
 
-      <CourseFiltersBar
-        query={query}
-        onQueryChange={setQuery}
-        filters={filters}
-        onFiltersChange={setFilters}
-        filterOptions={filterOptions}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        onOpenMobileFilters={() => setFiltersOpen(true)}
-      />
+        <CourseFiltersBar
+          query={query}
+          onQueryChange={setQuery}
+          filters={filters}
+          onFiltersChange={setFilters}
+          filterOptions={filterOptions}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onOpenMobileFilters={() => setFiltersOpen(true)}
+        />
+      </div>
 
       <CourseFilterDrawer
         open={filtersOpen}
@@ -432,6 +434,13 @@ export function PortalCourses() {
               <p className="et-alert__title">Courses unavailable</p>
               <p className="et-alert__body">{loadError}</p>
             </div>
+            <button
+              type="button"
+              className="et-btn et-btn--secondary et-btn--sm"
+              onClick={() => void loadLocationPage(debouncedQuery, 0, locationState, locationStep)}
+            >
+              Retry
+            </button>
           </div>
         ) : null}
 
@@ -440,6 +449,14 @@ export function PortalCourses() {
             <div className="et-loading__mark" aria-hidden="true" />
             <p className="et-loading__text">Loading course library</p>
           </div>
+        ) : null}
+
+        {showFeatured && featuredDiscovery ? (
+          <CourseFeaturedSections
+            categories={featuredDiscovery}
+            onOpen={openCourse}
+            bucketListCourseIdSet={bucketListCourseIdSet}
+          />
         ) : null}
 
         {showLocationBrowse ? (
@@ -532,13 +549,6 @@ export function PortalCourses() {
           </button>
         ) : null}
 
-        {showFeatured && featuredDiscovery ? (
-          <CourseFeaturedSections
-            categories={featuredDiscovery}
-            onOpen={openCourse}
-            bucketListCourseIdSet={bucketListCourseIdSet}
-          />
-        ) : null}
       </div>
 
       {showAddCourseModal ? (

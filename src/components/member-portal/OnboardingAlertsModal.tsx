@@ -15,7 +15,7 @@ const onboardingAlerts = [
   },
   {
     id: "feed",
-    title: "Introduce yourself in the Feed.",
+    title: "Introduce yourself from Home.",
     hint: "Share where you play, what you love about golf, or ask for an introduction.",
   },
   {
@@ -26,6 +26,8 @@ const onboardingAlerts = [
 ] as const;
 
 export function OnboardingAlertsModal({ onClose }: OnboardingAlertsModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   return (
     <div
       className="portal-modal-backdrop"
@@ -33,6 +35,7 @@ export function OnboardingAlertsModal({ onClose }: OnboardingAlertsModalProps) {
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="portal-modal portal-modal--coming-soon portal-modal--onboarding"
         role="dialog"
         aria-labelledby="onboarding-alerts-title"
@@ -63,3 +66,5 @@ export function OnboardingAlertsModal({ onClose }: OnboardingAlertsModalProps) {
     </div>
   );
 }
+import { useRef } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";

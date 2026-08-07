@@ -252,6 +252,58 @@
   background: var(--et-forest-soft);
 }
 
+/* Shared action hierarchy: active controls should never resemble disabled controls. */
+.portal-page.et-theme-portal .et-btn {
+  transition:
+    color var(--et-duration-fast, 160ms) ease,
+    background-color var(--et-duration-fast, 160ms) ease,
+    border-color var(--et-duration-fast, 160ms) ease,
+    box-shadow var(--et-duration-fast, 160ms) ease;
+}
+
+.portal-page.et-theme-portal .et-btn--forest:not(:disabled) {
+  color: #ffffff;
+  background: #1f4a39;
+  border-color: #1f4a39;
+  box-shadow: 0 1px 2px rgba(24, 52, 41, 0.12);
+}
+
+.portal-page.et-theme-portal .et-btn--forest:hover:not(:disabled) {
+  color: #ffffff;
+  background: #173d30;
+  border-color: #173d30;
+}
+
+.portal-page.et-theme-portal .et-btn--secondary:not(:disabled) {
+  color: #234d3d;
+  background: #fffdf8;
+  border-color: rgba(35, 77, 61, 0.44);
+}
+
+.portal-page.et-theme-portal .et-btn--secondary:hover:not(:disabled) {
+  color: #173d30;
+  background: #edf2ed;
+  border-color: #315f4d;
+}
+
+.portal-page.et-theme-portal .et-btn.is-active:not(:disabled),
+.portal-page.et-theme-portal .et-btn[aria-pressed="true"]:not(:disabled) {
+  color: #173d30;
+  background: #e1ebe2;
+  border-color: #315f4d;
+  box-shadow: inset 0 0 0 1px rgba(49, 95, 77, 0.12);
+}
+
+.portal-page.et-theme-portal .et-btn:disabled,
+.portal-page.et-theme-portal .portal-btn:disabled {
+  opacity: 1;
+  color: #59635e;
+  background: #e7e5de;
+  border-color: #c8c6bd;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 /* —— Forms & fields —— */
 .portal-page.et-theme-portal .portal-profile-field span,
 .portal-page.et-theme-portal .portal-composer-field span {

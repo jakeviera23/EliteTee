@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState, type ReactNode } from "react";
+import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { searchGolfCourses } from "../../lib/golfCourses";
@@ -10,6 +11,7 @@ import { formatGolfCourseLocation } from "../../types/golfCourse";
 import type { MemberCourseRoundInsert } from "../../types/memberCourseRound";
 import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
 import { validateCourseRating } from "../../lib/courseRating";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { RoundPhotoPicker } from "./RoundPhotoPicker";
 import "../../member-portal-experience.css";
@@ -121,6 +123,8 @@ export function AddCoursePlayedModal({
   onSubmitted,
   initialCourse,
 }: AddCoursePlayedModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const [form, setForm] = useState(() =>
     initialCourse
       ? {
@@ -253,7 +257,8 @@ export function AddCoursePlayedModal({
 
     if (submitError || !roundData?.id) {
       setSubmitting(false);
-      setError(submitError?.message ?? "Your experience could not be saved.");
+      if (import.meta.env.DEV && submitError) console.error("[AddCoursePlayedModal] submit failed", submitError);
+      setError(memberFacingPortalError(submitError?.message ?? "Experience save failed.", "experience"));
       return;
     }
 
@@ -345,8 +350,10 @@ export function AddCoursePlayedModal({
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal portal-modal--course-played et-experience-modal"
         role="dialog"
+        aria-modal="true"
         aria-labelledby="share-experience-heading"
         onClick={(event) => event.stopPropagation()}
       >
@@ -584,22 +591,6 @@ export function AddCoursePlayedModal({
                 onCoverDraftIdChange={setCoverDraftId}
                 disabled={submitting}
               />
-            </ExperienceSection>
-
-            <ExperienceSection
-              step={4}
-              title={experienceCopy.detailsTitle}
-              description={experienceCopy.detailsLead}
-            >
-              <div className="et-experience-future-grid" aria-hidden="true">
-                {experienceCopy.futureFields.map((field) => (
-                  <div key={field.key} className="et-experience-future-field">
-                    <p className="et-experience-future-label">{field.label}</p>
-                    <p className="et-experience-future-soon">Later</p>
-                  </div>
-                ))}
-              </div>
-              <p className="et-experience-future-note">{experienceCopy.futureFieldsNote}</p>
             </ExperienceSection>
 
             <div className="et-experience-footer">

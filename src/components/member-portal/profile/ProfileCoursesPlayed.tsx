@@ -3,6 +3,7 @@ import {
   formatProfileCoursePlayedMeta,
   type ProfileCoursePlayedSummary,
 } from "../../../lib/profilePageDisplay";
+import { ClubMark } from "../ClubMark";
 
 type ProfileCoursesPlayedProps = {
   courses: ProfileCoursePlayedSummary[];
@@ -29,8 +30,11 @@ export function ProfileCoursesPlayed({ courses, isViewingOther }: ProfileCourses
         const meta = formatProfileCoursePlayedMeta(course);
         const content = (
           <>
-            <span className="et-profile-course-name">{course.courseName}</span>
-            <span className="et-profile-course-meta">{meta}</span>
+            <ClubMark name={course.courseName} size="sm" />
+            <span className="et-profile-course-copy">
+              <span className="et-profile-course-name">{course.courseName}</span>
+              <span className="et-profile-course-meta">{meta}</span>
+            </span>
           </>
         );
 

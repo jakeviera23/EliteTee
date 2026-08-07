@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type { CourseListing } from "../../data/portalSocial";
 import { earlyStageCopy, getPostsForCourse } from "../../data/portalSocial";
 import { isCoursePlayed, togglePlayedCourse } from "../../lib/portalCourseState";
@@ -12,6 +13,8 @@ type CourseDetailModalProps = {
 };
 
 export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const { showToast } = usePortalToast();
   const [played, setPlayed] = useState(() => isCoursePlayed(course.id));
   const posts = getPostsForCourse(course.name);
@@ -44,6 +47,7 @@ export function CourseDetailModal({ course, onClose }: CourseDetailModalProps) {
   return (
     <div className="portal-course-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-course-modal"
         role="dialog"
         aria-modal="true"

@@ -1,4 +1,4 @@
-import { earlyStageCopy, emptyGolferDefaults, type PortalGolfer } from "../data/portalSocial";
+import { emptyGolferDefaults, type PortalGolfer } from "../data/portalSocial";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 
 export type GolferProfileDisplay = {
@@ -22,6 +22,29 @@ export type GolferProfileMediaUrls = {
   avatarImageUrl?: string | null;
 };
 
+function splitClubValues(values: string[]): string[] {
+  const unique = new Map<string, string>();
+  for (const value of values) {
+    for (const club of value.split(/[,;\n]+/).map((entry) => entry.trim()).filter(Boolean)) {
+      const key = club.toLocaleLowerCase();
+      if (!unique.has(key)) unique.set(key, club);
+    }
+  }
+  return [...unique.values()];
+}
+
+export function formatProfileIndustryForDisplay(value: string): string {
+  const cleaned = value.trim().replace(/\s+/g, " ");
+  if (!cleaned || /^(not specified|n\/?a|none|unknown)$/i.test(cleaned)) return "";
+  const words = cleaned.split(" ");
+  const looksLikeHeadline =
+    words.length > 6 ||
+    cleaned.length > 48 ||
+    /[.!?]/.test(cleaned) ||
+    (words.length >= 5 && cleaned === cleaned.toUpperCase());
+  return looksLikeHeadline ? "" : cleaned;
+}
+
 function parseHandicap(value: string): number | undefined {
   if (!value.trim()) return undefined;
   const parsed = Number(value);
@@ -42,7 +65,7 @@ export function buildGolferProfileDisplay(
       title: "",
       location: "",
       homeCourse: "",
-      bio: earlyStageCopy.profileOnboarding,
+      bio: "",
       isVerified: false,
       avatarImage,
       coverImage,
@@ -54,16 +77,19 @@ export function buildGolferProfileDisplay(
     };
   }
 
+  const clubs = splitClubValues([member.primary_club, ...member.additional_clubs]);
+  const homeCourse = clubs[0] ?? "";
+
   return {
     name: member.full_name,
-    title: member.industry || "",
+    title: formatProfileIndustryForDisplay(member.industry || ""),
     location: member.based_in,
-    homeCourse: member.primary_club,
-    bio: member.current_request || earlyStageCopy.profileOnboarding,
+    homeCourse,
+    bio: member.current_request || "",
     isVerified: member.is_verified,
     avatarImage,
     coverImage,
-    favoriteCourses: member.additional_clubs,
+    favoriteCourses: clubs.slice(1),
     upcomingTravel: member.traveling_to || "",
     connectionInterests: member.golf_interests,
     handicap: parseHandicap(member.handicap),

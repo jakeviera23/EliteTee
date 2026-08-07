@@ -223,8 +223,10 @@
 
 .et-profile-headline {
   margin: 0;
+  max-width: 42rem;
   font-size: 1.05rem;
   color: var(--et-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .et-profile-location {
@@ -234,9 +236,21 @@
 }
 
 .et-profile-club {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   margin: 0;
   font-size: 0.9375rem;
   color: var(--et-text-secondary);
+  min-width: 0;
+}
+
+.et-profile-club span {
+  min-width: 0;
+  max-width: min(100%, 42rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .et-profile-club strong {
@@ -443,8 +457,9 @@
 }
 
 .et-profile-course-card {
-  display: grid;
-  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   padding: 0.85rem 1rem;
   border-radius: 0.85rem;
   border: 1px solid var(--et-border-hairline);
@@ -455,6 +470,12 @@
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease;
+}
+
+.et-profile-course-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
 }
 
 .et-profile-course-card:hover,
@@ -475,6 +496,9 @@
 }
 
 .et-profile-course-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 600;
   color: var(--et-text-primary);
 }
@@ -566,6 +590,16 @@
   margin: 0;
   color: var(--et-text-secondary);
   line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.et-profile-chips {
+  max-width: 100%;
+}
+
+.et-profile-chip {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .et-btn {
@@ -754,4 +788,21 @@
   .et-profile-course-card {
     transition: none;
   }
+}
+.et-profile-completion {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+  color: var(--et-ink-muted);
+  font-size: 0.78rem;
+}
+
+.et-profile-completion progress {
+  width: 100%;
+  height: 0.35rem;
+  accent-color: var(--et-gold);
+}
+
+.et-profile-completion small {
+  line-height: 1.45;
 }

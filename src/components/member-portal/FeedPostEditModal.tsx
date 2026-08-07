@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useId, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type { FeedPost } from "../../data/portalSocial";
 import {
   deriveCourseRoundEditDefaults,
@@ -47,6 +48,8 @@ export function FeedPostEditModal({
   onClose,
   onSaved,
 }: FeedPostEditModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const formId = useId();
   const editMode = getFeedPostEditMode(post);
   const [message, setMessage] = useState(post.caption ?? "");
@@ -299,6 +302,7 @@ export function FeedPostEditModal({
   return (
     <div className="feed-edit-backdrop" role="presentation" onClick={isSaving ? undefined : onClose}>
       <div
+        ref={dialogRef}
         className="feed-edit-modal"
         role="dialog"
         aria-modal="true"

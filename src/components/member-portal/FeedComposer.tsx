@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { FeedPost, PortalGolfer, PostType, ComposerPostType } from "../../data/portalSocial";
 import {
   composerPostTypeLabels,
@@ -18,6 +18,9 @@ type FeedComposerProps = {
   author: PortalGolfer;
   onPosted?: (post: FeedPost) => void;
   id?: string;
+  initialPostType?: ComposerPostType;
+  initialMessage?: string;
+  startExpanded?: boolean;
 };
 
 type FieldType = "text" | "select" | "rating";
@@ -41,7 +44,6 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
   "round-review": {
     internalPostType: "course-review",
     primaryKey: "course",
-    hasPhoto: true,
     fields: [
       { key: "course", label: "Course", type: "text", placeholder: "Course name" },
       { key: "rating", label: "Rating", type: "rating" },
@@ -85,7 +87,6 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
   },
   general: {
     internalPostType: "played-today",
-    hasPhoto: true,
     fields: [],
   },
 };
@@ -104,8 +105,8 @@ const detailLabels: Record<string, string> = {
   rating: "Rating",
 };
 
-function defaultValuesFor(type: ComposerPostType): Record<string, string> {
-  const values: Record<string, string> = { message: "" };
+function defaultValuesFor(type: ComposerPostType, initialMessage = ""): Record<string, string> {
+  const values: Record<string, string> = { message: initialMessage };
   for (const field of composerConfig[type].fields) {
     values[field.key] = field.type === "rating" ? String(COURSE_RATING_MAX) : "";
   }
@@ -117,11 +118,18 @@ function parseComposerRating(value: string | undefined): number | null {
   return result.ok ? result.value : null;
 }
 
-export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
-  const [expanded, setExpanded] = useState(false);
-  const [postType, setPostType] = useState<ComposerPostType>("introduction");
+export function FeedComposer({
+  author,
+  onPosted,
+  id,
+  initialPostType = "introduction",
+  initialMessage = "",
+  startExpanded = false,
+}: FeedComposerProps) {
+  const [expanded, setExpanded] = useState(startExpanded);
+  const [postType, setPostType] = useState<ComposerPostType>(initialPostType);
   const [values, setValues] = useState<Record<string, string>>(() =>
-    defaultValuesFor("introduction"),
+    defaultValuesFor(initialPostType, initialMessage),
   );
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,9 +139,18 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
   const config = composerConfig[postType];
 
+  useEffect(() => {
+    setPostType(initialPostType);
+    setValues(defaultValuesFor(initialPostType, initialMessage));
+    setPhotoPreview(null);
+    setSubmitError(null);
+    setExpanded(startExpanded);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [initialMessage, initialPostType, startExpanded]);
+
   function reset() {
-    setPostType("introduction");
-    setValues(defaultValuesFor("introduction"));
+    setPostType(initialPostType);
+    setValues(defaultValuesFor(initialPostType));
     setPhotoPreview(null);
     setExpanded(false);
     setSubmitError(null);
@@ -383,7 +400,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                     Posting…
                   </>
                 ) : (
-                  "Post to Feed"
+                  "Share with members"
                 )}
               </button>
             </div>

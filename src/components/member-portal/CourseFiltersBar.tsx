@@ -82,11 +82,12 @@ export function CourseFiltersBar({
     <div className="et-courses-filters">
       <label className="et-courses-search">
         <span className="visually-hidden">Search courses</span>
+        <span className="et-courses-search-icon" aria-hidden="true">⌕</span>
         <input
           type="search"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search by course name, city, region, or country…"
+          placeholder="Search courses and destinations…"
           autoComplete="off"
         />
       </label>
@@ -98,7 +99,7 @@ export function CourseFiltersBar({
           onClick={onOpenMobileFilters}
           aria-haspopup="dialog"
         >
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          All filters{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
         </button>
 
         <div className="et-courses-filters-desktop" role="group" aria-label="Course filters">
@@ -110,32 +111,11 @@ export function CourseFiltersBar({
             emptyLabel="All countries"
           />
           <FilterSelect
-            label="Region"
-            value={filters.region}
-            options={filterOptions.regions}
-            onChange={(value) => updateFilter("region", value)}
-            emptyLabel="All regions"
-          />
-          <FilterSelect
-            label="City"
-            value={filters.city}
-            options={filterOptions.cities}
-            onChange={(value) => updateFilter("city", value)}
-            emptyLabel="All cities"
-          />
-          <FilterSelect
             label="Course type"
             value={filters.courseType}
             options={filterOptions.courseTypes}
             onChange={(value) => updateFilter("courseType", value)}
             emptyLabel="All types"
-          />
-          <FilterSelect
-            label="Access"
-            value={filters.accessType}
-            options={filterOptions.accessTypes}
-            onChange={(value) => updateFilter("accessType", value)}
-            emptyLabel="All access"
           />
           <label className="et-courses-filter">
             <span>Sort</span>

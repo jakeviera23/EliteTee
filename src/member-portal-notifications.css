@@ -25,9 +25,9 @@
   top: calc(100% + 0.5rem);
   right: 0;
   z-index: 140;
-  width: min(22.5rem, calc(100vw - 2rem));
-  min-width: min(20rem, calc(100vw - 2rem));
-  max-height: min(28rem, calc(100vh - 6rem));
+  width: min(30rem, calc(100vw - 2rem));
+  min-width: min(24rem, calc(100vw - 2rem));
+  max-height: min(36rem, calc(100vh - 6rem));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -92,6 +92,10 @@
 .portal-notifications-close {
   min-width: 44px;
   min-height: 44px;
+  border-color: rgba(46, 59, 49, 0.14);
+  background: transparent;
+  color: var(--portal-text-primary, #1f2a24);
+  font-size: 1.25rem;
 }
 
 .portal-notifications-panel-body {
@@ -106,6 +110,22 @@
   font-size: 0.875rem;
   line-height: 1.55;
   color: var(--portal-text-muted, #5f6d66);
+}
+
+.portal-notifications-empty {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.portal-notifications-empty strong {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--portal-text-primary, #1f2a24);
+}
+
+.portal-notifications-empty span {
+  line-height: 1.55;
 }
 
 .portal-notifications-error {
@@ -134,6 +154,31 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--portal-accent-gold, #b8955a);
+}
+
+.portal-notifications-section--priority {
+  padding: 0.15rem;
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, rgba(31, 74, 57, 0.07), rgba(184, 149, 90, 0.08));
+}
+
+.portal-notifications-section--priority .portal-notifications-section-title {
+  color: #315f4d;
+}
+
+.portal-notifications-section--priority .portal-notifications-item {
+  border-color: rgba(31, 74, 57, 0.18);
+  box-shadow: 0 2px 8px rgba(24, 52, 41, 0.05);
+}
+
+.portal-notifications-section--network .portal-notifications-item {
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+}
+
+.portal-notifications-section--network .portal-notifications-item-type,
+.portal-notifications-item--like .portal-notifications-item-type {
+  color: #59635e;
 }
 
 .portal-notifications-list {
@@ -173,10 +218,22 @@
 }
 
 .portal-notifications-item-type {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   font-size: 0.625rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--portal-accent-gold, #b8955a);
+}
+
+.portal-notifications-item-new {
+  padding: 0.12rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(184, 149, 90, 0.14);
+  color: #826733;
+  letter-spacing: 0.08em;
 }
 
 .portal-notifications-item-member {

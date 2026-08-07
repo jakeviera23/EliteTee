@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { earlyStageCopy, messagesCopy } from "../../data/portalSocial";
 import { fetchMessageablePortalMembers } from "../../lib/memberProfiles";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
@@ -23,6 +24,8 @@ function memberMatchesSearch(member: MemberProfileRecord, query: string) {
 }
 
 export function NewConversationModal({ onClose, onStart }: NewConversationModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const [members, setMembers] = useState<MemberProfileRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -67,6 +70,7 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal et-messages-modal"
         role="dialog"
         aria-labelledby="new-conversation-heading"

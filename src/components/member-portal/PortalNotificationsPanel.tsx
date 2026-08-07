@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import {
   groupPortalNotifications,
   PORTAL_NOTIFICATIONS_EMPTY_MESSAGE,
@@ -33,6 +34,12 @@ export function PortalNotificationsPanel({
   const titleId = useId();
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
+  useDialogFocus({
+    active: isOpen && shouldRender,
+    dialogRef: panelRef,
+    initialFocusRef: closeButtonRef,
+    onEscape: onClose,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -49,8 +56,6 @@ export function PortalNotificationsPanel({
   useEffect(() => {
     if (!isOpen || !shouldRender) return;
 
-    closeButtonRef.current?.focus();
-
     function handlePointerDown(event: MouseEvent) {
       const target = event.target;
       if (!(target instanceof Node)) return;
@@ -59,19 +64,10 @@ export function PortalNotificationsPanel({
       onClose();
     }
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-      }
-    }
-
     document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose, shouldRender]);
 
@@ -99,13 +95,13 @@ export function PortalNotificationsPanel({
       >
         <div className="portal-notifications-panel-header">
           <h2 id={titleId} className="portal-notifications-panel-title">
-            Notifications
+            Activity
           </h2>
           <button
             ref={closeButtonRef}
             type="button"
             className="portal-icon-btn portal-notifications-close"
-            aria-label="Close notifications"
+            aria-label="Close activity"
             onClick={onClose}
           >
             <span aria-hidden="true">×</span>
@@ -115,7 +111,7 @@ export function PortalNotificationsPanel({
         <div className="portal-notifications-panel-body">
           {isLoading ? (
             <p className="portal-notifications-status" role="status">
-              Loading notifications...
+              Loading activity...
             </p>
           ) : null}
 
@@ -129,9 +125,10 @@ export function PortalNotificationsPanel({
           ) : null}
 
           {!isLoading && !errorMessage && notifications.length === 0 ? (
-            <p className="portal-notifications-empty" role="status">
-              {PORTAL_NOTIFICATIONS_EMPTY_MESSAGE}
-            </p>
+            <div className="portal-notifications-empty" role="status">
+              <strong>{PORTAL_NOTIFICATIONS_EMPTY_MESSAGE}</strong>
+              <span>Comments, introductions, messages, matches, and member recommendations will appear here.</span>
+            </div>
           ) : null}
 
           {!isLoading && !errorMessage && sections.length > 0 ? (
@@ -139,7 +136,7 @@ export function PortalNotificationsPanel({
               {sections.map((section) => (
                 <section
                   key={section.id}
-                  className="portal-notifications-section"
+                  className={`portal-notifications-section portal-notifications-section--${section.id}`}
                   aria-label={section.label}
                 >
                   {section.showHeader ? (
@@ -155,6 +152,9 @@ export function PortalNotificationsPanel({
                         >
                           <span className="portal-notifications-item-type">
                             {notification.typeLabel}
+                            {notification.countsTowardBadge ? (
+                              <span className="portal-notifications-item-new">New</span>
+                            ) : null}
                           </span>
                           <span className="portal-notifications-item-member">
                             {notification.memberName}

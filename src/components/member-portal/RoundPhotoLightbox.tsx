@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { createPortal } from "react-dom";
 import { formatPlayedOnDate } from "../../lib/memberCourseRounds";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
@@ -18,22 +19,6 @@ type RoundPhotoLightboxProps = {
   onPhotoDeleted?: (photoId: string) => void;
 };
 
-function lockBodyScroll() {
-  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-  const previousOverflow = document.body.style.overflow;
-  const previousPaddingRight = document.body.style.paddingRight;
-
-  document.body.style.overflow = "hidden";
-  if (scrollbarWidth > 0) {
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
-  }
-
-  return () => {
-    document.body.style.overflow = previousOverflow;
-    document.body.style.paddingRight = previousPaddingRight;
-  };
-}
-
 export function RoundPhotoLightbox({
   photos,
   initialIndex = 0,
@@ -41,6 +26,8 @@ export function RoundPhotoLightbox({
   allowDelete = false,
   onPhotoDeleted,
 }: RoundPhotoLightboxProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const [index, setIndex] = useState(() => clampPhotoGalleryIndex(initialIndex, photos.length));
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -78,12 +65,6 @@ export function RoundPhotoLightbox({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
       if (event.key === "ArrowLeft" && navigation.canGoPrev) {
         event.preventDefault();
         goPrev();
@@ -97,13 +78,11 @@ export function RoundPhotoLightbox({
     }
 
     document.addEventListener("keydown", onKeyDown);
-    const unlockBodyScroll = lockBodyScroll();
 
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      unlockBodyScroll();
     };
-  }, [goNext, goPrev, navigation.canGoNext, navigation.canGoPrev, onClose]);
+  }, [goNext, goPrev, navigation.canGoNext, navigation.canGoPrev]);
 
   async function handleImageError() {
     if (!photo?.storage_path) return;
@@ -143,6 +122,7 @@ export function RoundPhotoLightbox({
 
   return createPortal(
     <div
+      ref={dialogRef}
       className="round-photo-lightbox-backdrop"
       role="dialog"
       aria-modal="true"

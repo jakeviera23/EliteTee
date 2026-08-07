@@ -108,9 +108,7 @@ export async function updateAiSettings(update: AiSettingsUpdate) {
 }
 
 export const ASK_ELITETEE_EXAMPLE_PROMPTS = [
-  "Who should I meet in Florida?",
   "Which members have played National Golf Links?",
   "Find golfers interested in architecture.",
   "Show me the highest-rated courses members have reviewed.",
-  "Who shares my travel interests?",
 ] as const;

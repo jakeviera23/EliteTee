@@ -16,6 +16,27 @@ export type FeedMetaChip = {
   tone: FeedMetaChipTone;
 };
 
+export type FeedCaptionPreview = {
+  text: string;
+  isTruncated: boolean;
+};
+
+export function getFeedCaptionPreview(
+  caption: string,
+  expanded: boolean,
+  maxLength = 320,
+): FeedCaptionPreview {
+  const trimmed = caption.trim();
+  if (expanded || trimmed.length <= maxLength) {
+    return { text: trimmed, isTruncated: false };
+  }
+
+  const initial = trimmed.slice(0, maxLength);
+  const wordBoundary = initial.lastIndexOf(" ");
+  const preview = wordBoundary > maxLength * 0.7 ? initial.slice(0, wordBoundary) : initial;
+  return { text: `${preview.trimEnd()}…`, isTruncated: true };
+}
+
 function normalizeLabel(label: string): string {
   const lower = label.toLowerCase().trim();
   if (lower === "played") return "Played";
@@ -93,6 +114,32 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
   }
 
   return chips;
+}
+
+/**
+ * Removes facts already presented in a course card's title, location, and
+ * rating treatment. The underlying post data is unchanged.
+ */
+export function buildVisibleFeedMetaChips(
+  post: FeedPost,
+  isCourseRound: boolean,
+): FeedMetaChip[] {
+  const chips = buildFeedMetaChips(post);
+  if (!isCourseRound) return chips;
+
+  return chips
+    .filter((chip) => {
+      if (chip.tone === "rating") return false;
+      if (
+        chip.tone === "location" &&
+        post.courseLocation.trim() &&
+        chip.value.trim().toLowerCase() === post.courseLocation.trim().toLowerCase()
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .slice(0, 4);
 }
 
 /** Badge tone from request label / post type — feed presentation only. */

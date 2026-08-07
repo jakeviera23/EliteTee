@@ -1,21 +1,44 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { PortalToastProvider } from "./components/member-portal/PortalToastProvider";
 import { Home } from "./pages/Home";
-import { About } from "./pages/About";
-import { InsideEliteTee } from "./pages/InsideEliteTee";
-import { MemberDirectory } from "./pages/MemberDirectory";
-import { MemberPortal } from "./pages/MemberPortal";
-import { MemberPublicProfilePage } from "./pages/MemberPublicProfilePage";
-import { CourseDetailPage } from "./pages/CourseDetailPage";
-import { AdminMembers } from "./pages/AdminMembers";
-import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
-import { InviteSignup } from "./pages/InviteSignup";
-import { NotFound } from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 
 import type { ProfileReturnContext } from "./types/memberProfileNavigation";
+
+const About = lazy(() => import("./pages/About").then((module) => ({ default: module.About })));
+const InsideEliteTee = lazy(() =>
+  import("./pages/InsideEliteTee").then((module) => ({ default: module.InsideEliteTee })),
+);
+const MemberDirectory = lazy(() =>
+  import("./pages/MemberDirectory").then((module) => ({ default: module.MemberDirectory })),
+);
+const MemberPortal = lazy(() =>
+  import("./pages/MemberPortal").then((module) => ({ default: module.MemberPortal })),
+);
+const MemberPublicProfilePage = lazy(() =>
+  import("./pages/MemberPublicProfilePage").then((module) => ({
+    default: module.MemberPublicProfilePage,
+  })),
+);
+const CourseDetailPage = lazy(() =>
+  import("./pages/CourseDetailPage").then((module) => ({ default: module.CourseDetailPage })),
+);
+const AdminMembers = lazy(() =>
+  import("./pages/AdminMembers").then((module) => ({ default: module.AdminMembers })),
+);
+const InviteSignup = lazy(() =>
+  import("./pages/InviteSignup").then((module) => ({ default: module.InviteSignup })),
+);
+const NotFound = lazy(() =>
+  import("./pages/NotFound").then((module) => ({ default: module.NotFound })),
+);
+
+function RouteFallback() {
+  return <div className="page-loading" role="status" aria-live="polite">Loading…</div>;
+}
 
 function CourseDetailRoute() {
   const navigate = useNavigate();
@@ -25,7 +48,7 @@ function CourseDetailRoute() {
     <PortalToastProvider>
       <CourseDetailPage
         onMessageMember={(userId, memberName) => {
-          navigate("/member-portal", {
+          navigate("/member-portal/messages", {
             state: { openMessagesWith: { userId, memberName } },
           });
         }}
@@ -52,7 +75,8 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/founder" element={<Navigate to="/about" replace />} />
@@ -69,6 +93,14 @@ export default function App() {
       />
       <Route
         path="/member-portal"
+        element={
+          <ProtectedRoute>
+            <MemberPortal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member-portal/:section"
         element={
           <ProtectedRoute>
             <MemberPortal />
@@ -100,9 +132,10 @@ export default function App() {
         }
       />
       <Route path="/directory" element={<MemberDirectory />} />
-      <Route path="/request-introduction" element={<RequestIntroductionPage />} />
+      <Route path="/request-introduction" element={<Navigate to="/#apply" replace />} />
       <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </>
   );
 }

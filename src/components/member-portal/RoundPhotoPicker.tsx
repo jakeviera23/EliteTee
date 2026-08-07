@@ -15,6 +15,10 @@ type RoundPhotoPickerProps = {
   coverDraftId: string | null;
   onCoverDraftIdChange: (id: string) => void;
   disabled?: boolean;
+  label?: string;
+  helpText?: string;
+  emptyActionLabel?: string;
+  moreActionLabel?: string;
 };
 
 function syncCoverDraftId(
@@ -33,6 +37,10 @@ export function RoundPhotoPicker({
   coverDraftId,
   onCoverDraftIdChange,
   disabled = false,
+  label = "Course photos (optional)",
+  helpText,
+  emptyActionLabel = "Add photos",
+  moreActionLabel = "Add more photos",
 }: RoundPhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pickerError, setPickerError] = useState<string | null>(null);
@@ -125,14 +133,18 @@ export function RoundPhotoPicker({
   return (
     <div className="round-photo-picker">
       <div className="round-photo-picker-head">
-        <span>Course photos (optional)</span>
+        <span>{label}</span>
         <span className="round-photo-picker-count">
           {drafts.length}/{MAX_ROUND_PHOTOS}
         </span>
       </div>
       <p className="round-photo-picker-help">
-        Add up to {MAX_ROUND_PHOTOS} JPEG, PNG, or WebP photos (12 MB each). Images are resized before
-        upload. Choose one as the cover photo for the feed.
+        {helpText ?? (
+          <>
+            Add up to {MAX_ROUND_PHOTOS} JPEG, PNG, or WebP photos (12 MB each). Images are
+            resized before upload. Choose one as the cover photo for the feed.
+          </>
+        )}
       </p>
 
       {drafts.length > 0 ? (
@@ -207,7 +219,7 @@ export function RoundPhotoPicker({
             disabled={disabled}
             onChange={(event) => addFiles(event.target.files)}
           />
-          <span>{drafts.length === 0 ? "Add photos" : "Add more photos"}</span>
+          <span>{drafts.length === 0 ? emptyActionLabel : moreActionLabel}</span>
         </label>
       ) : null}
 

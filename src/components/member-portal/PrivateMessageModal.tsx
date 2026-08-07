@@ -3,11 +3,13 @@
  * Member UI routes accepted introductions to direct Messages (PortalMessages).
  * Preserved for backward compatibility with introduction_request_id message rows in the database.
  */
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { fetchPrivateMessages, markIntroductionMessagesAsRead, sendPrivateMessage } from "../../lib/privateMessages";
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";
 import type { PrivateMessageRecord } from "../../types/privateMessage";
 import { EditablePrivateMessage } from "./EditablePrivateMessage";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 
 type PrivateMessageModalProps = {
   request: IntroductionRequestRecord;
@@ -41,6 +43,9 @@ export function PrivateMessageModal({
   onClose,
   onMessagesRead,
 }: PrivateMessageModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus({ dialogRef, initialFocusRef: closeButtonRef, onEscape: onClose });
   const [messages, setMessages] = useState<PrivateMessageRecord[]>([]);
   const [draft, setDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +61,7 @@ export function PrivateMessageModal({
     const { data, error } = await fetchPrivateMessages(request.id);
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(memberFacingPortalError(error.message, "message"));
       setMessages([]);
     } else {
       setMessages(data ?? []);
@@ -84,7 +89,7 @@ export function PrivateMessageModal({
     setIsSending(false);
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(memberFacingPortalError(error.message, "message"));
       return;
     }
 
@@ -99,14 +104,20 @@ export function PrivateMessageModal({
   }
 
   return (
-    <div className="portal-modal" role="dialog" aria-modal="true" aria-labelledby="private-message-title">
+    <div className="portal-modal">
       <button
         type="button"
         className="portal-modal-backdrop"
         aria-label="Close dialog"
         onClick={onClose}
       />
-      <div className="portal-modal-card portal-modal-card--wide portal-message-modal">
+      <div
+        ref={dialogRef}
+        className="portal-modal-card portal-modal-card--wide portal-message-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="private-message-title"
+      >
         <p className="portal-eyebrow">Private Conversation</p>
         <h3 id="private-message-title">Private Conversation with {otherMemberName}</h3>
         <p className="portal-modal-text">
@@ -114,9 +125,12 @@ export function PrivateMessageModal({
         </p>
 
         {errorMessage ? (
-          <p className="portal-alert portal-alert--error" role="alert">
-            {errorMessage}
-          </p>
+          <div className="portal-alert portal-alert--error" role="alert">
+            <p>{errorMessage}</p>
+            <button type="button" className="portal-btn portal-btn--outline" onClick={() => void loadMessages()}>
+              Retry
+            </button>
+          </div>
         ) : null}
 
         <div className="portal-message-thread" aria-live="polite">
@@ -136,6 +150,7 @@ export function PrivateMessageModal({
                     <EditablePrivateMessage
                       message={message}
                       isOwn={isOwn}
+                      senderLabel={isOwn ? "You" : otherMemberName}
                       formatTime={formatMessageTime}
                       onEdited={handleMessageEdited}
                     />
@@ -162,6 +177,7 @@ export function PrivateMessageModal({
               {isSending ? "Sending..." : "Send Message"}
             </button>
             <button
+              ref={closeButtonRef}
               type="button"
               className="portal-btn portal-btn--outline"
               onClick={onClose}

@@ -829,3 +829,5 @@
   justify-content: center;
   text-decoration: none;
 }
+.inside-access-link--button{appearance:none;border:0;padding:0;background:transparent;color:inherit;font:inherit;text-decoration:underline;cursor:pointer}
+.inside-access-success{margin:.75rem 0 0;color:#315f4b;font-size:.82rem;line-height:1.5}

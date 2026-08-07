@@ -4,9 +4,12 @@ type ComingSoonModalProps = {
 };
 
 export function ComingSoonModal({ feature = "This feature", onClose }: ComingSoonModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal portal-modal--coming-soon"
         role="dialog"
         aria-modal="true"
@@ -30,3 +33,5 @@ export function ComingSoonModal({ feature = "This feature", onClose }: ComingSoo
     </div>
   );
 }
+import { useRef } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";

@@ -1,4 +1,5 @@
 import type { GolfCourseRecord } from "../types/golfCourse";
+import { getCoursePhoto } from "../assets/photos";
 import { resolveGolfCourseDisplayImage } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
 import type { MemberCourseRoundPhotoRecord } from "../types/memberCourseRoundPhoto";
@@ -40,7 +41,7 @@ export function buildMemberPlaySummaries(
 }
 
 export function buildCourseGalleryPhotos(
-  course: Pick<GolfCourseRecord, "image_url" | "thumbnail_url">,
+  course: Pick<GolfCourseRecord, "name" | "image_url" | "thumbnail_url">,
   rounds: MemberCourseRoundRecord[],
 ): MemberCourseRoundPhotoRecord[] {
   const seen = new Set<string>();
@@ -59,7 +60,24 @@ export function buildCourseGalleryPhotos(
       moderation_status: "approved",
       created_at: "",
       signed_url: officialUrl,
-      caption: "Official course photo",
+      caption: "Course photography",
+    });
+  }
+
+  const bundledUrl = getCoursePhoto(course.name);
+  if (bundledUrl && !seen.has(bundledUrl)) {
+    seen.add(bundledUrl);
+    photos.push({
+      id: "elitetee-course-reference",
+      member_course_round_id: "",
+      user_id: "",
+      storage_path: "",
+      sort_order: photos.length,
+      is_featured: !officialUrl,
+      moderation_status: "approved",
+      created_at: "",
+      signed_url: bundledUrl,
+      caption: "Destination reference photography — not verified as course-specific",
     });
   }
 

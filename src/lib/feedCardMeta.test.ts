@@ -3,6 +3,8 @@ import type { FeedPost } from "../data/portalSocial";
 import {
   badgeToneForPost,
   buildFeedMetaChips,
+  buildVisibleFeedMetaChips,
+  getFeedCaptionPreview,
   isCourseRoundPost,
 } from "./feedCardMeta";
 
@@ -92,6 +94,28 @@ describe("buildFeedMetaChips", () => {
       }),
     );
     expect(chips[0]?.tone).toBe("emphasis");
+  });
+});
+
+describe("buildVisibleFeedMetaChips", () => {
+  it("removes course location and rating when the card already presents them", () => {
+    expect(buildVisibleFeedMetaChips(makePost(), true).map((chip) => chip.label)).toEqual([
+      "Played",
+      "Would play again",
+    ]);
+  });
+});
+
+describe("getFeedCaptionPreview", () => {
+  it("keeps concise posts intact and makes long posts expandable", () => {
+    expect(getFeedCaptionPreview("A concise member update.", false)).toEqual({
+      text: "A concise member update.",
+      isTruncated: false,
+    });
+    const longPreview = getFeedCaptionPreview("A thoughtful round note ".repeat(30), false, 100);
+    expect(longPreview.isTruncated).toBe(true);
+    expect(longPreview.text.length).toBeLessThanOrEqual(101);
+    expect(getFeedCaptionPreview("A thoughtful round note ".repeat(30), true).isTruncated).toBe(false);
   });
 });
 

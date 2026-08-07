@@ -190,7 +190,7 @@ describe("getNotificationBadgeDisplay", () => {
 });
 
 describe("groupPortalNotifications", () => {
-  it("groups mixed notifications into sections when both types exist", () => {
+  it("groups messages and pending requests into the priority section", () => {
     const notifications = buildPortalNotifications({
       currentUserId: "member-1",
       seenIntroductionRequestIds: new Set(),
@@ -209,10 +209,42 @@ describe("groupPortalNotifications", () => {
 
     const sections = groupPortalNotifications(notifications);
 
-    expect(sections).toHaveLength(2);
-    expect(sections[0]?.id).toBe("messages");
-    expect(sections[1]?.id).toBe("introductions");
-    expect(sections.every((section) => section.showHeader)).toBe(true);
+    expect(sections).toHaveLength(1);
+    expect(sections[0]?.id).toBe("priority");
+    expect(sections[0]?.items.map((item) => item.kind)).toEqual([
+      "unread_message",
+      "introduction_pending",
+    ]);
+    expect(sections[0]?.showHeader).toBe(true);
+  });
+
+  it("places replies and requests ahead of passive appreciation", () => {
+    const sections = groupPortalNotifications([
+      {
+        id: "like-1",
+        kind: "like",
+        typeLabel: "Appreciation",
+        memberName: "Alex Kim",
+        description: "Alex appreciated your post.",
+        timestampLabel: "1m ago",
+        sortTimestamp: 3,
+        countsTowardBadge: true,
+      },
+      {
+        id: "reply-1",
+        kind: "reply",
+        typeLabel: "Reply",
+        memberName: "Jordan Lee",
+        description: "Jordan replied to your comment.",
+        timestampLabel: "2m ago",
+        sortTimestamp: 2,
+        countsTowardBadge: true,
+      },
+    ]);
+
+    expect(sections.map((section) => section.id)).toEqual(["priority", "network"]);
+    expect(sections[0]?.items[0]?.kind).toBe("reply");
+    expect(sections[1]?.items[0]?.kind).toBe("like");
   });
 });
 

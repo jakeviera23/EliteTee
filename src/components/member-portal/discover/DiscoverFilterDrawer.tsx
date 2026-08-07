@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useRef } from "react";
+import { useDialogFocus } from "../../../hooks/useDialogFocus";
 import type {
   DiscoverFilterOptions,
   DiscoverFilters,
@@ -57,17 +58,8 @@ export function DiscoverFilterDrawer({
   sortBy,
   onSortChange,
 }: DiscoverFilterDrawerProps) {
-  useEffect(() => {
-    if (!open) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus({ active: open, dialogRef, onEscape: onClose });
   if (!open) return null;
 
   function updateFilter<Key extends keyof DiscoverFilters>(key: Key, value: DiscoverFilters[Key]) {
@@ -79,6 +71,7 @@ export function DiscoverFilterDrawer({
   return (
     <div className="et-discover-drawer-backdrop" role="presentation" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="et-discover-drawer"
         role="dialog"
         aria-modal="true"
@@ -169,14 +162,6 @@ export function DiscoverFilterDrawer({
             onChange={(value) => updateFilter("travelDestination", value)}
             emptyLabel="Any destination"
           />
-          <DrawerSelect
-            label="Current request"
-            value={filters.currentRequest}
-            options={filterOptions.currentRequests}
-            onChange={(value) => updateFilter("currentRequest", value)}
-            emptyLabel="Any request"
-          />
-
           <label className="et-discover-drawer-field">
             <span>Sort</span>
             <select

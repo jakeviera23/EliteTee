@@ -6,10 +6,12 @@ import {
   PRIVATE_MESSAGE_MAX_LENGTH,
 } from "../../lib/privateMessages";
 import type { PrivateMessageRecord } from "../../types/privateMessage";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 
 type EditablePrivateMessageProps = {
   message: PrivateMessageRecord;
   isOwn: boolean;
+  senderLabel: string;
   formatTime: (value: string) => string;
   bubbleClassName?: string;
   onEdited?: (message: PrivateMessageRecord) => void;
@@ -18,6 +20,7 @@ type EditablePrivateMessageProps = {
 export function EditablePrivateMessage({
   message,
   isOwn,
+  senderLabel,
   formatTime,
   bubbleClassName = "et-messages-bubble-inner",
   onEdited,
@@ -66,7 +69,7 @@ export function EditablePrivateMessage({
     setIsSaving(false);
 
     if (error || !data) {
-      setEditError(error?.message ?? "Message could not be updated.");
+      setEditError(memberFacingPortalError(error?.message ?? "Message update failed.", "message"));
       return;
     }
 
@@ -81,7 +84,8 @@ export function EditablePrivateMessage({
   }
 
   return (
-    <article className={bubbleClassName}>
+    <article className={bubbleClassName} aria-label={`Message from ${senderLabel}`}>
+      <span className="visually-hidden">{senderLabel} said:</span>
       {isEditing ? (
         <form className="et-messages-edit-form" onSubmit={handleSave}>
           <label className="visually-hidden" htmlFor={`edit-message-${message.id}`}>

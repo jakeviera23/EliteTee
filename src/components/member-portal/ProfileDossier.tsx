@@ -26,14 +26,14 @@ import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 
 type ProfileFormState = {
   full_name: string;
-  headline: string;
+  industry: string;
   based_in: string;
   primary_club: string;
   traveling_to: string;
-  favorite_courses: string;
-  connection_interests: string;
+  additional_clubs: string;
+  golf_interests: string;
   business_interests: string;
-  bio: string;
+  current_request: string;
   handicap: string;
 };
 
@@ -51,14 +51,14 @@ const NO_LINKED_PROFILE_MESSAGE = "No profile is linked to this account yet.";
 function profileToFormState(profile: MemberProfileRecord): ProfileFormState {
   return {
     full_name: profile.full_name ?? "",
-    headline: profile.industry ?? "",
+    industry: profile.industry ?? "",
     based_in: profile.based_in ?? "",
     primary_club: profile.primary_club ?? "",
     traveling_to: profile.traveling_to ?? "",
-    favorite_courses: formatListForInput(profile.additional_clubs),
-    connection_interests: formatListForInput(profile.golf_interests),
+    additional_clubs: formatListForInput(profile.additional_clubs),
+    golf_interests: formatListForInput(profile.golf_interests),
     business_interests: formatListForInput(profile.business_interests),
-    bio: profile.current_request ?? "",
+    current_request: profile.current_request ?? "",
     handicap: profile.handicap ?? "",
   };
 }
@@ -76,21 +76,21 @@ function buildProfileUpdates(
     full_name: form.full_name.trim(),
     primary_club: form.primary_club.trim(),
     based_in: form.based_in.trim(),
-    industry: form.headline.trim(),
+    industry: form.industry.trim(),
     traveling_to: buildTextFieldUpdate({
       formValue: form.traveling_to,
       initialFormValue: initialForm.traveling_to,
       existingValue: profile.traveling_to,
     }),
     additional_clubs: buildListFieldUpdate({
-      formValue: form.favorite_courses,
-      initialFormValue: initialForm.favorite_courses,
+      formValue: form.additional_clubs,
+      initialFormValue: initialForm.additional_clubs,
       existingValues: profile.additional_clubs,
     }),
     regions: profile.regions,
     golf_interests: buildListFieldUpdate({
-      formValue: form.connection_interests,
-      initialFormValue: initialForm.connection_interests,
+      formValue: form.golf_interests,
+      initialFormValue: initialForm.golf_interests,
       existingValues: profile.golf_interests,
     }),
     business_interests: buildListFieldUpdate({
@@ -99,8 +99,8 @@ function buildProfileUpdates(
       existingValues: profile.business_interests,
     }),
     current_request: buildTextFieldUpdate({
-      formValue: form.bio,
-      initialFormValue: initialForm.bio,
+      formValue: form.current_request,
+      initialFormValue: initialForm.current_request,
       existingValue: profile.current_request,
     }),
     handicap: buildTextFieldUpdate({
@@ -136,6 +136,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
     if (!isActive) return;
@@ -196,11 +197,8 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         setProfile(null);
         setForm(null);
         setInitialForm(null);
-        setErrorMessage(
-          unexpectedError instanceof Error
-            ? unexpectedError.message
-            : "Unable to load your profile.",
-        );
+        if (import.meta.env.DEV) console.error("[ProfileDossier] unexpected load failure", unexpectedError);
+        setErrorMessage("Your profile could not be loaded. Please try again.");
       } finally {
         if (active) {
           setIsLoading(false);
@@ -213,7 +211,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
     return () => {
       active = false;
     };
-  }, [isActive]);
+  }, [isActive, retryVersion]);
 
   useEffect(() => {
     return () => {
@@ -384,11 +382,8 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         onSaved?.();
       }
     } catch (unexpectedError) {
-      setErrorMessage(
-        unexpectedError instanceof Error
-          ? unexpectedError.message
-          : "Unable to save your profile.",
-      );
+      if (import.meta.env.DEV) console.error("[ProfileDossier] unexpected save failure", unexpectedError);
+      setErrorMessage("Your profile could not be saved. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -404,6 +399,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         <p className="portal-alert portal-alert--error" role="alert">
           {errorMessage ?? "Your profile is not available."}
         </p>
+        <button type="button" className="et-btn et-btn--secondary" onClick={() => setRetryVersion((value) => value + 1)}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -429,7 +427,7 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
           <div className="portal-profile-edit-preview-identity">
             <h3>{form.full_name || profile.full_name}</h3>
-            {form.headline ? <p className="portal-profile-edit-headline">{form.headline}</p> : null}
+            {form.industry ? <p className="portal-profile-edit-headline">{form.industry}</p> : null}
             <span className="portal-golfer-member-badge">
               {formatMembershipLabel(profile.membership_status)}
             </span>
@@ -491,12 +489,12 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
             </label>
 
             <label className="portal-profile-field">
-              <span>Headline</span>
+              <span>Industry</span>
               <input
                 type="text"
-                value={form.headline}
-                onChange={(event) => updateField("headline", event.target.value)}
-                placeholder="Private club member, frequent traveler"
+                value={form.industry}
+                onChange={(event) => updateField("industry", event.target.value)}
+                placeholder="Hospitality, finance, real estate…"
               />
             </label>
 
@@ -511,12 +509,12 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
             </label>
 
             <label className="portal-profile-field portal-profile-field--full">
-              <span>Bio</span>
+              <span>Current request</span>
               <textarea
                 rows={3}
-                value={form.bio}
-                onChange={(event) => updateField("bio", event.target.value)}
-                placeholder="Share what you love about golf and what brought you to EliteTee"
+                value={form.current_request}
+                onChange={(event) => updateField("current_request", event.target.value)}
+                placeholder="A game in South Florida, a Scotland travel partner, an introduction…"
               />
             </label>
           </div>
@@ -547,12 +545,12 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
             </label>
 
             <label className="portal-profile-field portal-profile-field--full">
-              <span>Favorite Courses</span>
+              <span>Other Clubs / Courses</span>
               <textarea
                 rows={4}
-                value={form.favorite_courses}
-                onChange={(event) => updateField("favorite_courses", event.target.value)}
-                placeholder="One course per line or separated by commas"
+                value={form.additional_clubs}
+                onChange={(event) => updateField("additional_clubs", event.target.value)}
+                placeholder="Other clubs or courses you regularly play"
               />
             </label>
           </div>
@@ -592,12 +590,12 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           <h3 className="portal-profile-form-card-title et-profile-form-card-title">Connection Interests</h3>
           <div className="portal-profile-form-grid et-profile-form-grid">
             <label className="portal-profile-field portal-profile-field--full">
-              <span>What connections are you looking for?</span>
+              <span>Golf interests</span>
               <textarea
                 rows={4}
-                value={form.connection_interests}
-                onChange={(event) => updateField("connection_interests", event.target.value)}
-                placeholder="Weekend games, member introductions, golf travel partners, business golf"
+                value={form.golf_interests}
+                onChange={(event) => updateField("golf_interests", event.target.value)}
+                placeholder="Architecture, links golf, weekend games, golf travel"
               />
             </label>
           </div>

@@ -5,6 +5,7 @@ import { PortalToastProvider, usePortalToast } from "../components/member-portal
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
+import { getPortalDestinationPath } from "../lib/portalNavigation";
 import { useState } from "react";
 import "../inside-elitetee.css";
 import "../member-portal.css";
@@ -27,7 +28,7 @@ function MemberPublicProfileContent() {
   const returnTo = state?.returnTo ?? {
     type: "portal" as const,
     tab: "feed" as const,
-    label: "Back to Feed",
+    label: "Back to Home",
   };
 
   function handleBack() {
@@ -36,13 +37,11 @@ function MemberPublicProfileContent() {
       return;
     }
 
-    navigate("/member-portal", {
-      state: { restorePortalTab: returnTo.tab },
-    });
+    navigate(getPortalDestinationPath(returnTo.tab));
   }
 
   function handleMessageMember(messageUserId: string, memberName: string) {
-    navigate("/member-portal", {
+    navigate("/member-portal/messages", {
       state: {
         openMessagesWith: { userId: messageUserId, memberName },
       },
@@ -83,7 +82,7 @@ function MemberPublicProfileContent() {
           onSubmitted={() => {
             showToast("Introduction request submitted");
             setIntroRequestMember(null);
-            navigate("/member-portal", { state: { restorePortalTab: "introductions" } });
+            navigate("/member-portal/introductions");
           }}
         />
       ) : null}

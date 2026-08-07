@@ -36,7 +36,8 @@
   }
 
   .portal-page.et-theme-portal .portal-main--social > .portal-shell {
-    padding-inline: var(--portal-mobile-gutter);
+    padding-left: max(var(--portal-mobile-gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--portal-mobile-gutter), env(safe-area-inset-right, 0px));
   }
 
   .portal-page.et-theme-portal .portal-main {
@@ -73,10 +74,11 @@
     overflow: visible;
   }
 
-  /* Bottom navigation — 5 equal columns, full labels */
+  /* Bottom navigation — all primary destinations remain reachable */
   .portal-page.et-theme-portal .portal-bottom-nav {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    padding-inline: 0.1rem;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    padding-left: max(0.1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.1rem, env(safe-area-inset-right, 0px));
   }
 
   .portal-page.et-theme-portal .portal-bottom-nav-btn {
@@ -95,6 +97,67 @@
 
   .portal-page.et-theme-portal .portal-bottom-nav-icon {
     font-size: 0.9rem;
+  }
+
+  /* Keep the collapsed composer a single-line pill on narrow screens. */
+  .portal-page.et-theme-portal .et-feed-composer-wrap,
+  .portal-page.et-theme-portal .et-feed .feed-composer {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-feed .feed-composer-bar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 0.65rem;
+  }
+
+  .portal-page.et-theme-portal .et-feed .feed-composer-trigger {
+    min-width: 0;
+    min-height: 2.75rem;
+    max-height: 2.75rem;
+    padding-inline: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .portal-page.et-theme-portal .et-feed .feed-composer-new {
+    min-width: 5.75rem;
+    min-height: 2.75rem;
+  }
+
+  /* Messages are a full-width two-state experience on phones. */
+  .portal-page.et-theme-portal .et-messages,
+  .portal-page.et-theme-portal .et-messages-header,
+  .portal-page.et-theme-portal .et-messages-layout,
+  .portal-page.et-theme-portal .et-messages-sidebar,
+  .portal-page.et-theme-portal .et-messages-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal-page.et-theme-portal .et-messages-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-page.et-theme-portal .et-messages-sidebar {
+    border-right: 0;
+  }
+
+  .portal-page.et-theme-portal .et-messages-conversation {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .portal-page.et-theme-portal .et-messages-preview {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
   }
 
   /* Courses page */
@@ -210,6 +273,40 @@
     min-width: 0;
     margin: 0;
     box-sizing: border-box;
+  }
+
+  /* Featured discovery is a visual rail, not six full cards stacked vertically. */
+  .portal-page.et-theme-portal .et-courses-grid--featured-compact {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: calc(-1 * var(--portal-mobile-gutter));
+    padding: 0 var(--portal-mobile-gutter) 0.35rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--portal-mobile-gutter);
+    scrollbar-width: none;
+  }
+
+  .portal-page.et-theme-portal .et-courses-grid--featured-compact::-webkit-scrollbar {
+    display: none;
+  }
+
+  .portal-page.et-theme-portal .et-courses-grid--featured-compact > li {
+    flex: 0 0 var(--portal-mobile-course-card-width);
+    width: var(--portal-mobile-course-card-width);
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .portal-page.et-theme-portal .et-courses-grid--featured-compact .et-course-card {
+    width: 100%;
+    max-width: 100%;
   }
 
   /* Directory cards — single column, bounded width */
@@ -356,7 +453,7 @@
 
   .portal-page.et-theme-portal .et-course-card-stats {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.65rem 0.75rem;
     width: 100%;
     min-width: 0;
@@ -409,6 +506,14 @@
     max-width: min(20rem, calc(100vw - 2rem));
     right: 1rem;
     left: auto;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 899px) {
+  .portal-page.et-theme-portal .portal-bottom-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    padding-left: max(0.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.25rem, env(safe-area-inset-right, 0px));
   }
 }
 

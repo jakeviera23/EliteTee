@@ -19,6 +19,7 @@ import {
 } from "./feedPostEditing";
 import { supabase } from "./supabase";
 import { attachFeedPostEngagement } from "./feedPostEngagement";
+import { fetchFeedPostMediaForPostIds } from "./feedPostMedia";
 import { buildEditCourseRoundFeedPostRpcParams } from "./editCourseRoundFeedPostRpc";
 import { logSupabaseOperation } from "./supabaseOperationLog";
 
@@ -268,6 +269,7 @@ export function dedupeFeedPosts(posts: FeedPost[]): FeedPost[] {
 
 async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<FeedPost[]> {
   const records = rows.map((row) => normalizeFeedPostRow(row as unknown as Record<string, unknown>));
+  const postIds = records.map((record) => record.id).filter(Boolean);
   const roundIds = [
     ...new Set(
       records
@@ -276,8 +278,13 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
     ),
   ];
 
-  const { data: roundPhotos } = await fetchPhotosForRoundIds(roundIds);
-  const { data: coverPhotoIds } = await fetchCoverPhotoIdsForRoundIds(roundIds);
+  const [roundPhotosResult, coverPhotoIdsResult, feedMediaResult] = await Promise.all([
+    fetchPhotosForRoundIds(roundIds),
+    fetchCoverPhotoIdsForRoundIds(roundIds),
+    fetchFeedPostMediaForPostIds(postIds),
+  ]);
+  const roundPhotos = roundPhotosResult.data;
+  const coverPhotoIds = coverPhotoIdsResult.data;
   const photosByRoundId = new Map<string, typeof roundPhotos>();
 
   for (const photo of roundPhotos ?? []) {
@@ -296,13 +303,24 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
     );
   }
 
+  const mediaUrlsByPostId = new Map<string, string[]>();
+  for (const media of feedMediaResult.data) {
+    if (!media.signed_url) continue;
+    const existing = mediaUrlsByPostId.get(media.feed_post_id) ?? [];
+    existing.push(media.signed_url);
+    mediaUrlsByPostId.set(media.feed_post_id, existing);
+  }
+
   return records.map((record) => {
     const profile = normalizeAuthorProfile(
       rows.find((row) => String((row as { id?: string }).id ?? "") === record.id)?.member_profiles,
     );
-    const imageUrls = record.member_course_round_id
-      ? imagesByRoundId.get(record.member_course_round_id) ?? []
-      : [];
+    const imageUrls = [
+      ...(record.member_course_round_id
+        ? imagesByRoundId.get(record.member_course_round_id) ?? []
+        : []),
+      ...(mediaUrlsByPostId.get(record.id) ?? []),
+    ];
 
     return memberFeedPostToFeedPost(record, profile, imageUrls);
   });
@@ -380,6 +398,34 @@ export async function fetchMemberFeedPage({
 export async function fetchMemberFeedPosts() {
   const { data, error } = await fetchMemberFeedPage({ limit: FEED_PAGE_SIZE });
   return { data, error };
+}
+
+export async function fetchMemberFeedPostById(postId: string) {
+  if (!supabase) {
+    return { data: null as FeedPost | null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedPostId = postId.trim();
+  if (!normalizedPostId) {
+    return { data: null as FeedPost | null, error: new Error("Post is unavailable.") };
+  }
+
+  const { data, error } = await supabase
+    .from("member_feed_posts")
+    .select(FEED_POST_SELECT)
+    .eq("id", normalizedPostId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return { data: null as FeedPost | null, error: error ?? new Error("Post is unavailable.") };
+  }
+
+  let posts = await mapRowsToFeedPosts([data as MemberFeedPostWithProfile]);
+  const { userId } = await getCurrentAuthUserId();
+  const engagementResult = await attachFeedPostEngagement(posts, userId);
+  if (!engagementResult.error) posts = engagementResult.data;
+
+  return { data: posts[0] ?? null, error: null };
 }
 
 export async function fetchMemberFeedPostsForUser(userId: string) {
@@ -493,6 +539,24 @@ export async function createMemberFeedPost(
     data: memberFeedPostToFeedPost(record, authorProfile, imageUrls),
     error: null,
   };
+}
+
+export async function deleteOwnMemberFeedPost(postId: string) {
+  if (!supabase) {
+    return { error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedPostId = postId.trim();
+  if (!normalizedPostId) {
+    return { error: new Error("Post could not be removed.") };
+  }
+
+  const { error } = await supabase
+    .from("member_feed_posts")
+    .delete()
+    .eq("id", normalizedPostId);
+
+  return { error };
 }
 
 export async function createCourseRoundFeedPost({

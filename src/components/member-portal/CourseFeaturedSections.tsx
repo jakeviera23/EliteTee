@@ -57,9 +57,12 @@ export function CourseFeaturedSections({
       aria-labelledby="featured-discovery-heading"
     >
       <div className="et-courses-featured-head">
-        <h3 id="featured-discovery-heading" className="et-courses-featured-title">
-          Featured in EliteTee
-        </h3>
+        <div>
+          <p className="et-courses-section-kicker">Selected by the network</p>
+          <h3 id="featured-discovery-heading" className="et-courses-featured-title">
+            Courses in conversation
+          </h3>
+        </div>
         <p className="et-courses-featured-copy">{FEATURED_CATEGORY_COPY[resolvedCategory]}</p>
       </div>
 

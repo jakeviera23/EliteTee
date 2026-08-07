@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
-import { buildGolferProfileDisplay } from "./portalProfileDisplay";
+import { buildGolferProfileDisplay, formatProfileIndustryForDisplay } from "./portalProfileDisplay";
 
 function profile(overrides: Partial<MemberProfileRecord> = {}): MemberProfileRecord {
   return {
@@ -56,5 +56,30 @@ describe("buildGolferProfileDisplay", () => {
     expect(display.name).toBe("Your profile");
     expect(display.favoriteCourses).toEqual([]);
     expect(display.handicap).toBeUndefined();
+  });
+
+  it("keeps headline-like prose out of the Industry presentation", () => {
+    expect(formatProfileIndustryForDisplay("Private equity")).toBe("Private equity");
+    expect(formatProfileIndustryForDisplay("Not specified")).toBe("");
+    expect(formatProfileIndustryForDisplay("NJ GOLFER LOOKING FOR EPIC GOLF")).toBe("");
+    expect(
+      formatProfileIndustryForDisplay("Looking to meet members who enjoy architecture and travel."),
+    ).toBe("");
+  });
+
+  it("presents one primary club and moves extra delimited clubs into the compact list", () => {
+    const display = buildGolferProfileDisplay(
+      profile({
+        primary_club: "Liberty National, Essex County CC; Neshanic Valley",
+        additional_clubs: ["Pine Barrens Golf Club", "Essex County CC"],
+      }),
+    );
+
+    expect(display.homeCourse).toBe("Liberty National");
+    expect(display.favoriteCourses).toEqual([
+      "Essex County CC",
+      "Neshanic Valley",
+      "Pine Barrens Golf Club",
+    ]);
   });
 });

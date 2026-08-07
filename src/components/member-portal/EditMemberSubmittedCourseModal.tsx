@@ -1,4 +1,5 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type { GolfCourseRecord } from "../../types/golfCourse";
 import { updateMemberSubmittedCourse } from "../../lib/memberSubmittedCourses";
 import { usePortalToast } from "./PortalToastProvider";
@@ -14,6 +15,8 @@ export function EditMemberSubmittedCourseModal({
   onClose,
   onSaved,
 }: EditMemberSubmittedCourseModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const { showToast } = usePortalToast();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +85,10 @@ export function EditMemberSubmittedCourseModal({
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal portal-modal--course-played"
         role="dialog"
+        aria-modal="true"
         aria-labelledby="edit-course-heading"
         onClick={(event) => event.stopPropagation()}
       >
@@ -186,4 +191,3 @@ export function EditMemberSubmittedCourseModal({
     </div>
   );
 }
-

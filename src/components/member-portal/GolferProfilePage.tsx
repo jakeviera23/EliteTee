@@ -23,6 +23,11 @@ import {
   buildUniqueCoursesPlayed,
 } from "../../lib/profilePageDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
+import { fetchIntroductionRequests } from "../../lib/introductionRequests";
+import {
+  calculateProfileCompletion,
+  countAcceptedIntroductionConnections,
+} from "../../lib/profileConfidence";
 import { migrateLegacyPortalProfileExtrasIfNeeded } from "../../lib/portalProfileExtras";
 import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
 import { isSupabaseConfigured, supabase } from "../../lib/supabase";
@@ -37,6 +42,10 @@ import { ProfileBucketList } from "./profile/ProfileBucketList";
 import { ProfileCoursesPlayed } from "./profile/ProfileCoursesPlayed";
 import { ProfileMemberAvatar } from "./profile/ProfileMemberAvatar";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { ClubMark } from "./ClubMark";
+
+const PROFILE_PREVIEW_LIMIT = 3;
+const PROFILE_COURSE_LIMIT = 6;
 
 function ProfileEmptyState({ title, hint }: { title: string; hint: string }) {
   return (
@@ -108,6 +117,7 @@ export function GolferProfilePage({
   const [isBucketListLoading, setIsBucketListLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [acceptedConnectionCount, setAcceptedConnectionCount] = useState<number | null>(null);
 
   const resolvedViewUserId = viewUserId?.trim() || null;
   const isViewingOther = Boolean(resolvedViewUserId && resolvedViewUserId !== currentUserId);
@@ -156,9 +166,22 @@ export function GolferProfilePage({
     const roundsPromise = viewingOther
       ? fetchMemberCourseRoundsForUser(targetUserId)
       : fetchMemberCourseRoundsForCurrentUser();
+    const introductionPromise = viewingOther
+      ? Promise.resolve({ data: null, error: null })
+      : fetchIntroductionRequests();
 
-    const [{ data: profile, error: profileError }, { data: posts }, { data: rounds }] =
-      await Promise.all([profilePromise, postsPromise, roundsPromise]);
+    const [
+      { data: profile, error: profileError },
+      { data: posts },
+      { data: rounds },
+      introductionResult,
+    ] = await Promise.all([profilePromise, postsPromise, roundsPromise, introductionPromise]);
+
+    setAcceptedConnectionCount(
+      viewingOther || introductionResult.error
+        ? null
+        : countAcceptedIntroductionConnections(introductionResult.data ?? [], userId ?? null),
+    );
 
     if (profileError) {
       if (import.meta.env.DEV) {
@@ -260,11 +283,26 @@ export function GolferProfilePage({
   }, [avatarImageUrl, coverImageUrl, memberProfile, profileVersion]);
 
   const uniqueCourses = useMemo(() => buildUniqueCoursesPlayed(courseRounds), [courseRounds]);
-  const experienceStats = useMemo(
-    () => buildProfileExperienceStats(courseRounds, feedPosts.length),
-    [courseRounds, feedPosts.length],
+  const profileCoursePreview = useMemo(
+    () => uniqueCourses.slice(0, PROFILE_COURSE_LIMIT),
+    [uniqueCourses],
   );
-  const recentExperiences = useMemo(() => courseRounds, [courseRounds]);
+  const experienceStats = useMemo(
+    () => buildProfileExperienceStats(courseRounds, feedPosts.length, acceptedConnectionCount ?? 0),
+    [acceptedConnectionCount, courseRounds, feedPosts.length],
+  );
+  const profileCompletion = useMemo(
+    () => memberProfile && !isViewingOther ? calculateProfileCompletion(memberProfile) : null,
+    [isViewingOther, memberProfile],
+  );
+  const recentExperiences = useMemo(
+    () => courseRounds.slice(0, PROFILE_PREVIEW_LIMIT),
+    [courseRounds],
+  );
+  const recentFeedPosts = useMemo(
+    () => feedPosts.slice(0, PROFILE_PREVIEW_LIMIT),
+    [feedPosts],
+  );
   const bucketListCount = bucketListCourses.length;
 
   const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
@@ -334,6 +372,9 @@ export function GolferProfilePage({
           title="Complete your profile"
           hint="Your member profile is not linked to this account yet. If you just joined through an invite, refresh the page. Otherwise contact membership@elitetee.club."
         />
+        <button type="button" className="et-btn et-btn--secondary" onClick={() => void loadProfile()}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -405,14 +446,15 @@ export function GolferProfilePage({
                   {display.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
                 </div>
                 {industryLabel ? (
-                  <p className="et-profile-headline">{industryLabel}</p>
+                  <p className="et-profile-headline">Industry · {industryLabel}</p>
                 ) : null}
                 <p className="et-profile-location">
                   {display.location ||
                     (isViewingOther ? "Location not shared" : "Add your location in Edit Profile")}
                 </p>
                 <p className="et-profile-club">
-                  Home club · <strong>{display.homeCourse || "Not shared"}</strong>
+                  <ClubMark name={display.homeCourse || "EliteTee"} size="sm" />
+                  <span>Home club · <strong>{display.homeCourse || "Not shared"}</strong></span>
                 </p>
                 <div className="et-profile-badges">
                   <span className="et-profile-badge et-profile-badge--gold">
@@ -428,19 +470,37 @@ export function GolferProfilePage({
                   ) : null}
                 </div>
                 <p className="et-profile-note">{earlyStageCopy.foundingMemberNote}</p>
+                {profileCompletion ? (
+                  <div className="et-profile-completion" aria-label={`Profile ${profileCompletion.percentage}% complete`}>
+                    <span>Profile {profileCompletion.percentage}% complete</span>
+                    <progress value={profileCompletion.completed} max={profileCompletion.total}>
+                      {profileCompletion.percentage}%
+                    </progress>
+                    {profileCompletion.missing.length > 0 ? (
+                      <small>Still to add: {profileCompletion.missing.join(", ")}.</small>
+                    ) : (
+                      <small>All profile foundations are complete.</small>
+                    )}
+                  </div>
+                ) : null}
             </div>
           </header>
 
           <div className="et-profile-layout">
             <div className="et-profile-main">
               <ProfileSection
-                title="About"
-                description="How this member shows up in the EliteTee network."
+                title="Current request"
+                description="What this member is hoping to find through the EliteTee network."
               >
-                {!isViewingOther ? (
-                  <p className="et-profile-section-lead">{earlyStageCopy.profileOnboarding}</p>
-                ) : null}
-                <p className="et-profile-about">{display.bio}</p>
+                {display.bio ? (
+                  <p className="et-profile-about">{display.bio}</p>
+                ) : (
+                  <p className="et-profile-section-lead">
+                    {isViewingOther
+                      ? "This member has not shared a current request."
+                      : "Add a current request in Edit Profile so members know how they can help."}
+                  </p>
+                )}
               </ProfileSection>
 
               <ProfileSection
@@ -460,10 +520,12 @@ export function GolferProfilePage({
                     <dt>Feed posts</dt>
                     <dd>{experienceStats.feedPosts}</dd>
                   </div>
-                  <div className="et-profile-stat">
-                    <dt>Connections</dt>
-                    <dd>{experienceStats.connections}</dd>
-                  </div>
+                  {!isViewingOther && acceptedConnectionCount !== null ? (
+                    <div className="et-profile-stat">
+                      <dt>Accepted introductions</dt>
+                      <dd>{experienceStats.connections}</dd>
+                    </div>
+                  ) : null}
                 </dl>
                 {!isViewingOther ? (
                   <p className="et-profile-note">{earlyStageCopy.profileStatsNote}</p>
@@ -501,7 +563,7 @@ export function GolferProfilePage({
                 title="Courses played"
                 description="Distinct courses represented in shared experiences."
               >
-                <ProfileCoursesPlayed courses={uniqueCourses} isViewingOther={isViewingOther} />
+                <ProfileCoursesPlayed courses={profileCoursePreview} isViewingOther={isViewingOther} />
               </ProfileSection>
 
               {feedPosts.length > 0 ? (
@@ -514,7 +576,7 @@ export function GolferProfilePage({
                   }
                 >
                   <div className={`et-profile-feed-grid ${FEED_CARD_SCOPE_CLASS}`}>
-                    {feedPosts.map((post, index) => (
+                    {recentFeedPosts.map((post, index) => (
                       <FeedCard
                         key={post.id}
                         post={post}
@@ -557,7 +619,7 @@ export function GolferProfilePage({
                   ) : null}
                 </dl>
                 <div>
-                  <p className="et-profile-section-lead">Favorite courses</p>
+                  <p className="et-profile-section-lead">Other clubs &amp; courses</p>
                   {display.favoriteCourses.length > 0 ? (
                     <ul className="et-profile-chips">
                       {display.favoriteCourses.map((course) => (
@@ -568,11 +630,11 @@ export function GolferProfilePage({
                     </ul>
                   ) : (
                     <ProfileEmptyState
-                      title={earlyStageCopy.favoriteCoursesEmpty}
+                      title="No other clubs or courses shared yet."
                       hint={
                         isViewingOther
-                          ? "This member has not shared favorite courses yet."
-                          : "List the courses that define your game in Edit Profile."
+                          ? "This member has not shared other clubs or regular courses yet."
+                          : "Add other clubs or courses you regularly play in Edit Profile."
                       }
                     />
                   )}

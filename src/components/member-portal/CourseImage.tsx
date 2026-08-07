@@ -6,6 +6,7 @@ import {
   type GolfCourseImageVariant,
 } from "../../types/golfCourse";
 import { fetchFeaturedCommunityPhotoUrl } from "../../lib/memberCourseRoundPhotos";
+import { getCoursePhoto } from "../../assets/photos";
 
 type CourseImageProps = {
   name: string;
@@ -97,14 +98,22 @@ export function CourseImage({
     variant,
   );
   const [communityUrl, setCommunityUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(() => new Set());
+  const bundledUrl = getCoursePhoto(name);
+
+  useEffect(() => {
+    setCommunityUrl(null);
+    setFailedUrls(new Set());
+  }, [golfCourseId, officialUrl, name]);
 
   useEffect(() => {
     let active = true;
-    setCommunityUrl(null);
-    setFailed(false);
 
-    if (officialUrl || !golfCourseId) {
+    if (
+      !golfCourseId ||
+      communityUrl ||
+      (officialUrl && !failedUrls.has(officialUrl))
+    ) {
       return () => {
         active = false;
       };
@@ -121,10 +130,15 @@ export function CourseImage({
     return () => {
       active = false;
     };
-  }, [officialUrl, golfCourseId]);
+  }, [officialUrl, golfCourseId, communityUrl, failedUrls]);
 
-  const resolvedUrl = officialUrl ?? communityUrl;
-  const showPhoto = Boolean(resolvedUrl) && !failed;
+  const resolvedUrl = [officialUrl, communityUrl, bundledUrl].find(
+    (url): url is string => Boolean(url) && !failedUrls.has(url!),
+  );
+  const showPhoto = Boolean(resolvedUrl);
+  const isDestinationReference = Boolean(
+    resolvedUrl && bundledUrl && resolvedUrl === bundledUrl && resolvedUrl !== officialUrl && resolvedUrl !== communityUrl,
+  );
 
   return (
     <div
@@ -136,12 +150,18 @@ export function CourseImage({
         <>
           <img
             src={resolvedUrl!}
-            alt={alt}
+            alt={isDestinationReference ? "Golf destination reference photography" : alt}
             loading={loading}
             decoding="async"
-            onError={() => setFailed(true)}
+            onError={() => {
+              if (!resolvedUrl) return;
+              setFailedUrls((current) => new Set(current).add(resolvedUrl));
+            }}
           />
           {overlay ? <div className="course-image-overlay" aria-hidden="true" /> : null}
+          {isDestinationReference ? (
+            <span className="course-image-reference-label">Destination reference</span>
+          ) : null}
         </>
       ) : (
         <CourseImagePlaceholder name={name} location={location} variant={variant} />

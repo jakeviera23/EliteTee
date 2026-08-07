@@ -13,14 +13,21 @@ import {
   type IntroductionTab,
 } from "../../lib/introductionBoard";
 import {
+  fetchDiscoverablePortalMembers,
   fetchApprovedMemberProfilesByUserIds,
+  fetchOwnMemberProfile,
   type ApprovedMemberDirectoryProfile,
 } from "../../lib/memberProfiles";
+import { getMemberPrimaryClub } from "../../lib/discoverDirectory";
+import { buildIntroductionRecommendations } from "../../lib/introductionRecommendations";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { IntroductionRequestRecord } from "../../types/introductionRequest";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { IntroductionRequestCard } from "./introductions/IntroductionRequestCard";
+import { IntroductionRequestModal } from "./IntroductionRequestModal";
+import { MemberClubAvatar } from "./MemberClubAvatar";
+import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import "../../member-portal-introductions.css";
 
 type PortalIntroductionRequestsProps = {
@@ -30,6 +37,7 @@ type PortalIntroductionRequestsProps = {
   onMessageMember: (userId: string, memberName: string) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onRequestsChange?: (requests: IntroductionRequestRecord[]) => void;
+  onDiscoverMembers?: () => void;
 };
 
 const TAB_LABELS: Record<IntroductionTab, string> = {
@@ -65,6 +73,7 @@ export function PortalIntroductionRequests({
   onMessageMember,
   onViewMemberProfile,
   onRequestsChange,
+  onDiscoverMembers,
 }: PortalIntroductionRequestsProps) {
   const [requests, setRequests] = useState<IntroductionRequestRecord[]>([]);
   const [profilesByUserId, setProfilesByUserId] = useState<
@@ -77,6 +86,9 @@ export function PortalIntroductionRequests({
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [viewerProfile, setViewerProfile] = useState<MemberProfileRecord | null>(null);
+  const [discoverableMembers, setDiscoverableMembers] = useState<MemberProfileRecord[]>([]);
+  const [recommendedMember, setRecommendedMember] = useState<MemberProfileRecord | null>(null);
   const onRequestsChangeRef = useRef(onRequestsChange);
 
   useEffect(() => {
@@ -88,9 +100,11 @@ export function PortalIntroductionRequests({
     setLoadError(null);
 
     try {
-      const [{ userId }, { data, error }] = await Promise.all([
+      const [{ userId }, { data, error }, ownProfileResult, membersResult] = await Promise.all([
         getCurrentAuthUserId(),
         fetchIntroductionRequests(),
+        fetchOwnMemberProfile(),
+        fetchDiscoverablePortalMembers(),
       ]);
 
       setCurrentUserId(userId ?? null);
@@ -105,6 +119,8 @@ export function PortalIntroductionRequests({
 
       const nextRequests = data ?? [];
       setRequests(nextRequests);
+      setViewerProfile(ownProfileResult.data ?? null);
+      setDiscoverableMembers(membersResult.data ?? []);
       onRequestsChangeRef.current?.(nextRequests);
 
       const participantIds = [
@@ -167,6 +183,15 @@ export function PortalIntroductionRequests({
 
   const activeRequests = categorized[activeTab];
   const hasAnyRequests = requests.length > 0;
+  const recommendations = useMemo(
+    () =>
+      buildIntroductionRecommendations({
+        viewer: viewerProfile,
+        members: discoverableMembers,
+        requests,
+      }),
+    [discoverableMembers, requests, viewerProfile],
+  );
 
   async function handleAccept(requestId: string) {
     setUpdatingRequestId(requestId);
@@ -262,6 +287,49 @@ export function PortalIntroductionRequests({
         </p>
       ) : null}
 
+      {!isLoading && !loadError && recommendations.length > 0 ? (
+        <section className="et-introductions-recommendations" aria-labelledby="recommended-introductions-heading">
+          <div className="et-introductions-recommendations-head">
+            <div>
+              <p className="et-introductions-recommendations-eyebrow">Your network concierge</p>
+              <h3 id="recommended-introductions-heading">Members worth knowing</h3>
+            </div>
+            <p>Selected from real overlap in your clubs, location, travel, and interests.</p>
+          </div>
+          <ul className="et-introductions-recommendations-list">
+            {recommendations.map(({ member, reasons }) => (
+              <li key={member.user_id ?? member.id} className="et-introductions-recommendation">
+                <button
+                  type="button"
+                  className="et-introductions-recommendation-identity"
+                  onClick={() => member.user_id && onViewMemberProfile?.(member.user_id, member.full_name)}
+                >
+                  <MemberClubAvatar member={member} name={member.full_name} size="md" />
+                  <span>
+                    <strong>{member.full_name}</strong>
+                    <small>
+                      {[getMemberPrimaryClub(member), member.based_in.trim()]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </small>
+                  </span>
+                </button>
+                <div className="et-introductions-recommendation-reasons" aria-label="Why this member is recommended">
+                  {reasons.map((reason) => <span key={reason}>{reason}</span>)}
+                </div>
+                <button
+                  type="button"
+                  className="et-btn et-btn--forest et-btn--sm"
+                  onClick={() => setRecommendedMember(member)}
+                >
+                  Request introduction
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {isLoading ? (
         <p className="et-introductions-loading" aria-live="polite">
           {introductionsCopy.loading}
@@ -282,18 +350,30 @@ export function PortalIntroductionRequests({
         </div>
       ) : null}
 
-      {!isLoading && !loadError && !hasAnyRequests ? (
+      {!isLoading && !loadError && !hasAnyRequests && recommendations.length === 0 ? (
         <div className="et-introductions-empty et-introductions-empty--global">
           <p className="et-introductions-empty-eyebrow" aria-hidden="true">
             ◎
           </p>
           <p className="et-introductions-empty-title">{introductionsCopy.emptyAllTitle}</p>
           <p className="et-introductions-empty-copy">{introductionsCopy.emptyAllCopy}</p>
+          {onDiscoverMembers ? (
+            <button type="button" className="et-btn et-btn--forest et-btn--sm" onClick={onDiscoverMembers}>
+              Discover members
+            </button>
+          ) : null}
         </div>
       ) : null}
 
       {!isLoading && !loadError && hasAnyRequests ? (
-        <>
+        <section className="et-introductions-desk" aria-labelledby="introduction-desk-heading">
+          <header className="et-introductions-desk-head">
+            <div>
+              <p>Your introductions</p>
+              <h3 id="introduction-desk-heading">Requests and connections</h3>
+            </div>
+            <span>Review what needs attention and continue accepted connections.</span>
+          </header>
           <div className="et-introductions-tabs" role="tablist" aria-label="Introduction request status">
             {(Object.keys(TAB_LABELS) as IntroductionTab[]).map((tab) => (
               <button
@@ -353,7 +433,18 @@ export function PortalIntroductionRequests({
               </ul>
             )}
           </div>
-        </>
+        </section>
+      ) : null}
+
+      {recommendedMember ? (
+        <IntroductionRequestModal
+          member={recommendedMember}
+          onClose={() => setRecommendedMember(null)}
+          onSubmitted={() => {
+            setActionNotice(`Introduction requested with ${recommendedMember.full_name}.`);
+            void loadRequests();
+          }}
+        />
       ) : null}
     </section>
   );

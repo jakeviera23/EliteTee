@@ -60,11 +60,12 @@ export function DiscoverFiltersBar({
     <div className="et-discover-filters">
       <label className="et-discover-search">
         <span className="visually-hidden">Search members</span>
+        <span className="et-discover-search-icon" aria-hidden="true">⌕</span>
         <input
           type="search"
           value={filters.query}
           onChange={(event) => updateFilter("query", event.target.value)}
-          placeholder="Search by name, club, location, or interest…"
+          placeholder="Search members, clubs, places, interests…"
         />
       </label>
 
@@ -83,27 +84,6 @@ export function DiscoverFiltersBar({
             options={filterOptions.clubs}
             onChange={(value) => updateFilter("club", value)}
             emptyLabel="Any club"
-          />
-          <FilterSelect
-            label="Industry"
-            value={filters.industry}
-            options={filterOptions.industries}
-            onChange={(value) => updateFilter("industry", value)}
-            emptyLabel="Any industry"
-          />
-          <FilterSelect
-            label="Golf interest"
-            value={filters.golfInterest}
-            options={filterOptions.golfInterests}
-            onChange={(value) => updateFilter("golfInterest", value)}
-            emptyLabel="Any golf interest"
-          />
-          <FilterSelect
-            label="Travel"
-            value={filters.travelDestination}
-            options={filterOptions.travelDestinations}
-            onChange={(value) => updateFilter("travelDestination", value)}
-            emptyLabel="Any destination"
           />
           <label className="et-discover-filter">
             <span>Sort</span>
@@ -125,7 +105,7 @@ export function DiscoverFiltersBar({
           className="et-btn et-btn--secondary et-discover-filters-mobile-trigger"
           onClick={onOpenMobileFilters}
         >
-          Filters{activeCount > 0 ? ` (${activeCount})` : ""}
+          All filters{activeCount > 0 ? ` · ${activeCount}` : ""}
         </button>
       </div>
     </div>

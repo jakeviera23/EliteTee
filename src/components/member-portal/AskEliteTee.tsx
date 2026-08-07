@@ -212,7 +212,7 @@ export function AskEliteTee({
           <textarea
             id="ask-elitetee-question"
             className="et-ask-textarea"
-            rows={4}
+            rows={3}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             placeholder={askCopy.composePlaceholder}

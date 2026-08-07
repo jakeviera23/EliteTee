@@ -17,7 +17,7 @@ export function getNotificationBadgeDisplay(count: number): NotificationBadgeDis
 
 /** Dropdown width is viewport-based so it does not collapse to the bell button width. */
 export const PORTAL_NOTIFICATION_PANEL_WIDTH =
-  "min(22.5rem, calc(100vw - 2rem))";
+  "min(30rem, calc(100vw - 2rem))";
 
 export function getSeenIntroductionRequestIds(userId: string) {
   try {

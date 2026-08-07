@@ -21,15 +21,23 @@ import {
 } from "../../lib/feedPostEngagement";
 import {
   badgeToneForPost,
-  buildFeedMetaChips,
+  buildVisibleFeedMetaChips,
+  getFeedCaptionPreview,
   isCourseRoundPost,
   type FeedMetaChipTone,
 } from "../../lib/feedCardMeta";
 import { FeedAvatar } from "./FeedAvatar";
 import { FeedCardHeroMedia } from "./FeedCardHeroMedia";
+import { CourseImage } from "./CourseImage";
 import { FeedPostEditModal } from "./FeedPostEditModal";
 import { FeedPostMenu } from "./FeedPostMenu";
 import { VerifiedBadge } from "./VerifiedBadge";
+import {
+  buildContributionResponseAction,
+  contributionCommentPlaceholder,
+  type ContributionResponseAction,
+} from "../../lib/contributionResponse";
+import { buildFeedPostDeepLink, buildFeedPostShareText } from "../../lib/feedPostShare";
 
 type FeedCardProps = {
   post: FeedPost;
@@ -39,7 +47,13 @@ type FeedCardProps = {
   viewerIsAdmin?: boolean;
   onToast?: (message: string) => void;
   onViewAuthor?: (userId: string, memberName: string) => void;
+  onRespondPrivately?: (
+    userId: string,
+    memberName: string,
+    response: ContributionResponseAction,
+  ) => void;
   onPostUpdated?: (post: FeedPost) => void;
+  isActivityFocus?: boolean;
 };
 
 function HeartIcon({ filled }: { filled?: boolean }) {
@@ -203,7 +217,9 @@ export function FeedCard({
   viewerIsAdmin = false,
   onToast,
   onViewAuthor,
+  onRespondPrivately,
   onPostUpdated,
+  isActivityFocus = false,
 }: FeedCardProps) {
   const isFounder = variant === "founder";
   const [editing, setEditing] = useState(false);
@@ -222,6 +238,7 @@ export function FeedCard({
   const [isTogglingSave, setIsTogglingSave] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
 
   useEffect(() => {
     setLiked(Boolean(post.isLiked));
@@ -266,7 +283,8 @@ export function FeedCard({
         : [],
     [hasImages, post.images, post.memberCourseRoundId],
   );
-  const metaChips = buildFeedMetaChips(post);
+  const metaChips = buildVisibleFeedMetaChips(post, isCourseRound);
+  const captionPreview = getFeedCaptionPreview(post.caption, captionExpanded, isFounder ? 1000 : 320);
   const badgeTone = badgeToneForPost(post);
   const entranceStyle = { animationDelay: `${Math.min(index, 9) * 55}ms` };
 
@@ -284,7 +302,10 @@ export function FeedCard({
 
   const authorUserId = post.author.id?.trim();
   const canViewAuthor = Boolean(onViewAuthor && authorUserId);
-  const contentFlags = isFounder ? [] : getFeedContentFlags(post);
+  const contentFlags = isFounder || !viewerIsAdmin ? [] : getFeedContentFlags(post);
+  const responseAction = isFounder
+    ? null
+    : buildContributionResponseAction(post, currentUserId);
 
   const cardKind = isFounder ? "founder" : isCourseRound ? "round" : "social";
 
@@ -340,18 +361,27 @@ export function FeedCard({
   }
 
   async function handleShare() {
-    const shareText = post.courseName
-      ? `${post.author.name} played ${post.courseName} on EliteTee`
-      : `${post.author.name} shared an update on EliteTee`;
+    const shareText = buildFeedPostShareText({
+      authorName: post.author.name,
+      courseName: post.courseName,
+      caption: post.caption,
+    });
+    const shareUrl = isPersistedFeedPostId(post.id)
+      ? buildFeedPostDeepLink(post.id, window.location.origin)
+      : null;
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: "EliteTee", text: shareText });
+        await navigator.share({
+          title: "EliteTee",
+          text: shareText,
+          ...(shareUrl ? { url: shareUrl } : {}),
+        });
         return;
       }
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareText);
-        onToast?.("Link copied to clipboard");
+        await navigator.clipboard.writeText(shareUrl ?? shareText);
+        onToast?.(shareUrl ? "Post link copied" : "Post text copied");
         return;
       }
     } catch {
@@ -416,7 +446,8 @@ export function FeedCard({
 
   return (
     <article
-      className={`feed-card feed-card--${cardKind}`}
+      id={`feed-post-${post.id}`}
+      className={`feed-card feed-card--${cardKind}${isActivityFocus ? " is-activity-focus" : ""}`}
       style={entranceStyle}
     >
       <header className="feed-card-head">
@@ -438,8 +469,24 @@ export function FeedCard({
           variant={isCourseRound ? "hero" : "editorial"}
         />
       ) : isCourseRound ? (
-        <div className="feed-card-photo-placeholder" role="img" aria-label="No course photo available">
-          <span className="feed-card-photo-placeholder-label">Course photo unavailable</span>
+        <div className="feed-card-course-media">
+          <CourseImage
+            name={post.courseName || "Golf course"}
+            region={post.courseLocation}
+            variant="hero"
+            className="feed-card-course-image"
+            overlay
+            alt={post.courseName ? `${post.courseName} course view` : "Golf course"}
+          />
+          {ratingDisplay ? (
+            <div
+              className="feed-card-rating feed-card-rating--overlay"
+              title={`Rated ${ratingDisplay} out of ${MAX_RATING.toFixed(1)}`}
+            >
+              <span className="feed-card-rating-value">{ratingDisplay}</span>
+              <span className="feed-card-rating-label">Member rating</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -453,15 +500,6 @@ export function FeedCard({
           ) : null}
           {post.courseLocation ? (
             <p className="feed-card-course-location">{post.courseLocation}</p>
-          ) : null}
-          {ratingDisplay && !hasImages ? (
-            <div
-              className="feed-card-rating feed-card-rating--inline"
-              title={`Rated ${ratingDisplay} out of ${MAX_RATING.toFixed(1)}`}
-            >
-              <span className="feed-card-rating-value">{ratingDisplay}</span>
-              <span className="feed-card-rating-label">Member rating</span>
-            </div>
           ) : null}
         </div>
       ) : null}
@@ -484,9 +522,20 @@ export function FeedCard({
         ) : null}
 
         {post.caption ? (
-          <p className={`feed-card-caption${isFounder ? " feed-card-caption--founder" : ""}`}>
-            {post.caption}
-          </p>
+          <div className="feed-card-caption-wrap">
+            <p className={`feed-card-caption${isFounder ? " feed-card-caption--founder" : ""}`}>
+              {captionPreview.text}
+            </p>
+            {captionPreview.isTruncated ? (
+              <button
+                type="button"
+                className="feed-card-caption-more"
+                onClick={() => setCaptionExpanded(true)}
+              >
+                Read full post
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         {metaChips.length > 0 ? (
@@ -500,6 +549,21 @@ export function FeedCard({
               </li>
             ))}
           </ul>
+        ) : null}
+
+        {responseAction?.presentation === "bridge" && onRespondPrivately && authorUserId ? (
+          <aside className="feed-card-response-bridge" aria-label="Continue this contribution">
+            <div>
+              <span>{responseAction.eyebrow}</span>
+              <p>{responseAction.explanation}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRespondPrivately(authorUserId, post.author.name, responseAction)}
+            >
+              {responseAction.label}
+            </button>
+          </aside>
         ) : null}
 
         <div className="feed-card-actions" role="group" aria-label="Post actions">
@@ -543,6 +607,15 @@ export function FeedCard({
             <ShareIcon />
             <span className="feed-card-action-label">Share</span>
           </button>
+          {responseAction?.presentation === "compact" && onRespondPrivately && authorUserId ? (
+            <button
+              type="button"
+              className="feed-card-action feed-card-action--respond"
+              onClick={() => onRespondPrivately(authorUserId, post.author.name, responseAction)}
+            >
+              <span className="feed-card-action-label">{responseAction.label}</span>
+            </button>
+          ) : null}
         </div>
 
         {previewComment && !showComments ? (
@@ -626,7 +699,7 @@ export function FeedCard({
               type="text"
               value={commentDraft}
               onChange={(event) => setCommentDraft(event.target.value)}
-              placeholder="Add a comment…"
+              placeholder={contributionCommentPlaceholder(post)}
               disabled={isSubmittingComment}
             />
             <button

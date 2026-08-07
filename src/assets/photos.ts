@@ -77,6 +77,53 @@ export const coursePhotosByName: Record<string, string> = {
   "Royal County Down": photos.courseRoyalCountyDown,
 };
 
+function normalizeCoursePhotoKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Bundled, approved visual references. Resort-wide imagery is intentionally
+ * limited to courses at that same destination; unrelated courses retain the
+ * branded fallback rather than showing a misleading photograph.
+ */
+const coursePhotosByNormalizedName: Record<string, string> = {
+  "national golf links of america": photos.courseNationalGolfLinks,
+  "pebble beach golf links": photos.coursePebbleBeach,
+  "st andrews links": photos.courseStAndrews,
+  "old course at st andrews": photos.courseStAndrews,
+  "bandon dunes": photos.courseBandonDunes,
+  "bandon dunes golf resort": photos.courseBandonDunes,
+  "bandon dunes golf resort old macdonald": photos.courseBandonDunes,
+  "old macdonald": photos.courseBandonDunes,
+  "bandon trails": photos.courseBandonDunes,
+  "pacific dunes": photos.courseBandonDunes,
+  "cabot cliffs": photos.courseCabotCliffs,
+  "royal county down": photos.courseRoyalCountyDown,
+  "royal county down golf club": photos.courseRoyalCountyDown,
+  "winged foot": photos.courseWingedFoot,
+  "winged foot golf club": photos.courseWingedFoot,
+  "pine valley": photos.coursePineValley,
+  "pine valley golf club": photos.coursePineValley,
+  "seminole": photos.courseSeminole,
+  "seminole golf club": photos.courseSeminole,
+  "cypress point": photos.courseCypressPoint,
+  "cypress point club": photos.courseCypressPoint,
+  "royal melbourne": photos.courseRoyalMelbourne,
+  "royal melbourne golf club": photos.courseRoyalMelbourne,
+};
+
 export function getCoursePhoto(courseIdOrName: string): string | undefined {
-  return coursePhotosById[courseIdOrName] ?? coursePhotosByName[courseIdOrName];
+  const value = courseIdOrName.trim();
+  if (!value) return undefined;
+
+  return (
+    coursePhotosById[value] ??
+    coursePhotosByName[value] ??
+    coursePhotosByNormalizedName[normalizeCoursePhotoKey(value)]
+  );
 }

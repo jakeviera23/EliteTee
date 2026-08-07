@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import type {
   LocationBrowseCountry,
   LocationBrowseRegion,
@@ -36,16 +37,28 @@ export function CourseLocationBrowse({
   onClearLocation,
 }: CourseLocationBrowseProps) {
   const hasLocationSelection = Boolean(selectedCountry || selectedRegion || step === "all");
+  const [showAllCountries, setShowAllCountries] = useState(false);
+  const rankedCountries = useMemo(
+    () =>
+      [...countries].sort(
+        (a, b) => b.courseCount - a.courseCount || a.country.localeCompare(b.country),
+      ),
+    [countries],
+  );
+  const visibleCountries = showAllCountries ? rankedCountries : rankedCountries.slice(0, 6);
+  const hiddenCountryCount = Math.max(rankedCountries.length - visibleCountries.length, 0);
 
   return (
     <section className="et-courses-location" aria-labelledby="course-location-heading">
       <div className="et-courses-location-head">
         <div>
           <h3 id="course-location-heading" className="et-h3">
-            Browse by location
+            {step === "countries" && !showAllCountries ? "Popular destinations" : "Browse by location"}
           </h3>
           <p className="et-body-sm et-courses-directory-copy">
-            Start with a destination, then drill into regions and courses.
+            {step === "countries" && !showAllCountries
+              ? "Start with the strongest parts of the library or browse every destination."
+              : "Choose a destination, then drill into regions and courses."}
           </p>
         </div>
         <div className="et-courses-location-actions">
@@ -68,7 +81,7 @@ export function CourseLocationBrowse({
         </div>
       </div>
 
-      <nav className="et-courses-breadcrumbs" aria-label="Course location">
+      {step !== "countries" ? <nav className="et-courses-breadcrumbs" aria-label="Course location">
         <ol>
           <li>
             <button
@@ -77,7 +90,6 @@ export function CourseLocationBrowse({
               onClick={() =>
                 onNavigateBreadcrumb({ country: "", region: "", viewAll: false })
               }
-              aria-current={step === "countries" ? "page" : undefined}
             >
               Courses
             </button>
@@ -115,11 +127,11 @@ export function CourseLocationBrowse({
             </li>
           ) : null}
         </ol>
-      </nav>
+      </nav> : null}
 
       {step === "countries" ? (
         <ul className="et-courses-location-grid">
-          {countries.map((entry) => (
+          {visibleCountries.map((entry) => (
             <li key={entry.country}>
               <button
                 type="button"
@@ -132,6 +144,16 @@ export function CourseLocationBrowse({
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {step === "countries" && hiddenCountryCount > 0 ? (
+        <button
+          type="button"
+          className="et-courses-location-more"
+          onClick={() => setShowAllCountries(true)}
+        >
+          Browse all {rankedCountries.length} destinations
+        </button>
       ) : null}
 
       {step === "regions" ? (

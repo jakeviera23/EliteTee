@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
+import type { PortalCreateAction } from "../../lib/portalCreation";
 import { buildComposerAuthor } from "../../lib/portalProfileDisplay";
 import { resolveMemberProfileMedia } from "../../lib/memberProfileMedia";
 import { FeedComposer } from "./FeedComposer";
@@ -7,9 +8,10 @@ import { usePortalToast } from "./PortalToastProvider";
 
 type PortalComposeProps = {
   onPosted?: () => void;
+  createAction?: PortalCreateAction | null;
 };
 
-export function PortalCompose({ onPosted }: PortalComposeProps) {
+export function PortalCompose({ onPosted, createAction }: PortalComposeProps) {
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
 
@@ -28,15 +30,29 @@ export function PortalCompose({ onPosted }: PortalComposeProps) {
     onPosted?.();
   }
 
+  const initialPostType =
+    createAction?.destination.kind === "composer"
+      ? createAction.destination.composerPostType
+      : "general";
+
   return (
     <section className="et-feed et-feed-compose" aria-labelledby="compose-heading">
       <header className="et-feed-hero">
         <h2 id="compose-heading" className="et-feed-title">
-          Create post
+          {createAction?.label ?? "Create post"}
         </h2>
-        <p className="et-feed-lead">Share where you played, request introductions, and connect with members.</p>
+        <p className="et-feed-lead">
+          {createAction?.description ??
+            "Share where you played, request introductions, and connect with members."}
+        </p>
       </header>
-      <FeedComposer author={composerAuthor} onPosted={handlePosted} />
+      <FeedComposer
+        key={createAction?.id ?? "default"}
+        author={composerAuthor}
+        initialPostType={initialPostType}
+        startExpanded
+        onPosted={handlePosted}
+      />
     </section>
   );
 }

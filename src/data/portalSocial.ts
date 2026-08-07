@@ -64,8 +64,6 @@ export const experienceCopy = {
   experienceLead: "Rate the round, capture the story, and note when you played.",
   photographyTitle: "Photography",
   photographyLead: "Optional photos from the day — they appear on your feed post and course gallery.",
-  detailsTitle: "Details",
-  detailsLead: "Additional context will live here as EliteTee expands the experience model.",
   shareSubmit: "Share Experience",
   shareSaving: "Sharing…",
   shareSuccessTitle: "Experience shared.",
@@ -78,15 +76,6 @@ export const experienceCopy = {
   reviewLabel: "Review",
   reviewPlaceholder: "What stood out—layout, conditions, hospitality, travel tips…",
   wouldPlayAgain: "Would play again?",
-  futureFields: [
-    { key: "tees", label: "Tees played" },
-    { key: "hole", label: "Favorite hole" },
-    { key: "cart", label: "Walking / riding" },
-    { key: "weather", label: "Weather" },
-    { key: "partners", label: "Playing partners" },
-    { key: "trip", label: "Trip" },
-  ] as const,
-  futureFieldsNote: "Additional details will be available in a future update. Your experience saves with the fields above.",
 } as const;
 
 /** Messages — member correspondence copy */

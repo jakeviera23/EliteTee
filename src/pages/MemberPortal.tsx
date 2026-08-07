@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
-import { AskEliteTee } from "../components/member-portal/AskEliteTee";
-import { PortalCompose } from "../components/member-portal/PortalCompose";
-import { PortalCourses } from "../components/member-portal/PortalCourses";
-import { PortalDiscover } from "../components/member-portal/PortalDiscover";
+import { AddCoursePlayedModal } from "../components/member-portal/AddCoursePlayedModal";
+import { GlobalCreateMenu } from "../components/member-portal/GlobalCreateMenu";
 import { PortalFeed } from "../components/member-portal/PortalFeed";
-import { PortalIntroductionRequests } from "../components/member-portal/PortalIntroductionRequests";
-import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { PortalNotificationsPanel } from "../components/member-portal/PortalNotificationsPanel";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
@@ -27,9 +22,16 @@ import {
   getSeenIntroductionRequestIds,
   markIntroductionRequestsSeen,
 } from "../lib/portalNotifications";
+import { markNetworkActivitySeen } from "../lib/networkActivity";
+import type { PortalCreateAction } from "../lib/portalCreation";
+import type { ContributionResponseAction } from "../lib/contributionResponse";
+import { shouldRefreshMemberExperience } from "../lib/foregroundRefresh";
 import {
   PORTAL_DESKTOP_PRIMARY_TABS,
   PORTAL_MOBILE_BOTTOM_TABS,
+  getPortalDestinationFromPath,
+  getPortalDestinationPath,
+  getPortalViewForDestination,
   type PortalPrimaryTab,
 } from "../lib/portalNavigation";
 import { supabase } from "../lib/supabase";
@@ -46,7 +48,44 @@ import "../member-portal-profile.css";
 import "../member-portal-messages.css";
 import "../member-portal-introductions.css";
 import "../member-portal-notifications.css";
+import "../member-portal-create.css";
 import "../member-portal-mobile.css";
+
+const GolferProfilePage = lazy(() =>
+  import("../components/member-portal/GolferProfilePage").then((module) => ({
+    default: module.GolferProfilePage,
+  })),
+);
+const AskEliteTee = lazy(() =>
+  import("../components/member-portal/AskEliteTee").then((module) => ({
+    default: module.AskEliteTee,
+  })),
+);
+const PortalCompose = lazy(() =>
+  import("../components/member-portal/PortalCompose").then((module) => ({
+    default: module.PortalCompose,
+  })),
+);
+const PortalCourses = lazy(() =>
+  import("../components/member-portal/PortalCourses").then((module) => ({
+    default: module.PortalCourses,
+  })),
+);
+const PortalDiscover = lazy(() =>
+  import("../components/member-portal/PortalDiscover").then((module) => ({
+    default: module.PortalDiscover,
+  })),
+);
+const PortalIntroductionRequests = lazy(() =>
+  import("../components/member-portal/PortalIntroductionRequests").then((module) => ({
+    default: module.PortalIntroductionRequests,
+  })),
+);
+const PortalMessages = lazy(() =>
+  import("../components/member-portal/PortalMessages").then((module) => ({
+    default: module.PortalMessages,
+  })),
+);
 
 const INITIAL_LOADER_MS = 1800;
 const TAB_TRANSITION_MS = 650;
@@ -57,9 +96,15 @@ type PortalTab = PortalPrimaryTab;
 type PendingConversation = {
   otherUserId: string;
   otherUserName: string;
+  draftMessage?: string;
+  contributionContext?: string;
 };
 
 const MOBILE_LAYOUT_QUERY = "(max-width: 767px)";
+
+function PortalSectionFallback() {
+  return <div className="portal-state" role="status" aria-live="polite">Loading…</div>;
+}
 
 function bottomNavIcon(tab: PortalTab) {
   switch (tab) {
@@ -71,6 +116,8 @@ function bottomNavIcon(tab: PortalTab) {
       return "✦";
     case "courses":
       return "⛳";
+    case "introductions":
+      return "↔";
     case "profile":
       return "◉";
     default:
@@ -127,22 +174,28 @@ function PortalTopBarEnvelopeIcon() {
 function MemberPortalContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isCoursesRoute = location.pathname === "/courses";
+  const routeDestination = getPortalDestinationFromPath(location.pathname);
+  const isCoursesRoute = routeDestination === "courses";
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isInitialLoaderVisible, setIsInitialLoaderVisible] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [activeView, setActiveView] = useState<PortalTab>("feed");
+  const [activeView, setActiveView] = useState<PortalTab>(() =>
+    getPortalViewForDestination(routeDestination),
+  );
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [introductionRequests, setIntroductionRequests] = useState<IntroductionRequestRecord[]>([]);
   const [seenIntroductionRequestIds, setSeenIntroductionRequestIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(
+    () => routeDestination === "activity",
+  );
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [notificationItems, setNotificationItems] = useState<PortalNotificationItem[]>([]);
+  const [networkActivityUnreadCount, setNetworkActivityUnreadCount] = useState(0);
   const [isMobileLayout, setIsMobileLayout] = useState(() =>
     window.matchMedia(MOBILE_LAYOUT_QUERY).matches,
   );
@@ -151,8 +204,50 @@ function MemberPortalContent() {
     null,
   );
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [globalRoundOpen, setGlobalRoundOpen] = useState(false);
+  const [messageThreadOpen, setMessageThreadOpen] = useState(false);
+  const [pendingCreateAction, setPendingCreateAction] = useState<PortalCreateAction | null>(null);
+  const [createFlowKey, setCreateFlowKey] = useState(0);
+  const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+  const [pendingFeedPostId, setPendingFeedPostId] = useState<string | null>(() =>
+    new URLSearchParams(location.search).get("post"),
+  );
+  const activityLoadedAtRef = useRef(0);
+  const foregroundRefreshStartedAtRef = useRef(0);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
   const resolvedView: PortalTab = isCoursesRoute ? "courses" : activeView;
+  const mobileCreateBlocked =
+    notificationsOpen || globalRoundOpen ||
+    (resolvedView === "messages" && messageThreadOpen);
+
+  const handleFeedPostFocusConsumed = useCallback(() => {
+    setPendingFeedPostId(null);
+    if (new URLSearchParams(location.search).has("post")) {
+      navigate(getPortalDestinationPath("feed"), { replace: true });
+    }
+  }, [location.search, navigate]);
+
+  useEffect(() => {
+    if (!routeDestination) {
+      navigate(getPortalDestinationPath("feed"), { replace: true });
+      return;
+    }
+
+    if (routeDestination === "activity") {
+      setNotificationsOpen(true);
+      return;
+    }
+
+    setActiveView(getPortalViewForDestination(routeDestination));
+    setNotificationsOpen(false);
+  }, [navigate, routeDestination]);
+
+  useEffect(() => {
+    if (routeDestination !== "feed") return;
+    const postId = new URLSearchParams(location.search).get("post")?.trim() || null;
+    setPendingFeedPostId(postId);
+  }, [location.search, routeDestination]);
 
   const notificationBadgeCount = useMemo(
     () =>
@@ -161,8 +256,8 @@ function MemberPortalContent() {
         introductionRequests,
         currentUserId,
         seenIntroductionRequestIds,
-      }),
-    [currentUserId, introductionRequests, seenIntroductionRequestIds, unreadMessageCount],
+      }) + networkActivityUnreadCount,
+    [currentUserId, introductionRequests, networkActivityUnreadCount, seenIntroductionRequestIds, unreadMessageCount],
   );
 
   useEffect(() => {
@@ -220,6 +315,20 @@ function MemberPortalContent() {
 
     setIntroductionRequests(result.introductionRequests);
     setNotificationItems(result.notifications);
+    activityLoadedAtRef.current = Date.now();
+
+    const networkUnread = result.notifications.filter(
+      (item) =>
+        item.countsTowardBadge &&
+        !item.messageTarget &&
+        !item.introductionTarget,
+    ).length;
+    if (currentUserId) {
+      markNetworkActivitySeen(currentUserId);
+      setNetworkActivityUnreadCount(0);
+    } else {
+      setNetworkActivityUnreadCount(networkUnread);
+    }
 
     const unreadFromConversations = result.conversations.reduce(
       (total, conversation) => total + conversation.unreadCount,
@@ -227,11 +336,51 @@ function MemberPortalContent() {
     );
     setUnreadMessageCount(unreadFromConversations);
     setNotificationsLoading(false);
+  }, [currentUserId]);
+
+  const primeActivityCenter = useCallback(async () => {
+    const result = await fetchPortalNotificationFeed();
+    if (result.error) return;
+    setIntroductionRequests(result.introductionRequests);
+    setNotificationItems(result.notifications);
+    activityLoadedAtRef.current = Date.now();
+    setUnreadMessageCount(
+      result.conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+    );
+    setNetworkActivityUnreadCount(
+      result.notifications.filter(
+        (item) => item.countsTowardBadge && !item.messageTarget && !item.introductionTarget,
+      ).length,
+    );
   }, []);
 
+  const refreshMemberSignals = useCallback((force = false) => {
+    if (!force && !shouldRefreshMemberExperience(foregroundRefreshStartedAtRef.current)) return;
+    foregroundRefreshStartedAtRef.current = Date.now();
+    if (notificationsOpen) {
+      void loadNotificationPanel();
+    } else {
+      void primeActivityCenter();
+    }
+  }, [loadNotificationPanel, notificationsOpen, primeActivityCenter]);
+
   useEffect(() => {
-    void refreshNotificationCounts();
-  }, [refreshNotificationCounts]);
+    void primeActivityCenter();
+  }, [primeActivityCenter]);
+
+  useEffect(() => {
+    function handleForegroundReturn() {
+      if (document.visibilityState !== "visible") return;
+      refreshMemberSignals();
+    }
+
+    window.addEventListener("focus", handleForegroundReturn);
+    document.addEventListener("visibilitychange", handleForegroundReturn);
+    return () => {
+      window.removeEventListener("focus", handleForegroundReturn);
+      document.removeEventListener("visibilitychange", handleForegroundReturn);
+    };
+  }, [refreshMemberSignals]);
 
   useEffect(() => {
     void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
@@ -268,8 +417,7 @@ function MemberPortalContent() {
 
     if (state?.openAskWith?.question?.trim()) {
       setPendingAskQuestion(state.openAskWith.question.trim());
-      setActiveView("ask");
-      navigate("/member-portal", { replace: true, state: null });
+      navigate(getPortalDestinationPath("ask"), { replace: true, state: null });
       return;
     }
 
@@ -278,14 +426,12 @@ function MemberPortalContent() {
         otherUserId: state.openMessagesWith.userId,
         otherUserName: state.openMessagesWith.memberName,
       });
-      setActiveView("messages");
-      navigate("/member-portal", { replace: true, state: null });
+      navigate(getPortalDestinationPath("messages"), { replace: true, state: null });
       return;
     }
 
     if (state?.restorePortalTab) {
-      setActiveView(state.restorePortalTab);
-      navigate("/member-portal", { replace: true, state: null });
+      navigate(getPortalDestinationPath(state.restorePortalTab), { replace: true, state: null });
     }
   }, [location.state, navigate]);
 
@@ -328,7 +474,7 @@ function MemberPortalContent() {
       case "profile":
         return { type: "portal", tab: "profile", label: "Back to Profile" };
       default:
-        return { type: "portal", tab: "feed", label: "Back to Feed" };
+        return { type: "portal", tab: "feed", label: "Back to Home" };
     }
   }
 
@@ -353,29 +499,30 @@ function MemberPortalContent() {
     });
   }
 
-  function handleMessageMember(userId: string, memberName: string) {
-    setPendingConversation({ otherUserId: userId, otherUserName: memberName });
+  function handleMessageMember(
+    userId: string,
+    memberName: string,
+    response?: ContributionResponseAction,
+  ) {
+    setPendingConversation({
+      otherUserId: userId,
+      otherUserName: memberName,
+      draftMessage: response?.draftMessage,
+      contributionContext: response?.contextLabel,
+    });
     transitionTo("messages");
   }
 
   function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
-    if (view === "courses") {
-      navigate("/courses");
-      setActiveView("courses");
-      return;
-    }
-
-    if (isCoursesRoute) {
-      navigate("/member-portal");
-    }
-
-    if (view === activeView && !options?.scrollToComposer) return;
+    const destinationPath = getPortalDestinationPath(view);
+    if (view === activeView && location.pathname === destinationPath && !options?.scrollToComposer) return;
 
     if (options?.scrollToComposer) {
       scrollAfterTransition.current = "feed";
     }
 
     setIsTransitioning(true);
+    navigate(destinationPath);
     window.setTimeout(() => {
       setActiveView(view === "compose" && options?.scrollToComposer ? "feed" : view);
       if (view === "messages" || view === "introductions") {
@@ -392,9 +539,10 @@ function MemberPortalContent() {
   function handleMobileNav(tab: PortalTab) {
     if (tab === "compose") {
       if (isCoursesRoute) {
-        navigate("/member-portal");
+        navigate(getPortalDestinationPath("feed"));
       }
       setActiveView("feed");
+      navigate(getPortalDestinationPath("feed"));
       window.scrollTo({ top: 0, behavior: "auto" });
       requestAnimationFrame(() => {
         document.getElementById(FEED_COMPOSER_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -403,19 +551,16 @@ function MemberPortalContent() {
     }
 
     if (tab === "courses") {
-      navigate("/courses");
+      navigate(getPortalDestinationPath("courses"));
       setActiveView("courses");
       window.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
 
-    if (isCoursesRoute) {
-      navigate("/member-portal");
-    }
-
-    if (tab === activeView) return;
+    if (tab === activeView && location.pathname === getPortalDestinationPath(tab)) return;
 
     setActiveView(tab);
+    navigate(getPortalDestinationPath(tab));
     window.scrollTo({ top: 0, behavior: "auto" });
 
     if (tab === "messages" || tab === "introductions") {
@@ -423,18 +568,52 @@ function MemberPortalContent() {
     }
   }
 
+  function handleCreateAction(action: PortalCreateAction) {
+    setCreateMenuOpen(false);
+
+    if (action.destination.kind === "round") {
+      setGlobalRoundOpen(true);
+      return;
+    }
+
+    if (action.destination.kind === "discover-introduction") {
+      setPendingCreateAction(null);
+      transitionTo("discover");
+      return;
+    }
+
+    setPendingCreateAction(action);
+    setCreateFlowKey((current) => current + 1);
+    transitionTo("compose");
+  }
+
   const handleIntroductionRequestsChange = useCallback((requests: IntroductionRequestRecord[]) => {
     setIntroductionRequests(requests);
-  }, []);
+    refreshMemberSignals(true);
+  }, [refreshMemberSignals]);
+
+  function closeNotificationsPanel() {
+    setNotificationsOpen(false);
+    if (routeDestination === "activity") {
+      navigate(getPortalDestinationPath(activeView), { replace: true });
+    }
+  }
 
   function toggleNotificationsPanel() {
-    setNotificationsOpen((isOpen) => {
-      const nextOpen = !isOpen;
-      if (nextOpen) {
-        void loadNotificationPanel();
-      }
-      return nextOpen;
-    });
+    if (notificationsOpen) {
+      closeNotificationsPanel();
+      return;
+    }
+
+    setNotificationsOpen(true);
+    navigate(getPortalDestinationPath("activity"));
+    const activityIsFresh = Date.now() - activityLoadedAtRef.current < 30_000;
+    if (activityIsFresh) {
+      if (currentUserId) markNetworkActivitySeen(currentUserId);
+      setNetworkActivityUnreadCount(0);
+    } else {
+      void loadNotificationPanel();
+    }
   }
 
   function handleNotificationSelect(notification: PortalNotificationItem) {
@@ -450,6 +629,26 @@ function MemberPortalContent() {
     if (notification.messageTarget) {
       setPendingConversation(notification.messageTarget);
       transitionTo("messages");
+      return;
+    }
+
+    if (notification.feedTarget) {
+      setPendingFeedPostId(notification.feedTarget.postId);
+      transitionTo("feed");
+      return;
+    }
+
+    if (notification.courseTarget) {
+      navigate(`/courses/${notification.courseTarget.slug}`);
+      return;
+    }
+
+    if (notification.memberTarget) {
+      handleViewMemberProfile(
+        notification.memberTarget.userId,
+        notification.memberTarget.memberName,
+        { type: "portal", tab: "feed", label: "Back to Home" },
+      );
       return;
     }
 
@@ -476,13 +675,23 @@ function MemberPortalContent() {
             <button
               type="button"
               className="portal-logo-link"
-              aria-label="EliteTee feed"
-              onClick={() => transitionTo("feed")}
+              aria-label="EliteTee home"
+              onClick={() => (isMobileLayout ? handleMobileNav("feed") : transitionTo("feed"))}
             >
               <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
             </button>
 
             <div className="portal-top-actions">
+              <button
+                type="button"
+                className="portal-global-create portal-global-create--desktop"
+                aria-haspopup="dialog"
+                aria-expanded={createMenuOpen}
+                onClick={() => setCreateMenuOpen(true)}
+              >
+                <span className="portal-global-create-plus" aria-hidden="true">+</span>
+                <span>Create</span>
+              </button>
               <div className="portal-notifications-anchor">
                 <button
                   type="button"
@@ -493,7 +702,7 @@ function MemberPortalContent() {
                       ? "1 new notification"
                       : notificationBadgeCount > 1
                         ? `${notificationBadgeCount} notifications`
-                        : "Open notifications"
+                        : "Open activity"
                   }
                   aria-expanded={notificationsOpen}
                   aria-haspopup="dialog"
@@ -502,7 +711,7 @@ function MemberPortalContent() {
                   <span className="portal-icon-btn-glyph" aria-hidden="true">
                     <PortalTopBarBellIcon />
                   </span>
-                  <span className="portal-icon-btn-label">Notifications</span>
+                  <span className="portal-icon-btn-label">Activity</span>
                   {getNotificationBadgeDisplay(notificationBadgeCount) === "dot" ? (
                     <span className="portal-icon-badge-dot" aria-hidden="true" />
                   ) : null}
@@ -518,7 +727,7 @@ function MemberPortalContent() {
                   isLoading={notificationsLoading}
                   errorMessage={notificationsError}
                   notifications={notificationItems}
-                  onClose={() => setNotificationsOpen(false)}
+                  onClose={closeNotificationsPanel}
                   onRetry={() => void loadNotificationPanel()}
                   onSelect={handleNotificationSelect}
                 />
@@ -574,14 +783,21 @@ function MemberPortalContent() {
         <div className="portal-shell">
           <div hidden={resolvedView !== "feed"}>
             <PortalFeed
+              key={feedRefreshKey}
               showComposer
               composerId={FEED_COMPOSER_ID}
               isActive={resolvedView === "feed"}
               onViewMemberProfile={handleViewMemberProfile}
+              onNavigate={(tab) => transitionTo(tab)}
+              onMessageMember={handleMessageMember}
+              focusPostId={pendingFeedPostId}
+              onFocusPostConsumed={handleFeedPostFocusConsumed}
+              onMeaningfulAction={() => refreshMemberSignals(true)}
             />
           </div>
-          {resolvedView === "discover" ? (
-            <PortalDiscover
+          <Suspense fallback={<PortalSectionFallback />}>
+            {resolvedView === "discover" ? (
+              <PortalDiscover
               onViewCourse={handleViewCourse}
               onNavigate={(tab) => transitionTo(tab)}
               onViewMemberProfile={handleViewMemberProfile}
@@ -597,7 +813,15 @@ function MemberPortalContent() {
             />
           ) : null}
           {resolvedView === "compose" ? (
-            <PortalCompose onPosted={() => transitionTo("feed")} />
+            <PortalCompose
+              key={createFlowKey}
+              createAction={pendingCreateAction}
+              onPosted={() => {
+                setFeedRefreshKey((current) => current + 1);
+                setPendingCreateAction(null);
+                transitionTo("feed");
+              }}
+            />
           ) : null}
           {resolvedView === "courses" ? <PortalCourses /> : null}
           {resolvedView === "introductions" ? (
@@ -608,6 +832,7 @@ function MemberPortalContent() {
               onMessageMember={handleMessageMember}
               onViewMemberProfile={handleViewMemberProfile}
               onRequestsChange={handleIntroductionRequestsChange}
+              onDiscoverMembers={() => transitionTo("discover")}
             />
           ) : null}
           {resolvedView === "messages" ? (
@@ -616,14 +841,17 @@ function MemberPortalContent() {
               initialConversation={pendingConversation}
               onInitialConversationOpened={() => setPendingConversation(null)}
               onViewMemberProfile={handleViewMemberProfile}
+              onThreadOpenChange={setMessageThreadOpen}
+              onMeaningfulAction={() => refreshMemberSignals(true)}
             />
           ) : null}
-          {resolvedView === "profile" ? (
-            <GolferProfilePage
+            {resolvedView === "profile" ? (
+              <GolferProfilePage
               isActive={resolvedView === "profile"}
               onViewMemberProfile={handleViewMemberProfile}
             />
-          ) : null}
+            ) : null}
+          </Suspense>
 
           {resolvedView !== "introductions" ? (
             <section className="portal-privacy">
@@ -632,6 +860,35 @@ function MemberPortalContent() {
           ) : null}
         </div>
       </main>
+
+      {resolvedView !== "compose" && !mobileCreateBlocked ? (
+        <button
+          type="button"
+          className="portal-global-create portal-global-create--mobile"
+          aria-haspopup="dialog"
+          aria-expanded={createMenuOpen}
+          onClick={() => setCreateMenuOpen(true)}
+        >
+          <span className="portal-global-create-plus" aria-hidden="true">+</span>
+          <span>Create</span>
+        </button>
+      ) : null}
+
+      <GlobalCreateMenu
+        open={createMenuOpen}
+        onClose={() => setCreateMenuOpen(false)}
+        onSelect={handleCreateAction}
+      />
+
+      {globalRoundOpen ? (
+        <AddCoursePlayedModal
+          onClose={() => setGlobalRoundOpen(false)}
+          onSubmitted={() => {
+            setFeedRefreshKey((current) => current + 1);
+            refreshMemberSignals(true);
+          }}
+        />
+      ) : null}
 
       <nav className="portal-bottom-nav" aria-label="Mobile navigation">
         {PORTAL_MOBILE_BOTTOM_TABS.map((tab) => (

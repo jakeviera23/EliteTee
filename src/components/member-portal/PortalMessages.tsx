@@ -1,9 +1,19 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { earlyStageCopy, messagesCopy } from "../../data/portalSocial";
 import {
   buildApprovedMemberIdentityMap,
+  fetchApprovedMemberProfileByUserId,
   fetchApprovedMemberProfilesByUserIds,
+  fetchOwnMemberProfile,
+  type ApprovedMemberDirectoryProfile,
 } from "../../lib/memberProfiles";
+import { fetchIntroductionRequests } from "../../lib/introductionRequests";
+import { fetchMemberCourseRoundsForUser } from "../../lib/memberCourseRounds";
+import {
+  buildConversationContext,
+  buildConversationStarter,
+  type ConversationContextItem,
+} from "../../lib/conversationContext";
 import {
   buildDirectConversationSummaries,
   extractDirectMessageParticipantUserIds,
@@ -15,6 +25,8 @@ import {
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { DirectConversationSummary, PrivateMessageRecord } from "../../types/privateMessage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import type { MemberProfileRecord } from "../../types/memberProfileRecord";
+import type { IntroductionRequestRecord } from "../../types/introductionRequest";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { EditablePrivateMessage } from "./EditablePrivateMessage";
 import { MemberClubAvatar } from "./MemberClubAvatar";
@@ -26,14 +38,19 @@ type PortalMessagesProps = {
   initialConversation?: {
     otherUserId: string;
     otherUserName: string;
+    draftMessage?: string;
+    contributionContext?: string;
   } | null;
   onInitialConversationOpened?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
+  onThreadOpenChange?: (isOpen: boolean) => void;
+  onMeaningfulAction?: () => void;
 };
 
 type ActiveConversation = {
   otherUserId: string;
   otherUserName: string;
+  contributionContext?: string;
 };
 
 function formatMessageTime(value: string) {
@@ -61,6 +78,8 @@ export function PortalMessages({
   initialConversation = null,
   onInitialConversationOpened,
   onViewMemberProfile,
+  onThreadOpenChange,
+  onMeaningfulAction,
 }: PortalMessagesProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -74,6 +93,11 @@ export function PortalMessages({
   const [inboxError, setInboxError] = useState<string | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [viewerProfile, setViewerProfile] = useState<MemberProfileRecord | null>(null);
+  const [profilesByUserId, setProfilesByUserId] = useState<Record<string, ApprovedMemberDirectoryProfile>>({});
+  const [introductionRequests, setIntroductionRequests] = useState<IntroductionRequestRecord[]>([]);
+  const [conversationContext, setConversationContext] = useState<ConversationContextItem[]>([]);
+  const [visualViewport, setVisualViewport] = useState<{ height: number; offsetTop: number } | null>(null);
   const composeInputRef = useRef<HTMLTextAreaElement>(null);
   const threadEndRef = useRef<HTMLLIElement>(null);
 
@@ -90,7 +114,14 @@ export function PortalMessages({
       return;
     }
 
-    const { data, error } = await fetchDirectPrivateMessages();
+    const [{ data, error }, ownProfileResult, introductionResult] = await Promise.all([
+      fetchDirectPrivateMessages(),
+      fetchOwnMemberProfile(),
+      fetchIntroductionRequests(),
+    ]);
+
+    setViewerProfile(ownProfileResult.data ?? null);
+    setIntroductionRequests(introductionResult.data ?? []);
 
     if (error) {
       console.error("[PortalMessages] failed to load inbox", error.message);
@@ -113,6 +144,11 @@ export function PortalMessages({
     }
 
     const memberIdentitiesByUserId = buildApprovedMemberIdentityMap(profiles ?? []);
+    const nextProfilesByUserId: Record<string, ApprovedMemberDirectoryProfile> = {};
+    for (const profile of profiles ?? []) {
+      if (profile.user_id) nextProfilesByUserId[profile.user_id] = profile;
+    }
+    setProfilesByUserId(nextProfilesByUserId);
 
     setConversations(
       buildDirectConversationSummaries({
@@ -155,10 +191,11 @@ export function PortalMessages({
   useEffect(() => {
     if (!initialConversation) return;
     setSendError(null);
-    setComposeText("");
+    setComposeText(initialConversation.draftMessage ?? "");
     setActiveConversation({
       otherUserId: initialConversation.otherUserId,
       otherUserName: initialConversation.otherUserName,
+      contributionContext: initialConversation.contributionContext,
     });
     onInitialConversationOpened?.();
   }, [initialConversation, onInitialConversationOpened]);
@@ -167,6 +204,42 @@ export function PortalMessages({
     if (!activeConversation) return;
     void loadThread(activeConversation.otherUserId);
   }, [activeConversation, loadThread]);
+
+  useEffect(() => {
+    if (!activeConversation || !currentUserId) {
+      setConversationContext([]);
+      return;
+    }
+
+    const otherUserId = activeConversation.otherUserId;
+    const viewerUserId = currentUserId;
+    let cancelled = false;
+    async function loadConversationContext() {
+      const knownProfile = profilesByUserId[otherUserId];
+      const [profileResult, viewerRoundsResult, memberRoundsResult] = await Promise.all([
+        knownProfile
+          ? Promise.resolve({ data: knownProfile, error: null })
+          : fetchApprovedMemberProfileByUserId(otherUserId),
+        fetchMemberCourseRoundsForUser(viewerUserId, 24),
+        fetchMemberCourseRoundsForUser(otherUserId, 24),
+      ]);
+      if (cancelled) return;
+      setConversationContext(
+        buildConversationContext({
+          viewer: viewerProfile,
+          member: profileResult.data,
+          introductionRequests,
+          viewerRounds: viewerRoundsResult.data ?? [],
+          memberRounds: memberRoundsResult.data ?? [],
+        }),
+      );
+    }
+
+    void loadConversationContext();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConversation, currentUserId, introductionRequests, profilesByUserId, viewerProfile]);
 
   useEffect(() => {
     if (!activeConversation || isLoadingThread || threadError) return;
@@ -198,6 +271,29 @@ export function PortalMessages({
   const hasConversations = conversations.length > 0;
   const showMobileThread = Boolean(activeConversation);
 
+  useEffect(() => {
+    onThreadOpenChange?.(showMobileThread);
+    return () => onThreadOpenChange?.(false);
+  }, [onThreadOpenChange, showMobileThread]);
+
+  useEffect(() => {
+    if (!showMobileThread || !window.visualViewport) {
+      setVisualViewport(null);
+      return;
+    }
+    const viewport = window.visualViewport;
+    function updateViewport() {
+      setVisualViewport({ height: viewport!.height, offsetTop: viewport!.offsetTop });
+    }
+    updateViewport();
+    viewport.addEventListener("resize", updateViewport);
+    viewport.addEventListener("scroll", updateViewport);
+    return () => {
+      viewport.removeEventListener("resize", updateViewport);
+      viewport.removeEventListener("scroll", updateViewport);
+    };
+  }, [showMobileThread]);
+
   const activeSummary = useMemo(
     () =>
       activeConversation
@@ -211,7 +307,7 @@ export function PortalMessages({
   function openConversation(otherUserId: string, otherUserName: string) {
     setSendError(null);
     setComposeText("");
-    setActiveConversation({ otherUserId, otherUserName });
+    setActiveConversation({ otherUserId, otherUserName, contributionContext: undefined });
   }
 
   function openConversationFromSummary(conversation: DirectConversationSummary) {
@@ -275,6 +371,7 @@ export function PortalMessages({
 
     setComposeText("");
     await loadThread(activeConversation.otherUserId);
+    onMeaningfulAction?.();
   }
 
   function handleComposeKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -304,9 +401,12 @@ export function PortalMessages({
       </header>
 
       {inboxError ? (
-        <p className="et-messages-alert" role="alert">
-          {inboxError}
-        </p>
+        <div className="et-messages-thread-error" role="alert">
+          <p className="et-messages-alert">{inboxError}</p>
+          <button type="button" className="et-btn et-btn--secondary et-btn--sm" onClick={() => void loadInbox()}>
+            Retry
+          </button>
+        </div>
       ) : null}
 
       <div className="et-messages-layout">
@@ -323,6 +423,9 @@ export function PortalMessages({
               <p className="et-messages-empty-title">{earlyStageCopy.messagesEmptyTitle}</p>
               <p className="et-messages-empty-copy">{earlyStageCopy.messagesEmptyBody}</p>
               <p className="et-messages-empty-copy">{earlyStageCopy.messagesEmptyNote}</p>
+              <button type="button" className="et-btn et-btn--forest et-btn--sm et-messages-empty-action" onClick={() => setShowNewModal(true)}>
+                Start a conversation
+              </button>
             </div>
           ) : null}
 
@@ -389,11 +492,20 @@ export function PortalMessages({
 
         <div
           className={`et-messages-panel${showMobileThread ? " is-visible-mobile" : ""}`}
+          style={visualViewport ? ({
+            "--et-message-viewport-height": `${visualViewport.height}px`,
+            "--et-message-viewport-top": `${visualViewport.offsetTop}px`,
+          } as CSSProperties) : undefined}
         >
           {!activeConversation ? (
             <div className="et-messages-panel-placeholder">
               <p className="et-messages-panel-placeholder-title">{messagesCopy.selectThread}</p>
               <p className="et-messages-panel-placeholder-copy">{messagesCopy.selectThreadHint}</p>
+              {!hasConversations ? (
+                <button type="button" className="et-btn et-btn--secondary et-btn--sm" onClick={() => setShowNewModal(true)}>
+                  Find a member
+                </button>
+              ) : null}
             </div>
           ) : (
             <>
@@ -443,6 +555,26 @@ export function PortalMessages({
                 ) : null}
               </header>
 
+              {conversationContext.length > 0 || activeConversation.contributionContext ? (
+                <div className="et-messages-context" aria-label="Conversation context">
+                  <span className="et-messages-context-label">
+                    {activeConversation.contributionContext ? "From the network" : "Connection context"}
+                  </span>
+                  <div className="et-messages-context-items">
+                    {activeConversation.contributionContext ? (
+                      <span className="et-messages-context-item et-messages-context-item--contribution">
+                        {activeConversation.contributionContext}
+                      </span>
+                    ) : null}
+                    {conversationContext.map((item) => (
+                      <span key={`${item.kind}-${item.label}`} className={`et-messages-context-item et-messages-context-item--${item.kind}`}>
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="et-messages-thread-scroll">
                 {isLoadingThread ? (
                   <p className="et-messages-loading">{messagesCopy.loadingThread}</p>
@@ -467,7 +599,7 @@ export function PortalMessages({
                   <div className="et-messages-thread-empty">
                     <p className="et-messages-thread-empty-title">{messagesCopy.threadEmptyTitle}</p>
                     <p className="et-messages-thread-empty-copy">
-                      Send the first note to {activeConversation.otherUserName}.
+                      {buildConversationStarter(activeConversation.otherUserName, conversationContext)}
                     </p>
                   </div>
                 ) : null}
@@ -485,6 +617,7 @@ export function PortalMessages({
                         <EditablePrivateMessage
                           message={message}
                           isOwn={isOwn}
+                          senderLabel={isOwn ? "You" : activeConversation.otherUserName}
                           formatTime={formatMessageTime}
                           bubbleClassName="et-messages-bubble-inner"
                           onEdited={handleMessageEdited}

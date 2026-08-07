@@ -14,12 +14,18 @@ import {
 import { getSeenIntroductionRequestIds } from "./portalNotifications";
 import type { DirectConversationSummary } from "../types/privateMessage";
 import type { IntroductionRequestRecord } from "../types/introductionRequest";
+import {
+  fetchNetworkActivityItems,
+  getLastSeenNetworkActivityAt,
+  type NetworkActivityKind,
+} from "./networkActivity";
 
 export type PortalNotificationKind =
   | "unread_message"
   | "introduction_pending"
   | "introduction_accepted"
-  | "introduction_declined";
+  | "introduction_declined"
+  | NetworkActivityKind;
 
 export type PortalNotificationItem = {
   id: string;
@@ -38,10 +44,13 @@ export type PortalNotificationItem = {
     tab: IntroductionTab;
     requestId: string;
   };
+  feedTarget?: { postId: string };
+  courseTarget?: { slug: string };
+  memberTarget?: { userId: string; memberName: string };
   acknowledgeIntroductionRequestId?: string;
 };
 
-const TYPE_LABELS: Record<PortalNotificationKind, string> = {
+const TYPE_LABELS: Record<Exclude<PortalNotificationKind, NetworkActivityKind>, string> = {
   unread_message: "Message",
   introduction_pending: "Introduction request",
   introduction_accepted: "Introduction accepted",
@@ -264,7 +273,7 @@ export function computePortalNotificationBadgeCountFromSources({
 export const PORTAL_NOTIFICATIONS_EMPTY_MESSAGE = "You're all caught up.";
 
 export type PortalNotificationSection = {
-  id: "messages" | "introductions";
+  id: "priority" | "conversations" | "introductions" | "network";
   label: string;
   showHeader: boolean;
   items: PortalNotificationItem[];
@@ -273,17 +282,41 @@ export type PortalNotificationSection = {
 export function groupPortalNotifications(
   items: PortalNotificationItem[],
 ): PortalNotificationSection[] {
-  const messages = items.filter((item) => item.kind === "unread_message");
-  const introductions = items.filter((item) => item.kind !== "unread_message");
+  const priority = items.filter((item) =>
+    [
+      "unread_message",
+      "introduction_pending",
+      "reply",
+      "mention",
+      "game_request",
+      "travel_match",
+    ].includes(item.kind),
+  );
+  const conversations = items.filter((item) => item.kind === "comment");
+  const introductions = items.filter((item) =>
+    ["introduction_accepted", "introduction_declined"].includes(item.kind),
+  );
+  const network = items.filter((item) =>
+    ["like", "course_activity", "recommended_member"].includes(item.kind),
+  );
 
   const sections: PortalNotificationSection[] = [];
 
-  if (messages.length > 0) {
+  if (priority.length > 0) {
     sections.push({
-      id: "messages",
-      label: "Messages",
+      id: "priority",
+      label: "Needs your attention",
+      showHeader: true,
+      items: priority,
+    });
+  }
+
+  if (conversations.length > 0) {
+    sections.push({
+      id: "conversations",
+      label: "Conversation activity",
       showHeader: false,
-      items: messages,
+      items: conversations,
     });
   }
 
@@ -296,8 +329,20 @@ export function groupPortalNotifications(
     });
   }
 
+  if (network.length > 0) {
+    sections.push({
+      id: "network",
+      label: "Network updates",
+      showHeader: false,
+      items: network,
+    });
+  }
+
   const showHeaders = sections.length > 1;
-  return sections.map((section) => ({ ...section, showHeader: showHeaders }));
+  return sections.map((section) => ({
+    ...section,
+    showHeader: section.id === "priority" || showHeaders,
+  }));
 }
 
 export const PORTAL_NOTIFICATIONS_LOAD_ERROR =
@@ -336,9 +381,13 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
     };
   }
 
-  const [messagesResult, introductionResult] = await Promise.all([
+  const [messagesResult, introductionResult, networkResult] = await Promise.all([
     fetchDirectPrivateMessages(),
     fetchIntroductionRequests(),
+    fetchNetworkActivityItems({
+      currentUserId: userId,
+      lastSeenAt: getLastSeenNetworkActivityAt(userId),
+    }),
   ]);
 
   if (messagesResult.error || introductionResult.error) {
@@ -373,9 +422,26 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
     currentUserId: userId,
     seenIntroductionRequestIds,
   });
+  const networkNotifications: PortalNotificationItem[] = (networkResult.data ?? []).map((item) => ({
+    id: item.id,
+    kind: item.kind,
+    typeLabel: item.typeLabel,
+    memberName: item.memberName,
+    description: item.description,
+    timestampLabel: formatNotificationTimestamp(item.createdAt),
+    sortTimestamp: Date.parse(item.createdAt) || 0,
+    countsTowardBadge: item.countsTowardBadge,
+    feedTarget: item.feedPostId ? { postId: item.feedPostId } : undefined,
+    courseTarget: item.courseSlug ? { slug: item.courseSlug } : undefined,
+    memberTarget: item.memberTarget,
+  }));
+
+  if (networkResult.error && import.meta.env.DEV) {
+    console.error("[PortalNotifications] network activity load failed", networkResult.error);
+  }
 
   return {
-    notifications,
+    notifications: sortNotifications([...notifications, ...networkNotifications]),
     introductionRequests,
     conversations,
     error: null,

@@ -14,20 +14,12 @@ export function CourseDetailGallery({ photos }: CourseDetailGalleryProps) {
     [photos],
   );
 
-  if (visiblePhotos.length === 0) {
-    return (
-      <div className="et-course-detail-empty">
-        <p className="et-course-detail-empty-title">No course photos yet</p>
-        <p className="et-course-detail-empty-copy">
-          Official imagery and member round photos will appear here once shared.
-        </p>
-      </div>
-    );
-  }
+  if (visiblePhotos.length === 0) return null;
 
   const leadPhoto = visiblePhotos[0]!;
   const thumbPhotos = visiblePhotos.slice(1, 5);
   const overflowCount = Math.max(visiblePhotos.length - 1 - thumbPhotos.length, 0);
+  const leadIsReference = leadPhoto.id === "elitetee-course-reference";
 
   return (
     <>
@@ -36,7 +28,7 @@ export function CourseDetailGallery({ photos }: CourseDetailGalleryProps) {
           type="button"
           className="et-course-detail-gallery-lead"
           onClick={() => setLightboxIndex(0)}
-          aria-label={`View course photo 1 of ${visiblePhotos.length}`}
+          aria-label={`View ${leadIsReference ? "destination reference" : "course"} photo 1 of ${visiblePhotos.length}`}
         >
           <img
             src={leadPhoto.signed_url!}
@@ -52,6 +44,7 @@ export function CourseDetailGallery({ photos }: CourseDetailGalleryProps) {
               const photoIndex = index + 1;
               const isOverflowTile =
                 index === thumbPhotos.length - 1 && overflowCount > 0;
+              const isReference = photo.id === "elitetee-course-reference";
 
               return (
                 <li key={photo.id}>
@@ -62,7 +55,7 @@ export function CourseDetailGallery({ photos }: CourseDetailGalleryProps) {
                     aria-label={
                       isOverflowTile
                         ? `View all ${visiblePhotos.length} photos`
-                        : `View course photo ${photoIndex + 1} of ${visiblePhotos.length}`
+                        : `View ${isReference ? "destination reference" : "course"} photo ${photoIndex + 1} of ${visiblePhotos.length}`
                     }
                   >
                     <img

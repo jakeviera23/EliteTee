@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 
 const DEFAULT_MESSAGE = (name: string) =>
   `Hi ${name.split(" ")[0]} — I saw your profile on EliteTee and would love to connect through golf. If you are open to it, I'd enjoy setting up a round or talking more about courses we both enjoy.`;
@@ -14,6 +15,8 @@ export function RequestConnectionModal({
   onClose,
   onSent,
 }: RequestConnectionModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocus({ dialogRef, onEscape: onClose });
   const [message, setMessage] = useState(DEFAULT_MESSAGE(golferName));
   const [sent, setSent] = useState(false);
 
@@ -28,8 +31,10 @@ export function RequestConnectionModal({
   return (
     <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
       <article
+        ref={dialogRef}
         className="portal-modal portal-modal--connection"
         role="dialog"
+        aria-modal="true"
         aria-labelledby="request-connection-heading"
         onClick={(event) => event.stopPropagation()}
       >
