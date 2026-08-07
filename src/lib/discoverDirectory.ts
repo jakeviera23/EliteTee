@@ -1,4 +1,6 @@
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
+import { normalizeCountryValue } from "./courseLocationParse";
+import { US_STATE_CANONICAL, normalizeRegionLabel } from "./courseLocationNormalization";
 
 export type DiscoverSortOption =
   | "most-relevant"
@@ -62,7 +64,21 @@ export const DISCOVER_SORT_LABELS: Record<DiscoverSortOption, string> = {
   alphabetical: "A–Z",
 };
 
+export function excludeCurrentDiscoverMember(
+  members: MemberProfileRecord[],
+  viewer: MemberProfileRecord | null,
+): MemberProfileRecord[] {
+  return members.filter(
+    (member) =>
+      member.id !== viewer?.id &&
+      (!viewer?.user_id || member.user_id !== viewer.user_id),
+  );
+}
+
 const FEATURED_SECTION_LIMIT = 6;
+const CONCISE_FEATURED_SECTION_LIMIT = 3;
+const CONCISE_FEATURED_SECTION_COUNT = 2;
+const CONCISE_FEATURED_MEMBER_LIMIT = 3;
 
 function compareStrings(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: "base" });
@@ -74,6 +90,183 @@ function normalizeText(value: string | null | undefined): string {
 
 function uniqueSorted(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort(compareStrings);
+}
+
+function cleanDerivedValue(value: string): string {
+  return value.trim().replace(/\s+/g, " ").replace(/[.,;:]+$/, "");
+}
+
+function titleCaseDerivedValue(value: string): string {
+  const cleaned = cleanDerivedValue(value);
+  if (!cleaned || /[A-Z].*[A-Z]/.test(cleaned)) return cleaned;
+  return cleaned.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+export function normalizeDiscoverCountry(value: string): string {
+  return titleCaseDerivedValue(normalizeCountryValue(cleanDerivedValue(value)));
+}
+
+export function normalizeDiscoverRegion(value: string, country = ""): string {
+  const cleaned = cleanDerivedValue(value);
+  if (!cleaned) return "";
+  const parsed = cleaned.includes(",") ? parseBasedInParts(cleaned) : null;
+  const candidate = cleanDerivedValue(parsed?.region || cleaned);
+  const state = US_STATE_CANONICAL[candidate.toUpperCase()];
+  if (state) return state;
+  return titleCaseDerivedValue(normalizeRegionLabel(country, candidate));
+}
+
+const INDUSTRY_RULES: Array<[RegExp, string]> = [
+  [/financ|bank|invest|private equity|venture capital|wealth/i, "Finance & Investing"],
+  [/real estate|property|development/i, "Real Estate"],
+  [/hospitality|hotel|travel|tourism/i, "Hospitality & Travel"],
+  [/technology|software|tech|saas/i, "Technology"],
+  [/health|medical|medicine|pharma/i, "Healthcare"],
+  [/law|legal|attorney/i, "Law"],
+  [/media|advertis|marketing|publishing/i, "Media & Marketing"],
+  [/sport|golf/i, "Sports & Golf"],
+  [/education|university|school/i, "Education"],
+  [/consult/i, "Consulting"],
+  [/manufactur|industrial/i, "Manufacturing"],
+  [/retail|consumer/i, "Retail & Consumer"],
+];
+
+export function normalizeDiscoverIndustry(value: string): string {
+  const cleaned = cleanDerivedValue(value);
+  if (!cleaned || /^(not specified|n\/a|none)$/i.test(cleaned)) return "";
+  return INDUSTRY_RULES.find(([pattern]) => pattern.test(cleaned))?.[1] ?? "";
+}
+
+const INTEREST_RULES: Array<[RegExp, string]> = [
+  [/architect|design|history of courses/i, "Golf architecture"],
+  [/travel|trip|destination/i, "Golf travel"],
+  [/introduc|connect|meet|relationship|like-minded|likeminded/i, "Member introductions"],
+  [/weekend|game|round/i, "Games & rounds"],
+  [/business|professional|network/i, "Business golf"],
+  [/new course|discover|top course|best course/i, "Course discovery"],
+  [/compet|tournament/i, "Competition"],
+  [/host|hospitality/i, "Hosting"],
+  [/private club|club access/i, "Private club access"],
+  [/friend/i, "Friendship"],
+];
+
+export function normalizeDiscoverGolfInterests(values: string[]): string[] {
+  const normalized: string[] = [];
+  for (const rawValue of values) {
+    const pieces = rawValue.split(/[,;\n]+/).map(cleanDerivedValue).filter(Boolean);
+    for (const piece of pieces) {
+      const matches = INTEREST_RULES.filter(([pattern]) => pattern.test(piece)).map(([, label]) => label);
+      if (matches.length > 0) {
+        normalized.push(...matches);
+      } else if (piece.length <= 36 && piece.split(/\s+/).length <= 5) {
+        normalized.push(titleCaseDerivedValue(piece));
+      }
+    }
+  }
+  return uniqueSorted(normalized);
+}
+
+const EMPTY_CLUB_VALUE = /^(none|n\/a|not specified)$/i;
+
+function isValidClubValue(value: string): boolean {
+  const cleaned = cleanDerivedValue(value);
+  return cleaned.length >= 2 && !EMPTY_CLUB_VALUE.test(cleaned);
+}
+
+/** Member-facing home club: first explicit value from primary_club only. */
+export function getMemberPrimaryClub(member: MemberProfileRecord): string {
+  const firstPrimary = member.primary_club
+    .split(/[,;\n]+/)
+    .map(cleanDerivedValue)
+    .find(isValidClubValue);
+
+  return firstPrimary ?? "";
+}
+
+export function getDiscoverMemberClubs(member: MemberProfileRecord): string[] {
+  return uniqueSorted(
+    [member.primary_club, ...member.additional_clubs]
+      .flatMap((value) => value.split(/[,;\n]+/))
+      .map(cleanDerivedValue)
+      .filter(isValidClubValue),
+  );
+}
+
+function formatSharedInterestReason(interest: string): string {
+  if (/member introductions/i.test(interest)) {
+    return "Interested in introductions";
+  }
+  return `Shared interest · ${interest}`;
+}
+
+/** One subtle, member-facing context line for recommendation cards. */
+export function formatMemberCardContext(
+  viewer: MemberProfileRecord | null,
+  member: MemberProfileRecord,
+): string | null {
+  if (!viewer?.user_id || viewer.user_id === member.user_id) return null;
+
+  if (member.traveling_to.trim()) {
+    return `Traveling to ${member.traveling_to.trim()}`;
+  }
+
+  const viewerGolf = new Set(
+    normalizeDiscoverGolfInterests(viewer.golf_interests).map((interest) => normalizeText(interest)),
+  );
+  for (const interest of normalizeDiscoverGolfInterests(member.golf_interests)) {
+    if (viewerGolf.has(normalizeText(interest))) {
+      return formatSharedInterestReason(interest);
+    }
+  }
+
+  const viewerBusiness = new Set(
+    viewer.business_interests.map((interest) => normalizeText(interest)),
+  );
+  for (const interest of member.business_interests) {
+    if (viewerBusiness.has(normalizeText(interest))) {
+      return `Shared interest · ${interest.trim()}`;
+    }
+  }
+
+  const viewerRegions = new Set(viewer.regions.map((region) => normalizeText(region)));
+  for (const region of member.regions) {
+    if (viewerRegions.has(normalizeText(region))) {
+      return `Same region · ${region}`;
+    }
+  }
+
+  if (
+    viewer.based_in.trim() &&
+    normalizeText(viewer.based_in) === normalizeText(member.based_in)
+  ) {
+    return "Same location";
+  }
+
+  const viewerClub = getMemberPrimaryClub(viewer);
+  const memberClub = getMemberPrimaryClub(member);
+  if (viewerClub && memberClub && normalizeText(viewerClub) === normalizeText(memberClub)) {
+    return "Same home club";
+  }
+
+  return null;
+}
+
+export function getDiscoverMemberGeo(member: MemberProfileRecord): {
+  city: string;
+  regions: string[];
+  countries: string[];
+} {
+  const parsed = parseBasedInParts(member.based_in);
+  const country = normalizeDiscoverCountry(parsed.country);
+  const regions = uniqueSorted([
+    normalizeDiscoverRegion(parsed.region, country),
+    ...member.regions.map((region) => normalizeDiscoverRegion(region, country)),
+  ]);
+  return {
+    city: titleCaseDerivedValue(parsed.city),
+    regions,
+    countries: country ? [country] : [],
+  };
 }
 
 export function parseBasedInParts(basedIn: string): { city: string; region: string; country: string } {
@@ -115,19 +308,17 @@ export function extractDiscoverFilterOptions(members: MemberProfileRecord[]): Di
 
   for (const member of members) {
     if (member.based_in.trim()) locations.push(member.based_in.trim());
-    if (member.primary_club.trim()) clubs.push(member.primary_club.trim());
-    if (member.industry.trim()) industries.push(member.industry.trim());
+    clubs.push(...getDiscoverMemberClubs(member));
+    const normalizedIndustry = normalizeDiscoverIndustry(member.industry);
+    if (normalizedIndustry) industries.push(normalizedIndustry);
     if (member.traveling_to.trim()) travelDestinations.push(member.traveling_to.trim());
-    if (member.current_request.trim()) currentRequests.push(member.current_request.trim());
 
-    golfInterests.push(...member.golf_interests);
+    golfInterests.push(...normalizeDiscoverGolfInterests(member.golf_interests));
     businessInterests.push(...member.business_interests);
-    regions.push(...member.regions);
-
-    const parsed = parseBasedInParts(member.based_in);
-    if (parsed.city) cities.push(parsed.city);
-    if (parsed.region) regions.push(parsed.region);
-    if (parsed.country) countries.push(parsed.country);
+    const geo = getDiscoverMemberGeo(member);
+    if (geo.city) cities.push(geo.city);
+    regions.push(...geo.regions);
+    countries.push(...geo.countries);
   }
 
   return {
@@ -149,14 +340,17 @@ export function countActiveDiscoverFilters(filters: DiscoverFilters): number {
 }
 
 function memberMatchesQuery(member: MemberProfileRecord, query: string): boolean {
+  const geo = getDiscoverMemberGeo(member);
   const haystack = [
     member.full_name,
-    member.primary_club,
+    ...getDiscoverMemberClubs(member),
     member.based_in,
+    geo.city,
+    ...geo.regions,
+    ...geo.countries,
     member.traveling_to,
-    member.current_request,
-    member.industry,
-    ...member.golf_interests,
+    normalizeDiscoverIndustry(member.industry),
+    ...normalizeDiscoverGolfInterests(member.golf_interests),
     ...member.business_interests,
     ...member.regions,
     member.founding_member_number ?? "",
@@ -179,33 +373,35 @@ export function filterDiscoverMembers(
   const query = filters.query.trim().toLowerCase();
 
   return members.filter((member) => {
-    const basedInParts = parseBasedInParts(member.based_in);
+    const geo = getDiscoverMemberGeo(member);
 
     if (query && !memberMatchesQuery(member, query)) return false;
     if (filters.location && !memberMatchesField(member.based_in, filters.location)) return false;
-    if (filters.club && normalizeText(member.primary_club) !== normalizeText(filters.club)) {
+    if (filters.club && !getDiscoverMemberClubs(member).some((club) => normalizeText(club) === normalizeText(filters.club))) {
       return false;
     }
-    if (filters.city && normalizeText(basedInParts.city) !== normalizeText(filters.city)) {
+    if (filters.city && normalizeText(geo.city) !== normalizeText(filters.city)) {
       return false;
     }
     if (
       filters.region &&
-      normalizeText(basedInParts.region) !== normalizeText(filters.region) &&
-      !member.regions.some((region) => normalizeText(region) === normalizeText(filters.region))
+      !geo.regions.some((region) => normalizeText(region) === normalizeText(filters.region))
     ) {
       return false;
     }
-    if (filters.country && normalizeText(basedInParts.country) !== normalizeText(filters.country)) {
+    if (filters.country && !geo.countries.some((country) => normalizeText(country) === normalizeText(filters.country))) {
       return false;
     }
-    if (filters.industry && normalizeText(member.industry) !== normalizeText(filters.industry)) {
+    if (filters.industry && normalizeText(normalizeDiscoverIndustry(member.industry)) !== normalizeText(filters.industry)) {
       return false;
     }
     if (
       filters.golfInterest &&
-      !member.golf_interests.some(
-        (interest) => normalizeText(interest) === normalizeText(filters.golfInterest),
+      !normalizeDiscoverGolfInterests(member.golf_interests).some(
+        (interest) =>
+          normalizeDiscoverGolfInterests([filters.golfInterest]).some(
+            (filterInterest) => normalizeText(interest) === normalizeText(filterInterest),
+          ),
       )
     ) {
       return false;
@@ -243,7 +439,9 @@ export function scoreMemberRelevance(
 
   let categoryScore = 0;
   const viewerRegions = new Set(viewer.regions.map((region) => normalizeText(region)));
-  const viewerGolf = new Set(viewer.golf_interests.map((interest) => normalizeText(interest)));
+  const viewerGolf = new Set(
+    normalizeDiscoverGolfInterests(viewer.golf_interests).map((interest) => normalizeText(interest)),
+  );
   const viewerBusiness = new Set(
     viewer.business_interests.map((interest) => normalizeText(interest)),
   );
@@ -262,14 +460,13 @@ export function scoreMemberRelevance(
     }
   }
 
-  if (
-    viewer.primary_club.trim() &&
-    normalizeText(viewer.primary_club) === normalizeText(member.primary_club)
-  ) {
+  const viewerClub = getMemberPrimaryClub(viewer);
+  const memberClub = getMemberPrimaryClub(member);
+  if (viewerClub && memberClub && normalizeText(viewerClub) === normalizeText(memberClub)) {
     categoryScore += 3;
   }
 
-  for (const interest of member.golf_interests) {
+  for (const interest of normalizeDiscoverGolfInterests(member.golf_interests)) {
     if (viewerGolf.has(normalizeText(interest))) {
       categoryScore += 2;
       break;
@@ -317,14 +514,16 @@ export function buildMatchReasons(
 
   const reasons: string[] = [];
   const viewerRegions = new Set(viewer.regions.map((region) => normalizeText(region)));
-  const viewerGolf = new Set(viewer.golf_interests.map((interest) => normalizeText(interest)));
+  const viewerGolf = new Set(
+    normalizeDiscoverGolfInterests(viewer.golf_interests).map((interest) => normalizeText(interest)),
+  );
   const viewerBusiness = new Set(
     viewer.business_interests.map((interest) => normalizeText(interest)),
   );
 
   for (const region of member.regions) {
     if (viewerRegions.has(normalizeText(region))) {
-      reasons.push(`Same region: ${region}`);
+      reasons.push(`Same region · ${region}`);
       break;
     }
   }
@@ -336,22 +535,21 @@ export function buildMatchReasons(
     reasons.push("Same location");
   }
 
-  if (
-    viewer.primary_club.trim() &&
-    normalizeText(viewer.primary_club) === normalizeText(member.primary_club)
-  ) {
+  const viewerClub = getMemberPrimaryClub(viewer);
+  const memberClub = getMemberPrimaryClub(member);
+  if (viewerClub && memberClub && normalizeText(viewerClub) === normalizeText(memberClub)) {
     reasons.push("Same home club");
   }
 
-  for (const interest of member.golf_interests) {
+  for (const interest of normalizeDiscoverGolfInterests(member.golf_interests)) {
     if (viewerGolf.has(normalizeText(interest))) {
-      reasons.push(`${interest} interest`);
+      reasons.push(formatSharedInterestReason(interest));
     }
   }
 
   for (const interest of member.business_interests) {
     if (viewerBusiness.has(normalizeText(interest))) {
-      reasons.push(`${interest} overlap`);
+      reasons.push(`Shared interest · ${interest.trim()}`);
     }
   }
 
@@ -465,6 +663,35 @@ export function buildFeaturedDiscoverSections(
   return sections;
 }
 
+/**
+ * Editorial home for Discover: a member appears in at most one preview rail and
+ * no more than two rails are shown. The full directory can render the remaining
+ * members once, avoiding the same small community being repeated down the page.
+ */
+export function buildConciseFeaturedDiscoverSections(
+  members: MemberProfileRecord[],
+  viewer: MemberProfileRecord | null,
+): DiscoverFeaturedSection[] {
+  const seenMemberIds = new Set<string>();
+  const concise: DiscoverFeaturedSection[] = [];
+
+  for (const section of buildFeaturedDiscoverSections(members, viewer)) {
+    const remainingSlots = CONCISE_FEATURED_MEMBER_LIMIT - seenMemberIds.size;
+    if (remainingSlots <= 0) break;
+    const uniqueMembers = section.members
+      .filter((member) => !seenMemberIds.has(member.id))
+      .slice(0, Math.min(CONCISE_FEATURED_SECTION_LIMIT, remainingSlots));
+
+    if (uniqueMembers.length === 0) continue;
+    uniqueMembers.forEach((member) => seenMemberIds.add(member.id));
+    concise.push({ ...section, members: uniqueMembers });
+
+    if (concise.length === CONCISE_FEATURED_SECTION_COUNT) break;
+  }
+
+  return concise;
+}
+
 export type DiscoverGeoGroup = {
   label: string;
   count: number;
@@ -497,12 +724,13 @@ export function buildDiscoverGeoGroups(members: MemberProfileRecord[]): Discover
   }
 
   for (const member of members) {
-    const parsed = parseBasedInParts(member.based_in);
-    addGroup("city", parsed.city, "City");
-    addGroup("region", parsed.region, "Region");
-    addGroup("country", parsed.country, "Country");
-    for (const region of member.regions) {
+    const geo = getDiscoverMemberGeo(member);
+    addGroup("city", geo.city, "City");
+    for (const region of geo.regions) {
       addGroup("region", region, "Region");
+    }
+    for (const country of geo.countries) {
+      addGroup("country", country, "Country");
     }
     addGroup("travelDestination", member.traveling_to, "Travel");
   }
@@ -532,7 +760,10 @@ export function formatMemberActivitySummary(updatedAt: string): string | null {
 }
 
 export function selectInterestChips(member: MemberProfileRecord, limit = 4): string[] {
-  const combined = [...member.golf_interests, ...member.business_interests].filter(Boolean);
+  const combined = [
+    ...normalizeDiscoverGolfInterests(member.golf_interests),
+    ...member.business_interests.map(cleanDerivedValue).filter(Boolean),
+  ];
   return combined.slice(0, limit);
 }
 

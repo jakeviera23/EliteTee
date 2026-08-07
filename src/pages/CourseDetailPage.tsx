@@ -27,6 +27,7 @@ import { fetchGolfCourseBySlug } from "../lib/golfCourses";
 import {
   fetchMemberCourseRoundsForCourse,
 } from "../lib/memberCourseRounds";
+import { canEditMemberSubmittedCourse } from "../lib/memberSubmittedCourses";
 import {
   fetchApprovedMemberProfilesByUserIds,
   type ApprovedMemberDirectoryProfile,
@@ -60,6 +61,37 @@ function formatCountLabel(value: number, singular: string, plural: string, empty
   return `${value} ${value === 1 ? singular : plural}`;
 }
 
+function CourseDetailSkeleton() {
+  return (
+    <>
+      <header className="et-course-detail-hero" aria-hidden="true">
+        <div className="et-course-detail-hero-media et-course-detail-skeleton-block" />
+      </header>
+
+      <section className="et-course-detail-profile-header" aria-hidden="true">
+        <div className="et-course-detail-profile-top">
+          <div className="et-course-detail-profile-heading">
+            <span className="et-course-detail-skeleton-line et-course-detail-skeleton-line--eyebrow" />
+            <span className="et-course-detail-skeleton-line et-course-detail-skeleton-line--title" />
+            <span className="et-course-detail-skeleton-line et-course-detail-skeleton-line--subtitle" />
+          </div>
+          <span className="et-course-detail-skeleton-pill" />
+        </div>
+        <div className="et-course-detail-skeleton-pills">
+          <span className="et-course-detail-skeleton-pill" />
+          <span className="et-course-detail-skeleton-pill" />
+        </div>
+        <div className="et-course-detail-skeleton-stats">
+          <span className="et-course-detail-skeleton-stat" />
+          <span className="et-course-detail-skeleton-stat" />
+          <span className="et-course-detail-skeleton-stat" />
+          <span className="et-course-detail-skeleton-stat" />
+        </div>
+      </section>
+    </>
+  );
+}
+
 export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: CourseDetailPageProps) {
   const navigate = useNavigate();
   const { slug = "" } = useParams();
@@ -88,19 +120,20 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
       return;
     }
 
-    setIsLoading(true);
     setNotFound(false);
     setLoadError(null);
+    setIsLoading(true);
 
     const { data, error } = await fetchGolfCourseBySlug(slug);
 
     if (error) {
+      if (import.meta.env.DEV) console.error("[CourseDetailPage] course load failed", error);
       setCourse(null);
       setRounds([]);
       setMemberProfiles([]);
       setRelatedCourses([]);
       setNotFound(false);
-      setLoadError(error.message || "Course could not be loaded.");
+      setLoadError("This course could not be loaded right now.");
       setIsLoading(false);
       return;
     }
@@ -141,6 +174,16 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   }, [slug]);
 
   useEffect(() => {
+    setCourse(null);
+    setRounds([]);
+    setMemberProfiles([]);
+    setRelatedCourses([]);
+    setNotFound(false);
+    setLoadError(null);
+    setIsLoading(true);
+  }, [slug]);
+
+  useEffect(() => {
     void loadCourse();
   }, [loadCourse]);
 
@@ -153,7 +196,6 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
         return;
       }
 
-      const { canEditMemberSubmittedCourse } = await import("../lib/memberSubmittedCourses");
       const { data, error } = await canEditMemberSubmittedCourse(course.id);
       if (!active) return;
 
@@ -209,7 +251,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   );
 
   function handleAskAboutCourse(question: string) {
-    navigate("/member-portal", {
+    navigate("/member-portal/ask", {
       state: { openAskWith: { question } },
     });
   }
@@ -218,12 +260,30 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
     membersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  if (isLoading) {
+  const showPageSkeleton = isLoading && !course;
+
+  if (showPageSkeleton) {
     return (
       <div className="inside-page portal-page portal-page--social et-theme-portal">
         <main className="portal-main portal-main--social">
           <div className="portal-shell">
-            <p className="portal-discover-loading">Loading course…</p>
+            <article
+              className="et-course-detail et-course-detail--loading"
+              aria-busy="true"
+              aria-labelledby="course-detail-heading"
+            >
+              <button
+                type="button"
+                className="et-course-detail-back"
+                onClick={() => navigate("/courses")}
+              >
+                ← Back to Courses
+              </button>
+              <CourseDetailSkeleton />
+              <p className="visually-hidden" role="status">
+                Loading course…
+              </p>
+            </article>
           </div>
         </main>
       </div>
@@ -238,13 +298,17 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
             <section className="portal-social-page">
               <h2>{loadError ? "Course unavailable" : "Course not found"}</h2>
               {loadError ? (
-                <p>We couldn’t load this course right now. Please try again.</p>
+                <>
+                  <p>We couldn’t load this course right now. Please try again.</p>
+                  <button type="button" className="portal-btn portal-btn--gold" onClick={() => void loadCourse()}>
+                    Retry
+                  </button>
+                </>
               ) : (
                 <p>This course is not in the EliteTee library yet.</p>
               )}
               <Link
-                to="/member-portal"
-                state={{ restorePortalTab: "courses" }}
+                to="/courses"
                 className="portal-btn portal-btn--outline"
               >
                 Back to Courses
@@ -260,7 +324,6 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
   const isMemberSubmitted = isMemberSubmittedCourse(course);
-  const hasHeroImage = Boolean(course.image_url?.trim());
   const architectYear = formatArchitectYearLine(course.architect, course.year_opened);
   const courseDetailFacts = buildCourseDetailFacts(course);
   const memberRating =
@@ -272,6 +335,13 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
       ? formatCourseRatingDisplay(course.avg_rating)
       : null;
   const latestActivity = formatLatestActivityAt(course.latest_activity_at);
+  const locationClassificationFacts = [
+    ["City", course.city?.trim()],
+    ["Region", course.region?.trim()],
+    ["Country", course.country?.trim()],
+    ["Course type", course.course_type?.trim()],
+    ["Access", course.access_type?.trim()],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   return (
     <div className="inside-page portal-page portal-page--social et-theme-portal">
@@ -282,79 +352,82 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
               type="button"
               className="et-course-detail-back"
               onClick={() =>
-                navigate("/member-portal", { state: { restorePortalTab: "courses" } })
+                navigate("/courses")
               }
             >
               ← Back to Courses
             </button>
 
-            <header
-              className={`et-course-detail-hero${hasHeroImage ? "" : " et-course-detail-hero--no-image"}`}
-            >
-              {hasHeroImage ? (
-                <div className="et-course-detail-hero-media">
-                  <CourseImage
-                    name={course.name}
-                    city={course.city}
-                    region={course.region}
-                    country={course.country}
-                    imageUrl={course.image_url}
-                    thumbnailUrl={course.thumbnail_url}
-                    golfCourseId={course.id}
-                    variant="hero"
-                    overlay
-                    loading="eager"
-                  />
-                </div>
-              ) : null}
-              <div className="et-course-detail-hero-body">
-                <p className="et-course-detail-eyebrow">Course Profile</p>
-                <h1 id="course-detail-heading" className="et-course-detail-title">
-                  {course.name}
-                </h1>
-                {location ? (
-                  <p className="et-course-detail-location">{location}</p>
-                ) : (
-                  <p className="et-course-detail-location">Location details not available</p>
-                )}
-                {architectYear ? (
-                  <p className="et-course-detail-architect-year">{architectYear}</p>
-                ) : null}
-
-                <div className="et-course-detail-hero-meta">
-                  {isMemberSubmitted ? (
-                    <span className="et-course-detail-pill et-course-detail-pill--member">
-                      Member submitted
-                    </span>
-                  ) : null}
-                  {course.course_type ? (
-                    <span className="et-course-detail-pill">{course.course_type}</span>
-                  ) : null}
-                  {course.access_type ? (
-                    <span className="et-course-detail-pill">{course.access_type}</span>
-                  ) : null}
-                </div>
-
-                <dl className="et-course-detail-hero-stats">
-                  <div className="et-course-detail-hero-stat et-course-detail-hero-stat--rating">
-                    <dt>Average rating</dt>
-                    <dd>{ratingDisplay ?? "No rating yet"}</dd>
-                  </div>
-                  <div className="et-course-detail-hero-stat">
-                    <dt>Members played</dt>
-                    <dd>{formatCountLabel(memberCount, "member", "members", "None yet")}</dd>
-                  </div>
-                  <div className="et-course-detail-hero-stat">
-                    <dt>Rounds shared</dt>
-                    <dd>{formatCountLabel(roundCount, "round", "rounds", "None yet")}</dd>
-                  </div>
-                  <div className="et-course-detail-hero-stat">
-                    <dt>Would play again</dt>
-                    <dd>{formatRecommendLabel(course.recommend_pct ?? null, roundCount)}</dd>
-                  </div>
-                </dl>
+            <header className="et-course-detail-hero">
+              <div className="et-course-detail-hero-media">
+                <CourseImage
+                  name={course.name}
+                  city={course.city}
+                  region={course.region}
+                  country={course.country}
+                  imageUrl={course.image_url}
+                  thumbnailUrl={course.thumbnail_url}
+                  golfCourseId={course.id}
+                  variant="hero"
+                  overlay
+                  loading="eager"
+                  alt={`${course.name} course view`}
+                />
               </div>
             </header>
+
+            <section className="et-course-detail-profile-header" aria-labelledby="course-detail-heading">
+              <div className="et-course-detail-profile-top">
+                <div className="et-course-detail-profile-heading">
+                  <p className="et-course-detail-eyebrow">Course Profile</p>
+                  <h1 id="course-detail-heading" className="et-course-detail-title">
+                    {course.name}
+                  </h1>
+                  {location ? (
+                    <p className="et-course-detail-location">{location}</p>
+                  ) : null}
+                  {architectYear ? (
+                    <p className="et-course-detail-architect-year">{architectYear}</p>
+                  ) : null}
+                </div>
+                <div className="et-course-detail-profile-actions">
+                  <BucketListToggleButton courseId={course.id} variant="et-secondary" />
+                </div>
+              </div>
+
+              <div className="et-course-detail-hero-meta">
+                {isMemberSubmitted ? (
+                  <span className="et-course-detail-pill et-course-detail-pill--member">
+                    Member submitted
+                  </span>
+                ) : null}
+                {course.course_type ? (
+                  <span className="et-course-detail-pill">{course.course_type}</span>
+                ) : null}
+                {course.access_type ? (
+                  <span className="et-course-detail-pill">{course.access_type}</span>
+                ) : null}
+              </div>
+
+              <dl className="et-course-detail-hero-stats">
+                <div className="et-course-detail-hero-stat et-course-detail-hero-stat--rating">
+                  <dt>Member rating</dt>
+                  <dd>{ratingDisplay ?? "No rating yet"}</dd>
+                </div>
+                <div className="et-course-detail-hero-stat">
+                  <dt>Experiences shared</dt>
+                  <dd>{formatCountLabel(roundCount, "experience", "experiences", "None yet")}</dd>
+                </div>
+                <div className="et-course-detail-hero-stat">
+                  <dt>Members played</dt>
+                  <dd>{formatCountLabel(memberCount, "member", "members", "None yet")}</dd>
+                </div>
+                <div className="et-course-detail-hero-stat">
+                  <dt>Would play again</dt>
+                  <dd>{formatRecommendLabel(course.recommend_pct ?? null, roundCount)}</dd>
+                </div>
+              </dl>
+            </section>
 
             <div className="et-course-detail-actions">
               <button
@@ -364,7 +437,6 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
               >
                 {experienceCopy.shareTitle}
               </button>
-              <BucketListToggleButton courseId={course.id} variant="et-secondary" />
               {canEditSubmittedCourse ? (
                 <button
                   type="button"
@@ -404,32 +476,17 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
 
             <div className="et-course-detail-layout">
               <div className="et-course-detail-main">
-                <section className="et-course-detail-section" aria-labelledby="course-summary-heading">
+                {course.description?.trim() ? <section className="et-course-detail-section" aria-labelledby="course-summary-heading">
                   <h2 id="course-summary-heading" className="et-course-detail-section-title">
                     About this course
                   </h2>
-                  {course.description?.trim() ? (
-                    <p className="et-course-detail-summary">{course.description}</p>
-                  ) : (
-                    <div className="et-course-detail-empty">
-                      <p className="et-course-detail-empty-title">No course description on file</p>
-                      <p className="et-course-detail-empty-copy">
-                        EliteTee shows stored library descriptions only — nothing is invented here.
-                      </p>
-                    </div>
-                  )}
-                  {course.image_attribution ? (
-                    <p className="et-course-detail-attribution">Photo: {course.image_attribution}</p>
-                  ) : null}
-                </section>
+                  <p className="et-course-detail-summary">{course.description}</p>
+                </section> : null}
 
-                <section className="et-course-detail-section" aria-labelledby="course-stats-heading">
+                {roundCount > 0 ? <section className="et-course-detail-section" aria-labelledby="course-stats-heading">
                   <h2 id="course-stats-heading" className="et-course-detail-section-title">
                     Member intelligence
                   </h2>
-                  <p className="et-course-detail-section-lead">
-                    Aggregated from EliteTee member rounds and reviews.
-                  </p>
                   <dl className="et-course-detail-stats-grid">
                     <div className="et-course-detail-stat-card et-course-detail-stat-card--rating">
                       <dt>Average rating</dt>
@@ -458,16 +515,19 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                       </div>
                     ) : null}
                   </dl>
-                </section>
+                </section> : null}
 
-                <section className="et-course-detail-section" aria-labelledby="course-gallery-heading">
+                {galleryPhotos.length > 0 ? <section className="et-course-detail-section" aria-labelledby="course-gallery-heading">
                   <h2 id="course-gallery-heading" className="et-course-detail-section-title">
                     Photography
                   </h2>
                   <CourseDetailGallery photos={galleryPhotos} />
-                </section>
+                  {course.image_attribution ? (
+                    <p className="et-course-detail-attribution">Photography credit: {course.image_attribution}</p>
+                  ) : null}
+                </section> : null}
 
-                <section className="et-course-detail-section" aria-labelledby="course-reviews-heading">
+                {rounds.length > 0 ? <section className="et-course-detail-section" aria-labelledby="course-reviews-heading">
                   <h2 id="course-reviews-heading" className="et-course-detail-section-title">
                     Member reviews
                   </h2>
@@ -478,9 +538,9 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                     onRoundsChanged={() => void loadCourse()}
                     onViewMemberProfile={onViewMemberProfile}
                   />
-                </section>
+                </section> : null}
 
-                <section
+                {memberSummaries.length > 0 ? <section
                   ref={membersSectionRef}
                   id="course-detail-members"
                   className="et-course-detail-section"
@@ -496,7 +556,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                     onRequestIntroduction={setIntroMember}
                     onAddPlayed={() => setShowAddModal(true)}
                   />
-                </section>
+                </section> : null}
 
                 {relatedCourses.length > 0 ? (
                   <section className="et-course-detail-section" aria-labelledby="course-related-heading">
@@ -549,40 +609,26 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                   </section>
                 ) : null}
 
-                <section className="et-course-detail-section" aria-labelledby="course-location-heading">
+                {locationClassificationFacts.length > 0 ? <section className="et-course-detail-section" aria-labelledby="course-location-heading">
                   <h2 id="course-location-heading" className="et-course-detail-section-title">
                     Location & classification
                   </h2>
                   <dl className="et-course-detail-facts">
-                    <div>
-                      <dt>City</dt>
-                      <dd>{course.city?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Region</dt>
-                      <dd>{course.region?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Country</dt>
-                      <dd>{course.country?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Course type</dt>
-                      <dd>{course.course_type?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Access</dt>
-                      <dd>{course.access_type?.trim() || "Not specified"}</dd>
-                    </div>
+                    {locationClassificationFacts.map(([label, value]) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
                   </dl>
-                </section>
+                </section> : null}
 
                 <section className="et-course-detail-section" aria-labelledby="course-ask-heading">
                   <h2 id="course-ask-heading" className="et-course-detail-section-title">
                     Ask EliteTee
                   </h2>
                   <p className="et-course-detail-section-lead">
-                    Private concierge answers from EliteTee directory data only.
+                    Ask who has played it, what members recommend, or what to explore nearby.
                   </p>
                   <div className="et-course-detail-ask-prompts" role="group" aria-label="Suggested questions">
                     {askPrompts.map((prompt) => (

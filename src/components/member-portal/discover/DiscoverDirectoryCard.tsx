@@ -1,11 +1,13 @@
 import {
   buildMatchReasons,
   formatMemberActivitySummary,
+  formatMemberCardContext,
+  getMemberPrimaryClub,
   selectInterestChips,
-  truncateDiscoverText,
 } from "../../../lib/discoverDirectory";
 import type { MemberProfileRecord } from "../../../types/memberProfileRecord";
 import { DiscoverMemberAvatar } from "./DiscoverMemberAvatar";
+import { ClubMark } from "../ClubMark";
 
 type DiscoverDirectoryCardProps = {
   member: MemberProfileRecord;
@@ -15,6 +17,8 @@ type DiscoverDirectoryCardProps = {
   onViewProfile: (member: MemberProfileRecord) => void;
   onRequestIntroduction: (member: MemberProfileRecord) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
+  variant?: "standard" | "spotlight";
+  contextLabel?: string;
 };
 
 export function DiscoverDirectoryCard({
@@ -25,19 +29,25 @@ export function DiscoverDirectoryCard({
   onViewProfile,
   onRequestIntroduction,
   onMessageMember,
+  variant = "standard",
+  contextLabel,
 }: DiscoverDirectoryCardProps) {
-  const interestChips = selectInterestChips(member, 4);
+  const interestChips = selectInterestChips(member, 1);
+  const cardContext = formatMemberCardContext(viewer, member);
   const matchReasons =
     matchReasonsOverride ??
-    (showMatchReasons ? buildMatchReasons(viewer, member) : []);
+    (showMatchReasons
+      ? (cardContext ? [cardContext] : buildMatchReasons(viewer, member).slice(0, 1))
+      : []);
   const activitySummary = formatMemberActivitySummary(member.updated_at);
-  const currentRequest = member.current_request.trim();
   const location = member.based_in.trim();
-  const club = member.primary_club.trim();
+  const club = getMemberPrimaryClub(member);
   const travel = member.traveling_to.trim();
+  const canMessage = Boolean(onMessageMember && member.user_id !== viewer?.user_id);
 
   return (
-    <article className="et-discover-card">
+    <article className={`et-discover-card et-discover-card--${variant}`}>
+      {contextLabel ? <p className="et-discover-card-context">{contextLabel}</p> : null}
       <header className="et-discover-card-head">
         <button
           type="button"
@@ -48,38 +58,24 @@ export function DiscoverDirectoryCard({
           <DiscoverMemberAvatar member={member} size="lg" />
           <div className="et-discover-card-copy">
             <h3 className="et-discover-card-name">{member.full_name}</h3>
-            <div className="et-discover-card-badges">
-              {member.is_verified ? (
+            {member.is_verified ? (
+              <div className="et-discover-card-badges">
                 <span className="et-discover-badge et-discover-badge--verified">Verified</span>
-              ) : null}
-              {member.founding_member_number ? (
-                <span className="et-discover-badge et-discover-badge--gold">
-                  Founding {member.founding_member_number}
-                </span>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
         </button>
       </header>
 
-      <dl className="et-discover-card-meta">
-        <div>
-          <dt>Home club</dt>
-          <dd>{club || "Not shared"}</dd>
+      {club || location ? (
+        <div className="et-discover-card-club">
+          {club ? <ClubMark name={club} size="sm" /> : null}
+          <div>
+            {club ? <p className="et-discover-card-club-name">{club}</p> : null}
+            {location ? <p className="et-discover-card-location">{location}</p> : null}
+          </div>
         </div>
-        <div>
-          <dt>Location</dt>
-          <dd>{location || "Not shared"}</dd>
-        </div>
-      </dl>
-
-      {currentRequest ? (
-        <p className="et-discover-card-request">{truncateDiscoverText(currentRequest)}</p>
-      ) : (
-        <p className="et-discover-card-request et-discover-card-request--empty">
-          No current connection request shared.
-        </p>
-      )}
+      ) : null}
 
       {interestChips.length > 0 ? (
         <ul className="et-discover-card-chips" aria-label="Interests">
@@ -91,11 +87,10 @@ export function DiscoverDirectoryCard({
         </ul>
       ) : null}
 
-      {travel ? <p className="et-discover-card-travel">Traveling to {travel}</p> : null}
-
-      {activitySummary ? (
-        <p className="et-discover-card-activity">{activitySummary}</p>
-      ) : null}
+      <div className="et-discover-card-footnote">
+        {travel ? <span>Travel · {travel}</span> : null}
+        {activitySummary ? <span>{activitySummary}</span> : null}
+      </div>
 
       {matchReasons.length > 0 ? (
         <ul className="et-discover-card-reasons" aria-label="Match reasons">
@@ -107,19 +102,19 @@ export function DiscoverDirectoryCard({
         </ul>
       ) : null}
 
-      <div className="et-discover-card-actions">
-        <button type="button" className="et-btn et-btn--secondary" onClick={() => onViewProfile(member)}>
-          View Profile
-        </button>
+      <div className={`et-discover-card-actions${canMessage ? "" : " et-discover-card-actions--two"}`}>
         <button
           type="button"
-          className="et-btn et-btn--forest"
+          className="et-btn et-btn--forest et-discover-card-intro"
           onClick={() => onRequestIntroduction(member)}
         >
-          Request Introduction
+          Request introduction
         </button>
-        {onMessageMember && member.user_id !== viewer?.user_id ? (
-          <button type="button" className="et-btn et-btn--ghost" onClick={() => onMessageMember(member)}>
+        <button type="button" className="et-discover-card-profile" onClick={() => onViewProfile(member)}>
+          View profile
+        </button>
+        {canMessage && onMessageMember ? (
+          <button type="button" className="et-discover-card-message" onClick={() => onMessageMember(member)}>
             Message
           </button>
         ) : null}
