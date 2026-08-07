@@ -31,21 +31,9 @@
 }
 
 .portal-loader-logo {
-  height: clamp(4.5rem, 10vw, 7rem);
-  width: calc(clamp(4.5rem, 10vw, 7rem) * 1024 / 682);
-  animation: portal-logo-breathe 1.8s ease-in-out infinite;
-}
-
-@keyframes portal-logo-breathe {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
+  height: var(--et-logo-loader-mark-h);
+  width: calc(var(--et-logo-loader-mark-h) * var(--et-logo-mark-aspect));
+  animation: et-logo-breathe 1.8s ease-in-out infinite;
 }
 
 /* Top bar */
@@ -73,8 +61,8 @@
 }
 
 .portal-logo-mark {
-  height: 56px;
-  width: calc(56px * 1024 / 682);
+  height: var(--et-logo-portal-header-mark-h);
+  width: calc(var(--et-logo-portal-header-mark-h) * var(--et-logo-mark-aspect));
 }
 
 .portal-signout {
@@ -1949,8 +1937,8 @@
   }
 
   .portal-logo-mark {
-    height: 52px;
-    width: calc(52px * 1024 / 682);
+    height: var(--et-logo-portal-header-mark-h-md);
+    width: calc(var(--et-logo-portal-header-mark-h-md) * var(--et-logo-mark-aspect));
   }
 
   .portal-signout {
@@ -7305,8 +7293,8 @@
   }
 
   .portal-logo-mark {
-    height: 44px;
-    width: calc(44px * 1024 / 682);
+    height: var(--et-logo-portal-header-mark-h-sm);
+    width: calc(var(--et-logo-portal-header-mark-h-sm) * var(--et-logo-mark-aspect));
   }
 
   .portal-top {

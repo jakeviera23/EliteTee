@@ -60,15 +60,15 @@
   gap: 0.65rem;
   flex-shrink: 0;
   font-family: var(--serif);
-  font-size: 1.0625rem;
+  font-size: var(--et-logo-inside-wordmark-size);
   letter-spacing: 0.04em;
   color: var(--inside-text);
 }
 
 .inside-logo-mark {
   display: block;
-  height: 30px;
-  width: calc(30px * 1024 / 682);
+  height: var(--et-logo-inside-mark-h);
+  width: calc(var(--et-logo-inside-mark-h) * var(--et-logo-mark-aspect));
   background-color: var(--inside-gold);
   -webkit-mask-image: url(/elitetee-logo-mark.png);
   mask-image: url(/elitetee-logo-mark.png);

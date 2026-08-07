@@ -37,7 +37,12 @@ const NotFound = lazy(() =>
 );
 
 function RouteFallback() {
-  return <div className="page-loading" role="status" aria-live="polite">Loading…</div>;
+  return (
+    <div className="page-loading" role="status" aria-live="polite">
+      <span className="page-loading-logo" aria-hidden="true" />
+      <span className="visually-hidden">Loading…</span>
+    </div>
+  );
 }
 
 function CourseDetailRoute() {
