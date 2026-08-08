@@ -81,6 +81,35 @@ export function InviteSignup() {
     };
   }, [token]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function redeemInviteForExistingSession() {
+      if (!invite || !token.trim() || !isSupabaseConfigured || !supabase) return;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!active || !session?.user?.email) return;
+
+      const sessionEmail = session.user.email.trim().toLowerCase();
+      if (sessionEmail !== invite.email.trim().toLowerCase()) return;
+
+      const { error: completeError } = await completeMembershipInvite(token);
+      if (!active || completeError) return;
+
+      clearLegacySharedProfileExtras();
+      navigate("/member-portal", { replace: true });
+    }
+
+    void redeemInviteForExistingSession();
+
+    return () => {
+      active = false;
+    };
+  }, [invite, navigate, token]);
+
   async function handleResendVerification() {
     if (!invite || !supabase || isResending) return;
 

@@ -313,7 +313,9 @@ export function AdminMembers() {
     if (data) {
       setInvitationDraft(data);
       setApplicationMessage(
-        `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
+        data.autoLinkedExistingAuthUser
+          ? `${data.foundingMemberNumber} approved. Existing EliteTee login linked — portal access is active.`
+          : `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
       );
     }
 

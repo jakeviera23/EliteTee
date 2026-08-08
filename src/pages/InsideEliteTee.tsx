@@ -129,7 +129,7 @@ export function InsideEliteTee() {
 
     try {
       const response = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 

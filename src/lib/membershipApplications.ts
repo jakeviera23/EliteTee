@@ -239,6 +239,11 @@ async function getReviewerEmail() {
   return user?.email?.toLowerCase() ?? null;
 }
 
+export function didAutoLinkExistingAuthUser(linkResult: unknown) {
+  if (!linkResult || typeof linkResult !== "object") return false;
+  return Boolean((linkResult as Record<string, unknown>).linked);
+}
+
 export type ApproveApplicationResult = {
   application: MembershipApplicationRecord | null;
   invitationEmailDraft: string;
@@ -246,6 +251,7 @@ export type ApproveApplicationResult = {
   memberProfileId: string | null;
   invitationLink: string;
   inviteToken: string;
+  autoLinkedExistingAuthUser: boolean;
 };
 
 export async function approveMembershipApplication(applicationId: string) {
@@ -328,14 +334,49 @@ export async function approveMembershipApplication(applicationId: string) {
     return { data: null, error: updateError };
   }
 
+  const approvedApplicationId = String(updatedRow.id ?? applicationId);
+  let autoLinkedExistingAuthUser = false;
+
+  const { data: linkResult, error: linkError } = await supabase.rpc(
+    "try_link_application_to_existing_auth_user",
+    { p_application_id: approvedApplicationId },
+  );
+
+  if (linkError) {
+    return { data: null, error: linkError };
+  }
+
+  if (linkResult && typeof linkResult === "object") {
+    autoLinkedExistingAuthUser = didAutoLinkExistingAuthUser(linkResult);
+  }
+
+  let finalApplication = normalizeApplication(updatedRow as Record<string, unknown>);
+
+  if (autoLinkedExistingAuthUser) {
+    const { data: refreshedApplication, error: refreshError } = await supabase
+      .from("membership_applications")
+      .select("*")
+      .eq("id", approvedApplicationId)
+      .maybeSingle();
+
+    if (refreshError) {
+      return { data: null, error: refreshError };
+    }
+
+    if (refreshedApplication) {
+      finalApplication = normalizeApplication(refreshedApplication as Record<string, unknown>);
+    }
+  }
+
   return {
     data: {
-      application: normalizeApplication(updatedRow as Record<string, unknown>),
+      application: finalApplication,
       invitationEmailDraft,
       foundingMemberNumber,
       memberProfileId: profile?.id ?? null,
       invitationLink,
       inviteToken,
+      autoLinkedExistingAuthUser,
     } satisfies ApproveApplicationResult,
     error: null,
   };

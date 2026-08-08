@@ -116,3 +116,17 @@ export async function completeMembershipInvite(token: string) {
 
   return { data, error: null };
 }
+
+export async function completePendingMembershipInviteForUser() {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("complete_pending_membership_invite_for_user");
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}

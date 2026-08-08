@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { isAdminEmail } from "../lib/admin";
 import { fetchMemberPortalAccess } from "../lib/memberProfiles";
+import { completePendingMembershipInviteForUser } from "../lib/membershipInvites";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { RouteLoading } from "./RouteLoading";
 
@@ -48,6 +49,26 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
         const { hasAccess } = await fetchMemberPortalAccess();
         if (!active) return;
+
+        if (!hasAccess) {
+          const { data: completionResult, error: completionError } =
+            await completePendingMembershipInviteForUser();
+
+          if (completionError) {
+            console.warn("Pending membership invite completion failed:", completionError);
+          } else if (
+            completionResult &&
+            typeof completionResult === "object" &&
+            Boolean((completionResult as Record<string, unknown>).completed)
+          ) {
+            const retry = await fetchMemberPortalAccess();
+            if (!active) return;
+            setHasPortalAccess(retry.hasAccess);
+            setPortalChecked(true);
+            return;
+          }
+        }
+
         setHasPortalAccess(hasAccess);
         setPortalChecked(true);
       })
@@ -78,8 +99,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
         <div className="portal-access-pending-card">
           <h1>Portal access pending</h1>
           <p>
-            Your login is active, but portal access has not been enabled yet. Founding Member
-            approvals are reviewed individually — you will receive an invitation when approved.
+            Your login is active, but portal access has not been enabled yet. If you were recently
+            approved, sign out and back in, or open your private invitation link to finish setup.
           </p>
           <a href="/login" className="portal-btn portal-btn--gold">
             Return to sign in
