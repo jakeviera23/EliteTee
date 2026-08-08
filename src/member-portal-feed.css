@@ -1165,6 +1165,84 @@
   color: var(--feed-text-primary);
 }
 
+.et-feed-card-scope .feed-card-course-link {
+  display: inline-block;
+  margin: 0;
+  font-family: var(--et-font-serif);
+  font-size: clamp(1.375rem, 2.4vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: var(--et-tracking-tight);
+  color: var(--feed-text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.et-feed-card-scope .feed-card-course-link:hover,
+.et-feed-card-scope .feed-card-course-link:focus-visible {
+  color: var(--feed-forest);
+  border-bottom-color: var(--feed-gold);
+  outline: none;
+}
+
+.et-feed-card-scope .feed-card-social-title.feed-card-course-link {
+  font-size: var(--et-text-h4);
+}
+
+.et-feed-card-scope .feed-card-open-target {
+  cursor: pointer;
+  border-radius: var(--et-radius-md);
+  transition: background 0.15s ease;
+}
+
+.et-feed-card-scope .feed-card-open-target:hover,
+.et-feed-card-scope .feed-card-open-target:focus-visible {
+  background: var(--et-bg-inset);
+  outline: none;
+}
+
+.et-feed-card-scope .feed-card-body-primary {
+  display: grid;
+  gap: var(--et-space-3);
+  padding: var(--et-space-4) var(--feed-pad) 0;
+}
+
+.feed-post-detail-modal {
+  width: min(100%, 42rem);
+}
+
+.feed-post-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 0.75rem;
+  border-bottom: 1px solid var(--inside-border);
+}
+
+.feed-post-detail-title {
+  margin: 0;
+  font-family: var(--et-font-serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--portal-heading);
+}
+
+.feed-post-detail-scroll .feed-card {
+  border: 0;
+  box-shadow: none;
+}
+
+.feed-post-detail-scroll .feed-card-open-target {
+  cursor: default;
+}
+
+.feed-post-detail-scroll .feed-card-open-target:hover,
+.feed-post-detail-scroll .feed-card-open-target:focus-visible {
+  background: transparent;
+}
+
 .et-feed-card-scope .feed-card-course-location,
 .et-feed-card-scope .feed-card-social-location {
   margin: 0;

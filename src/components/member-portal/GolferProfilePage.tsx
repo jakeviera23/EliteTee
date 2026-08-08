@@ -34,6 +34,7 @@ import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { FeedCard } from "./FeedCard";
+import { FeedPostDetailModal } from "./FeedPostDetailModal";
 import { FEED_CARD_SCOPE_CLASS } from "../../lib/feedCardScope";
 import { MemberActivityList } from "./MemberActivityList";
 import { ProfileCover } from "./ProfileCover";
@@ -118,6 +119,7 @@ export function GolferProfilePage({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [acceptedConnectionCount, setAcceptedConnectionCount] = useState<number | null>(null);
+  const [detailPost, setDetailPost] = useState<FeedPost | null>(null);
 
   const resolvedViewUserId = viewUserId?.trim() || null;
   const isViewingOther = Boolean(resolvedViewUserId && resolvedViewUserId !== currentUserId);
@@ -584,6 +586,7 @@ export function GolferProfilePage({
                         currentUserId={currentUserId}
                         viewerIsAdmin={viewerIsAdmin}
                         onViewAuthor={onViewMemberProfile}
+                        onOpenDetail={() => setDetailPost(post)}
                         onPostUpdated={(updatedPost) => {
                           setFeedPosts((current) =>
                             current.map((entry) =>
@@ -591,6 +594,9 @@ export function GolferProfilePage({
                                 ? mergeFeedPostAfterEdit(entry, updatedPost)
                                 : entry,
                             ),
+                          );
+                          setDetailPost((current) =>
+                            current?.id === updatedPost.id ? updatedPost : current,
                           );
                         }}
                       />
@@ -717,6 +723,24 @@ export function GolferProfilePage({
             </aside>
           </div>
         </>
+      ) : null}
+
+      {detailPost ? (
+        <FeedPostDetailModal
+          post={detailPost}
+          currentUserId={currentUserId}
+          viewerIsAdmin={viewerIsAdmin}
+          onClose={() => setDetailPost(null)}
+          onViewAuthor={onViewMemberProfile}
+          onPostUpdated={(updatedPost) => {
+            setFeedPosts((current) =>
+              current.map((entry) =>
+                entry.id === updatedPost.id ? mergeFeedPostAfterEdit(entry, updatedPost) : entry,
+              ),
+            );
+            setDetailPost((current) => (current?.id === updatedPost.id ? updatedPost : current));
+          }}
+        />
       ) : null}
     </article>
   );

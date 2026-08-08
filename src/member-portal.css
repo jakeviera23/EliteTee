@@ -8891,10 +8891,45 @@
 }
 
 .round-photo-lightbox-stage {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 12rem;
-  touch-action: pan-y;
+  touch-action: pan-x pinch-zoom;
+}
+
+.round-photo-lightbox-stage-btn {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--portal-heading);
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.round-photo-lightbox-stage-btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.round-photo-lightbox-stage-btn--prev {
+  left: 0.65rem;
+}
+
+.round-photo-lightbox-stage-btn--next {
+  right: 0.65rem;
 }
 
 .round-photo-lightbox-image {

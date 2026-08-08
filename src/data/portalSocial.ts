@@ -308,6 +308,9 @@ export type FeedPost = {
   /** ISO date (YYYY-MM-DD) when available from linked round */
   playedOn?: string;
   wouldPlayAgain?: boolean;
+  /** Linked library course — used for course name navigation in feed cards */
+  golfCourseId?: string;
+  courseSlug?: string;
 };
 
 export type CourseListing = {

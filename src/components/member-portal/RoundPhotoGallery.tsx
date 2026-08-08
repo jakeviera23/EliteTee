@@ -90,7 +90,6 @@ export function RoundPhotoGallery({
 
       {lightboxIndex !== null ? (
         <RoundPhotoLightbox
-          key={`gallery-lightbox-${lightboxIndex}`}
           photos={visiblePhotos}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}

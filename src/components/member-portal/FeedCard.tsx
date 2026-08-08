@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { Link } from "react-router-dom";
 import type { FeedPost, FeedPostComment } from "../../data/portalSocial";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
@@ -54,6 +55,8 @@ type FeedCardProps = {
   ) => void;
   onPostUpdated?: (post: FeedPost) => void;
   isActivityFocus?: boolean;
+  isDetailView?: boolean;
+  onOpenDetail?: () => void;
 };
 
 function HeartIcon({ filled }: { filled?: boolean }) {
@@ -143,6 +146,36 @@ function badgeToneClass(tone: FeedMetaChipTone): string {
   return `feed-card-type-badge feed-card-type-badge--${tone}`;
 }
 
+function FeedCourseName({
+  post,
+  className,
+  heading = false,
+}: {
+  post: FeedPost;
+  className: string;
+  heading?: boolean;
+}) {
+  if (!post.courseName) return null;
+
+  if (post.courseSlug) {
+    return (
+      <Link
+        to={`/courses/${post.courseSlug}`}
+        className={`feed-card-course-link ${className}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {post.courseName}
+      </Link>
+    );
+  }
+
+  if (heading) {
+    return <h3 className={className}>{post.courseName}</h3>;
+  }
+
+  return <p className={className}>{post.courseName}</p>;
+}
+
 function AuthorIdentity({
   post,
   canViewAuthor,
@@ -220,6 +253,8 @@ export function FeedCard({
   onRespondPrivately,
   onPostUpdated,
   isActivityFocus = false,
+  isDetailView = false,
+  onOpenDetail,
 }: FeedCardProps) {
   const isFounder = variant === "founder";
   const [editing, setEditing] = useState(false);
@@ -228,7 +263,7 @@ export function FeedCard({
   const [saved, setSaved] = useState(Boolean(post.isSaved));
   const [likeCount, setLikeCount] = useState(post.likes);
   const [commentCount, setCommentCount] = useState(post.comments);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(isDetailView);
   const [commentDraft, setCommentDraft] = useState("");
   const [comments, setComments] = useState<FeedPostComment[]>(post.feedComments ?? []);
   const [commentsLoaded, setCommentsLoaded] = useState(Boolean(post.feedComments?.length));
@@ -238,7 +273,7 @@ export function FeedCard({
   const [isTogglingSave, setIsTogglingSave] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(isDetailView);
 
   useEffect(() => {
     setLiked(Boolean(post.isLiked));
@@ -268,6 +303,11 @@ export function FeedCard({
     setCommentsLoaded(true);
     setIsLoadingComments(false);
   }
+
+  useEffect(() => {
+    if (!isDetailView || !engagementEnabled || commentsLoaded) return;
+    void loadComments();
+  }, [isDetailView, engagementEnabled, commentsLoaded, post.id]);
 
   const isCourseRound = !isFounder && isCourseRoundPost(post);
   const canEdit =
@@ -443,11 +483,135 @@ export function FeedCard({
   const showCourseBlock =
     isCourseRound && (roundLabel || post.courseName || post.courseLocation || ratingDisplay);
   const showSocialHeadline = !isCourseRound && !isFounder && (roundLabel || post.courseName);
+  const canOpenDetail = Boolean(onOpenDetail && !isFounder && !isDetailView);
+
+  function handleOpenDetail() {
+    onOpenDetail?.();
+  }
+
+  function handleOpenTargetKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!canOpenDetail) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleOpenDetail();
+    }
+  }
+
+  const primaryContent = (
+    <>
+      {showCourseBlock ? (
+        <div className="feed-card-course-block">
+          {roundLabel ? (
+            <span className={badgeToneClass("positive")}>{roundLabel}</span>
+          ) : null}
+          <FeedCourseName
+            post={post}
+            className="feed-card-course-title"
+            heading
+          />
+          {post.courseLocation ? (
+            <p className="feed-card-course-location">{post.courseLocation}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showSocialHeadline ? (
+        <div className="feed-card-social-head">
+          {roundLabel ? <span className={badgeToneClass(badgeTone)}>{roundLabel}</span> : null}
+          <FeedCourseName post={post} className="feed-card-social-title" />
+          {post.courseLocation ? (
+            <p className="feed-card-social-location">{post.courseLocation}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="feed-card-body-primary">
+        {contentFlags.length > 0 ? (
+          <div className="et-feed-content-flag" role="note">
+            <p className="et-caption">Review suggested: {contentFlags.join(" · ")}</p>
+          </div>
+        ) : null}
+
+        {post.caption ? (
+          <div className="feed-card-caption-wrap">
+            <p className={`feed-card-caption${isFounder ? " feed-card-caption--founder" : ""}`}>
+              {captionPreview.text}
+            </p>
+            {captionPreview.isTruncated && !isDetailView ? (
+              <button
+                type="button"
+                className="feed-card-caption-more"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (onOpenDetail) {
+                    onOpenDetail();
+                  } else {
+                    setCaptionExpanded(true);
+                  }
+                }}
+              >
+                Read full post
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {metaChips.length > 0 ? (
+          <ul className="feed-card-meta-chips" aria-label="Post details">
+            {metaChips.map((chip) => (
+              <li key={chip.key} className={chipToneClass(chip.tone)}>
+                {chip.tone === "location" ? <PinIcon /> : null}
+                {chip.tone === "date" ? <CalendarIcon /> : null}
+                <span className="feed-card-meta-chip-label">{chip.label}</span>
+                <span className="feed-card-meta-chip-value">{chip.value}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {responseAction?.presentation === "bridge" && onRespondPrivately && authorUserId ? (
+          <aside className="feed-card-response-bridge" aria-label="Continue this contribution">
+            <div>
+              <span>{responseAction.eyebrow}</span>
+              <p>{responseAction.explanation}</p>
+            </div>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRespondPrivately(authorUserId, post.author.name, responseAction);
+              }}
+            >
+              {responseAction.label}
+            </button>
+          </aside>
+        ) : null}
+
+        {previewComment && !showComments && !isDetailView ? (
+          <div className="feed-card-comment-preview">
+            <p className="feed-card-comment-preview-text">
+              <strong>{previewComment.authorName}</strong> {previewComment.body}
+            </p>
+            <button
+              type="button"
+              className="feed-card-comment-link"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleToggleComments();
+              }}
+            >
+              {commentCount > 1 ? `View all ${commentCount} comments` : "View comment"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </>
+  );
 
   return (
     <article
       id={`feed-post-${post.id}`}
-      className={`feed-card feed-card--${cardKind}${isActivityFocus ? " is-activity-focus" : ""}`}
+      className={`feed-card feed-card--${cardKind}${isActivityFocus ? " is-activity-focus" : ""}${isDetailView ? " feed-card--detail" : ""}`}
       style={entranceStyle}
     >
       <header className="feed-card-head">
@@ -490,82 +654,22 @@ export function FeedCard({
         </div>
       ) : null}
 
-      {showCourseBlock ? (
-        <div className="feed-card-course-block">
-          {roundLabel ? (
-            <span className={badgeToneClass("positive")}>{roundLabel}</span>
-          ) : null}
-          {post.courseName ? (
-            <h3 className="feed-card-course-title">{post.courseName}</h3>
-          ) : null}
-          {post.courseLocation ? (
-            <p className="feed-card-course-location">{post.courseLocation}</p>
-          ) : null}
+      {canOpenDetail ? (
+        <div
+          className="feed-card-open-target"
+          role="button"
+          tabIndex={0}
+          onClick={handleOpenDetail}
+          onKeyDown={handleOpenTargetKeyDown}
+          aria-label="Open post details"
+        >
+          {primaryContent}
         </div>
-      ) : null}
-
-      {showSocialHeadline ? (
-        <div className="feed-card-social-head">
-          {roundLabel ? <span className={badgeToneClass(badgeTone)}>{roundLabel}</span> : null}
-          {post.courseName ? <p className="feed-card-social-title">{post.courseName}</p> : null}
-          {post.courseLocation ? (
-            <p className="feed-card-social-location">{post.courseLocation}</p>
-          ) : null}
-        </div>
-      ) : null}
+      ) : (
+        primaryContent
+      )}
 
       <div className="feed-card-body">
-        {contentFlags.length > 0 ? (
-          <div className="et-feed-content-flag" role="note">
-            <p className="et-caption">Review suggested: {contentFlags.join(" · ")}</p>
-          </div>
-        ) : null}
-
-        {post.caption ? (
-          <div className="feed-card-caption-wrap">
-            <p className={`feed-card-caption${isFounder ? " feed-card-caption--founder" : ""}`}>
-              {captionPreview.text}
-            </p>
-            {captionPreview.isTruncated ? (
-              <button
-                type="button"
-                className="feed-card-caption-more"
-                onClick={() => setCaptionExpanded(true)}
-              >
-                Read full post
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {metaChips.length > 0 ? (
-          <ul className="feed-card-meta-chips" aria-label="Post details">
-            {metaChips.map((chip) => (
-              <li key={chip.key} className={chipToneClass(chip.tone)}>
-                {chip.tone === "location" ? <PinIcon /> : null}
-                {chip.tone === "date" ? <CalendarIcon /> : null}
-                <span className="feed-card-meta-chip-label">{chip.label}</span>
-                <span className="feed-card-meta-chip-value">{chip.value}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {responseAction?.presentation === "bridge" && onRespondPrivately && authorUserId ? (
-          <aside className="feed-card-response-bridge" aria-label="Continue this contribution">
-            <div>
-              <span>{responseAction.eyebrow}</span>
-              <p>{responseAction.explanation}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onRespondPrivately(authorUserId, post.author.name, responseAction)}
-            >
-              {responseAction.label}
-            </button>
-          </aside>
-        ) : null}
-
         <div className="feed-card-actions" role="group" aria-label="Post actions">
           <button
             type="button"
@@ -617,21 +721,6 @@ export function FeedCard({
             </button>
           ) : null}
         </div>
-
-        {previewComment && !showComments ? (
-          <div className="feed-card-comment-preview">
-            <p className="feed-card-comment-preview-text">
-              <strong>{previewComment.authorName}</strong> {previewComment.body}
-            </p>
-            <button
-              type="button"
-              className="feed-card-comment-link"
-              onClick={handleToggleComments}
-            >
-              {commentCount > 1 ? `View all ${commentCount} comments` : "View comment"}
-            </button>
-          </div>
-        ) : null}
 
         {showComments ? (
           <div className="feed-card-comments-panel">

@@ -29,6 +29,7 @@ import {
 } from "../../lib/memberHome";
 import { FeedCard } from "./FeedCard";
 import { FeedComposer } from "./FeedComposer";
+import { FeedPostDetailModal } from "./FeedPostDetailModal";
 import { MemberHomeBriefing } from "./MemberHomeBriefing";
 import { MemberOnboardingChecklist } from "./MemberOnboardingChecklist";
 import { usePortalToast } from "./PortalToastProvider";
@@ -87,6 +88,7 @@ export function PortalFeed({
   const [postsError, setPostsError] = useState<string | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [activityFocusedPostId, setActivityFocusedPostId] = useState<string | null>(null);
+  const [detailPost, setDetailPost] = useState<FeedPost | null>(null);
   const hasLoadedInitialRef = useRef(false);
   const recordedVisitForRef = useRef<string | null>(null);
   const revealingActivityPostRef = useRef<string | null>(null);
@@ -296,10 +298,20 @@ export function PortalFeed({
   }
 
   function openPost(postId: string) {
+    const post = memberPosts.find((entry) => entry.id === postId);
+    if (post) {
+      setDetailPost(post);
+      return;
+    }
     document.getElementById(`feed-post-${postId}`)?.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
+  }
+
+  function handlePostDetailUpdated(updatedPost: FeedPost) {
+    handlePostUpdated(updatedPost);
+    setDetailPost((current) => (current?.id === updatedPost.id ? updatedPost : current));
   }
 
   const recordHomeExposure = useCallback(
@@ -414,6 +426,7 @@ export function PortalFeed({
                 onViewAuthor={onViewMemberProfile}
                 onRespondPrivately={onMessageMember}
                 onPostUpdated={handlePostUpdated}
+                onOpenDetail={() => setDetailPost(post)}
                 isActivityFocus={activityFocusedPostId === post.id}
               />
             ))}
@@ -475,6 +488,19 @@ export function PortalFeed({
           </button>
         ) : null}
       </section>
+
+      {detailPost ? (
+        <FeedPostDetailModal
+          post={detailPost}
+          currentUserId={currentUserId}
+          viewerIsAdmin={viewerIsAdmin}
+          onClose={() => setDetailPost(null)}
+          onToast={showToast}
+          onViewAuthor={onViewMemberProfile}
+          onRespondPrivately={onMessageMember}
+          onPostUpdated={handlePostDetailUpdated}
+        />
+      ) : null}
     </section>
   );
 }

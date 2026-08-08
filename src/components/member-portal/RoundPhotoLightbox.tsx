@@ -45,6 +45,10 @@ export function RoundPhotoLightbox({
   }, [allowDelete]);
 
   useEffect(() => {
+    setIndex(clampPhotoGalleryIndex(initialIndex, photos.length));
+  }, [initialIndex, photos.length]);
+
+  useEffect(() => {
     setDeleteError(null);
     setImageUrlOverride(null);
   }, [safeIndex, photo?.id]);
@@ -175,6 +179,16 @@ export function RoundPhotoLightbox({
             if (delta < 0 && navigation.canGoNext) goNext();
           }}
         >
+          {photos.length > 1 && navigation.canGoPrev ? (
+            <button
+              type="button"
+              className="round-photo-lightbox-stage-btn round-photo-lightbox-stage-btn--prev"
+              onClick={goPrev}
+              aria-label="Previous photo"
+            >
+              ‹
+            </button>
+          ) : null}
           {imageUrl ? (
             <img
               key={photo.id}
@@ -189,6 +203,16 @@ export function RoundPhotoLightbox({
           ) : (
             <p className="round-photo-lightbox-missing">This photo is no longer available.</p>
           )}
+          {photos.length > 1 && navigation.canGoNext ? (
+            <button
+              type="button"
+              className="round-photo-lightbox-stage-btn round-photo-lightbox-stage-btn--next"
+              onClick={goNext}
+              aria-label="Next photo"
+            >
+              ›
+            </button>
+          ) : null}
         </div>
 
         {photo.caption?.trim() ? (

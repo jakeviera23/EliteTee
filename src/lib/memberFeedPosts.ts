@@ -30,6 +30,57 @@ export type MemberFeedCursor = {
   id: string;
 };
 
+type RoundCourseLink = {
+  golfCourseId: string;
+  courseSlug: string;
+};
+
+async function fetchRoundCourseLinksByRoundIds(
+  roundIds: string[],
+): Promise<Map<string, RoundCourseLink>> {
+  if (!supabase || roundIds.length === 0) return new Map();
+
+  const { data: rounds, error } = await supabase
+    .from("member_course_rounds")
+    .select("id, golf_course_id")
+    .in("id", roundIds);
+
+  if (error || !rounds?.length) return new Map();
+
+  const courseIds = [
+    ...new Set(
+      rounds
+        .map((round) => (round.golf_course_id ? String(round.golf_course_id) : ""))
+        .filter(Boolean),
+    ),
+  ];
+
+  if (courseIds.length === 0) return new Map();
+
+  const { data: courses } = await supabase
+    .from("golf_courses")
+    .select("id, slug")
+    .in("id", courseIds);
+
+  const slugByCourseId = new Map(
+    (courses ?? [])
+      .filter((course) => course.id && course.slug)
+      .map((course) => [String(course.id), String(course.slug)]),
+  );
+
+  const linksByRoundId = new Map<string, RoundCourseLink>();
+  for (const round of rounds) {
+    const roundId = String(round.id ?? "");
+    const golfCourseId = round.golf_course_id ? String(round.golf_course_id) : "";
+    const courseSlug = golfCourseId ? slugByCourseId.get(golfCourseId) : undefined;
+    if (roundId && golfCourseId && courseSlug) {
+      linksByRoundId.set(roundId, { golfCourseId, courseSlug });
+    }
+  }
+
+  return linksByRoundId;
+}
+
 const POST_TYPE_TO_DB: Record<ComposerPostType, string> = {
   introduction: "intro",
   "round-review": "round-review",
@@ -183,6 +234,7 @@ export function memberFeedPostToFeedPost(
   row: MemberFeedPostRecord,
   profile: MemberFeedPostAuthorProfile | null,
   imageUrls: string[] = [],
+  courseLink?: RoundCourseLink | null,
 ): FeedPost {
   const parsed = parseFeedPostContent(row.content);
   const composerType = DB_TYPE_TO_COMPOSER[row.post_type] ?? parsed.composerPostType;
@@ -212,6 +264,8 @@ export function memberFeedPostToFeedPost(
     authorUserId: row.user_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    golfCourseId: courseLink?.golfCourseId,
+    courseSlug: courseLink?.courseSlug,
   };
 }
 
@@ -278,10 +332,12 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
     ),
   ];
 
-  const [roundPhotosResult, coverPhotoIdsResult, feedMediaResult] = await Promise.all([
+  const [roundPhotosResult, coverPhotoIdsResult, feedMediaResult, courseLinksByRoundId] =
+    await Promise.all([
     fetchPhotosForRoundIds(roundIds),
     fetchCoverPhotoIdsForRoundIds(roundIds),
     fetchFeedPostMediaForPostIds(postIds),
+    fetchRoundCourseLinksByRoundIds(roundIds),
   ]);
   const roundPhotos = roundPhotosResult.data;
   const coverPhotoIds = coverPhotoIdsResult.data;
@@ -322,7 +378,11 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
       ...(mediaUrlsByPostId.get(record.id) ?? []),
     ];
 
-    return memberFeedPostToFeedPost(record, profile, imageUrls);
+    const courseLink = record.member_course_round_id
+      ? courseLinksByRoundId.get(record.member_course_round_id) ?? null
+      : null;
+
+    return memberFeedPostToFeedPost(record, profile, imageUrls, courseLink);
   });
 }
 
