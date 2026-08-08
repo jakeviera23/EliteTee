@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { findOrCreateMemberGolfCourse } = vi.hoisted(() => ({
+const { findOrCreateMemberGolfCourse, searchGolfCourses } = vi.hoisted(() => ({
   findOrCreateMemberGolfCourse: vi.fn(),
+  searchGolfCourses: vi.fn(),
 }));
 
 const { getCurrentAuthUserId } = vi.hoisted(() => ({
@@ -14,6 +15,7 @@ const singleMock = vi.fn();
 
 vi.mock("./golfCourses", () => ({
   findOrCreateMemberGolfCourse,
+  searchGolfCourses,
 }));
 
 vi.mock("./authUserLinking", () => ({
@@ -37,6 +39,7 @@ import { submitMemberCourseRound } from "./memberCourseRounds";
 describe("submitMemberCourseRound", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    searchGolfCourses.mockResolvedValue({ data: [], error: null });
   });
 
   it("links to an existing curated course id when provided", async () => {
@@ -80,6 +83,39 @@ describe("submitMemberCourseRound", () => {
 
     expect(data).toBeNull();
     expect(error?.message).toMatch(/course-linking error/i);
+  });
+
+  it("links a directory course by name when location is omitted", async () => {
+    getCurrentAuthUserId.mockResolvedValue({ userId: "u1", error: null });
+    searchGolfCourses.mockResolvedValue({
+      data: [
+        {
+          id: "curated-course-id",
+          name: "Pine Valley Golf Club",
+          slug: "pine-valley-golf-club",
+          city: "Pine Valley",
+          region: "New Jersey",
+          country: "United States",
+        },
+      ],
+      error: null,
+    });
+    singleMock.mockResolvedValueOnce({ data: { id: "round-1" }, error: null });
+
+    const { data, error } = await submitMemberCourseRound({
+      course_name: "Pine Valley Golf Club",
+      location: "",
+      played_on: "2026-07-13",
+      note: "Great round.",
+      would_play_again: true,
+      course_rating: 9,
+      golf_course_id: null,
+    });
+
+    expect(error).toBeNull();
+    expect(data?.golf_course_id).toBe("curated-course-id");
+    expect(findOrCreateMemberGolfCourse).not.toHaveBeenCalled();
+    expect(insertMock).toHaveBeenCalled();
   });
 });
 

@@ -10,7 +10,7 @@ import {
 import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
 import { getFeedComposerValidation } from "../../lib/feedComposerValidation";
 import { createMemberFeedPost } from "../../lib/memberFeedPosts";
-import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
+import { formatMemberPortalError } from "../../lib/portalErrorDisplay";
 import {
   publishRoundReview,
   type PublishRoundReviewPending,
@@ -52,6 +52,13 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
     primaryKey: "course",
     fields: [
       { key: "course", label: "Course", type: "text", placeholder: "Course name" },
+      {
+        key: "location",
+        label: "Location",
+        type: "text",
+        placeholder: "City, state, or country",
+        optional: true,
+      },
       { key: "rating", label: "Rating", type: "rating" },
       { key: "playedWith", label: "Played With", type: "text", placeholder: "Optional", optional: true },
     ],
@@ -247,6 +254,7 @@ export function FeedComposer({
       const result = await publishRoundReview(
         {
           courseName: values.course?.trim() ?? "",
+          location: values.location?.trim() || undefined,
           message,
           courseRating: normalizedRating!,
           playedWith: values.playedWith?.trim() || undefined,
@@ -261,7 +269,7 @@ export function FeedComposer({
       if (!result.ok) {
         console.error("[FeedComposer] round review publish failed", result.error);
         setPublishPending(result.pending ?? publishPending);
-        setSubmitError(memberFacingPortalError(result.error, "feed"));
+        setSubmitError(formatMemberPortalError(result.error, "feed"));
         return;
       }
 
@@ -284,7 +292,7 @@ export function FeedComposer({
 
     if (error) {
       console.error("[FeedComposer] post failed", error.message);
-      setSubmitError(memberFacingPortalError(error.message, "feed"));
+      setSubmitError(formatMemberPortalError(error.message, "feed"));
       return;
     }
 

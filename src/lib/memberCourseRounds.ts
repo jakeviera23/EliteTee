@@ -1,8 +1,8 @@
-import type {
-  MemberCourseRoundInsert,
-  MemberCourseRoundRecord,
-} from "../types/memberCourseRound";
-import { findOrCreateMemberGolfCourse } from "./golfCourses";
+import type { MemberCourseRoundInsert, MemberCourseRoundRecord } from "../types/memberCourseRound";
+import type { GolfCourseSearchResult } from "../types/golfCourse";
+import { findOrCreateMemberGolfCourse, searchGolfCourses } from "./golfCourses";
+import { normalizeGolfCourseNameForMatch } from "./golfCourseDuplicates";
+import { formatGolfCourseLocation } from "../types/golfCourse";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchPhotosForRoundIds, fetchCoverPhotoIdsForRoundIds, groupPhotosByRoundId } from "./memberCourseRoundPhotos";
 import { normalizeCourseRating, validateCourseRating } from "./courseRating";
@@ -167,6 +167,72 @@ function buildMemberFacingCourseLinkError(error: Error) {
   return error;
 }
 
+async function resolveGolfCourseIdForRound(
+  courseName: string,
+  location: string,
+  existingId: string | null | undefined,
+) {
+  if (existingId?.trim()) {
+    return { golfCourseId: existingId.trim(), location: location.trim(), error: null as Error | null };
+  }
+
+  const trimmedName = courseName.trim();
+  const trimmedLocation = location.trim();
+
+  if (trimmedLocation.length >= 2) {
+    const { data: linkedCourse, error: linkError } = await findOrCreateMemberGolfCourse(
+      trimmedName,
+      trimmedLocation,
+    );
+
+    if (linkError || !linkedCourse?.id) {
+      if (linkError) {
+        console.error("[submitMemberCourseRound] course link failed", linkError.message);
+      }
+      return {
+        golfCourseId: null,
+        location: trimmedLocation,
+        error:
+          linkError
+            ? buildMemberFacingCourseLinkError(linkError)
+            : new Error("This course could not be added to the EliteTee directory."),
+      };
+    }
+
+    return { golfCourseId: linkedCourse.id, location: trimmedLocation, error: null };
+  }
+
+  const { data: searchResults, error: searchError } = await searchGolfCourses({
+    query: trimmedName,
+    limit: 8,
+  });
+
+  if (searchError) {
+    return { golfCourseId: null, location: trimmedLocation, error: searchError };
+  }
+
+  const normalizedTarget = normalizeGolfCourseNameForMatch(trimmedName);
+  const exactMatches = (searchResults ?? []).filter(
+    (course: GolfCourseSearchResult) =>
+      normalizeGolfCourseNameForMatch(course.name) === normalizedTarget,
+  );
+
+  if (exactMatches.length === 1) {
+    const match = exactMatches[0];
+    return {
+      golfCourseId: match.id,
+      location: formatGolfCourseLocation(match) || trimmedLocation,
+      error: null,
+    };
+  }
+
+  return {
+    golfCourseId: null,
+    location: trimmedLocation,
+    error: new Error("Location must be between 2 and 200 characters."),
+  };
+}
+
 export async function fetchMemberCourseRounds(limit = 20) {
   if (!supabase) {
     return { data: null, error: new Error("Supabase is not configured.") };
@@ -272,29 +338,17 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
     return { data: null, error: sessionError ?? new Error("You must be signed in to add a course.") };
   }
 
-  let golfCourseId = round.golf_course_id ?? null;
+  const {
+    golfCourseId: resolvedCourseId,
+    location: resolvedLocation,
+    error: linkError,
+  } = await resolveGolfCourseIdForRound(round.course_name, round.location, round.golf_course_id);
 
-  if (!golfCourseId) {
-    const { data: linkedCourse, error: linkError } = await findOrCreateMemberGolfCourse(
-      round.course_name,
-      round.location,
-    );
-
-    if (linkError || !linkedCourse?.id) {
-      if (linkError) {
-        console.error("[submitMemberCourseRound] course link failed", linkError.message);
-      }
-      return {
-        data: null,
-        error:
-          linkError
-            ? buildMemberFacingCourseLinkError(linkError)
-            : new Error("This course could not be added to the EliteTee directory."),
-      };
-    }
-
-    golfCourseId = linkedCourse.id;
+  if (linkError || !resolvedCourseId) {
+    return { data: null, error: linkError };
   }
+
+  const golfCourseId = resolvedCourseId;
 
   const ratingResult = validateCourseRating(round.course_rating);
   if (!ratingResult.ok) {
@@ -304,7 +358,7 @@ export async function submitMemberCourseRound(round: MemberCourseRoundInsert) {
   const payload: Record<string, unknown> = {
     member_user_id: userId,
     course_name: round.course_name.trim(),
-    location: round.location.trim(),
+    location: resolvedLocation.trim() || round.location.trim(),
     played_on: round.played_on,
     note: round.note.trim(),
     would_play_again: round.would_play_again,

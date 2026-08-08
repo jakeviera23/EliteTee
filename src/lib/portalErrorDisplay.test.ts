@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { memberFacingCoverPhotoError, memberFacingPortalError } from "./portalErrorDisplay";
+import { describe, expect, it, vi } from "vitest";
+import {
+  formatMemberPortalError,
+  memberFacingCoverPhotoError,
+  memberFacingPortalError,
+} from "./portalErrorDisplay";
 
 describe("memberFacingPortalError", () => {
   it("maps auth errors without exposing raw text", () => {
@@ -20,6 +24,20 @@ describe("memberFacingPortalError", () => {
     expect(memberFacingPortalError("unexpected", "profile")).toBe(
       "Your profile could not be saved. Please try again.",
     );
+  });
+
+  it("maps location validation errors to a member-safe message", () => {
+    expect(memberFacingPortalError("Location must be between 2 and 200 characters.", "feed")).toBe(
+      "Add a course location (city, state, or country) to share this round.",
+    );
+  });
+
+  it("appends raw server errors in development", () => {
+    vi.stubEnv("DEV", true);
+    expect(formatMemberPortalError("Location must be between 2 and 200 characters.", "feed")).toBe(
+      "Add a course location (city, state, or country) to share this round. (Location must be between 2 and 200 characters.)",
+    );
+    vi.unstubAllEnvs();
   });
 });
 

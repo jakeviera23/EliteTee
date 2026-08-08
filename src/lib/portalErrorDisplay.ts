@@ -1,3 +1,7 @@
+export function shouldIncludePortalErrorDetails() {
+  return import.meta.env.DEV;
+}
+
 export function memberFacingPortalError(message: string, context?: "feed" | "message" | "profile" | "introduction" | "experience" | "general"): string {
   const normalized = message.trim().toLowerCase();
 
@@ -21,6 +25,17 @@ export function memberFacingPortalError(message: string, context?: "feed" | "mes
     return "That record already exists. Refresh and try again.";
   }
 
+  if (normalized.includes("location must be between")) {
+    return "Add a course location (city, state, or country) to share this round.";
+  }
+
+  if (
+    normalized.includes("course-linking error") ||
+    normalized.includes("column reference") && normalized.includes("slug") && normalized.includes("ambiguous")
+  ) {
+    return "Your round could not be linked to the course directory. Please try again.";
+  }
+
   if (normalized.includes("pgrst202") || normalized.includes("could not find the function")) {
     return "Your changes could not be saved because the server is missing a required database update. Contact support if this continues.";
   }
@@ -39,6 +54,23 @@ export function memberFacingPortalError(message: string, context?: "feed" | "mes
     default:
       return "Something went wrong. Please try again.";
   }
+}
+
+export function formatMemberPortalError(
+  message: string,
+  context?: "feed" | "message" | "profile" | "introduction" | "experience" | "general",
+) {
+  const friendly = memberFacingPortalError(message, context);
+  const raw = message.trim();
+  if (!shouldIncludePortalErrorDetails() || !raw) {
+    return friendly;
+  }
+
+  if (friendly === raw) {
+    return friendly;
+  }
+
+  return `${friendly} (${raw})`;
 }
 
 export function memberFacingCoverPhotoError(message: string): string {
