@@ -665,6 +665,114 @@
   border-radius: var(--et-radius-md);
 }
 
+.et-feed .round-review-photo-picker {
+  display: grid;
+  gap: var(--et-space-3);
+  padding: var(--et-space-3) 0;
+}
+
+.et-feed .round-review-photo-picker-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--et-space-2);
+}
+
+.et-feed .round-review-photo-picker-label {
+  font-size: var(--et-text-caption);
+  font-weight: 600;
+  letter-spacing: var(--et-tracking-wide);
+  text-transform: uppercase;
+  color: var(--feed-text-secondary);
+}
+
+.et-feed .round-review-photo-picker-optional {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--feed-stone);
+}
+
+.et-feed .round-review-photo-picker-count {
+  font-size: var(--et-text-caption);
+  color: var(--feed-stone);
+}
+
+.et-feed .round-review-photo-picker-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  font-size: var(--et-text-caption);
+  letter-spacing: var(--et-tracking-wide);
+  color: var(--feed-text-secondary);
+  background: var(--et-bg-inset);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-sm);
+  cursor: pointer;
+}
+
+.et-feed .round-review-photo-picker-add:hover {
+  color: var(--feed-text-primary);
+  border-color: var(--feed-gold-border);
+}
+
+.et-feed .round-review-photo-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--et-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.et-feed .round-review-photo-picker-item {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: 0 0 auto;
+}
+
+.et-feed .round-review-photo-picker-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--et-radius-sm);
+  border: 1px solid var(--et-border-hairline);
+}
+
+.et-feed .round-review-photo-picker-remove {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--et-text-inverse);
+  background: var(--feed-forest);
+  border: 1px solid var(--feed-forest);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.et-feed .round-review-photo-picker-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.et-feed .round-review-photo-picker-error {
+  margin: 0;
+  font-size: var(--et-text-caption);
+  color: var(--et-error);
+}
+
 .et-feed .feed-composer-footer-note,
 .et-feed .feed-composer-photo-note {
   font-size: var(--et-text-caption);

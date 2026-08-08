@@ -428,6 +428,45 @@ export async function fetchMemberFeedPostById(postId: string) {
   return { data: posts[0] ?? null, error: null };
 }
 
+export async function fetchMemberFeedPostForRound(roundId: string) {
+  if (!supabase) {
+    return { data: null as FeedPost | null, error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedRoundId = roundId.trim();
+  if (!normalizedRoundId) {
+    return { data: null as FeedPost | null, error: null };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError || !userId) {
+    return {
+      data: null as FeedPost | null,
+      error: sessionError ?? new Error("You must be signed in to view this post."),
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("member_feed_posts")
+    .select(FEED_POST_SELECT)
+    .eq("member_course_round_id", normalizedRoundId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null as FeedPost | null, error };
+  }
+
+  if (!data) {
+    return { data: null as FeedPost | null, error: null };
+  }
+
+  const posts = await mapRowsToFeedPosts([data as MemberFeedPostWithProfile]);
+  return { data: posts[0] ?? null, error: null };
+}
+
 export async function fetchMemberFeedPostsForUser(userId: string) {
   if (!supabase) {
     return { data: [] as FeedPost[], error: new Error("Supabase is not configured.") };
@@ -567,6 +606,7 @@ export async function createCourseRoundFeedPost({
   wouldPlayAgain,
   playedOn,
   courseRating,
+  playedWith,
 }: {
   roundId: string;
   courseName: string;
@@ -575,9 +615,18 @@ export async function createCourseRoundFeedPost({
   wouldPlayAgain: boolean;
   playedOn: string;
   courseRating: number;
+  playedWith?: string;
 }) {
   const message = note.trim() || `Played ${courseName.trim()}`;
   const ratingDisplay = formatCourseRatingDisplay(courseRating);
+
+  const details = [
+    ...(location.trim() ? [{ label: "Location", value: location.trim() }] : []),
+    { label: "Played", value: formatPlayedOnDate(playedOn) },
+    ...(ratingDisplay ? [{ label: "Course Rating", value: `${ratingDisplay}/10.0` }] : []),
+    { label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" },
+    ...(playedWith?.trim() ? [{ label: "Played with", value: playedWith.trim() }] : []),
+  ];
 
   return createMemberFeedPost(
     {
@@ -585,16 +634,10 @@ export async function createCourseRoundFeedPost({
       message,
       headline: courseName.trim(),
       badge: experienceCopy.feedBadge,
-      details: [
-        { label: "Location", value: location.trim() },
-        { label: "Played", value: formatPlayedOnDate(playedOn) },
-        ...(ratingDisplay
-          ? [{ label: "Course Rating", value: `${ratingDisplay}/10.0` }]
-          : []),
-        { label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" },
-      ],
+      details,
       internalPostType: "course-review",
       rating: courseRating,
+      playedWith: playedWith?.trim() || undefined,
     },
     roundId,
   );

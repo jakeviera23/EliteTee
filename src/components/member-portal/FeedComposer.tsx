@@ -11,8 +11,14 @@ import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating"
 import { getFeedComposerValidation } from "../../lib/feedComposerValidation";
 import { createMemberFeedPost } from "../../lib/memberFeedPosts";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
+import {
+  publishRoundReview,
+  type PublishRoundReviewPending,
+} from "../../lib/publishRoundReview";
+import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { FeedAvatar } from "./FeedAvatar";
+import { RoundReviewPhotoPicker } from "./RoundReviewPhotoPicker";
 
 type FeedComposerProps = {
   author: PortalGolfer;
@@ -132,6 +138,8 @@ export function FeedComposer({
     defaultValuesFor(initialPostType, initialMessage),
   );
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoDrafts, setPhotoDrafts] = useState<CourseRoundPhotoDraft[]>([]);
+  const [publishPending, setPublishPending] = useState<PublishRoundReviewPending | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,15 +151,26 @@ export function FeedComposer({
     setPostType(initialPostType);
     setValues(defaultValuesFor(initialPostType, initialMessage));
     setPhotoPreview(null);
+    setPhotoDrafts([]);
+    setPublishPending(null);
     setSubmitError(null);
     setExpanded(startExpanded);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [initialMessage, initialPostType, startExpanded]);
 
+  function clearPhotoDrafts() {
+    for (const draft of photoDrafts) {
+      URL.revokeObjectURL(draft.previewUrl);
+    }
+    setPhotoDrafts([]);
+  }
+
   function reset() {
     setPostType(initialPostType);
     setValues(defaultValuesFor(initialPostType));
     setPhotoPreview(null);
+    clearPhotoDrafts();
+    setPublishPending(null);
     setExpanded(false);
     setSubmitError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -161,6 +180,10 @@ export function FeedComposer({
     setPostType(next);
     setValues(defaultValuesFor(next));
     if (!composerConfig[next].hasPhoto) setPhotoPreview(null);
+    if (next !== "round-review") {
+      clearPhotoDrafts();
+      setPublishPending(null);
+    }
   }
 
   function updateValue(key: string, value: string) {
@@ -220,6 +243,33 @@ export function FeedComposer({
     setIsSubmitting(true);
     setSubmitError(null);
 
+    if (isReview) {
+      const result = await publishRoundReview(
+        {
+          courseName: values.course?.trim() ?? "",
+          message,
+          courseRating: normalizedRating!,
+          playedWith: values.playedWith?.trim() || undefined,
+          photoDrafts,
+          coverDraftId: photoDrafts[0]?.id ?? null,
+        },
+        publishPending,
+      );
+
+      setIsSubmitting(false);
+
+      if (!result.ok) {
+        console.error("[FeedComposer] round review publish failed", result.error);
+        setPublishPending(result.pending ?? publishPending);
+        setSubmitError(memberFacingPortalError(result.error, "feed"));
+        return;
+      }
+
+      onPosted?.(result.post);
+      reset();
+      return;
+    }
+
     const { data, error } = await createMemberFeedPost({
       composerPostType: postType,
       message,
@@ -228,7 +278,6 @@ export function FeedComposer({
       details: details.length ? details : undefined,
       internalPostType: config.internalPostType,
       rating: normalizedRating,
-      playedWith: isReview ? values.playedWith?.trim() || undefined : undefined,
     });
 
     setIsSubmitting(false);
@@ -323,6 +372,14 @@ export function FeedComposer({
                 ),
               )}
             </div>
+          ) : null}
+
+          {postType === "round-review" ? (
+            <RoundReviewPhotoPicker
+              drafts={photoDrafts}
+              onChange={setPhotoDrafts}
+              disabled={isSubmitting}
+            />
           ) : null}
 
           <label className="feed-composer-field feed-composer-field--wide">
