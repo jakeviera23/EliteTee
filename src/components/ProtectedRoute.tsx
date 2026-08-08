@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { isAdminEmail } from "../lib/admin";
 import { fetchMemberPortalAccess } from "../lib/memberProfiles";
-import { completePendingMembershipInviteForUser } from "../lib/membershipInvites";
+import { tryCompleteAuthenticatedInviteRedemption } from "../lib/membershipInviteRedemption";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { RouteLoading } from "./RouteLoading";
 
@@ -51,16 +51,13 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
         if (!active) return;
 
         if (!hasAccess) {
-          const { data: completionResult, error: completionError } =
-            await completePendingMembershipInviteForUser();
+          const redemption = await tryCompleteAuthenticatedInviteRedemption();
 
-          if (completionError) {
-            console.warn("Pending membership invite completion failed:", completionError);
-          } else if (
-            completionResult &&
-            typeof completionResult === "object" &&
-            Boolean((completionResult as Record<string, unknown>).completed)
-          ) {
+          if (redemption.error) {
+            console.warn("Pending membership invite completion failed:", redemption.error);
+          }
+
+          if (redemption.completed) {
             const retry = await fetchMemberPortalAccess();
             if (!active) return;
             setHasPortalAccess(retry.hasAccess);

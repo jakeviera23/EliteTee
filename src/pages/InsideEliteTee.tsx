@@ -13,6 +13,7 @@ import {
   whyEliteTee,
 } from "../data/insidePreview";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { tryCompleteAuthenticatedInviteRedemption } from "../lib/membershipInviteRedemption";
 import "../inside-elitetee.css";
 
 function LockIcon() {
@@ -147,6 +148,8 @@ export function InsideEliteTee() {
         setLoginError("Sign in could not be completed. Please try again.");
         return;
       }
+
+      await tryCompleteAuthenticatedInviteRedemption();
 
       navigate("/member-portal", { replace: true });
     } catch (error) {

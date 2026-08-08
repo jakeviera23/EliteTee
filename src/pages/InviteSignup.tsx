@@ -1,10 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  completeMembershipInvite,
   fetchMembershipInviteByToken,
   type MembershipInvitePreview,
 } from "../lib/membershipInvites";
+import {
+  storePendingInviteToken,
+  tryCompleteAuthenticatedInviteRedemption,
+} from "../lib/membershipInviteRedemption";
 import {
   establishInviteSignupSession,
   mapInviteSignupCompletionError,
@@ -82,6 +85,31 @@ export function InviteSignup() {
   }, [token]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !token.trim()) return;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN" || !session?.user?.email || !invite) return;
+
+      const sessionEmail = session.user.email.trim().toLowerCase();
+      if (sessionEmail !== invite.email.trim().toLowerCase()) return;
+
+      void (async () => {
+        const result = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+        if (!result.completed) return;
+
+        clearLegacySharedProfileExtras();
+        navigate("/member-portal", { replace: true });
+      })();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [invite, navigate, token]);
+
+  useEffect(() => {
     let active = true;
 
     async function redeemInviteForExistingSession() {
@@ -96,8 +124,15 @@ export function InviteSignup() {
       const sessionEmail = session.user.email.trim().toLowerCase();
       if (sessionEmail !== invite.email.trim().toLowerCase()) return;
 
-      const { error: completeError } = await completeMembershipInvite(token);
-      if (!active || completeError) return;
+      const result = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+      if (!active) return;
+
+      if (!result.completed) {
+        if (result.error && import.meta.env.DEV) {
+          console.error("[InviteSignup] invite redemption failed", result.error);
+        }
+        return;
+      }
 
       clearLegacySharedProfileExtras();
       navigate("/member-portal", { replace: true });
@@ -154,6 +189,7 @@ export function InviteSignup() {
     }
 
     setIsSubmitting(true);
+    storePendingInviteToken(token);
 
     try {
       const authResult = await establishInviteSignupSession(
@@ -163,9 +199,9 @@ export function InviteSignup() {
       );
 
       if (authResult.status === "session") {
-        const { error: completeError } = await completeMembershipInvite(token);
-        if (completeError) {
-          setSubmitError(mapInviteSignupCompletionError(completeError));
+        const redemption = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+        if (!redemption.completed) {
+          setSubmitError(mapInviteSignupCompletionError(redemption.error));
           return;
         }
 
