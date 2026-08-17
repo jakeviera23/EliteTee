@@ -1,10 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  completeMembershipInvite,
   fetchMembershipInviteByToken,
   type MembershipInvitePreview,
 } from "../lib/membershipInvites";
+import {
+  storePendingInviteToken,
+  tryCompleteAuthenticatedInviteRedemption,
+} from "../lib/membershipInviteRedemption";
 import {
   establishInviteSignupSession,
   mapInviteSignupCompletionError,
@@ -13,6 +16,7 @@ import {
   validateInviteSignupForm,
   type InviteSignupUiState,
 } from "../lib/inviteSignupFlow";
+import { getEmailRedirectTo } from "../lib/siteUrl";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
   clearLegacySharedProfileExtras,
@@ -81,6 +85,67 @@ export function InviteSignup() {
     };
   }, [token]);
 
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !token.trim()) return;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN" || !session?.user?.email || !invite) return;
+
+      const sessionEmail = session.user.email.trim().toLowerCase();
+      if (sessionEmail !== invite.email.trim().toLowerCase()) return;
+
+      void (async () => {
+        const result = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+        if (!result.completed) return;
+
+        clearLegacySharedProfileExtras();
+        navigate("/member-portal", { replace: true });
+      })();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [invite, navigate, token]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function redeemInviteForExistingSession() {
+      if (!invite || !token.trim() || !isSupabaseConfigured || !supabase) return;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!active || !session?.user?.email) return;
+
+      const sessionEmail = session.user.email.trim().toLowerCase();
+      if (sessionEmail !== invite.email.trim().toLowerCase()) return;
+
+      const result = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+      if (!active) return;
+
+      if (!result.completed) {
+        if (result.error && import.meta.env.DEV) {
+          console.error("[InviteSignup] invite redemption failed", result.error);
+        }
+        return;
+      }
+
+      clearLegacySharedProfileExtras();
+      navigate("/member-portal", { replace: true });
+    }
+
+    void redeemInviteForExistingSession();
+
+    return () => {
+      active = false;
+    };
+  }, [invite, navigate, token]);
+
   async function handleResendVerification() {
     if (!invite || !supabase || isResending) return;
 
@@ -89,7 +154,9 @@ export function InviteSignup() {
     setIsResending(true);
 
     try {
-      const result = await resendInviteSignupVerification(supabase.auth, invite.email);
+      const result = await resendInviteSignupVerification(supabase.auth, invite.email, {
+        emailRedirectTo: getEmailRedirectTo(),
+      });
       if (result.ok) {
         setSubmitInfo(result.message);
       } else {
@@ -125,18 +192,20 @@ export function InviteSignup() {
     }
 
     setIsSubmitting(true);
+    storePendingInviteToken(token);
 
     try {
       const authResult = await establishInviteSignupSession(
         supabase.auth,
         validation.normalizedEmail,
         password,
+        { emailRedirectTo: getEmailRedirectTo() },
       );
 
       if (authResult.status === "session") {
-        const { error: completeError } = await completeMembershipInvite(token);
-        if (completeError) {
-          setSubmitError(mapInviteSignupCompletionError(completeError));
+        const redemption = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+        if (!redemption.completed) {
+          setSubmitError(mapInviteSignupCompletionError(redemption.error));
           return;
         }
 
@@ -263,8 +332,9 @@ export function InviteSignup() {
                   </div>
 
                   <p className="invite-note">
-                    Do not create another account with the same email. After your address is verified,
-                    sign in to finish redeeming this invitation.
+                    Do not create another account with the same email. The confirmation link opens
+                    EliteTee and finishes your invitation. If that link has expired, sign in with the
+                    password you just created.
                   </p>
                 </div>
               ) : (

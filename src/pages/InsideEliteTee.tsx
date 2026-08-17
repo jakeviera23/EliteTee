@@ -13,6 +13,8 @@ import {
   whyEliteTee,
 } from "../data/insidePreview";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { tryCompleteAuthenticatedInviteRedemption } from "../lib/membershipInviteRedemption";
+import { getEmailRedirectTo } from "../lib/siteUrl";
 import "../inside-elitetee.css";
 
 function LockIcon() {
@@ -60,14 +62,116 @@ function InsideTopNav() {
   );
 }
 
+type LoginLocationState = {
+  recoveryVerified?: boolean;
+  authError?: string;
+};
+
 export function InsideEliteTee() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const loginState = (location.state as LoginLocationState | null) ?? null;
   const [activeNav, setActiveNav] = useState("society");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(loginState?.authError ?? null);
+  const [accessMessage, setAccessMessage] = useState<string | null>(null);
+  const [accessMode, setAccessMode] = useState<
+    "sign-in" | "request-reset" | "validating-recovery" | "set-password"
+  >(
+    () =>
+      loginState?.recoveryVerified
+        ? "set-password"
+        : new URLSearchParams(window.location.search).get("recovery") === "1"
+          ? "validating-recovery"
+          : "sign-in",
+  );
+  const [recoverySessionVerified, setRecoverySessionVerified] = useState(
+    () => Boolean(loginState?.recoveryVerified),
+  );
   const [isSigningIn, setIsSigningIn] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) {
+      if (new URLSearchParams(window.location.search).get("recovery") === "1") {
+        setAccessMode("request-reset");
+        setLoginError("Password recovery is temporarily unavailable. Please contact membership@elitetee.club.");
+      }
+      return;
+    }
+
+    if (loginState?.recoveryVerified) {
+      setRecoverySessionVerified(true);
+      setAccessMode("set-password");
+      setLoginError(null);
+      return;
+    }
+
+    if (loginState?.authError) {
+      setLoginError(loginState.authError);
+    }
+
+    let active = true;
+    const expectsRecovery = new URLSearchParams(window.location.search).get("recovery") === "1";
+    let recoveryValidated = loginState?.recoveryVerified ?? false;
+
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+
+      if (event === "PASSWORD_RECOVERY") {
+        recoveryValidated = true;
+        setRecoverySessionVerified(true);
+        setAccessMode("set-password");
+        setLoginError(null);
+        return;
+      }
+
+      if (event === "SIGNED_IN" && session && !expectsRecovery && !loginState?.recoveryVerified) {
+        void (async () => {
+          await tryCompleteAuthenticatedInviteRedemption();
+          if (active) navigate("/member-portal", { replace: true });
+        })();
+      }
+    });
+
+    void supabase.auth.getSession().then(async ({ data: sessionData }) => {
+      if (!active) return;
+
+      if (expectsRecovery && sessionData.session) {
+        recoveryValidated = true;
+        setRecoverySessionVerified(true);
+        setAccessMode("set-password");
+        setLoginError(null);
+        return;
+      }
+
+      if (expectsRecovery) {
+        return;
+      }
+
+      if (sessionData.session) {
+        await tryCompleteAuthenticatedInviteRedemption();
+        if (active) navigate("/member-portal", { replace: true });
+      }
+    });
+
+    const validationTimer = expectsRecovery
+      ? window.setTimeout(() => {
+          if (!recoveryValidated) {
+            setLoginError("This recovery link is invalid or has expired. Request a new secure link.");
+            setAccessMode("request-reset");
+          }
+        }, 8000)
+      : null;
+
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+      if (validationTimer !== null) window.clearTimeout(validationTimer);
+    };
+  }, [loginState?.authError, loginState?.recoveryVerified, navigate]);
 
   async function handleSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,12 +187,17 @@ export function InsideEliteTee() {
 
     try {
       const response = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (response.error) {
-        setLoginError(response.error.message);
+        const isInvalidCredentials = /invalid login credentials/i.test(response.error.message);
+        setLoginError(
+          isInvalidCredentials
+            ? "The email or password is incorrect. Please try again or reset your password."
+            : "Sign in could not be completed. Please try again.",
+        );
         return;
       }
 
@@ -97,9 +206,92 @@ export function InsideEliteTee() {
         return;
       }
 
+      await tryCompleteAuthenticatedInviteRedemption();
+
       navigate("/member-portal", { replace: true });
     } catch (error) {
-      setLoginError(error instanceof Error ? error.message : "Sign in failed. Please try again.");
+      if (import.meta.env.DEV) console.error("[InsideEliteTee] unexpected sign-in failure", error);
+      setLoginError("Sign in could not be completed. Please try again.");
+    } finally {
+      setIsSigningIn(false);
+    }
+  }
+
+  async function handleRequestReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginError(null);
+    setAccessMessage(null);
+
+    if (!isSupabaseConfigured || !supabase) {
+      setLoginError("Password recovery is temporarily unavailable. Please contact membership@elitetee.club.");
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: getEmailRedirectTo(),
+      });
+
+      if (error) {
+        setLoginError("We couldn't send a recovery email right now. Please try again shortly.");
+        return;
+      }
+
+      setAccessMessage(
+        "If an EliteTee account exists for that email, a secure password link is on its way.",
+      );
+    } catch {
+      setLoginError("We couldn't send a recovery email right now. Please try again shortly.");
+    } finally {
+      setIsSigningIn(false);
+    }
+  }
+
+  async function handleSetPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginError(null);
+    setAccessMessage(null);
+
+    if (!recoverySessionVerified) {
+      setLoginError("This recovery link is invalid or has expired. Request a new secure link.");
+      setAccessMode("request-reset");
+      return;
+    }
+
+    if (password.length < 8) {
+      setLoginError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setLoginError("Passwords do not match.");
+      return;
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      setLoginError("Password recovery is temporarily unavailable. Please contact membership@elitetee.club.");
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setLoginError(
+          "This recovery link is invalid or has expired. Request a new secure link and try again.",
+        );
+        return;
+      }
+
+      await supabase.auth.signOut();
+      setPassword("");
+      setConfirmPassword("");
+      setAccessMode("sign-in");
+      setAccessMessage("Password updated. Sign in with your new password.");
+      navigate("/login", { replace: true });
+    } catch {
+      setLoginError("We couldn't update your password. Request a new secure link and try again.");
     } finally {
       setIsSigningIn(false);
     }
@@ -132,15 +324,39 @@ export function InsideEliteTee() {
       <div className="inside-shell">
         <aside className="inside-sidebar" aria-label="Member sign in">
           <article id="member-access" className="inside-access-card">
-            <h2 className="inside-access-title">Sign In</h2>
-            <p className="inside-access-lead">{memberAccessLead}</p>
-            <form
+            <h2 className="inside-access-title">
+              {accessMode === "request-reset"
+                ? "Reset Password"
+                : accessMode === "validating-recovery"
+                  ? "Checking Secure Link"
+                : accessMode === "set-password"
+                  ? "Choose a New Password"
+                  : "Sign In"}
+            </h2>
+            <p className="inside-access-lead">
+              {accessMode === "request-reset"
+                ? "Enter your member email and we'll send a secure recovery link."
+                : accessMode === "validating-recovery"
+                  ? "Confirming this password-recovery request with EliteTee."
+                : accessMode === "set-password"
+                  ? "Use a strong password of at least 8 characters."
+                  : memberAccessLead}
+            </p>
+            {accessMode === "validating-recovery" ? (
+              <p className="inside-access-success" role="status">Validating secure link…</p>
+            ) : <form
               className="inside-access-form"
-              onSubmit={handleSignIn}
-              aria-label="Member sign in"
+              onSubmit={
+                accessMode === "request-reset"
+                  ? handleRequestReset
+                  : accessMode === "set-password"
+                    ? handleSetPassword
+                    : handleSignIn
+              }
+              aria-label={accessMode === "sign-in" ? "Member sign in" : "Password recovery"}
               aria-busy={isSigningIn}
             >
-              <label>
+              {accessMode !== "set-password" ? <label>
                 <span className="visually-hidden">Email address</span>
                 <input
                   type="email"
@@ -150,13 +366,13 @@ export function InsideEliteTee() {
                   onChange={(event) => setEmail(event.target.value)}
                   required
                 />
-              </label>
-              <label className="inside-password-field">
+              </label> : null}
+              {accessMode !== "request-reset" ? <label className="inside-password-field">
                 <span className="visually-hidden">Password</span>
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
-                  autoComplete="current-password"
+                    autoComplete={accessMode === "set-password" ? "new-password" : "current-password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
@@ -172,25 +388,78 @@ export function InsideEliteTee() {
                     <circle cx="10" cy="10" r="2.2" fill="none" stroke="currentColor" strokeWidth="1.2" />
                   </svg>
                 </button>
-              </label>
+              </label> : null}
+              {accessMode === "set-password" ? (
+                <label>
+                  <span className="visually-hidden">Confirm new password</span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    required
+                  />
+                </label>
+              ) : null}
               <button
                 type="submit"
                 className="inside-btn inside-btn--gold"
                 disabled={isSigningIn}
                 aria-live="polite"
               >
-                {isSigningIn ? "Signing in..." : "Sign In"}
+                {isSigningIn
+                  ? accessMode === "sign-in" ? "Signing in..." : "Working..."
+                  : accessMode === "request-reset"
+                    ? "Send Secure Link"
+                    : accessMode === "set-password"
+                      ? "Update Password"
+                      : "Sign In"}
               </button>
               {loginError ? (
                 <p className="inside-access-error" role="alert">
                   {loginError}
                 </p>
               ) : null}
-            </form>
+              {accessMessage ? (
+                <p className="inside-access-success" role="status">
+                  {accessMessage}
+                </p>
+              ) : null}
+            </form>}
             <p className="inside-access-footer">
-              <Link to="/#apply" className="inside-access-link">
-                Apply for Early Access
-              </Link>
+              {accessMode === "sign-in" ? (
+                <>
+                  <button
+                    type="button"
+                    className="inside-access-link inside-access-link--button"
+                    onClick={() => {
+                      setAccessMode("request-reset");
+                      setLoginError(null);
+                      setAccessMessage(null);
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                  <span aria-hidden="true"> · </span>
+                  <Link to="/#apply" className="inside-access-link">
+                    Apply for Early Access
+                  </Link>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="inside-access-link inside-access-link--button"
+                  onClick={() => {
+                    setAccessMode("sign-in");
+                    setLoginError(null);
+                    setAccessMessage(null);
+                    if (location.search) navigate("/login", { replace: true });
+                  }}
+                >
+                  Back to sign in
+                </button>
+              )}
             </p>
           </article>
 

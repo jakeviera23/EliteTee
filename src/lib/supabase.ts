@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { captureAuthCallbackFromLocation } from "./authCallbackParams";
 
 const PLACEHOLDER_VALUES = new Set([
   "undefined",
@@ -28,6 +29,10 @@ function isValidAnonKey(key: string): boolean {
   return key.length >= 20;
 }
 
+if (typeof window !== "undefined") {
+  captureAuthCallbackFromLocation(window.location.href);
+}
+
 const supabaseUrl = normalizeEnv(import.meta.env.VITE_SUPABASE_URL);
 const supabaseAnonKey = normalizeEnv(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -43,7 +48,14 @@ function createSupabaseClient(): SupabaseClient | null {
   }
 
   try {
-    return createClient(supabaseUrl, supabaseAnonKey);
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true,
+        flowType: "implicit",
+      },
+    });
   } catch (error) {
     console.warn("Supabase client failed to initialize. Member login is disabled.", error);
     return null;

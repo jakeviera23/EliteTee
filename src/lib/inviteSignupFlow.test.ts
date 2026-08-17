@@ -76,11 +76,21 @@ describe("establishInviteSignupSession", () => {
       })),
     });
 
-    const result = await establishInviteSignupSession(auth, "member@example.com", "password123");
+    const result = await establishInviteSignupSession(
+      auth,
+      "member@example.com",
+      "password123",
+      { emailRedirectTo: "https://www.elitetee.club/auth/callback" },
+    );
 
     expect(result).toEqual({
       status: "session",
       session: mockSession,
+    });
+    expect(auth.signUp).toHaveBeenCalledWith({
+      email: "member@example.com",
+      password: "password123",
+      options: { emailRedirectTo: "https://www.elitetee.club/auth/callback" },
     });
     expect(auth.signInWithPassword).not.toHaveBeenCalled();
   });
