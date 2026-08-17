@@ -117,7 +117,7 @@ describe("describeMemberOperationalState", () => {
     });
     expect(describeMemberOperationalState(member({ id: "2", user_id: null }))).toEqual({
       state: "awaiting_login",
-      label: "Awaiting login link",
+      label: "Awaiting account activation",
     });
     expect(
       describeMemberOperationalState(member({ id: "3", portal_access_enabled: false })),

@@ -318,7 +318,8 @@
   color: var(--admin-slate);
 }
 
-.et-admin-app-card-actions {
+.et-admin-app-card-actions,
+.et-admin-member-card-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--et-space-2);

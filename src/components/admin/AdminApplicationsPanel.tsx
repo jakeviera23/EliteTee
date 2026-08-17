@@ -17,6 +17,8 @@ type AdminApplicationsPanelProps = {
   onDecline: (applicationId: string) => void;
   onView: (application: MembershipApplicationRecord) => void;
   onCopyInvite: (application: MembershipApplicationRecord) => void;
+  onCopyInvitationEmail: (application: MembershipApplicationRecord) => void;
+  onViewInvitation: (application: MembershipApplicationRecord) => void;
   onRegenerateInvite: (applicationId: string) => void;
 };
 
@@ -34,6 +36,8 @@ export function AdminApplicationsPanel({
   onDecline,
   onView,
   onCopyInvite,
+  onCopyInvitationEmail,
+  onViewInvitation,
   onRegenerateInvite,
 }: AdminApplicationsPanelProps) {
   return (
@@ -118,6 +122,12 @@ export function AdminApplicationsPanel({
                   onView={() => onView(application)}
                   onCopyInvite={
                     inviteStatus === "ready" ? () => onCopyInvite(application) : undefined
+                  }
+                  onCopyInvitationEmail={
+                    inviteStatus === "ready" ? () => onCopyInvitationEmail(application) : undefined
+                  }
+                  onViewInvitation={
+                    inviteStatus === "ready" ? () => onViewInvitation(application) : undefined
                   }
                   onRegenerateInvite={
                     inviteStatus === "missing"

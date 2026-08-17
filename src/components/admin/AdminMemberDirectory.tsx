@@ -1,14 +1,23 @@
 import { adminCopy } from "../../data/adminCopy";
 import { describeMemberOperationalState } from "../../lib/adminDashboard";
+import {
+  findApprovedApplicationForMember,
+  memberHasRecoverableInvite,
+} from "../../lib/adminMemberInvites";
 import type { AdminMemberRow } from "../../lib/memberProfiles";
+import type { MembershipApplicationRecord } from "../../types/membershipApplication";
 
 type AdminMemberDirectoryProps = {
   members: AdminMemberRow[];
+  approvedApplications: MembershipApplicationRecord[];
   isLoading: boolean;
   search: string;
   filter: "all" | "portal" | "awaiting" | "unverified";
   onSearchChange: (value: string) => void;
   onFilterChange: (value: "all" | "portal" | "awaiting" | "unverified") => void;
+  onCopyInviteLink?: (application: MembershipApplicationRecord) => void;
+  onCopyInvitationEmail?: (application: MembershipApplicationRecord) => void;
+  onViewInvitation?: (application: MembershipApplicationRecord) => void;
 };
 
 function formatAdminDate(value: string) {
@@ -20,11 +29,15 @@ function formatAdminDate(value: string) {
 
 export function AdminMemberDirectory({
   members,
+  approvedApplications,
   isLoading,
   search,
   filter,
   onSearchChange,
   onFilterChange,
+  onCopyInviteLink,
+  onCopyInvitationEmail,
+  onViewInvitation,
 }: AdminMemberDirectoryProps) {
   return (
     <section className="et-admin-section" aria-labelledby="admin-member-directory-heading">
@@ -65,6 +78,8 @@ export function AdminMemberDirectory({
         <div className="et-admin-member-list">
           {members.map((member) => {
             const operational = describeMemberOperationalState(member);
+            const application = findApprovedApplicationForMember(member, approvedApplications);
+            const recoverableInvite = memberHasRecoverableInvite(member, application);
             return (
               <article key={member.id} className="et-admin-member-card">
                 <header className="et-admin-member-card-head">
@@ -107,6 +122,38 @@ export function AdminMemberDirectory({
                 </dl>
 
                 <p className="et-admin-member-card-email">{member.email}</p>
+
+                {recoverableInvite && application ? (
+                  <div className="et-admin-member-card-actions">
+                    {onViewInvitation ? (
+                      <button
+                        type="button"
+                        className="et-btn et-btn--secondary"
+                        onClick={() => onViewInvitation(application)}
+                      >
+                        {adminCopy.members.viewInvitation}
+                      </button>
+                    ) : null}
+                    {onCopyInviteLink ? (
+                      <button
+                        type="button"
+                        className="et-btn et-btn--forest"
+                        onClick={() => onCopyInviteLink(application)}
+                      >
+                        {adminCopy.members.copyInviteLink}
+                      </button>
+                    ) : null}
+                    {onCopyInvitationEmail ? (
+                      <button
+                        type="button"
+                        className="et-btn et-btn--secondary"
+                        onClick={() => onCopyInvitationEmail(application)}
+                      >
+                        {adminCopy.members.copyInvitationEmail}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </article>
             );
           })}

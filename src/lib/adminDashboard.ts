@@ -96,7 +96,7 @@ export function describeMemberOperationalState(member: AdminMemberRow): {
   }
 
   if (!member.user_id) {
-    return { state: "awaiting_login", label: "Awaiting login link" };
+    return { state: "awaiting_login", label: "Awaiting account activation" };
   }
 
   if (!member.portal_access_enabled) {

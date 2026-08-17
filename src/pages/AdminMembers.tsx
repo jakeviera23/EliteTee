@@ -19,6 +19,7 @@ import {
   filterAdminMembers,
   logAdminQueryError,
 } from "../lib/adminDashboard";
+import { getInvitationEmailDraftForApplication } from "../lib/adminMemberInvites";
 import { fetchAiAdminDashboard } from "../lib/askEliteTee";
 import {
   approveMembershipApplication,
@@ -313,7 +314,9 @@ export function AdminMembers() {
     if (data) {
       setInvitationDraft(data);
       setApplicationMessage(
-        `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
+        data.autoLinkedExistingAuthUser
+          ? `${data.foundingMemberNumber} approved. Existing EliteTee login linked — portal access is active.`
+          : `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
       );
     }
 
@@ -334,6 +337,45 @@ export function AdminMembers() {
     }
 
     setApplicationMessage(`Invite link copied for ${application.full_name}.`);
+    setApplicationError(null);
+  }
+
+  function handleViewInvitation(application: MembershipApplicationRecord) {
+    const invitationLink = getApplicationInviteLink(application);
+    const invitationEmailDraft = getInvitationEmailDraftForApplication(application);
+
+    if (!invitationLink || !invitationEmailDraft) {
+      setApplicationError("Invitation materials are unavailable for this member.");
+      return;
+    }
+
+    setInvitationDraft({
+      application,
+      invitationEmailDraft,
+      foundingMemberNumber: application.founding_member_number ?? "Founding Member",
+      memberProfileId: application.member_profile_id,
+      invitationLink,
+      inviteToken: application.invite_token ?? "",
+      autoLinkedExistingAuthUser: false,
+    });
+    setViewingApplication(null);
+    setApplicationError(null);
+  }
+
+  async function handleCopyInvitationEmail(application: MembershipApplicationRecord) {
+    const invitationEmailDraft = getInvitationEmailDraftForApplication(application);
+    if (!invitationEmailDraft) {
+      setApplicationError("Invitation email draft unavailable for this member.");
+      return;
+    }
+
+    const { error } = await copyInviteLinkToClipboard(invitationEmailDraft);
+    if (error) {
+      setApplicationError(error.message);
+      return;
+    }
+
+    setApplicationMessage(`Invitation email copied for ${application.full_name}.`);
     setApplicationError(null);
   }
 
@@ -386,7 +428,7 @@ export function AdminMembers() {
     <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
       <header className="portal-top portal-chrome">
         <Link to="/member-portal" className="portal-logo-link" aria-label="EliteTee member portal">
-          <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
+          <span className="portal-logo-mark" aria-hidden="true" />
         </Link>
         <button
           type="button"
@@ -422,13 +464,15 @@ export function AdminMembers() {
           </div>
         ) : null}
 
-        {(activeTab === "applications" || activeTab === "invites") && applicationMessage ? (
+        {(activeTab === "applications" || activeTab === "invites" || activeTab === "members") &&
+        applicationMessage ? (
           <p className="et-admin-alert et-admin-alert--success" role="status">
             {applicationMessage}
           </p>
         ) : null}
 
-        {(activeTab === "applications" || activeTab === "invites") && applicationError ? (
+        {(activeTab === "applications" || activeTab === "invites" || activeTab === "members") &&
+        applicationError ? (
           <p className="et-admin-alert et-admin-alert--error" role="alert">
             {applicationError}
           </p>
@@ -453,6 +497,8 @@ export function AdminMembers() {
             onDecline={(applicationId) => void handleDeclineApplication(applicationId)}
             onView={setViewingApplication}
             onCopyInvite={(application) => void handleCopyInviteLink(application)}
+            onCopyInvitationEmail={(application) => void handleCopyInvitationEmail(application)}
+            onViewInvitation={handleViewInvitation}
             onRegenerateInvite={(applicationId) => void handleRegenerateInviteLink(applicationId)}
           />
         ) : null}
@@ -464,6 +510,8 @@ export function AdminMembers() {
             inviteActionId={inviteActionId}
             onView={setViewingApplication}
             onCopyInvite={(application) => void handleCopyInviteLink(application)}
+            onCopyInvitationEmail={(application) => void handleCopyInvitationEmail(application)}
+            onViewInvitation={handleViewInvitation}
             onRegenerateInvite={(applicationId) => void handleRegenerateInviteLink(applicationId)}
           />
         ) : null}
@@ -472,11 +520,15 @@ export function AdminMembers() {
           <div className="et-admin-stack">
             <AdminMemberDirectory
               members={filteredMembers}
+              approvedApplications={approvedApplications}
               isLoading={isLoadingDashboard}
               search={memberSearch}
               filter={memberFilter}
               onSearchChange={setMemberSearch}
               onFilterChange={setMemberFilter}
+              onCopyInviteLink={(application) => void handleCopyInviteLink(application)}
+              onCopyInvitationEmail={(application) => void handleCopyInvitationEmail(application)}
+              onViewInvitation={handleViewInvitation}
             />
 
             <section className="et-admin-section" aria-labelledby="create-member-heading">
@@ -767,6 +819,7 @@ export function AdminMembers() {
               ? (applicationId) => void handleRegenerateInviteLink(applicationId)
               : undefined
           }
+          onViewInvitation={handleViewInvitation}
           isRegeneratingInvite={inviteActionId === viewingApplication.id}
         />
       ) : null}

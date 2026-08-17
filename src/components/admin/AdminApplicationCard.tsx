@@ -11,6 +11,8 @@ type AdminApplicationCardProps = {
   onDecline?: () => void;
   onView: () => void;
   onCopyInvite?: () => void;
+  onCopyInvitationEmail?: () => void;
+  onViewInvitation?: () => void;
   onRegenerateInvite?: () => void;
   inviteStatus?: "ready" | "redeemed" | "missing";
 };
@@ -31,6 +33,8 @@ export function AdminApplicationCard({
   onDecline,
   onView,
   onCopyInvite,
+  onCopyInvitationEmail,
+  onViewInvitation,
   onRegenerateInvite,
   inviteStatus,
 }: AdminApplicationCardProps) {
@@ -139,6 +143,18 @@ export function AdminApplicationCard({
         {variant === "approved" && inviteStatus === "ready" && onCopyInvite ? (
           <button type="button" className="et-btn et-btn--forest" onClick={onCopyInvite}>
             {adminCopy.invites.copyLink}
+          </button>
+        ) : null}
+
+        {variant === "approved" && inviteStatus === "ready" && onCopyInvitationEmail ? (
+          <button type="button" className="et-btn et-btn--secondary" onClick={onCopyInvitationEmail}>
+            {adminCopy.invites.copyInvitationEmail}
+          </button>
+        ) : null}
+
+        {variant === "approved" && inviteStatus === "ready" && onViewInvitation ? (
+          <button type="button" className="et-btn et-btn--secondary" onClick={onViewInvitation}>
+            {adminCopy.invites.viewInvitation}
           </button>
         ) : null}
 

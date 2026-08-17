@@ -19,6 +19,10 @@ import {
 import { getEmailRedirectTo } from "../lib/siteUrl";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import {
+  inviteSignupSessionConflict,
+  inviteSignupSessionConflictMessage,
+} from "../lib/inviteSignupSession";
+import {
   clearLegacySharedProfileExtras,
 } from "../lib/portalProfileExtras";
 import { fetchOwnMemberProfile, memberProfileToSelfUpdate, updateOwnMemberProfile } from "../lib/memberProfiles";
@@ -38,6 +42,13 @@ export function InviteSignup() {
   const [uiState, setUiState] = useState<InviteSignupUiState>({ kind: "form" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [activeSessionEmail, setActiveSessionEmail] = useState<string | null>(null);
+  const [isSigningOutSession, setIsSigningOutSession] = useState(false);
+
+  const sessionConflict =
+    invite && activeSessionEmail
+      ? inviteSignupSessionConflict(activeSessionEmail, invite.email)
+      : null;
 
   useEffect(() => {
     let active = true;
@@ -84,6 +95,36 @@ export function InviteSignup() {
       active = false;
     };
   }, [token]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    const authClient = supabase;
+    let active = true;
+
+    async function loadActiveSessionEmail() {
+      const {
+        data: { session },
+      } = await authClient.auth.getSession();
+
+      if (!active) return;
+      setActiveSessionEmail(session?.user?.email?.trim() || null);
+    }
+
+    void loadActiveSessionEmail();
+
+    const {
+      data: { subscription },
+    } = authClient.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setActiveSessionEmail(session?.user?.email?.trim() || null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase || !token.trim()) return;
@@ -146,6 +187,23 @@ export function InviteSignup() {
     };
   }, [invite, navigate, token]);
 
+  async function handleSignOutAndContinue() {
+    if (!supabase || isSigningOutSession) return;
+
+    setSubmitError(null);
+    setSubmitInfo(null);
+    setIsSigningOutSession(true);
+
+    try {
+      await supabase.auth.signOut();
+      setActiveSessionEmail(null);
+    } catch {
+      setSubmitError("We couldn't sign you out. Please try again.");
+    } finally {
+      setIsSigningOutSession(false);
+    }
+  }
+
   async function handleResendVerification() {
     if (!invite || !supabase || isResending) return;
 
@@ -173,6 +231,16 @@ export function InviteSignup() {
     setSubmitInfo(null);
 
     if (!invite || uiState.kind !== "form") return;
+
+    if (sessionConflict) {
+      setSubmitError(
+        inviteSignupSessionConflictMessage(
+          sessionConflict.signedInEmail,
+          sessionConflict.inviteEmail,
+        ),
+      );
+      return;
+    }
 
     if (!isSupabaseConfigured || !supabase) {
       setSubmitError("Account setup is temporarily unavailable. Please try again later.");
@@ -335,6 +403,37 @@ export function InviteSignup() {
                     Do not create another account with the same email. The confirmation link opens
                     EliteTee and finishes your invitation. If that link has expired, sign in with the
                     password you just created.
+                  </p>
+                </div>
+              ) : sessionConflict ? (
+                <div className="invite-followup">
+                  <p className="invite-info" role="status">
+                    {inviteSignupSessionConflictMessage(
+                      sessionConflict.signedInEmail,
+                      sessionConflict.inviteEmail,
+                    )}
+                  </p>
+
+                  {submitError ? (
+                    <p className="invite-error" role="alert">
+                      {submitError}
+                    </p>
+                  ) : null}
+
+                  <div className="invite-actions">
+                    <button
+                      type="button"
+                      className="portal-btn portal-btn--gold invite-action-button"
+                      onClick={() => void handleSignOutAndContinue()}
+                      disabled={isSigningOutSession}
+                    >
+                      {isSigningOutSession ? "Signing out..." : "Sign out and continue"}
+                    </button>
+                  </div>
+
+                  <p className="invite-note">
+                    This private invite is for {invite.email}. Sign out of your current EliteTee
+                    account first, then create the invited member login here.
                   </p>
                 </div>
               ) : (

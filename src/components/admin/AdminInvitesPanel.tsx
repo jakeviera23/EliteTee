@@ -9,6 +9,8 @@ type AdminInvitesPanelProps = {
   inviteActionId: string | null;
   onView: (application: MembershipApplicationRecord) => void;
   onCopyInvite: (application: MembershipApplicationRecord) => void;
+  onCopyInvitationEmail: (application: MembershipApplicationRecord) => void;
+  onViewInvitation: (application: MembershipApplicationRecord) => void;
   onRegenerateInvite: (applicationId: string) => void;
 };
 
@@ -20,6 +22,8 @@ function InviteGroup({
   inviteActionId,
   onView,
   onCopyInvite,
+  onCopyInvitationEmail,
+  onViewInvitation,
   onRegenerateInvite,
 }: {
   title: string;
@@ -29,6 +33,8 @@ function InviteGroup({
   inviteActionId: string | null;
   onView: (application: MembershipApplicationRecord) => void;
   onCopyInvite: (application: MembershipApplicationRecord) => void;
+  onCopyInvitationEmail: (application: MembershipApplicationRecord) => void;
+  onViewInvitation: (application: MembershipApplicationRecord) => void;
   onRegenerateInvite: (applicationId: string) => void;
 }) {
   return (
@@ -56,6 +62,12 @@ function InviteGroup({
                 onCopyInvite={
                   inviteStatus === "ready" ? () => onCopyInvite(application) : undefined
                 }
+                onCopyInvitationEmail={
+                  inviteStatus === "ready" ? () => onCopyInvitationEmail(application) : undefined
+                }
+                onViewInvitation={
+                  inviteStatus === "ready" ? () => onViewInvitation(application) : undefined
+                }
                 onRegenerateInvite={
                   inviteStatus === "missing"
                     ? () => onRegenerateInvite(application.id)
@@ -76,6 +88,8 @@ export function AdminInvitesPanel({
   inviteActionId,
   onView,
   onCopyInvite,
+  onCopyInvitationEmail,
+  onViewInvitation,
   onRegenerateInvite,
 }: AdminInvitesPanelProps) {
   const awaiting = approvedApplications.filter(
@@ -107,6 +121,8 @@ export function AdminInvitesPanel({
         inviteActionId={inviteActionId}
         onView={onView}
         onCopyInvite={onCopyInvite}
+        onCopyInvitationEmail={onCopyInvitationEmail}
+        onViewInvitation={onViewInvitation}
         onRegenerateInvite={onRegenerateInvite}
       />
 
@@ -118,6 +134,8 @@ export function AdminInvitesPanel({
         inviteActionId={inviteActionId}
         onView={onView}
         onCopyInvite={onCopyInvite}
+        onCopyInvitationEmail={onCopyInvitationEmail}
+        onViewInvitation={onViewInvitation}
         onRegenerateInvite={onRegenerateInvite}
       />
 
@@ -130,6 +148,8 @@ export function AdminInvitesPanel({
           inviteActionId={inviteActionId}
           onView={onView}
           onCopyInvite={onCopyInvite}
+          onCopyInvitationEmail={onCopyInvitationEmail}
+          onViewInvitation={onViewInvitation}
           onRegenerateInvite={onRegenerateInvite}
         />
       ) : null}

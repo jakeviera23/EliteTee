@@ -1,4 +1,5 @@
 import type { MembershipApplicationRecord } from "../../types/membershipApplication";
+import { getInvitationEmailDraftForApplication } from "../../lib/adminMemberInvites";
 import {
   copyInviteLinkToClipboard,
   getApplicationInviteLink,
@@ -8,6 +9,7 @@ type ApplicationViewModalProps = {
   application: MembershipApplicationRecord;
   onClose: () => void;
   onRegenerateInvite?: (applicationId: string) => void;
+  onViewInvitation?: (application: MembershipApplicationRecord) => void;
   isRegeneratingInvite?: boolean;
 };
 
@@ -28,15 +30,22 @@ export function ApplicationViewModal({
   application,
   onClose,
   onRegenerateInvite,
+  onViewInvitation,
   isRegeneratingInvite = false,
 }: ApplicationViewModalProps) {
   const isApproved = application.status === "approved";
   const inviteLink = isApproved ? getApplicationInviteLink(application) : null;
   const inviteRedeemed = Boolean(application.invite_redeemed_at);
+  const invitationEmailDraft = inviteLink ? getInvitationEmailDraftForApplication(application) : null;
 
   async function handleCopyInviteLink() {
     if (!inviteLink) return;
     await copyInviteLinkToClipboard(inviteLink);
+  }
+
+  async function handleCopyInvitationEmail() {
+    if (!invitationEmailDraft) return;
+    await copyInviteLinkToClipboard(invitationEmailDraft);
   }
 
   return (
@@ -137,6 +146,24 @@ export function ApplicationViewModal({
                   >
                     Copy invite link
                   </button>
+                  {invitationEmailDraft ? (
+                    <button
+                      type="button"
+                      className="et-btn et-btn--secondary"
+                      onClick={() => void handleCopyInvitationEmail()}
+                    >
+                      Copy invitation email
+                    </button>
+                  ) : null}
+                  {onViewInvitation ? (
+                    <button
+                      type="button"
+                      className="et-btn et-btn--forest"
+                      onClick={() => onViewInvitation(application)}
+                    >
+                      View invitation
+                    </button>
+                  ) : null}
                 </div>
               </>
             ) : (
