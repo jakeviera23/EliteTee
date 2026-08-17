@@ -4,7 +4,7 @@ export const INVITE_SIGNUP_EMAIL_RATE_LIMIT_MESSAGE =
   "Your account was created, but we could not send the verification email yet. Please wait a little while before requesting another email.";
 
 export const INVITE_SIGNUP_PENDING_VERIFICATION_MESSAGE =
-  "Your account was created. Check your email to confirm your address, then sign in to finish setting up your membership.";
+  "Your account was created. Open the confirmation email we just sent — that link will take you into EliteTee.";
 
 export const INVITE_SIGNUP_ACCOUNT_EXISTS_MESSAGE =
   "An account already exists for this email. Sign in instead, or resend the verification email if you have not confirmed your address yet.";
@@ -66,6 +66,7 @@ export type InviteSignupAuthClient = {
   signUp: (params: {
     email: string;
     password: string;
+    options?: { emailRedirectTo?: string };
   }) => Promise<{
     data: { user: { id: string } | null; session: Session | null };
     error: AuthErrorLike | null;
@@ -80,6 +81,7 @@ export type InviteSignupAuthClient = {
   resend: (params: {
     type: "signup";
     email: string;
+    options?: { emailRedirectTo?: string };
   }) => Promise<{
     error: AuthErrorLike | null;
   }>;
@@ -221,8 +223,15 @@ export async function establishInviteSignupSession(
   auth: InviteSignupAuthClient,
   email: string,
   password: string,
+  options?: { emailRedirectTo?: string },
 ): Promise<InviteSignupAuthResult> {
-  const signUp = await auth.signUp({ email, password });
+  const signUp = await auth.signUp({
+    email,
+    password,
+    options: options?.emailRedirectTo
+      ? { emailRedirectTo: options.emailRedirectTo }
+      : undefined,
+  });
   const userCreated = Boolean(signUp.data.user);
 
   if (signUp.data.session) {
@@ -300,10 +309,14 @@ export async function establishInviteSignupSession(
 export async function resendInviteSignupVerification(
   auth: Pick<InviteSignupAuthClient, "resend">,
   email: string,
+  options?: { emailRedirectTo?: string },
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
   const { error } = await auth.resend({
     type: "signup",
     email,
+    options: options?.emailRedirectTo
+      ? { emailRedirectTo: options.emailRedirectTo }
+      : undefined,
   });
 
   if (error) {

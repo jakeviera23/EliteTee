@@ -1,4 +1,5 @@
 import type { MembershipApplicationRecord } from "../types/membershipApplication";
+import { getPublicSiteUrl } from "./siteUrl";
 import { supabase } from "./supabase";
 
 export type MembershipInvitePreview = {
@@ -26,10 +27,7 @@ export function generateInviteToken(): string {
 }
 
 export function buildInviteLink(token: string): string {
-  const configuredBase = (import.meta.env.VITE_SITE_URL ?? "").trim().replace(/\/$/, "");
-  const base = configuredBase || "https://www.elitetee.club";
-
-  return `${base}/invite/${token}`;
+  return `${getPublicSiteUrl()}/invite/${token}`;
 }
 
 function normalizeInvitePreview(value: unknown): MembershipInvitePreview | null {
@@ -109,6 +107,20 @@ export async function completeMembershipInvite(token: string) {
   const { data, error } = await supabase.rpc("complete_membership_invite", {
     p_token: token.trim(),
   });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export async function completePendingMembershipInviteForUser() {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("complete_pending_membership_invite_for_user");
 
   if (error) {
     return { data: null, error };

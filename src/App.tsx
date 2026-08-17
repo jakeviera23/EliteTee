@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { AuthEntryHandler } from "./components/AuthEntryHandler";
 import { PortalToastProvider } from "./components/member-portal/PortalToastProvider";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
@@ -11,6 +12,7 @@ import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
 import { InviteSignup } from "./pages/InviteSignup";
+import { AuthCallback } from "./pages/AuthCallback";
 import { NotFound } from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -52,12 +54,14 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Routes>
+      <AuthEntryHandler>
+        <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/founder" element={<Navigate to="/about" replace />} />
       <Route path="/login" element={<InsideEliteTee />} />
       <Route path="/inside" element={<InsideEliteTee />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/invite/:token" element={<InviteSignup />} />
       <Route
         path="/members/:userId"
@@ -102,7 +106,8 @@ export default function App() {
       <Route path="/directory" element={<MemberDirectory />} />
       <Route path="/request-introduction" element={<RequestIntroductionPage />} />
       <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </AuthEntryHandler>
     </>
   );
 }
