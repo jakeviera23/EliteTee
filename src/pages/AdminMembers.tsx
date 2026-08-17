@@ -314,9 +314,7 @@ export function AdminMembers() {
     if (data) {
       setInvitationDraft(data);
       setApplicationMessage(
-        data.autoLinkedExistingAuthUser
-          ? `${data.foundingMemberNumber} approved. Existing EliteTee login linked — portal access is active.`
-          : `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
+        `${data.foundingMemberNumber} approved. Member profile created — review the invitation before sending.`,
       );
     }
 
@@ -356,7 +354,6 @@ export function AdminMembers() {
       memberProfileId: application.member_profile_id,
       invitationLink,
       inviteToken: application.invite_token ?? "",
-      autoLinkedExistingAuthUser: false,
     });
     setViewingApplication(null);
     setApplicationError(null);
@@ -428,7 +425,7 @@ export function AdminMembers() {
     <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
       <header className="portal-top portal-chrome">
         <Link to="/member-portal" className="portal-logo-link" aria-label="EliteTee member portal">
-          <span className="portal-logo-mark" aria-hidden="true" />
+          <span className="inside-logo-mark portal-logo-mark" aria-hidden="true" />
         </Link>
         <button
           type="button"
