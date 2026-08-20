@@ -1,3 +1,5 @@
+import { attachPhotosToRounds } from "./courseRoundPhotos";
+import { attachFeedPostIds } from "./courseRounds";
 import { fetchOwnProfile, getCurrentUserId } from "./members";
 import { fetchMemberFeedPostsForUser } from "./feed";
 import { resolveMemberProfileMedia } from "./memberProfileMedia";
@@ -140,13 +142,19 @@ async function fetchMemberCourseRoundsForUser(userId: string) {
     );
   }
 
-  return {
-    data: rounds.map((round) => ({
-      ...round,
-      course_slug: round.golf_course_id ? slugByCourseId.get(round.golf_course_id) : undefined,
-    })),
-    error: null,
-  };
+  const withSlugs = rounds.map((round) => ({
+    ...round,
+    course_slug: round.golf_course_id ? slugByCourseId.get(round.golf_course_id) : undefined,
+  }));
+
+  try {
+    const withFeedPosts = await attachFeedPostIds(withSlugs);
+    const withPhotos = await attachPhotosToRounds(withFeedPosts);
+    return { data: withPhotos, error: null };
+  } catch (hydrateError) {
+    console.warn("[memberProfile] round hydration failed", hydrateError);
+    return { data: withSlugs, error: null };
+  }
 }
 
 async function loadMemberRecord(userId: string) {
@@ -203,24 +211,22 @@ export async function fetchMemberProfileSecondary(
     { data: courseRounds },
     { count: feedPostCount },
     { count: connectionCount },
+    bucketResult,
   ] = await Promise.all([
     fetchMemberCourseRoundsForUser(userId),
     fetchMemberFeedPostCount(userId),
     isOwnProfile ? fetchIntroductionConnectionCount(userId) : Promise.resolve({ count: 0 }),
+    isOwnProfile && member.bucket_list_course_ids.length > 0
+      ? loadBucketListCourseSummaries(member.bucket_list_course_ids)
+      : Promise.resolve({ data: [] as BucketListCourseSummary[], error: null }),
   ]);
-
-  let bucketListCourses: BucketListCourseSummary[] = [];
-  if (isOwnProfile && member.bucket_list_course_ids.length > 0) {
-    const bucketResult = await loadBucketListCourseSummaries(member.bucket_list_course_ids);
-    bucketListCourses = bucketResult.data;
-  }
 
   return {
     data: {
       courseRounds,
       feedPostCount: feedPostCount ?? 0,
       connectionCount: connectionCount ?? 0,
-      bucketListCourses,
+      bucketListCourses: bucketResult.data,
     },
     error: null,
   };

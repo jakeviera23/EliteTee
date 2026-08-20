@@ -60,7 +60,7 @@ async function attachMemberNames(rounds: MobileCourseRoundRecord[]) {
  * Resolve feed posts linked through member_feed_posts.member_course_round_id.
  * Legacy rounds without a published feed post remain without feed_post_id.
  */
-async function attachFeedPostIds(rounds: MobileCourseRoundRecord[]) {
+export async function attachFeedPostIds(rounds: MobileCourseRoundRecord[]) {
   if (rounds.length === 0) return rounds;
 
   const roundIds = [...new Set(rounds.map((round) => round.id).filter(Boolean))];

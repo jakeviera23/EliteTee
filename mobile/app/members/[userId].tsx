@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Children, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RoundReviewCard } from "@/components/courses/RoundReviewCard";
 import { FeedPostCard } from "@/components/feed/FeedPostCard";
 import { EliteTeeMark } from "@/components/brand/EliteTeeMark";
 import { ProfileCoverFallback } from "@/components/profile/ProfileCoverFallback";
@@ -36,11 +37,12 @@ import { useAuth } from "@/hooks/AuthProvider";
 import type { MobileFeedPost } from "@/types/feed";
 
 function ProfileSection({ title, children }: { title: string; children: ReactNode }) {
-  if (!children) return null;
+  const items = Children.toArray(children).filter(Boolean);
+  if (items.length === 0) return null;
   return (
     <Card>
       <SectionTitle>{title}</SectionTitle>
-      <View style={styles.sectionBody}>{children}</View>
+      <View style={styles.sectionBody}>{items}</View>
     </Card>
   );
 }
@@ -58,10 +60,16 @@ function TagList({ items }: { items: string[] }) {
   );
 }
 
+function firstParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0]?.trim() ?? "";
+  return value?.trim() ?? "";
+}
+
 export default function MemberProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const params = useLocalSearchParams<{ userId: string }>();
+  const userId = firstParam(params.userId);
   const [identity, setIdentity] = useState<MemberProfileIdentity | null>(() =>
     userId ? getSessionCacheStale<MemberProfileIdentity>(SESSION_CACHE_KEYS.profileIdentity(userId)) : null,
   );
@@ -76,7 +84,7 @@ export default function MemberProfileScreen() {
   const [loadingFeedPosts, setLoadingFeedPosts] = useState(() => recentFeedPosts.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwnProfile = user?.id === userId;
+  const isOwnProfile = Boolean(user?.id && userId && user.id === userId);
 
   useEffect(() => {
     if (!userId) return;
@@ -130,36 +138,42 @@ export default function MemberProfileScreen() {
         return;
       }
 
-      setIdentity(identityData);
-      setSessionCache(SESSION_CACHE_KEYS.profileIdentity(userId), identityData);
+      // Never surface email on profile screens.
+      const safeIdentity: MemberProfileIdentity = {
+        ...identityData,
+        member: { ...identityData.member, email: "" },
+      };
+
+      setIdentity(safeIdentity);
+      setSessionCache(SESSION_CACHE_KEYS.profileIdentity(userId), safeIdentity);
       setLoadingIdentity(false);
 
+      const own = user?.id === userId;
       perfStart("profile-secondary");
-      const { data: secondaryData, error: secondaryError } = await fetchMemberProfileSecondary(
-        userId,
-        identityData.member,
-        user?.id === userId,
-      );
+      const [secondaryResult, feedResult] = await Promise.all([
+        fetchMemberProfileSecondary(userId, safeIdentity.member, own),
+        fetchMemberProfileFeedPosts(userId, 5),
+      ]);
       perfEnd("profile-secondary", { cached: Boolean(cachedSecondary) });
 
       if (!active) return;
 
-      if (secondaryError || !secondaryData) {
-        setError(formatMobileError(secondaryError?.message ?? "Member profile unavailable."));
+      if (secondaryResult.error || !secondaryResult.data) {
+        setError(
+          formatMobileError(secondaryResult.error?.message ?? "Member profile unavailable."),
+        );
         setLoadingSecondary(false);
         setLoadingFeedPosts(false);
         return;
       }
 
-      setSecondary(secondaryData);
-      setSessionCache(SESSION_CACHE_KEYS.profileSecondary(userId), secondaryData);
+      setSecondary(secondaryResult.data);
+      setSessionCache(SESSION_CACHE_KEYS.profileSecondary(userId), secondaryResult.data);
       setLoadingSecondary(false);
 
-      const { data: feedPosts } = await fetchMemberProfileFeedPosts(userId, 3);
-      if (!active) return;
-      setRecentFeedPosts(feedPosts);
-      if (feedPosts.length > 0) {
-        setSessionCache(SESSION_CACHE_KEYS.profileFeedPosts(userId), feedPosts);
+      setRecentFeedPosts(feedResult.data);
+      if (feedResult.data.length > 0) {
+        setSessionCache(SESSION_CACHE_KEYS.profileFeedPosts(userId), feedResult.data);
       }
       setLoadingFeedPosts(false);
     })();
@@ -175,6 +189,7 @@ export default function MemberProfileScreen() {
   );
 
   const memberName = display?.name || identity?.member.full_name?.trim() || "";
+  const targetUserId = identity?.member.user_id?.trim() || userId;
 
   const stats = useMemo(
     () =>
@@ -195,6 +210,11 @@ export default function MemberProfileScreen() {
 
   const recentRounds = secondary?.courseRounds.slice(0, 3) ?? [];
   const showConnections = isOwnProfile && (stats?.connections ?? 0) > 0;
+  const regions = identity?.member.regions.filter(isMeaningfulDisplayValue) ?? [];
+  const hasGolfSection =
+    Boolean(display?.homeCourse) ||
+    (isOwnProfile && display?.handicap !== undefined) ||
+    (display?.favoriteCourses.length ?? 0) > 0;
 
   if (loadingIdentity && !identity) {
     return (
@@ -234,15 +254,19 @@ export default function MemberProfileScreen() {
       >
         <View style={styles.hero}>
           {identity.media.coverImageUrl ? (
-            <Image source={{ uri: identity.media.coverImageUrl }} style={styles.coverImage} />
+            <Image
+              source={{ uri: identity.media.coverImageUrl }}
+              style={styles.coverImage}
+              onError={() => undefined}
+            />
           ) : (
-            <ProfileCoverFallback height={140} />
+            <ProfileCoverFallback height={160} />
           )}
           <View style={styles.avatarWrap}>
             <MemberAvatar
               name={memberName}
               imageUrl={identity.media.avatarImageUrl ?? identity.member.club_logo_url}
-              size={84}
+              size={88}
               style={styles.avatar}
             />
           </View>
@@ -250,22 +274,36 @@ export default function MemberProfileScreen() {
 
         <View style={styles.identity}>
           {memberName ? <Text style={styles.name}>{memberName}</Text> : null}
-          {display.title ? <Text style={styles.title}>Industry · {display.title}</Text> : null}
-          {display.location ? <Text style={styles.meta}>{display.location}</Text> : null}
+          <View style={styles.badgeRow}>
+            {display.foundingMemberNumber ? (
+              <Text style={styles.founding}>Founding Member #{display.foundingMemberNumber}</Text>
+            ) : null}
+            {display.isVerified ? <Text style={styles.verified}>Verified</Text> : null}
+          </View>
+          {display.title ? <Text style={styles.title}>{display.title}</Text> : null}
           {display.homeCourse ? <Text style={styles.meta}>Home club · {display.homeCourse}</Text> : null}
-          {display.foundingMemberNumber ? (
-            <Text style={styles.founding}>Founding member #{display.foundingMemberNumber}</Text>
+          {display.location ? <Text style={styles.meta}>{display.location}</Text> : null}
+          {display.bio ? (
+            <Text style={styles.requestPreview} numberOfLines={3}>
+              Looking for · {display.bio}
+            </Text>
           ) : null}
         </View>
 
-        {!isOwnProfile ? (
+        {isOwnProfile ? (
+          <Button
+            label="Edit profile"
+            variant="secondary"
+            onPress={() => router.push("/(app)/profile/edit")}
+          />
+        ) : targetUserId ? (
           <View style={styles.actions}>
             <Button
               label="Message"
               onPress={() =>
                 router.push({
                   pathname: "/(app)/messages/[userId]",
-                  params: { userId: identity.member.user_id!, memberName },
+                  params: { userId: targetUserId, memberName },
                 })
               }
             />
@@ -276,7 +314,7 @@ export default function MemberProfileScreen() {
                 router.push({
                   pathname: "/introductions",
                   params: {
-                    targetUserId: identity.member.user_id!,
+                    targetUserId,
                     targetMemberName: memberName,
                     openComposer: "1",
                   },
@@ -317,24 +355,28 @@ export default function MemberProfileScreen() {
           </Card>
         ) : null}
 
-        {display.bio ? (
-          <ProfileSection title="Current request">
-            <Text style={styles.body}>{display.bio}</Text>
+        {hasGolfSection ? (
+          <ProfileSection title="Golf">
+            {display.homeCourse ? (
+              <Text style={styles.body}>Home club: {display.homeCourse}</Text>
+            ) : null}
+            {isOwnProfile && display.handicap !== undefined ? (
+              <Text style={styles.body}>Handicap: {display.handicap}</Text>
+            ) : null}
+            {display.favoriteCourses.length > 0 ? (
+              <>
+                <Text style={styles.subheading}>Favorite courses</Text>
+                <TagList items={display.favoriteCourses} />
+              </>
+            ) : null}
           </ProfileSection>
         ) : null}
 
-        <ProfileSection title="Golf">
-          {display.homeCourse ? <Text style={styles.body}>Home club: {display.homeCourse}</Text> : null}
-          {isOwnProfile && display.handicap !== undefined ? (
-            <Text style={styles.body}>Handicap: {display.handicap}</Text>
-          ) : null}
-          {display.favoriteCourses.length > 0 ? (
-            <>
-              <Text style={styles.subheading}>Other clubs & courses</Text>
-              <TagList items={display.favoriteCourses} />
-            </>
-          ) : null}
-        </ProfileSection>
+        {display.bio ? (
+          <ProfileSection title="Looking for">
+            <Text style={styles.body}>{display.bio}</Text>
+          </ProfileSection>
+        ) : null}
 
         {display.connectionInterests.length > 0 ? (
           <ProfileSection title="Interests">
@@ -342,28 +384,28 @@ export default function MemberProfileScreen() {
           </ProfileSection>
         ) : null}
 
-        {(isMeaningfulDisplayValue(identity.member.industry) ||
-          display.businessInterests.length > 0) && (
-          <ProfileSection title="Business">
+        {display.upcomingTravel || regions.length > 0 ? (
+          <ProfileSection title="Travel">
+            {display.upcomingTravel ? (
+              <Text style={styles.body}>Traveling to {display.upcomingTravel}</Text>
+            ) : null}
+            {regions.length > 0 ? (
+              <>
+                <Text style={styles.subheading}>Regions</Text>
+                <TagList items={regions} />
+              </>
+            ) : null}
+          </ProfileSection>
+        ) : null}
+
+        {isMeaningfulDisplayValue(identity.member.industry) ||
+        display.businessInterests.length > 0 ? (
+          <ProfileSection title="Professional">
             {isMeaningfulDisplayValue(identity.member.industry) ? (
               <Text style={styles.body}>{identity.member.industry}</Text>
             ) : null}
             {display.businessInterests.length > 0 ? (
               <TagList items={display.businessInterests} />
-            ) : null}
-          </ProfileSection>
-        )}
-
-        {display.upcomingTravel || identity.member.regions.filter(isMeaningfulDisplayValue).length > 0 ? (
-          <ProfileSection title="Travel">
-            {display.upcomingTravel ? (
-              <Text style={styles.body}>Traveling to {display.upcomingTravel}</Text>
-            ) : null}
-            {identity.member.regions.filter(isMeaningfulDisplayValue).length > 0 ? (
-              <>
-                <Text style={styles.subheading}>Regions</Text>
-                <TagList items={identity.member.regions.filter(isMeaningfulDisplayValue)} />
-              </>
             ) : null}
           </ProfileSection>
         ) : null}
@@ -373,7 +415,10 @@ export default function MemberProfileScreen() {
             {coursesPlayed.map((course) => (
               <Pressable
                 key={course.key}
-                onPress={() => course.courseSlug && router.push(`/courses/${course.courseSlug}`)}
+                onPress={() =>
+                  course.courseSlug ? router.push(`/courses/${course.courseSlug}`) : undefined
+                }
+                disabled={!course.courseSlug}
                 style={styles.courseRow}
               >
                 <Text style={styles.courseName}>{course.courseName}</Text>
@@ -401,12 +446,14 @@ export default function MemberProfileScreen() {
         {recentRounds.length > 0 ? (
           <ProfileSection title="Recent experiences">
             {recentRounds.map((round) => (
-              <View key={round.id} style={styles.courseRow}>
-                <Text style={styles.courseName}>{round.course_name}</Text>
-                {isMeaningfulDisplayValue(round.note) ? (
-                  <Text style={styles.body}>{round.note}</Text>
-                ) : null}
-              </View>
+              <RoundReviewCard
+                key={round.id}
+                round={{
+                  ...round,
+                  member_name: memberName || "Member",
+                  member_user_id: round.member_user_id || targetUserId,
+                }}
+              />
             ))}
           </ProfileSection>
         ) : null}
@@ -465,14 +512,14 @@ const styles = StyleSheet.create({
   },
   coverImage: {
     width: "100%",
-    height: 140,
+    height: 160,
     borderRadius: radii.lg,
     backgroundColor: colors.bgInset,
   },
   avatarWrap: {
     position: "absolute",
     left: spacing.lg,
-    bottom: -24,
+    bottom: -28,
   },
   avatar: {
     borderWidth: 3,
@@ -488,6 +535,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     letterSpacing: -0.5,
   },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: 2,
+  },
   title: {
     fontFamily: typography.sans,
     fontSize: typography.body,
@@ -498,13 +551,26 @@ const styles = StyleSheet.create({
     fontSize: typography.bodySm,
     color: colors.textSecondary,
   },
+  requestPreview: {
+    marginTop: spacing.sm,
+    fontFamily: typography.sans,
+    fontSize: typography.bodySm,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
   founding: {
     fontFamily: typography.sansMedium,
     fontSize: typography.caption,
     letterSpacing: 0.8,
     textTransform: "uppercase",
     color: colors.gold,
-    marginTop: spacing.xs,
+  },
+  verified: {
+    fontFamily: typography.sansMedium,
+    fontSize: typography.caption,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: colors.forest,
   },
   actions: {
     gap: spacing.sm,
