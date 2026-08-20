@@ -1,18 +1,27 @@
-import { useCallback, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { FeedPostCard } from "@/components/feed/FeedPostCard";
+import { BrandedHeader } from "@/components/ui/BrandedHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { MemberAvatar } from "@/components/ui/MemberAvatar";
-import { Screen } from "@/components/ui/Screen";
-import { colors, radii, spacing, typography } from "@/constants/theme";
+import { colors, layout, radii, spacing, typography } from "@/constants/theme";
 import { fetchFeedPage } from "@/lib/api/feed";
 import { formatMobileError } from "@/lib/errors";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
   SESSION_CACHE_KEYS,
   getSessionCacheStale,
+  invalidateSessionCache,
   setSessionCache,
 } from "@/lib/sessionCache";
 import { useAuth } from "@/hooks/AuthProvider";
@@ -20,51 +29,144 @@ import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { getMemberDisplayName } from "@/lib/memberInitials";
 import type { MobileFeedPost } from "@/types/feed";
 
+type FeedCursor = { createdAt: string; id: string };
+
+type HomeFeedCache = {
+  posts: MobileFeedPost[];
+  hasMore: boolean;
+  nextCursor: FeedCursor | null;
+};
+
+const PAGE_SIZE = 20;
+
+function readHomeFeedCache(): HomeFeedCache | null {
+  const cached = getSessionCacheStale<HomeFeedCache | MobileFeedPost[]>(SESSION_CACHE_KEYS.homeFeed);
+  if (!cached) return null;
+  if (Array.isArray(cached)) {
+    return { posts: cached, hasMore: true, nextCursor: null };
+  }
+  return cached;
+}
+
+function mergeUniquePosts(existing: MobileFeedPost[], incoming: MobileFeedPost[]) {
+  const seen = new Set(existing.map((post) => post.id));
+  const next = [...existing];
+  for (const post of incoming) {
+    if (seen.has(post.id)) continue;
+    seen.add(post.id);
+    next.push(post);
+  }
+  return next;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { profile } = useAuth();
-  const [posts, setPosts] = useState<MobileFeedPost[]>(
-    () => getSessionCacheStale<MobileFeedPost[]>(SESSION_CACHE_KEYS.homeFeed) ?? [],
+  const initialCache = useMemo(() => readHomeFeedCache(), []);
+  const [posts, setPosts] = useState<MobileFeedPost[]>(() => initialCache?.posts ?? []);
+  const [hasMore, setHasMore] = useState(() => initialCache?.hasMore ?? true);
+  const [nextCursor, setNextCursor] = useState<FeedCursor | null>(
+    () => initialCache?.nextCursor ?? null,
   );
-  const [loading, setLoading] = useState(() => posts.length === 0);
+  const [loading, setLoading] = useState(() => (initialCache?.posts.length ?? 0) === 0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const requestId = useRef(0);
+  const loadingMoreLock = useRef(false);
 
-  const loadFeed = useCallback(async (options?: { background?: boolean }) => {
-    const cached = getSessionCacheStale<MobileFeedPost[]>(SESSION_CACHE_KEYS.homeFeed);
-    const hasCache = Boolean(cached?.length);
-    const currentRequest = ++requestId.current;
+  const persistCache = useCallback(
+    (nextPosts: MobileFeedPost[], nextHasMore: boolean, cursor: FeedCursor | null) => {
+      setSessionCache(SESSION_CACHE_KEYS.homeFeed, {
+        posts: nextPosts,
+        hasMore: nextHasMore,
+        nextCursor: cursor,
+      } satisfies HomeFeedCache);
+    },
+    [],
+  );
 
-    if (hasCache) {
-      setPosts(cached!);
+  const loadFeed = useCallback(
+    async (options?: { background?: boolean; refresh?: boolean }) => {
+      const cached = readHomeFeedCache();
+      const hasCache = Boolean(cached?.posts.length);
+      const currentRequest = ++requestId.current;
+
+      if (options?.refresh) {
+        setRefreshing(true);
+      } else if (hasCache) {
+        setPosts(cached!.posts);
+        setHasMore(cached!.hasMore);
+        setNextCursor(cached!.nextCursor);
+        setLoading(false);
+      } else if (!options?.background) {
+        setLoading(true);
+      }
+
+      setError(null);
+      setPageError(null);
+      perfStart("home");
+
+      const { data, error: feedError } = await fetchFeedPage({ limit: PAGE_SIZE });
+
+      if (currentRequest !== requestId.current) {
+        return;
+      }
+
+      perfEnd("home", { posts: data.posts.length, cached: hasCache });
+
+      setPosts(data.posts);
+      setHasMore(data.hasMore);
+      setNextCursor(data.nextCursor);
+      if (data.posts.length > 0) {
+        persistCache(data.posts, data.hasMore, data.nextCursor);
+      } else {
+        invalidateSessionCache(SESSION_CACHE_KEYS.homeFeed);
+      }
+      setError(feedError ? formatMobileError(feedError.message) : null);
       setLoading(false);
-    } else if (!options?.background) {
-      setLoading(true);
-    }
+      setRefreshing(false);
+    },
+    [persistCache],
+  );
 
-    setError(null);
-    perfStart("home");
-
-    const { data, error: feedError } = await fetchFeedPage({ limit: 20 });
-
-    if (currentRequest !== requestId.current) {
+  const loadMore = useCallback(async () => {
+    if (!hasMore || !nextCursor || loadingMoreLock.current || loading || refreshing) {
       return;
     }
 
-    perfEnd("home", { posts: data.posts.length, cached: hasCache });
+    loadingMoreLock.current = true;
+    setLoadingMore(true);
+    setPageError(null);
 
-    setPosts(data.posts);
-    if (data.posts.length > 0) {
-      setSessionCache(SESSION_CACHE_KEYS.homeFeed, data.posts);
+    const { data, error: feedError } = await fetchFeedPage({
+      limit: PAGE_SIZE,
+      cursor: nextCursor,
+    });
+
+    if (feedError) {
+      setPageError(formatMobileError(feedError.message));
+      setLoadingMore(false);
+      loadingMoreLock.current = false;
+      return;
     }
-    setError(feedError ? formatMobileError(feedError.message) : null);
-    setLoading(false);
-  }, []);
+
+    setPosts((current) => {
+      const merged = mergeUniquePosts(current, data.posts);
+      persistCache(merged, data.hasMore, data.nextCursor);
+      return merged;
+    });
+    setHasMore(data.hasMore);
+    setNextCursor(data.nextCursor);
+    setLoadingMore(false);
+    loadingMoreLock.current = false;
+  }, [hasMore, nextCursor, loading, refreshing, persistCache]);
 
   useFocusEffect(
     useCallback(() => {
-      const cached = getSessionCacheStale<MobileFeedPost[]>(SESSION_CACHE_KEYS.homeFeed);
-      void loadFeed({ background: Boolean(cached?.length) });
+      const cached = readHomeFeedCache();
+      void loadFeed({ background: Boolean(cached?.posts.length) });
     }, [loadFeed]),
   );
 
@@ -77,17 +179,18 @@ export default function HomeScreen() {
 
   const showInitialLoading = loading && posts.length === 0;
 
-  return (
-    <Screen
-      title="Home"
-      subtitle="From the network"
-      branded
-      headerRight={
-        <Pressable onPress={() => router.push("/notifications")} style={styles.iconButton}>
-          <Text style={styles.iconButtonLabel}>Alerts</Text>
-        </Pressable>
-      }
-    >
+  const listHeader = (
+    <>
+      <BrandedHeader
+        title="Home"
+        subtitle="From the network"
+        right={
+          <Pressable onPress={() => router.push("/notifications")} style={styles.iconButton}>
+            <Text style={styles.iconButtonLabel}>Alerts</Text>
+          </Pressable>
+        }
+      />
+
       <View style={styles.identityCard}>
         <View style={styles.identityRow}>
           <MemberAvatar
@@ -120,27 +223,74 @@ export default function HomeScreen() {
           body="Share a round, travel plan, or introduction request to begin the conversation."
         />
       ) : null}
+    </>
+  );
 
-      {posts.length > 0
-        ? posts.map((post) => (
-            <FeedPostCard
-              key={post.id}
-              post={post}
-              onPostChange={(updated) =>
-                setPosts((current) => {
-                  const next = current.map((entry) => (entry.id === updated.id ? updated : entry));
-                  setSessionCache(SESSION_CACHE_KEYS.homeFeed, next);
-                  return next;
-                })
-              }
-            />
-          ))
-        : null}
-    </Screen>
+  const listFooter =
+    posts.length > 0 ? (
+      <View style={styles.footer}>
+        {loadingMore ? (
+          <View style={styles.footerLoading}>
+            <ActivityIndicator color={colors.forest} />
+            <Text style={styles.footerText}>Loading more…</Text>
+          </View>
+        ) : null}
+
+        {pageError ? (
+          <View style={styles.pageErrorCard}>
+            <Text style={styles.errorText}>{pageError}</Text>
+            <Pressable onPress={() => void loadMore()}>
+              <Text style={styles.retry}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {!hasMore && !loadingMore && !pageError ? (
+          <Text style={styles.endText}>You are caught up with the network.</Text>
+        ) : null}
+      </View>
+    ) : null;
+
+  return (
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <FeedPostCard
+            post={item}
+            onPostChange={(updated) =>
+              setPosts((current) => {
+                const next = current.map((entry) => (entry.id === updated.id ? updated : entry));
+                persistCache(next, hasMore, nextCursor);
+                return next;
+              })
+            }
+          />
+        )}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        onEndReached={() => void loadMore()}
+        onEndReachedThreshold={0.4}
+        refreshing={refreshing}
+        onRefresh={() => void loadFeed({ refresh: true })}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.bgBase,
+  },
+  content: {
+    paddingHorizontal: layout.pagePadding,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.xl,
+  },
   identityCard: {
     padding: spacing.xl,
     borderRadius: radii.lg,
@@ -199,6 +349,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.errorSoft,
     gap: spacing.sm,
   },
+  pageErrorCard: {
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.errorSoft,
+    gap: spacing.sm,
+  },
   errorText: {
     fontFamily: typography.sans,
     fontSize: 14,
@@ -208,5 +364,27 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 14,
     color: colors.gold,
+  },
+  footer: {
+    gap: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+  },
+  footerLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  footerText: {
+    fontFamily: typography.sans,
+    fontSize: 13,
+    color: colors.textTertiary,
+  },
+  endText: {
+    fontFamily: typography.sans,
+    fontSize: 13,
+    color: colors.textTertiary,
+    textAlign: "center",
   },
 });

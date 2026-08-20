@@ -7,6 +7,7 @@ import { colors, radii, spacing, typography } from "@/constants/theme";
 import { createGeneralFeedPost } from "@/lib/api/feedPosts";
 import { getFeedComposerValidation } from "@/lib/feedComposerValidation";
 import { formatMobileError } from "@/lib/errors";
+import { invalidateSessionCache, SESSION_CACHE_KEYS } from "@/lib/sessionCache";
 
 export default function PostUpdateScreen() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function PostUpdateScreen() {
   );
 
   async function handleSubmit() {
-    if (!validation.canSubmit || submitting) return;
+    if (!validation.canSubmit || submitting || success) return;
 
     setSubmitting(true);
     setError(null);
@@ -40,6 +41,7 @@ export default function PostUpdateScreen() {
       return;
     }
 
+    invalidateSessionCache(SESSION_CACHE_KEYS.homeFeed);
     setSuccess(true);
     setTimeout(() => {
       router.replace("/(app)");
@@ -81,10 +83,10 @@ export default function PostUpdateScreen() {
       ) : null}
 
       <Button
-        label={submitting ? "Posting…" : "Post Update"}
+        label={submitting ? "Posting…" : success ? "Posted" : "Post Update"}
         onPress={() => void handleSubmit()}
         loading={submitting}
-        disabled={!validation.canSubmit}
+        disabled={!validation.canSubmit || success}
       />
     </Screen>
   );
@@ -144,6 +146,6 @@ const styles = StyleSheet.create({
   successText: {
     fontFamily: typography.sansMedium,
     fontSize: 14,
-    color: colors.ivory,
+    color: colors.forest,
   },
 });

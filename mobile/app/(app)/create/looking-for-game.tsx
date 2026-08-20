@@ -13,12 +13,14 @@ const config = {
     {
       key: "location",
       label: "Club/Course",
-      placeholder: "Where are you looking to play?",
+      placeholder: "Search courses or type a club name",
+      kind: "course" as const,
     },
     {
       key: "dates",
       label: "Dates",
-      placeholder: "When are you available?",
+      placeholder: "e.g. Apr 12–14 or next weekend",
+      kind: "dates" as const,
     },
     {
       key: "players",

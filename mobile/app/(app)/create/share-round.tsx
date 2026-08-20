@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Image,
   Pressable,
@@ -10,16 +10,15 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { CourseTypeahead } from "@/components/create/CourseTypeahead";
 import { Button } from "@/components/ui/Button";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { Screen } from "@/components/ui/Screen";
 import { colors, radii, spacing, typography } from "@/constants/theme";
-import { searchGolfCourses } from "@/lib/api/courses";
 import { MAX_ROUND_PHOTOS } from "@/lib/api/courseRoundPhotos";
 import { publishRoundReview } from "@/lib/api/publishRoundReview";
 import { getFeedComposerValidation } from "@/lib/feedComposerValidation";
 import { COURSE_RATING_MAX, COURSE_RATING_MIN, validateCourseRating } from "@/lib/courseRating";
-import { formatMobileError } from "@/lib/errors";
+import { invalidateSessionCache, SESSION_CACHE_KEYS } from "@/lib/sessionCache";
 import { formatGolfCourseLocation, type MobileGolfCourse } from "@/types/course";
 import type { MobileRoundPhotoDraft } from "@/types/courseRoundPhoto";
 
@@ -30,8 +29,6 @@ function randomId() {
 export default function ShareRoundScreen() {
   const router = useRouter();
   const [courseQuery, setCourseQuery] = useState("");
-  const [courseResults, setCourseResults] = useState<MobileGolfCourse[]>([]);
-  const [searchingCourses, setSearchingCourses] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<MobileGolfCourse | null>(null);
   const [manualCourseName, setManualCourseName] = useState("");
   const [manualLocation, setManualLocation] = useState("");
@@ -45,7 +42,8 @@ export default function ShareRoundScreen() {
   const [success, setSuccess] = useState(false);
   const [pending, setPending] = useState<{ roundId: string; photosComplete: boolean } | null>(null);
 
-  const resolvedCourseName = selectedCourse?.name ?? manualCourseName.trim();
+  const resolvedCourseName =
+    selectedCourse?.name ?? (manualCourseName.trim() || courseQuery.trim());
   const resolvedLocation = selectedCourse
     ? formatGolfCourseLocation(selectedCourse)
     : manualLocation.trim();
@@ -62,23 +60,6 @@ export default function ShareRoundScreen() {
       }),
     [review, resolvedCourseName, rating],
   );
-
-  const searchCourses = useCallback(async (query: string) => {
-    setSearchingCourses(true);
-    const { data, error: searchError } = await searchGolfCourses({ query, limit: 8 });
-    setCourseResults(data);
-    if (searchError) {
-      setError(formatMobileError(searchError.message));
-    }
-    setSearchingCourses(false);
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      void searchCourses(courseQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [courseQuery, searchCourses]);
 
   async function pickPhotos() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -114,8 +95,20 @@ export default function ShareRoundScreen() {
     }
   }
 
+  function removePhoto(photoId: string) {
+    setPhotos((current) => {
+      const next = current
+        .filter((photo) => photo.id !== photoId)
+        .map((photo, index) => ({ ...photo, sortOrder: index }));
+      if (coverDraftId === photoId) {
+        setCoverDraftId(next[0]?.id ?? null);
+      }
+      return next;
+    });
+  }
+
   async function handleSubmit() {
-    if (!validation.canSubmit || submitting) return;
+    if (!validation.canSubmit || submitting || success) return;
 
     const ratingResult = validateCourseRating(rating);
     if (!ratingResult.ok) {
@@ -151,6 +144,7 @@ export default function ShareRoundScreen() {
       return;
     }
 
+    invalidateSessionCache(SESSION_CACHE_KEYS.homeFeed);
     setSuccess(true);
     setPending(null);
     setTimeout(() => {
@@ -160,51 +154,42 @@ export default function ShareRoundScreen() {
 
   return (
     <Screen title="Share a Round" subtitle="Document a course experience with rating and photos.">
-      <Button label="Back" variant="ghost" onPress={() => router.back()} />
+      <Button label="Back" variant="ghost" onPress={() => router.back()} disabled={submitting} />
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Find a course</Text>
-        <TextInput
-          value={courseQuery}
-          onChangeText={(value) => {
-            setCourseQuery(value);
+      <CourseTypeahead
+        label="Find a course"
+        value={courseQuery}
+        onChangeText={(value) => {
+          setCourseQuery(value);
+          if (!value.trim()) {
             setSelectedCourse(null);
-          }}
-          placeholder="Search the EliteTee course library"
-          placeholderTextColor={colors.textTertiary}
-          style={styles.singleLineInput}
-        />
-        {searchingCourses ? <LoadingState label="Searching courses…" /> : null}
-        {!selectedCourse && courseResults.length > 0 ? (
-          <View style={styles.results}>
-            {courseResults.map((course) => (
-              <Pressable
-                key={course.id}
-                onPress={() => {
-                  setSelectedCourse(course);
-                  setCourseQuery(course.name);
-                  setManualCourseName("");
-                  setManualLocation("");
-                }}
-                style={styles.resultRow}
-              >
-                <Text style={styles.resultName}>{course.name}</Text>
-                <Text style={styles.resultMeta}>{formatGolfCourseLocation(course)}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-      </View>
+          }
+        }}
+        selectedCourse={selectedCourse}
+        onSelectCourse={(course) => {
+          setSelectedCourse(course);
+          if (course) {
+            setCourseQuery(course.name);
+            setManualCourseName("");
+            setManualLocation("");
+          }
+        }}
+        placeholder="Search the EliteTee course library"
+      />
 
       {!selectedCourse ? (
         <View style={styles.field}>
           <Text style={styles.label}>Or enter manually</Text>
           <TextInput
             value={manualCourseName}
-            onChangeText={setManualCourseName}
+            onChangeText={(value) => {
+              setManualCourseName(value);
+              setSelectedCourse(null);
+            }}
             placeholder="Course name"
             placeholderTextColor={colors.textTertiary}
             style={styles.singleLineInput}
+            editable={!submitting && !success}
           />
           <TextInput
             value={manualLocation}
@@ -212,16 +197,10 @@ export default function ShareRoundScreen() {
             placeholder="City, region, country"
             placeholderTextColor={colors.textTertiary}
             style={styles.singleLineInput}
+            editable={!submitting && !success}
           />
         </View>
-      ) : (
-        <View style={styles.selectedCourse}>
-          <Text style={styles.selectedLabel}>Selected course</Text>
-          <Text style={styles.selectedName}>{selectedCourse.name}</Text>
-          <Text style={styles.selectedMeta}>{formatGolfCourseLocation(selectedCourse)}</Text>
-          <Button label="Change course" variant="ghost" onPress={() => setSelectedCourse(null)} />
-        </View>
-      )}
+      ) : null}
 
       <View style={styles.field}>
         <Text style={styles.label}>
@@ -232,6 +211,7 @@ export default function ShareRoundScreen() {
           onChangeText={setRating}
           keyboardType="decimal-pad"
           style={styles.singleLineInput}
+          editable={!submitting && !success}
         />
       </View>
 
@@ -245,6 +225,7 @@ export default function ShareRoundScreen() {
           multiline
           style={styles.input}
           textAlignVertical="top"
+          editable={!submitting && !success}
         />
         <Text style={styles.counter}>{validation.characterCounterLabel}</Text>
       </View>
@@ -257,6 +238,7 @@ export default function ShareRoundScreen() {
           placeholder="Member names or playing partners"
           placeholderTextColor={colors.textTertiary}
           style={styles.singleLineInput}
+          editable={!submitting && !success}
         />
       </View>
 
@@ -266,25 +248,34 @@ export default function ShareRoundScreen() {
           label={photos.length > 0 ? "Add more photos" : "Choose from library"}
           variant="secondary"
           onPress={() => void pickPhotos()}
-          disabled={photos.length >= MAX_ROUND_PHOTOS}
+          disabled={photos.length >= MAX_ROUND_PHOTOS || submitting || success}
         />
         {photos.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.photoRow}>
               {photos.map((photo) => (
-                <Pressable
-                  key={photo.id}
-                  onPress={() => setCoverDraftId(photo.id)}
-                  style={[styles.photoWrap, coverDraftId === photo.id ? styles.photoCover : null]}
-                >
-                  <Image source={{ uri: photo.uri }} style={styles.photoThumb} />
-                  {coverDraftId === photo.id ? (
-                    <Text style={styles.coverBadge}>Cover</Text>
-                  ) : null}
-                </Pressable>
+                <View key={photo.id} style={styles.photoItem}>
+                  <Pressable
+                    onPress={() => setCoverDraftId(photo.id)}
+                    style={[styles.photoWrap, coverDraftId === photo.id ? styles.photoCover : null]}
+                  >
+                    <Image source={{ uri: photo.uri }} style={styles.photoThumb} />
+                    {coverDraftId === photo.id ? (
+                      <Text style={styles.coverBadge}>Cover</Text>
+                    ) : null}
+                  </Pressable>
+                  <Pressable onPress={() => removePhoto(photo.id)} hitSlop={6}>
+                    <Text style={styles.removePhoto}>Remove</Text>
+                  </Pressable>
+                </View>
               ))}
             </View>
           </ScrollView>
+        ) : null}
+        {pending && !pending.photosComplete ? (
+          <Text style={styles.hint}>
+            Your round was saved. Retry to finish uploading photos and publish to the feed.
+          </Text>
         ) : null}
       </View>
 
@@ -305,10 +296,18 @@ export default function ShareRoundScreen() {
       ) : null}
 
       <Button
-        label={submitting ? "Sharing…" : "Share Round"}
+        label={
+          submitting
+            ? "Sharing…"
+            : success
+              ? "Shared"
+              : pending
+                ? "Retry publish"
+                : "Share Round"
+        }
         onPress={() => void handleSubmit()}
         loading={submitting}
-        disabled={!validation.canSubmit}
+        disabled={!validation.canSubmit || success}
       />
     </Screen>
   );
@@ -354,58 +353,14 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: "right",
   },
-  results: {
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderHairline,
-    overflow: "hidden",
-  },
-  resultRow: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderHairline,
-    backgroundColor: colors.bgElevated,
-  },
-  resultName: {
-    fontFamily: typography.sansSemibold,
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  resultMeta: {
-    fontFamily: typography.sans,
-    fontSize: 12,
-    color: colors.textTertiary,
-    marginTop: 2,
-  },
-  selectedCourse: {
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1,
-    borderColor: colors.borderHairline,
-    gap: spacing.xs,
-  },
-  selectedLabel: {
-    fontFamily: typography.sansMedium,
-    fontSize: 11,
-    color: colors.gold,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  selectedName: {
-    fontFamily: typography.sansSemibold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  selectedMeta: {
-    fontFamily: typography.sans,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
   photoRow: {
     flexDirection: "row",
     gap: spacing.sm,
     paddingVertical: spacing.xs,
+  },
+  photoItem: {
+    gap: spacing.xs,
+    alignItems: "center",
   },
   photoWrap: {
     borderRadius: radii.md,
@@ -434,6 +389,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     overflow: "hidden",
   },
+  removePhoto: {
+    fontFamily: typography.sansMedium,
+    fontSize: 12,
+    color: colors.error,
+  },
   hint: {
     fontFamily: typography.sans,
     fontSize: 13,
@@ -459,6 +419,6 @@ const styles = StyleSheet.create({
   successText: {
     fontFamily: typography.sansMedium,
     fontSize: 14,
-    color: colors.ivory,
+    color: colors.forest,
   },
 });

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { FeedCourseLink } from "@/components/feed/FeedCourseLink";
@@ -9,7 +8,8 @@ import {
   MemberIdentityLink,
 } from "@/components/member/MemberIdentityLink";
 import { Card } from "@/components/ui/Card";
-import { colors, spacing, typography } from "@/constants/theme";
+import { colors, radii, spacing, typography } from "@/constants/theme";
+import { buildFeedMetaChips, type FeedMetaChip } from "@/lib/feedCardMeta";
 import type { MobileFeedPost } from "@/types/feed";
 
 type FeedPostCardProps = {
@@ -19,29 +19,46 @@ type FeedPostCardProps = {
   showActions?: boolean;
 };
 
+function chipToneStyle(tone: FeedMetaChip["tone"]) {
+  switch (tone) {
+    case "location":
+      return styles.chipLocation;
+    case "date":
+      return styles.chipDate;
+    case "rating":
+      return styles.chipRating;
+    case "positive":
+      return styles.chipPositive;
+    case "emphasis":
+      return styles.chipEmphasis;
+    default:
+      return styles.chipNeutral;
+  }
+}
+
 export function FeedPostCard({
-  post: initialPost,
+  post,
   onPostChange,
   onToast,
   showActions = true,
 }: FeedPostCardProps) {
   const router = useRouter();
-  const [post, setPost] = useState(initialPost);
+  const chips = buildFeedMetaChips(post);
+  const identitySubtitle = buildMemberIdentitySubtitle(post.authorClub, post.authorLocation);
+  const showHeadline = post.headline && post.headline !== post.badge;
+  const showPlayedWithInline =
+    Boolean(post.playedWith?.trim()) &&
+    !chips.some(
+      (chip) => chip.label.toLowerCase() === "with" || chip.label.toLowerCase() === "played with",
+    );
 
   function updatePost(patch: Partial<MobileFeedPost>) {
-    setPost((current) => {
-      const next = { ...current, ...patch };
-      onPostChange?.(next);
-      return next;
-    });
+    onPostChange?.({ ...post, ...patch });
   }
 
   function openDetail() {
     router.push(`/feed/${post.id}`);
   }
-
-  const identitySubtitle = buildMemberIdentitySubtitle(post.authorClub, post.authorLocation);
-  const showHeadline = post.headline && post.headline !== post.badge;
 
   return (
     <Card style={styles.card}>
@@ -65,13 +82,24 @@ export function FeedPostCard({
         />
       ) : null}
 
+      {chips.length > 0 ? (
+        <View style={styles.chipRow}>
+          {chips.map((chip) => (
+            <View key={chip.key} style={[styles.chip, chipToneStyle(chip.tone)]}>
+              <Text style={styles.chipLabel}>{chip.label}</Text>
+              <Text style={styles.chipValue}>{chip.value}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       <Pressable onPress={openDetail} style={({ pressed }) => [pressed ? styles.pressed : null]}>
         <FeedPhotoGallery imageUrls={post.imageUrls} rating={post.rating} />
 
         <Text style={styles.message} numberOfLines={6}>
           {post.message}
         </Text>
-        {post.playedWith ? (
+        {showPlayedWithInline ? (
           <Text style={styles.playedWith}>Played with {post.playedWith}</Text>
         ) : null}
       </Pressable>
@@ -112,6 +140,55 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     color: colors.gold,
     marginBottom: spacing.xs,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  chip: {
+    maxWidth: "100%",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    gap: 1,
+  },
+  chipNeutral: {
+    backgroundColor: colors.bgInset,
+    borderColor: colors.borderHairline,
+  },
+  chipLocation: {
+    backgroundColor: colors.forestSoft,
+    borderColor: colors.forestBorder,
+  },
+  chipDate: {
+    backgroundColor: colors.goldSofter,
+    borderColor: colors.borderAccent,
+  },
+  chipRating: {
+    backgroundColor: colors.goldSoft,
+    borderColor: colors.borderAccent,
+  },
+  chipPositive: {
+    backgroundColor: colors.forestSoft,
+    borderColor: colors.forestBorder,
+  },
+  chipEmphasis: {
+    backgroundColor: colors.bgInset,
+    borderColor: colors.borderSubtle,
+  },
+  chipLabel: {
+    fontFamily: typography.sansMedium,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: colors.textTertiary,
+  },
+  chipValue: {
+    fontFamily: typography.sans,
+    fontSize: 13,
+    color: colors.textPrimary,
   },
   message: {
     fontFamily: typography.sans,

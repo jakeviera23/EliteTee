@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
+import { CourseTypeahead } from "@/components/create/CourseTypeahead";
 import { Button } from "@/components/ui/Button";
 import { Screen, TextField } from "@/components/ui/Screen";
 import { colors, typography } from "@/constants/theme";
 import { createComposerFeedPost } from "@/lib/api/feedPosts";
 import { getFeedComposerValidation } from "@/lib/feedComposerValidation";
 import { formatMobileError } from "@/lib/errors";
+import { invalidateSessionCache, SESSION_CACHE_KEYS } from "@/lib/sessionCache";
+import { formatGolfCourseLocation, type MobileGolfCourse } from "@/types/course";
 
 export type ComposerConfig = {
   title: string;
@@ -17,7 +20,13 @@ export type ComposerConfig = {
   headlineFallback: string;
   primaryKey?: "location" | "destination";
   primaryLabel?: string;
-  fields: { key: string; label: string; placeholder: string; optional?: boolean }[];
+  fields: {
+    key: string;
+    label: string;
+    placeholder: string;
+    optional?: boolean;
+    kind?: "text" | "course" | "course-list" | "dates";
+  }[];
 };
 
 type ComposerFeedScreenProps = {
@@ -28,6 +37,7 @@ export function ComposerFeedScreen({ config }: ComposerFeedScreenProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [selectedCourse, setSelectedCourse] = useState<MobileGolfCourse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -47,23 +57,35 @@ export function ComposerFeedScreen({ config }: ComposerFeedScreenProps) {
   );
 
   async function handleSubmit() {
-    if (!validation.canSubmit || submitting) return;
+    if (!validation.canSubmit || submitting || success) return;
 
     setSubmitting(true);
     setError(null);
 
     const details = config.fields
-      .map((field) => ({
-        label: field.label,
-        value: fieldValues[field.key]?.trim() ?? "",
-      }))
+      .map((field) => {
+        let value = fieldValues[field.key]?.trim() ?? "";
+        if (field.kind === "course" && selectedCourse) {
+          const location = formatGolfCourseLocation(selectedCourse);
+          value = location ? `${selectedCourse.name} · ${location}` : selectedCourse.name;
+        }
+        return {
+          label: field.label,
+          value,
+        };
+      })
       .filter((detail) => detail.value);
+
+    const headline =
+      (config.primaryKey === "location" && selectedCourse
+        ? selectedCourse.name
+        : primaryValue.trim()) || config.headlineFallback;
 
     const { error: postError } = await createComposerFeedPost({
       composerPostType: config.composerPostType,
       internalPostType: config.internalPostType,
       message: message.trim(),
-      headline: primaryValue.trim() || config.headlineFallback,
+      headline,
       badge: config.badge,
       details,
     });
@@ -75,28 +97,66 @@ export function ComposerFeedScreen({ config }: ComposerFeedScreenProps) {
       return;
     }
 
+    invalidateSessionCache(SESSION_CACHE_KEYS.homeFeed);
     setSuccess(true);
     setTimeout(() => router.replace("/(app)"), 600);
   }
 
   return (
     <Screen title={config.title} subtitle={config.subtitle}>
-      <Button label="Back" variant="ghost" onPress={() => router.back()} />
+      <Button label="Back" variant="ghost" onPress={() => router.back()} disabled={submitting} />
 
-      {config.fields.map((field) => (
-        <TextField
-          key={field.key}
-          label={field.label}
-          value={fieldValues[field.key] ?? ""}
-          onChangeText={(value) =>
-            setFieldValues((current) => ({ ...current, [field.key]: value }))
-          }
-          placeholder={field.placeholder}
-          multiline={field.key === "message"}
-          style={field.key === "message" ? styles.messageInput : undefined}
-          textAlignVertical={field.key === "message" ? "top" : undefined}
-        />
-      ))}
+      {config.fields.map((field) => {
+        if (field.kind === "course") {
+          return (
+            <CourseTypeahead
+              key={field.key}
+              label={field.label}
+              value={fieldValues[field.key] ?? ""}
+              onChangeText={(value) =>
+                setFieldValues((current) => ({ ...current, [field.key]: value }))
+              }
+              selectedCourse={selectedCourse}
+              onSelectCourse={setSelectedCourse}
+              placeholder={field.placeholder}
+            />
+          );
+        }
+
+        if (field.kind === "course-list") {
+          return (
+            <CourseTypeahead
+              key={field.key}
+              label={field.label}
+              value={fieldValues[field.key] ?? ""}
+              onChangeText={(value) =>
+                setFieldValues((current) => ({ ...current, [field.key]: value }))
+              }
+              selectedCourse={null}
+              onSelectCourse={() => undefined}
+              placeholder={field.placeholder}
+              appendMode
+            />
+          );
+        }
+
+        return (
+          <TextField
+            key={field.key}
+            label={field.label}
+            value={fieldValues[field.key] ?? ""}
+            onChangeText={(value) =>
+              setFieldValues((current) => ({ ...current, [field.key]: value }))
+            }
+            placeholder={field.placeholder}
+            hint={
+              field.kind === "dates"
+                ? "Free text for now — e.g. Apr 12–14 or next weekend."
+                : undefined
+            }
+          />
+        );
+      })}
 
       <TextField
         label="Message"
@@ -106,6 +166,7 @@ export function ComposerFeedScreen({ config }: ComposerFeedScreenProps) {
         multiline
         style={styles.messageInput}
         textAlignVertical="top"
+        editable={!submitting && !success}
       />
       <Text style={styles.counter}>{validation.characterCounterLabel}</Text>
 
@@ -116,10 +177,10 @@ export function ComposerFeedScreen({ config }: ComposerFeedScreenProps) {
       {success ? <Text style={styles.successText}>Posted to the member feed.</Text> : null}
 
       <Button
-        label={submitting ? "Posting…" : "Post"}
+        label={submitting ? "Posting…" : success ? "Posted" : "Post"}
         onPress={() => void handleSubmit()}
         loading={submitting}
-        disabled={!validation.canSubmit}
+        disabled={!validation.canSubmit || success}
       />
     </Screen>
   );

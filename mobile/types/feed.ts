@@ -9,6 +9,11 @@ export type MobileFeedComment = {
   displayTimestamp: string;
 };
 
+export type MobileFeedDetail = {
+  label: string;
+  value: string;
+};
+
 export type MobileFeedPost = {
   id: string;
   authorUserId: string;
@@ -22,6 +27,7 @@ export type MobileFeedPost = {
   timestamp: string;
   createdAt: string;
   imageUrls: string[];
+  details?: MobileFeedDetail[];
   rating?: number;
   playedWith?: string;
   memberCourseRoundId?: string;

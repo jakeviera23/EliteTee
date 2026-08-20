@@ -18,13 +18,15 @@ const config = {
     {
       key: "dates",
       label: "Dates",
-      placeholder: "When will you be there?",
+      placeholder: "e.g. May 3–10 or early June",
+      kind: "dates" as const,
     },
     {
       key: "courses",
       label: "Courses",
-      placeholder: "Courses or clubs on your list",
+      placeholder: "Search to add courses, or type your list",
       optional: true,
+      kind: "course-list" as const,
     },
   ],
 };

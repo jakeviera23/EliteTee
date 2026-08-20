@@ -46,7 +46,32 @@ function formatFeedTimestamp(value: string) {
   });
 }
 
-function parseFeedContent(content: string) {
+function parseFeedDetails(value: unknown): { label: string; value: string }[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const details = value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const row = entry as Record<string, unknown>;
+      const label = typeof row.label === "string" ? row.label.trim() : "";
+      const detailValue = typeof row.value === "string" ? row.value.trim() : "";
+      if (!label || !detailValue) return null;
+      return { label, value: detailValue };
+    })
+    .filter((entry): entry is { label: string; value: string } => Boolean(entry));
+
+  return details.length > 0 ? details : undefined;
+}
+
+function parseFeedContent(content: string): {
+  message: string;
+  headline?: string;
+  badge?: string;
+  composerPostType?: string;
+  rating?: number;
+  playedWith?: string;
+  details?: { label: string; value: string }[];
+} {
   try {
     const parsed = JSON.parse(content) as {
       message?: string;
@@ -55,10 +80,19 @@ function parseFeedContent(content: string) {
       composerPostType?: string;
       rating?: number;
       playedWith?: string;
+      details?: unknown;
     };
 
     if (parsed && typeof parsed.message === "string") {
-      return parsed;
+      return {
+        message: parsed.message,
+        headline: parsed.headline,
+        badge: parsed.badge,
+        composerPostType: parsed.composerPostType,
+        rating: parsed.rating,
+        playedWith: parsed.playedWith,
+        details: parseFeedDetails(parsed.details),
+      };
     }
   } catch {
     // Plain-text legacy content.
@@ -85,6 +119,7 @@ function mapRpcRowToPost(row: Record<string, unknown>): MobileFeedPost {
     timestamp: formatFeedTimestamp(String(row.created_at ?? "")),
     createdAt: String(row.created_at ?? ""),
     imageUrls: [],
+    details: parsed.details,
     rating: typeof parsed.rating === "number" ? parsed.rating : undefined,
     playedWith: parsed.playedWith,
     memberCourseRoundId: row.member_course_round_id

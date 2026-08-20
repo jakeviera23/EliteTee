@@ -22,6 +22,7 @@ import {
 import { LoadingState } from "@/components/ui/LoadingState";
 import { colors, layout, radii, spacing, typography } from "@/constants/theme";
 import { fetchFeedPostById } from "@/lib/api/feed";
+import { buildFeedMetaChips } from "@/lib/feedCardMeta";
 import { formatCourseRatingDisplay } from "@/lib/courseRating";
 import {
   createFeedPostComment,
@@ -114,7 +115,13 @@ export default function FeedPostDetailScreen() {
   }
 
   const identitySubtitle = buildMemberIdentitySubtitle(post.authorClub, post.authorLocation);
+  const chips = buildFeedMetaChips(post);
   const ratingDisplay = formatCourseRatingDisplay(post.rating ?? null);
+  const showPlayedWithInline =
+    Boolean(post.playedWith?.trim()) &&
+    !chips.some(
+      (chip) => chip.label.toLowerCase() === "with" || chip.label.toLowerCase() === "played with",
+    );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -156,14 +163,23 @@ export default function FeedPostDetailScreen() {
             />
           ) : null}
 
-          {ratingDisplay ? (
+          {chips.length > 0 ? (
+            <View style={styles.chipRow}>
+              {chips.map((chip) => (
+                <View key={chip.key} style={styles.chip}>
+                  <Text style={styles.chipLabel}>{chip.label}</Text>
+                  <Text style={styles.chipValue}>{chip.value}</Text>
+                </View>
+              ))}
+            </View>
+          ) : ratingDisplay ? (
             <Text style={styles.rating}>Member rating {ratingDisplay}/10</Text>
           ) : null}
 
           <FeedPhotoGallery imageUrls={post.imageUrls} rating={post.rating} />
 
           <Text style={styles.message}>{post.message}</Text>
-          {post.playedWith ? (
+          {showPlayedWithInline ? (
             <Text style={styles.playedWith}>Played with {post.playedWith}</Text>
           ) : null}
 
@@ -305,6 +321,33 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: typography.bodySm,
     color: colors.gold,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  chip: {
+    maxWidth: "100%",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.borderHairline,
+    backgroundColor: colors.bgInset,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    gap: 1,
+  },
+  chipLabel: {
+    fontFamily: typography.sansMedium,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: colors.textTertiary,
+  },
+  chipValue: {
+    fontFamily: typography.sans,
+    fontSize: 13,
+    color: colors.textPrimary,
   },
   message: {
     fontFamily: typography.sans,

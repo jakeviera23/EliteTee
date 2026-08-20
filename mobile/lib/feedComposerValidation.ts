@@ -23,6 +23,22 @@ export function getFeedComposerMessageLength(message: string): number {
   return message.trim().length;
 }
 
+export function getFeedComposerCharacterCounterLabel(
+  messageLength: number,
+  minMessageLength = FEED_COMPOSER_MIN_MESSAGE_LENGTH,
+): string {
+  if (messageLength >= minMessageLength) {
+    return `${minMessageLength} character minimum met`;
+  }
+
+  const remaining = minMessageLength - messageLength;
+  if (messageLength === 0) {
+    return `${minMessageLength} characters minimum`;
+  }
+
+  return `${remaining} more character${remaining === 1 ? "" : "s"} needed`;
+}
+
 export function getFeedComposerValidation(
   input: FeedComposerValidationInput,
 ): FeedComposerValidationResult {
@@ -49,6 +65,6 @@ export function getFeedComposerValidation(
     minMessageLength: FEED_COMPOSER_MIN_MESSAGE_LENGTH,
     canSubmit,
     blockerMessage,
-    characterCounterLabel: `${messageLength} / ${FEED_COMPOSER_MIN_MESSAGE_LENGTH} characters`,
+    characterCounterLabel: getFeedComposerCharacterCounterLabel(messageLength),
   };
 }
