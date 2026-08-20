@@ -3,21 +3,24 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { useAuth } from "@/hooks/AuthProvider";
 
 export default function IndexRoute() {
-  const { loading, session, hasPortalAccess, isConfigured } = useAuth();
+  const { loading, status, isConfigured, pendingInviteToken } = useAuth();
 
   if (!isConfigured) {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  if (loading) {
+  if (loading || status === "booting") {
     return <LoadingState label="Restoring your session…" fullScreen />;
   }
 
-  if (!session) {
+  if (status === "signed_out") {
+    if (pendingInviteToken) {
+      return <Redirect href="/(auth)/membership-setup" />;
+    }
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  if (!hasPortalAccess) {
+  if (status === "portal_pending") {
     return <Redirect href="/(auth)/portal-pending" />;
   }
 

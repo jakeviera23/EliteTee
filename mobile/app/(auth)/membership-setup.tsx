@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { EliteTeeMark } from "@/components/brand/EliteTeeMark";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -9,51 +9,42 @@ import { colors, radii, spacing, typography } from "@/constants/theme";
 import { useAuth } from "@/hooks/AuthProvider";
 import { logAuthError } from "@/lib/auth/authErrors";
 import { describeSiteHost, openExternalEliteTeeUrl } from "@/lib/auth/deepLinks";
-import { getInviteUrl, getLoginUrl, getPublicSiteUrl } from "@/lib/auth/siteUrls";
+import { getInviteUrl, getPublicSiteUrl } from "@/lib/auth/siteUrls";
 
-export default function PortalPendingScreen() {
-  const { loading, status, pendingInviteToken, signOut, refreshPortalAccess } = useAuth();
+export default function MembershipSetupScreen() {
+  const router = useRouter();
+  const { loading, status, pendingInviteToken, clearInviteToken } = useAuth();
   const [opening, setOpening] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (loading || status === "booting") {
-    return <LoadingState label="Checking membership access…" fullScreen />;
-  }
-
-  if (status === "signed_out") {
-    return <Redirect href="/(auth)/sign-in" />;
+    return <LoadingState label="Preparing membership setup…" fullScreen />;
   }
 
   if (status === "ready") {
     return <Redirect href="/(app)" />;
   }
 
-  const setupUrl = pendingInviteToken ? getInviteUrl(pendingInviteToken) : getLoginUrl();
+  if (status === "portal_pending") {
+    return <Redirect href="/(auth)/portal-pending" />;
+  }
+
+  if (!pendingInviteToken) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  const inviteUrl = getInviteUrl(pendingInviteToken);
 
   async function handleOpenWeb() {
     setOpening(true);
     setError(null);
     try {
-      await openExternalEliteTeeUrl(setupUrl);
+      await openExternalEliteTeeUrl(inviteUrl);
     } catch (openError) {
-      logAuthError("open membership setup", openError);
-      setError(`Unable to open ${describeSiteHost()}. Try again, or visit ${getPublicSiteUrl()} in your browser.`);
+      logAuthError("open invite setup", openError);
+      setError(`Unable to open ${describeSiteHost()}. Visit ${getPublicSiteUrl()} in your browser.`);
     } finally {
       setOpening(false);
-    }
-  }
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    setError(null);
-    try {
-      await refreshPortalAccess();
-    } catch (refreshError) {
-      logAuthError("refresh portal access", refreshError);
-      setError("Unable to refresh membership status. Check your connection and try again.");
-    } finally {
-      setRefreshing(false);
     }
   }
 
@@ -61,7 +52,7 @@ export default function PortalPendingScreen() {
     <Screen scroll={false} contentStyle={styles.screen}>
       <View style={styles.hero}>
         <EliteTeeMark size={56} />
-        <Text style={styles.title}>Finish membership setup</Text>
+        <Text style={styles.title}>Welcome to EliteTee</Text>
         <Text style={styles.subtitle}>
           Complete your EliteTee membership setup securely on the web.
         </Text>
@@ -69,9 +60,9 @@ export default function PortalPendingScreen() {
 
       <View style={styles.card}>
         <Text style={styles.body}>
-          {pendingInviteToken
-            ? "We found your invitation. Open EliteTee on the web to finish account activation with the same invite link, then return to the app and sign in."
-            : "Your login is active, but portal access is not enabled yet. If you were recently approved, open EliteTee on the web to finish setup, then return here."}
+          Invitation signup, email confirmation, and first-time activation use the same secure web
+          flow as the member portal. Open your invite, finish setup, then return to the app to sign
+          in.
         </Text>
       </View>
 
@@ -79,12 +70,17 @@ export default function PortalPendingScreen() {
 
       <Button label="Open EliteTee" onPress={() => void handleOpenWeb()} loading={opening} />
       <Button
-        label="I've finished setup"
+        label="I already have an account"
         variant="secondary"
-        onPress={() => void handleRefresh()}
-        loading={refreshing}
+        onPress={() => router.replace("/(auth)/sign-in")}
       />
-      <Button label="Sign out" variant="ghost" onPress={() => void signOut()} />
+      <Button
+        label="Clear invite and dismiss"
+        variant="ghost"
+        onPress={() => {
+          void clearInviteToken().then(() => router.replace("/(auth)/sign-in"));
+        }}
+      />
     </Screen>
   );
 }

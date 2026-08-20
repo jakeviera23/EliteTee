@@ -1,27 +1,41 @@
 import { useState } from "react";
-import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from "react-native";
-import { Redirect } from "expo-router";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { Link, Redirect, useRouter } from "expo-router";
 import { EliteTeeMark } from "@/components/brand/EliteTeeMark";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { Screen } from "@/components/ui/Screen";
 import { colors, radii, spacing, typography } from "@/constants/theme";
-import { formatMobileError, isAuthError } from "@/lib/errors";
 import { useAuth } from "@/hooks/AuthProvider";
 
 const wordmarkSource = require("../../assets/elitetee-logo.png");
 
 export default function SignInScreen() {
-  const { isConfigured, loading, session, hasPortalAccess, signIn } = useAuth();
+  const router = useRouter();
+  const { isConfigured, loading, status, pendingInviteToken, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!loading && session && hasPortalAccess) {
+  if (loading || status === "booting") {
+    return <LoadingState label="Restoring your session…" fullScreen />;
+  }
+
+  if (status === "ready") {
     return <Redirect href="/(app)" />;
   }
 
-  if (!loading && session && !hasPortalAccess) {
+  if (status === "portal_pending") {
     return <Redirect href="/(auth)/portal-pending" />;
   }
 
@@ -33,11 +47,7 @@ export default function SignInScreen() {
     setSubmitting(false);
 
     if (result.error) {
-      setError(
-        isAuthError(result.error)
-          ? "Email or password is incorrect."
-          : formatMobileError(result.error),
-      );
+      setError(result.error.message);
     }
   }
 
@@ -63,6 +73,22 @@ export default function SignInScreen() {
           </View>
         ) : (
           <View style={styles.form}>
+            {pendingInviteToken ? (
+              <View style={styles.inviteBanner}>
+                <Text style={styles.inviteTitle}>Invitation ready</Text>
+                <Text style={styles.inviteBody}>
+                  Sign in to continue, or finish first-time setup securely on the web.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push("/(auth)/membership-setup")}
+                  hitSlop={8}
+                >
+                  <Text style={styles.inviteLink}>View membership setup</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             <Text style={styles.label}>Email</Text>
             <TextInput
               autoCapitalize="none"
@@ -73,6 +99,7 @@ export default function SignInScreen() {
               placeholder="you@example.com"
               placeholderTextColor={colors.textTertiary}
               style={styles.input}
+              editable={!submitting}
             />
 
             <Text style={styles.label}>Password</Text>
@@ -84,7 +111,14 @@ export default function SignInScreen() {
               placeholder="••••••••"
               placeholderTextColor={colors.textTertiary}
               style={styles.input}
+              editable={!submitting}
             />
+
+            <Link href={{ pathname: "/(auth)/forgot-password", params: { email } }} asChild>
+              <Pressable accessibilityRole="button" hitSlop={8} style={styles.forgotWrap}>
+                <Text style={styles.forgot}>Forgot password?</Text>
+              </Pressable>
+            </Link>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -131,6 +165,30 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.md,
   },
+  inviteBanner: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: colors.forestSoft,
+    borderWidth: 1,
+    borderColor: colors.forestBorder,
+  },
+  inviteTitle: {
+    fontFamily: typography.sansSemibold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  inviteBody: {
+    fontFamily: typography.sans,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  inviteLink: {
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    color: colors.forest,
+  },
   label: {
     fontFamily: typography.sansMedium,
     fontSize: 13,
@@ -148,10 +206,20 @@ const styles = StyleSheet.create({
     fontFamily: typography.sans,
     fontSize: 16,
   },
+  forgotWrap: {
+    alignSelf: "flex-start",
+    marginTop: -spacing.xs,
+  },
+  forgot: {
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    color: colors.forest,
+  },
   error: {
     color: colors.error,
     fontFamily: typography.sans,
     fontSize: 14,
+    lineHeight: 20,
   },
   notice: {
     gap: spacing.sm,

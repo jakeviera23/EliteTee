@@ -31,17 +31,17 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
 }
 
 export default function AppTabsLayout() {
-  const { loading, session, hasPortalAccess } = useAuth();
+  const { loading, status } = useAuth();
 
-  if (loading) {
+  if (loading || status === "booting") {
     return <LoadingState label="Opening member portal…" fullScreen />;
   }
 
-  if (!session) {
+  if (status === "signed_out") {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  if (!hasPortalAccess) {
+  if (status === "portal_pending") {
     return <Redirect href="/(auth)/portal-pending" />;
   }
 
