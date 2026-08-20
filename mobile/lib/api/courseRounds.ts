@@ -56,6 +56,42 @@ async function attachMemberNames(rounds: MobileCourseRoundRecord[]) {
   }));
 }
 
+/**
+ * Resolve feed posts linked through member_feed_posts.member_course_round_id.
+ * Legacy rounds without a published feed post remain without feed_post_id.
+ */
+async function attachFeedPostIds(rounds: MobileCourseRoundRecord[]) {
+  if (rounds.length === 0) return rounds;
+
+  const roundIds = [...new Set(rounds.map((round) => round.id).filter(Boolean))];
+  if (roundIds.length === 0) return rounds;
+
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("member_feed_posts")
+    .select("id, member_course_round_id, created_at")
+    .in("member_course_round_id", roundIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("[courseRounds] feed post linkage failed", error.message);
+    return rounds;
+  }
+
+  const postIdByRoundId = new Map<string, string>();
+  for (const row of data ?? []) {
+    const roundId = row.member_course_round_id ? String(row.member_course_round_id) : "";
+    const postId = row.id ? String(row.id) : "";
+    if (!roundId || !postId || postIdByRoundId.has(roundId)) continue;
+    postIdByRoundId.set(roundId, postId);
+  }
+
+  return rounds.map((round) => ({
+    ...round,
+    feed_post_id: postIdByRoundId.get(round.id) ?? null,
+  }));
+}
+
 export function formatPlayedOnDate(playedOn: string) {
   const parsed = new Date(`${playedOn}T12:00:00`);
   if (Number.isNaN(parsed.getTime())) {
@@ -149,8 +185,15 @@ export async function fetchMemberCourseRoundsForCourse({
 
   try {
     const withNames = await attachMemberNames(rounds);
-    const withPhotos = await attachPhotosToRounds(withNames);
-    return { data: withPhotos, error: null };
+    // Feed-post linkage and photos are independent — one failure must not drop the other.
+    const withFeedPosts = await attachFeedPostIds(withNames);
+    try {
+      const withPhotos = await attachPhotosToRounds(withFeedPosts);
+      return { data: withPhotos, error: null };
+    } catch (photoError) {
+      console.warn("[courseRounds] photo hydration failed", photoError);
+      return { data: withFeedPosts, error: null };
+    }
   } catch (hydrateError) {
     console.warn("[courseRounds] experience hydration failed", hydrateError);
     // Prefer returning the review rows themselves over failing the whole section.

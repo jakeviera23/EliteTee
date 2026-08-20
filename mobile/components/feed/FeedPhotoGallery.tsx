@@ -17,9 +17,11 @@ import { colors, radii, spacing, typography } from "@/constants/theme";
 type FeedPhotoGalleryProps = {
   imageUrls: string[];
   rating?: number;
+  /** Override hero width when embedded in non-feed layouts (e.g. course review cards). */
+  contentWidth?: number;
 };
 
-export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
+export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [failedUrls, setFailedUrls] = useState<Record<string, true>>({});
@@ -29,7 +31,8 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
   const urls = imageUrls.filter((url) => url.trim() && !failedUrls[url]);
   if (urls.length === 0) return null;
 
-  const width = Dimensions.get("window").width - spacing.lg * 2 - spacing.xl * 2;
+  const width =
+    contentWidth ?? Dimensions.get("window").width - spacing.lg * 2 - spacing.xl * 2;
   const safeIndex = Math.min(activeIndex, urls.length - 1);
 
   function markFailed(url: string) {

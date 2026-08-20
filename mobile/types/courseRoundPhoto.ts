@@ -20,6 +20,8 @@ export type MobileCourseRoundRecord = {
   cover_photo_id: string | null;
   created_at: string;
   member_name?: string;
+  /** Linked member feed post when this round was published to the feed. */
+  feed_post_id?: string | null;
   photos?: MobileCourseRoundPhoto[];
   course_slug?: string;
 };
