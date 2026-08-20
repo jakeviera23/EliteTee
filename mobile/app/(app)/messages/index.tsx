@@ -7,32 +7,32 @@ import { MemberIdentityLink } from "@/components/member/MemberIdentityLink";
 import { Screen } from "@/components/ui/Screen";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { fetchConversations } from "@/lib/api/messages";
+import {
+  readConversationsCache,
+  writeConversationsCache,
+} from "@/lib/conversationCache";
 import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
 import { formatConversationListTimestamp } from "@/lib/messageTimestamps";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
-import {
-  SESSION_CACHE_KEYS,
-  getSessionCacheStale,
-  setSessionCache,
-} from "@/lib/sessionCache";
 import type { MobileConversationSummary } from "@/types/messages";
 
 export default function MessagesScreen() {
   const router = useRouter();
-  const [conversations, setConversations] = useState<MobileConversationSummary[]>(
-    () => getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations) ?? [],
+  const [conversations, setConversations] = useState<MobileConversationSummary[]>(() =>
+    readConversationsCache(),
   );
   const [loading, setLoading] = useState(() => conversations.length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadConversations = useCallback(async (options?: { background?: boolean; pull?: boolean }) => {
-    const cached = getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations);
-    const hasCache = Boolean(cached?.length);
+    const cached = readConversationsCache();
+    const hasCache = cached.length > 0;
 
+    // Always prefer local cache first so send/read updates show immediately on focus.
     if (hasCache) {
-      setConversations(cached!);
+      setConversations(cached);
       setLoading(false);
     } else if (!options?.background && !options?.pull) {
       setLoading(true);
@@ -50,7 +50,7 @@ export default function MessagesScreen() {
     perfEnd("messages", { conversations: data.length, cached: hasCache });
 
     setConversations(data);
-    setSessionCache(SESSION_CACHE_KEYS.conversations, data);
+    writeConversationsCache(data);
     setError(fetchError ? formatMobileError(fetchError.message) : null);
     setLoading(false);
     setRefreshing(false);
@@ -58,8 +58,12 @@ export default function MessagesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const cached = getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations);
-      void loadConversations({ background: Boolean(cached?.length) });
+      const cached = readConversationsCache();
+      if (cached.length > 0) {
+        setConversations(cached);
+        setLoading(false);
+      }
+      void loadConversations({ background: cached.length > 0 });
     }, [loadConversations]),
   );
 
@@ -112,6 +116,7 @@ export default function MessagesScreen() {
 
       {!showInitialLoading
         ? conversations.map((conversation) => {
+            const isUnread = conversation.unreadCount > 0;
             const meta = formatMemberContextLine([
               formatPrimaryClubLine(conversation.otherUserPrimaryClub),
               conversation.otherUserBasedIn,
@@ -121,21 +126,32 @@ export default function MessagesScreen() {
               <Pressable
                 key={conversation.otherUserId}
                 onPress={() => openConversation(conversation)}
-                style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
+                style={({ pressed }) => [
+                  styles.row,
+                  isUnread ? styles.rowUnread : null,
+                  pressed ? styles.pressed : null,
+                ]}
+                accessibilityState={{ selected: isUnread }}
               >
-                <MemberIdentityLink
-                  userId={conversation.otherUserId}
-                  name={conversation.otherUserName}
-                  avatarUrl={conversation.otherUserPhotoUrl}
-                  size={48}
-                  avatarOnly
-                />
+                <View style={styles.avatarWrap}>
+                  <MemberIdentityLink
+                    userId={conversation.otherUserId}
+                    name={conversation.otherUserName}
+                    avatarUrl={conversation.otherUserPhotoUrl}
+                    size={48}
+                    avatarOnly
+                  />
+                  {isUnread ? <View style={styles.unreadDot} /> : null}
+                </View>
                 <View style={styles.body}>
                   <View style={styles.topLine}>
-                    <Text style={styles.name} numberOfLines={1}>
+                    <Text
+                      style={[styles.name, isUnread ? styles.nameUnread : null]}
+                      numberOfLines={1}
+                    >
                       {conversation.otherUserName}
                     </Text>
-                    <Text style={styles.time}>
+                    <Text style={[styles.time, isUnread ? styles.timeUnread : null]}>
                       {formatConversationListTimestamp(conversation.lastMessageAt)}
                     </Text>
                   </View>
@@ -144,11 +160,14 @@ export default function MessagesScreen() {
                       {meta}
                     </Text>
                   ) : null}
-                  <Text style={styles.preview} numberOfLines={2}>
+                  <Text
+                    style={[styles.preview, isUnread ? styles.previewUnread : null]}
+                    numberOfLines={2}
+                  >
                     {conversation.lastMessageBody}
                   </Text>
                 </View>
-                {conversation.unreadCount > 0 ? (
+                {isUnread ? (
                   <View style={styles.unreadBadge}>
                     <Text style={styles.unreadLabel}>{conversation.unreadCount}</Text>
                   </View>
@@ -172,8 +191,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderHairline,
   },
+  rowUnread: {
+    borderColor: colors.forestBorder,
+    backgroundColor: colors.bgSurface,
+  },
   pressed: {
     opacity: 0.92,
+  },
+  avatarWrap: {
+    position: "relative",
+  },
+  unreadDot: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.forest,
+    borderWidth: 2,
+    borderColor: colors.bgSurface,
   },
   body: {
     flex: 1,
@@ -188,15 +225,22 @@ const styles = StyleSheet.create({
   name: {
     flex: 1,
     minWidth: 0,
-    fontFamily: typography.sansSemibold,
+    fontFamily: typography.sansMedium,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  nameUnread: {
+    fontFamily: typography.sansSemibold,
   },
   time: {
     flexShrink: 0,
     fontFamily: typography.sans,
     fontSize: 11,
     color: colors.textTertiary,
+  },
+  timeUnread: {
+    color: colors.forest,
+    fontFamily: typography.sansMedium,
   },
   meta: {
     fontFamily: typography.sans,
@@ -208,6 +252,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  previewUnread: {
+    fontFamily: typography.sansMedium,
+    color: colors.textPrimary,
   },
   unreadBadge: {
     minWidth: 22,

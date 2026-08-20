@@ -73,6 +73,7 @@ export function FeedPostCard({
           avatarUrl={post.authorAvatarUrl}
           subtitle={identitySubtitle}
           size={44}
+          style={styles.identity}
         />
         <Text style={styles.timestamp}>{post.timestamp}</Text>
       </View>
@@ -149,6 +150,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: spacing.md,
+  },
+  identity: {
+    flex: 1,
+    minWidth: 0,
   },
   timestamp: {
     flexShrink: 0,

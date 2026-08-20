@@ -18,6 +18,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { MemberIdentityLink } from "@/components/member/MemberIdentityLink";
 import { colors, layout, radii, spacing, typography } from "@/constants/theme";
 import {
+  fetchConversations,
   fetchConversationThread,
   markDirectMessagesAsRead,
   PRIVATE_MESSAGE_MAX_LENGTH,
@@ -28,14 +29,13 @@ import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
 import { formatMessageBubbleTimestamp } from "@/lib/messageTimestamps";
 import { getMemberDisplayName } from "@/lib/memberInitials";
+import { SESSION_CACHE_KEYS, setSessionCache } from "@/lib/sessionCache";
 import {
-  SESSION_CACHE_KEYS,
-  getSessionCacheStale,
-  invalidateSessionCache,
-  setSessionCache,
-} from "@/lib/sessionCache";
+  markConversationReadInCache,
+  upsertConversationPreviewInCache,
+} from "@/lib/conversationCache";
 import { useAuth } from "@/hooks/AuthProvider";
-import type { MobileConversationSummary, MobilePrivateMessage } from "@/types/messages";
+import type { MobilePrivateMessage } from "@/types/messages";
 
 function firstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0]?.trim() ?? "";
@@ -64,6 +64,8 @@ export default function ConversationDetailScreen() {
   const [title, setTitle] = useState(memberName || "");
   const [subtitle, setSubtitle] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [memberClub, setMemberClub] = useState("");
+  const [memberBasedIn, setMemberBasedIn] = useState("");
   const listRef = useRef<FlatList<MobilePrivateMessage>>(null);
   const prefillApplied = useRef(false);
 
@@ -74,23 +76,6 @@ export default function ConversationDetailScreen() {
       prefillApplied.current = true;
     }
   }, [prefill]);
-
-  const clearUnreadInCache = useCallback((otherUserId: string) => {
-    const cached = getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations);
-    if (!cached?.length) {
-      invalidateSessionCache(SESSION_CACHE_KEYS.conversations);
-      return;
-    }
-
-    setSessionCache(
-      SESSION_CACHE_KEYS.conversations,
-      cached.map((conversation) =>
-        conversation.otherUserId === otherUserId
-          ? { ...conversation, unreadCount: 0 }
-          : conversation,
-      ),
-    );
-  }, []);
 
   const loadThread = useCallback(async () => {
     if (!userId) return;
@@ -105,7 +90,7 @@ export default function ConversationDetailScreen() {
       if (markResult.error) {
         console.warn("[messages] mark read failed", markResult.error.message);
       } else {
-        clearUnreadInCache(userId);
+        markConversationReadInCache(userId);
         setMessages((current) =>
           current.map((message) =>
             message.receiver_id === user?.id && !message.read_at
@@ -115,7 +100,7 @@ export default function ConversationDetailScreen() {
         );
       }
     }
-  }, [userId, user?.id, clearUnreadInCache]);
+  }, [userId, user?.id]);
 
   useEffect(() => {
     if (!userId) return;
@@ -136,6 +121,8 @@ export default function ConversationDetailScreen() {
           setTitle(displayName);
         }
         setAvatarUrl(member.club_logo_url);
+        setMemberClub(member.primary_club ?? "");
+        setMemberBasedIn(member.based_in ?? "");
         const meta = formatMemberContextLine([
           formatPrimaryClubLine(member.primary_club),
           member.based_in,
@@ -160,6 +147,19 @@ export default function ConversationDetailScreen() {
     }
   }, [messages.length]);
 
+  function syncInboxPreview(body: string, createdAt: string) {
+    if (!userId) return;
+    upsertConversationPreviewInCache({
+      otherUserId: userId,
+      otherUserName: title || memberName || "Member",
+      otherUserPhotoUrl: avatarUrl,
+      otherUserPrimaryClub: memberClub,
+      otherUserBasedIn: memberBasedIn,
+      lastMessageBody: body,
+      lastMessageAt: createdAt,
+    });
+  }
+
   async function handleSend(bodyOverride?: string) {
     if (!userId) return;
 
@@ -175,18 +175,21 @@ export default function ConversationDetailScreen() {
     setSendError(null);
     setFailedDraft(null);
 
+    const sentAt = new Date().toISOString();
     const optimisticMessage: MobilePrivateMessage = {
       id: `optimistic-${Date.now()}`,
       introduction_request_id: null,
       sender_id: user?.id ?? "",
       receiver_id: userId,
       body: trimmed,
-      created_at: new Date().toISOString(),
+      created_at: sentAt,
       read_at: null,
     };
 
     setMessages((current) => [...current, optimisticMessage]);
     setDraft("");
+    // Optimistic inbox preview so Back shows the new message immediately.
+    syncInboxPreview(trimmed, sentAt);
 
     const { data, error: sendFailure } = await sendDirectPrivateMessage({
       receiverUserId: userId,
@@ -198,23 +201,32 @@ export default function ConversationDetailScreen() {
       setDraft(trimmed);
       setFailedDraft(trimmed);
       setSendError(formatMobileError(sendFailure?.message ?? "Message could not be sent."));
+      // Reconcile inbox from server so a failed send does not leave a fake preview.
+      void fetchConversations().then(({ data: conversations }) => {
+        if (conversations) {
+          setSessionCache(SESSION_CACHE_KEYS.conversations, conversations);
+        }
+      });
       setSending(false);
       return;
     }
 
-    invalidateSessionCache(SESSION_CACHE_KEYS.conversations);
-
     const { data: refreshed, error: refreshError } = await fetchConversationThread(userId);
     if (!refreshError) {
       setMessages(refreshed);
+      const latest = refreshed[refreshed.length - 1];
+      if (latest) {
+        syncInboxPreview(latest.body, latest.created_at);
+      }
     } else {
       setMessages((current) =>
         current.map((message) =>
           message.id === optimisticMessage.id
-            ? { ...message, id: data.id, created_at: new Date().toISOString() }
+            ? { ...message, id: data.id, created_at: sentAt }
             : message,
         ),
       );
+      syncInboxPreview(trimmed, sentAt);
     }
 
     setSending(false);

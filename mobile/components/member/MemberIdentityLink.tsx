@@ -92,24 +92,30 @@ const styles = StyleSheet.create({
   pressable: {
     flex: 1,
     minWidth: 0,
+    maxWidth: "100%",
   },
   row: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
     minWidth: 0,
+    width: "100%",
   },
   copy: {
     flex: 1,
+    flexShrink: 1,
     gap: 2,
     minWidth: 0,
   },
   name: {
+    flexShrink: 1,
     fontFamily: typography.sansSemibold,
     fontSize: typography.body,
     color: colors.textPrimary,
   },
   subtitle: {
+    flexShrink: 1,
     fontFamily: typography.sans,
     fontSize: typography.caption,
     color: colors.textTertiary,
