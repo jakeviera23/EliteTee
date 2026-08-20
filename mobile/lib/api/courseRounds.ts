@@ -129,10 +129,15 @@ export async function fetchMemberCourseRoundsForCourse({
   limit?: number;
 }) {
   const client = requireSupabase();
+  const normalizedCourseId = golfCourseId.trim();
+  if (!normalizedCourseId) {
+    return { data: [] as MobileCourseRoundRecord[], error: new Error("Course is unavailable.") };
+  }
+
   const { data, error } = await client
     .from("member_course_rounds")
     .select(ROUND_SELECT)
-    .eq("golf_course_id", golfCourseId)
+    .eq("golf_course_id", normalizedCourseId)
     .order("played_on", { ascending: false })
     .limit(limit);
 
@@ -141,9 +146,16 @@ export async function fetchMemberCourseRoundsForCourse({
   }
 
   const rounds = (data ?? []).map((row) => normalizeRound(row as Record<string, unknown>));
-  const withNames = await attachMemberNames(rounds);
-  const withPhotos = await attachPhotosToRounds(withNames);
-  return { data: withPhotos, error: null };
+
+  try {
+    const withNames = await attachMemberNames(rounds);
+    const withPhotos = await attachPhotosToRounds(withNames);
+    return { data: withPhotos, error: null };
+  } catch (hydrateError) {
+    console.warn("[courseRounds] experience hydration failed", hydrateError);
+    // Prefer returning the review rows themselves over failing the whole section.
+    return { data: rounds, error: null };
+  }
 }
 
 export async function fetchPhotosForRoundIdsPublic(roundIds: string[]) {

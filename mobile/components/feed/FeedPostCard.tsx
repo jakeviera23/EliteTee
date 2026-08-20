@@ -10,6 +10,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { buildFeedMetaChips, type FeedMetaChip } from "@/lib/feedCardMeta";
+import { cacheFeedPostSnapshot } from "@/lib/feedPostCache";
 import type { MobileFeedPost } from "@/types/feed";
 
 type FeedPostCardProps = {
@@ -53,10 +54,13 @@ export function FeedPostCard({
     );
 
   function updatePost(patch: Partial<MobileFeedPost>) {
-    onPostChange?.({ ...post, ...patch });
+    const next = { ...post, ...patch };
+    cacheFeedPostSnapshot(next);
+    onPostChange?.(next);
   }
 
   function openDetail() {
+    cacheFeedPostSnapshot(post);
     router.push(`/feed/${post.id}`);
   }
 
@@ -86,6 +90,7 @@ export function FeedPostCard({
         <FeedCourseLink
           courseSlug={post.courseSlug}
           courseName={post.headline}
+          highlightRoundId={post.memberCourseRoundId}
           style="headline"
         />
       ) : null}

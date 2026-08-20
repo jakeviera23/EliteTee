@@ -5,12 +5,19 @@ import { colors, typography } from "@/constants/theme";
 type FeedCourseLinkProps = {
   courseSlug?: string | null;
   courseName: string;
+  highlightRoundId?: string | null;
   style?: "title" | "headline";
 };
 
-export function FeedCourseLink({ courseSlug, courseName, style = "headline" }: FeedCourseLinkProps) {
+export function FeedCourseLink({
+  courseSlug,
+  courseName,
+  highlightRoundId,
+  style = "headline",
+}: FeedCourseLinkProps) {
   const router = useRouter();
   const normalizedSlug = courseSlug?.trim() ?? "";
+  const roundId = highlightRoundId?.trim() ?? "";
 
   if (!courseName) return null;
 
@@ -22,7 +29,14 @@ export function FeedCourseLink({ courseSlug, courseName, style = "headline" }: F
 
   return (
     <Pressable
-      onPress={() => router.push(`/courses/${normalizedSlug}`)}
+      onPress={() =>
+        router.push({
+          pathname: "/courses/[slug]",
+          params: roundId
+            ? { slug: normalizedSlug, highlightRoundId: roundId }
+            : { slug: normalizedSlug },
+        })
+      }
       accessibilityRole="link"
       accessibilityLabel={`Open ${courseName}`}
     >

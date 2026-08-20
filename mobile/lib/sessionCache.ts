@@ -45,6 +45,7 @@ export function clearSessionCaches() {
 
 export const SESSION_CACHE_KEYS = {
   homeFeed: "feed:home",
+  feedPost: (postId: string) => `feed:post:${postId.trim()}`,
   discoverMembers: "discover:members",
   discoverCourses: (query: string, offset: number) =>
     `discover:courses:${query.trim().toLowerCase()}:${offset}`,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -30,15 +30,24 @@ import {
   formatFeedEngagementError,
   isPersistedFeedPostId,
 } from "@/lib/feedPostEngagement";
+import { cacheFeedPostSnapshot, findCachedFeedPost } from "@/lib/feedPostCache";
 import { formatMobileError } from "@/lib/errors";
 import type { MobileFeedComment, MobileFeedPost } from "@/types/feed";
 
 export default function FeedPostDetailScreen() {
   const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const [post, setPost] = useState<MobileFeedPost | null>(null);
+  const normalizedPostId = typeof postId === "string" ? postId.trim() : "";
+
+  const seededPost = useMemo(
+    () => (normalizedPostId ? findCachedFeedPost(normalizedPostId) : null),
+    [normalizedPostId],
+  );
+
+  const [post, setPost] = useState<MobileFeedPost | null>(seededPost);
   const [comments, setComments] = useState<MobileFeedComment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !seededPost);
+  const [refreshing, setRefreshing] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
@@ -46,31 +55,51 @@ export default function FeedPostDetailScreen() {
   const [commentError, setCommentError] = useState<string | null>(null);
 
   const loadPost = useCallback(async () => {
-    if (!postId) return;
-    setLoading(true);
+    if (!normalizedPostId) return;
+
+    const seeded = findCachedFeedPost(normalizedPostId);
+    if (seeded) {
+      setPost(seeded);
+      setLoading(false);
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
-    const { data, error: fetchError } = await fetchFeedPostById(postId);
-    setPost(data);
-    setError(fetchError ? formatMobileError(fetchError.message) : null);
+    const { data, error: fetchError } = await fetchFeedPostById(normalizedPostId);
+
+    if (data) {
+      cacheFeedPostSnapshot(data);
+      setPost(data);
+      setError(null);
+    } else if (!seeded) {
+      setPost(null);
+      setError(fetchError ? formatMobileError(fetchError.message) : "Post unavailable.");
+    } else if (fetchError) {
+      console.warn("[feed-detail] background refresh failed", fetchError.message);
+    }
+
     setLoading(false);
-  }, [postId]);
+    setRefreshing(false);
+  }, [normalizedPostId]);
 
   const loadComments = useCallback(async () => {
-    if (!postId || !isPersistedFeedPostId(postId)) return;
+    if (!normalizedPostId || !isPersistedFeedPostId(normalizedPostId)) return;
     setCommentsLoading(true);
-    const { data, error: fetchError } = await fetchFeedPostComments(postId);
+    const { data, error: fetchError } = await fetchFeedPostComments(normalizedPostId);
     setComments(data);
     if (fetchError) {
       setCommentError(formatFeedEngagementError(fetchError));
     }
     setCommentsLoading(false);
-  }, [postId]);
+  }, [normalizedPostId]);
 
   useEffect(() => {
+    if (!normalizedPostId) return;
     void loadPost();
     void loadComments();
-  }, [loadPost, loadComments]);
+  }, [normalizedPostId, loadPost, loadComments]);
 
   async function handleSubmitComment() {
     if (!post || !commentDraft.trim() || submittingComment) return;
@@ -87,13 +116,16 @@ export default function FeedPostDetailScreen() {
     }
 
     setComments((current) => [...current, data]);
-    setPost((current) =>
-      current ? { ...current, commentCount: current.commentCount + 1 } : current,
-    );
+    setPost((current) => {
+      if (!current) return current;
+      const next = { ...current, commentCount: current.commentCount + 1 };
+      cacheFeedPostSnapshot(next);
+      return next;
+    });
     setCommentDraft("");
   }
 
-  if (loading) {
+  if (loading && !post) {
     return (
       <SafeAreaView style={styles.safe}>
         <LoadingState label="Loading post…" fullScreen />
@@ -101,7 +133,7 @@ export default function FeedPostDetailScreen() {
     );
   }
 
-  if (error || !post) {
+  if ((error && !post) || !post) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.toolbar}>
@@ -138,6 +170,8 @@ export default function FeedPostDetailScreen() {
           <View style={styles.toolbarSpacer} />
         </View>
 
+        {refreshing ? <Text style={styles.refreshHint}>Updating…</Text> : null}
+
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
@@ -159,6 +193,7 @@ export default function FeedPostDetailScreen() {
             <FeedCourseLink
               courseSlug={post.courseSlug}
               courseName={post.headline}
+              highlightRoundId={post.memberCourseRoundId}
               style="headline"
             />
           ) : null}
@@ -185,7 +220,14 @@ export default function FeedPostDetailScreen() {
 
           <FeedPostActions
             post={post}
-            onEngagementChange={(patch) => setPost((current) => (current ? { ...current, ...patch } : current))}
+            onEngagementChange={(patch) =>
+              setPost((current) => {
+                if (!current) return current;
+                const next = { ...current, ...patch };
+                cacheFeedPostSnapshot(next);
+                return next;
+              })
+            }
             onCommentPress={() => undefined}
           />
 
@@ -295,6 +337,13 @@ const styles = StyleSheet.create({
   },
   toolbarSpacer: {
     width: 36,
+  },
+  refreshHint: {
+    paddingHorizontal: layout.pagePadding,
+    paddingBottom: spacing.xs,
+    fontFamily: typography.sans,
+    fontSize: typography.caption,
+    color: colors.textTertiary,
   },
   content: {
     paddingHorizontal: layout.pagePadding,

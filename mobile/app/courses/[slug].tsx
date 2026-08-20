@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { RoundReviewCard } from "@/components/courses/RoundReviewCard";
 import { Button } from "@/components/ui/Button";
@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { Screen } from "@/components/ui/Screen";
 import { colors, radii, spacing, typography } from "@/constants/theme";
+import { useAuth } from "@/hooks/AuthProvider";
 import { fetchGolfCourseBySlug } from "@/lib/api/courses";
 import { fetchMemberCourseRoundsForCourse } from "@/lib/api/courseRounds";
 import { formatMemberRatingSummary } from "@/lib/courseRating";
@@ -17,56 +18,84 @@ import type { MobileCourseRoundRecord } from "@/types/courseRoundPhoto";
 
 export default function CourseDetailScreen() {
   const router = useRouter();
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { status } = useAuth();
+  const { slug, highlightRoundId } = useLocalSearchParams<{
+    slug: string;
+    highlightRoundId?: string;
+  }>();
+  const normalizedSlug = typeof slug === "string" ? slug.trim() : "";
+  const focusRoundId = typeof highlightRoundId === "string" ? highlightRoundId.trim() : "";
+
   const [course, setCourse] = useState<MobileGolfCourse | null>(null);
   const [rounds, setRounds] = useState<MobileCourseRoundRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [courseLoading, setCourseLoading] = useState(true);
+  const [roundsLoading, setRoundsLoading] = useState(false);
+  const [courseError, setCourseError] = useState<string | null>(null);
+  const [roundsError, setRoundsError] = useState<string | null>(null);
+  const requestId = useRef(0);
+
+  const loadRounds = useCallback(async (golfCourseId: string, currentRequest: number) => {
+    setRoundsLoading(true);
+    setRoundsError(null);
+
+    const { data: roundData, error: nextRoundsError } = await fetchMemberCourseRoundsForCourse({
+      golfCourseId,
+    });
+
+    if (currentRequest !== requestId.current) return;
+
+    setRounds(roundData);
+    setRoundsError(nextRoundsError ? formatMobileError(nextRoundsError.message) : null);
+    setRoundsLoading(false);
+  }, []);
+
+  const loadCourse = useCallback(async () => {
+    if (!normalizedSlug) return;
+    // Rounds require an authenticated portal session (RLS). Wait for auth boot.
+    if (status === "booting") return;
+
+    const currentRequest = ++requestId.current;
+    setCourseLoading(true);
+    setCourseError(null);
+    setRoundsError(null);
+
+    const { data: courseData, error: nextCourseError } = await fetchGolfCourseBySlug(normalizedSlug);
+    if (currentRequest !== requestId.current) return;
+
+    if (nextCourseError) {
+      setCourse(null);
+      setRounds([]);
+      setCourseError(formatMobileError(nextCourseError.message));
+      setCourseLoading(false);
+      setRoundsLoading(false);
+      return;
+    }
+
+    if (!courseData) {
+      setCourse(null);
+      setRounds([]);
+      setCourseError(null);
+      setCourseLoading(false);
+      setRoundsLoading(false);
+      return;
+    }
+
+    setCourse(courseData);
+    setCourseLoading(false);
+
+    if (status !== "ready") {
+      setRounds([]);
+      setRoundsLoading(false);
+      setRoundsError("Sign in with portal access to view member experiences.");
+      return;
+    }
+
+    await loadRounds(courseData.id, currentRequest);
+  }, [normalizedSlug, status, loadRounds]);
 
   useEffect(() => {
-    if (!slug) return;
-
-    let active = true;
-
-    void (async () => {
-      setLoading(true);
-      setError(null);
-
-      const { data: courseData, error: courseError } = await fetchGolfCourseBySlug(slug);
-      if (!active) return;
-
-      if (courseError) {
-        setError(formatMobileError(courseError.message));
-        setLoading(false);
-        return;
-      }
-
-      if (!courseData) {
-        setCourse(null);
-        setRounds([]);
-        setLoading(false);
-        return;
-      }
-
-      setCourse(courseData);
-
-      const { data: roundData, error: roundsError } = await fetchMemberCourseRoundsForCourse({
-        golfCourseId: courseData.id,
-      });
-
-      if (!active) return;
-
-      setRounds(roundData);
-      if (roundsError) {
-        setError(formatMobileError(roundsError.message));
-      }
-      setLoading(false);
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [slug]);
+    void loadCourse();
+  }, [loadCourse]);
 
   const ratingSummary = course
     ? formatMemberRatingSummary(course.avg_rating ?? 0, course.round_count ?? rounds.length)
@@ -85,23 +114,36 @@ export default function CourseDetailScreen() {
     .filter(Boolean)
     .join(" · ");
 
+  const orderedRounds =
+    focusRoundId && rounds.some((round) => round.id === focusRoundId)
+      ? [
+          ...rounds.filter((round) => round.id === focusRoundId),
+          ...rounds.filter((round) => round.id !== focusRoundId),
+        ]
+      : rounds;
+
   return (
     <Screen title={course?.name ?? "Course"} subtitle="Course detail from the EliteTee directory.">
       <Button label="Back" variant="ghost" onPress={() => router.back()} />
 
-      {loading ? <LoadingState label="Loading course…" /> : null}
+      {courseLoading || status === "booting" ? (
+        <LoadingState label="Loading course…" />
+      ) : null}
 
-      {!loading && error ? (
+      {!courseLoading && courseError ? (
         <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText}>{courseError}</Text>
+          <Pressable onPress={() => void loadCourse()}>
+            <Text style={styles.retry}>Try again</Text>
+          </Pressable>
         </View>
       ) : null}
 
-      {!loading && !error && !course ? (
+      {!courseLoading && !courseError && !course ? (
         <EmptyState title="Course not found" body="This course may have been removed or renamed." />
       ) : null}
 
-      {!loading && !error && course ? (
+      {!courseLoading && !courseError && course ? (
         <>
           {course.image_url ? (
             <Image source={{ uri: course.image_url }} style={styles.hero} />
@@ -125,14 +167,35 @@ export default function CourseDetailScreen() {
           </View>
 
           <Text style={styles.sectionTitle}>Member experiences</Text>
-          {rounds.length === 0 ? (
+
+          {roundsLoading ? <LoadingState label="Loading member experiences…" /> : null}
+
+          {!roundsLoading && roundsError ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{roundsError}</Text>
+              <Pressable onPress={() => void loadRounds(course.id, ++requestId.current)}>
+                <Text style={styles.retry}>Try again</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {!roundsLoading && !roundsError && orderedRounds.length === 0 ? (
             <EmptyState
               title="No member experiences yet"
               body="Round reviews appear here as members share experiences at this course."
             />
-          ) : (
-            rounds.map((round) => <RoundReviewCard key={round.id} round={round} />)
-          )}
+          ) : null}
+
+          {!roundsLoading && !roundsError
+            ? orderedRounds.map((round) => (
+                <View
+                  key={round.id}
+                  style={round.id === focusRoundId ? styles.highlightedRound : null}
+                >
+                  <RoundReviewCard round={round} />
+                </View>
+              ))
+            : null}
         </>
       ) : null}
     </Screen>
@@ -190,14 +253,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.textPrimary,
   },
+  highlightedRound: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    padding: 2,
+  },
   errorBox: {
     padding: spacing.lg,
     backgroundColor: colors.errorSoft,
     borderRadius: radii.lg,
+    gap: spacing.sm,
   },
   errorText: {
     fontFamily: typography.sans,
     fontSize: 14,
     color: colors.error,
+  },
+  retry: {
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    color: colors.gold,
   },
 });

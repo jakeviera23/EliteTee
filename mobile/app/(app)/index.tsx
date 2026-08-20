@@ -25,6 +25,7 @@ import {
   setSessionCache,
 } from "@/lib/sessionCache";
 import { useAuth } from "@/hooks/AuthProvider";
+import { cacheFeedPostSnapshot } from "@/lib/feedPostCache";
 import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { getMemberDisplayName } from "@/lib/memberInitials";
 import type { MobileFeedPost } from "@/types/feed";
@@ -78,6 +79,9 @@ export default function HomeScreen() {
 
   const persistCache = useCallback(
     (nextPosts: MobileFeedPost[], nextHasMore: boolean, cursor: FeedCursor | null) => {
+      for (const post of nextPosts) {
+        cacheFeedPostSnapshot(post);
+      }
       setSessionCache(SESSION_CACHE_KEYS.homeFeed, {
         posts: nextPosts,
         hasMore: nextHasMore,
