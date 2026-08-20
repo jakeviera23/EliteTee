@@ -409,7 +409,7 @@ export default function MemberProfileScreen() {
         ) : null}
 
         {recentFeedPosts.length > 0 ? (
-          <ProfileSection title="Recent feed activity">
+          <ProfileSection title="Posts">
             {recentFeedPosts.map((post) => (
               <FeedPostCard key={post.id} post={post} />
             ))}

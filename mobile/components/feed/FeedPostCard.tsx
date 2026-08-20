@@ -73,7 +73,15 @@ export function FeedPostCard({
         <Text style={styles.timestamp}>{post.timestamp}</Text>
       </View>
 
-      <Text style={styles.badge}>{post.badge}</Text>
+      <Pressable
+        onPress={openDetail}
+        accessibilityRole="button"
+        accessibilityLabel="Open post"
+        style={({ pressed }) => [pressed ? styles.pressed : null]}
+      >
+        <Text style={styles.badge}>{post.badge}</Text>
+      </Pressable>
+
       {showHeadline ? (
         <FeedCourseLink
           courseSlug={post.courseSlug}
@@ -83,19 +91,30 @@ export function FeedPostCard({
       ) : null}
 
       {chips.length > 0 ? (
-        <View style={styles.chipRow}>
+        <Pressable
+          onPress={openDetail}
+          accessibilityRole="button"
+          accessibilityLabel="Open post details"
+          style={({ pressed }) => [styles.chipRow, pressed ? styles.pressed : null]}
+        >
           {chips.map((chip) => (
             <View key={chip.key} style={[styles.chip, chipToneStyle(chip.tone)]}>
               <Text style={styles.chipLabel}>{chip.label}</Text>
               <Text style={styles.chipValue}>{chip.value}</Text>
             </View>
           ))}
-        </View>
+        </Pressable>
       ) : null}
 
-      <Pressable onPress={openDetail} style={({ pressed }) => [pressed ? styles.pressed : null]}>
-        <FeedPhotoGallery imageUrls={post.imageUrls} rating={post.rating} />
+      {/* Gallery stays outside the post-body press target so lightbox/swipe stay independent. */}
+      <FeedPhotoGallery imageUrls={post.imageUrls} rating={post.rating} />
 
+      <Pressable
+        onPress={openDetail}
+        accessibilityRole="button"
+        accessibilityLabel="Open post"
+        style={({ pressed }) => [pressed ? styles.pressed : null]}
+      >
         <Text style={styles.message} numberOfLines={6}>
           {post.message}
         </Text>
@@ -123,10 +142,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: spacing.md,
     alignItems: "flex-start",
+    gap: spacing.md,
   },
   timestamp: {
+    flexShrink: 0,
     fontFamily: typography.sans,
     fontSize: typography.caption,
     color: colors.textTertiary,

@@ -25,6 +25,7 @@ export function MemberIdentityLink({
 }: MemberIdentityLinkProps) {
   const router = useRouter();
   const normalizedUserId = userId?.trim() ?? "";
+  const displayName = name.trim() || "Member";
   const canNavigate = Boolean(normalizedUserId);
 
   const navigateToProfile = () => {
@@ -34,14 +35,15 @@ export function MemberIdentityLink({
   };
 
   if (avatarOnly) {
-    const avatar = <MemberAvatar name={name} imageUrl={avatarUrl} size={size} />;
+    const avatar = <MemberAvatar name={displayName} imageUrl={avatarUrl} size={size} />;
     if (!canNavigate) return avatar;
     return (
       <Pressable
         onPress={navigateToProfile}
         style={({ pressed }) => [style, pressed ? styles.pressed : null]}
         accessibilityRole="button"
-        accessibilityLabel={`View ${name}'s profile`}
+        accessibilityLabel={`View ${displayName}'s profile`}
+        hitSlop={6}
       >
         {avatar}
       </Pressable>
@@ -49,14 +51,14 @@ export function MemberIdentityLink({
   }
 
   const content = (
-    <View style={[styles.row, style]}>
-      <MemberAvatar name={name} imageUrl={avatarUrl} size={size} />
+    <View style={styles.row}>
+      <MemberAvatar name={displayName} imageUrl={avatarUrl} size={size} />
       <View style={styles.copy}>
-        <Text style={styles.name} numberOfLines={1}>
-          {name}
+        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+          {displayName}
         </Text>
         {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1}>
+          <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
             {subtitle}
           </Text>
         ) : null}
@@ -65,15 +67,16 @@ export function MemberIdentityLink({
   );
 
   if (!canNavigate) {
-    return content;
+    return <View style={[styles.pressable, style]}>{content}</View>;
   }
 
   return (
     <Pressable
       onPress={navigateToProfile}
-      style={({ pressed }) => [pressed ? styles.pressed : null]}
+      style={({ pressed }) => [styles.pressable, style, pressed ? styles.pressed : null]}
       accessibilityRole="button"
-      accessibilityLabel={`View ${name}'s profile`}
+      accessibilityLabel={`View ${displayName}'s profile`}
+      hitSlop={6}
     >
       {content}
     </Pressable>
@@ -85,11 +88,15 @@ export function buildMemberIdentitySubtitle(club: string, location: string) {
 }
 
 const styles = StyleSheet.create({
+  /** Required so name text isn't crushed to 0 width beside the timestamp. */
+  pressable: {
+    flex: 1,
+    minWidth: 0,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    flex: 1,
     minWidth: 0,
   },
   copy: {

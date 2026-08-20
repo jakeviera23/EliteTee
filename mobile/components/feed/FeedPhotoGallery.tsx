@@ -22,16 +22,23 @@ type FeedPhotoGalleryProps = {
 export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [failedUrls, setFailedUrls] = useState<Record<string, true>>({});
   const heroListRef = useRef<FlatList<string>>(null);
   const lightboxListRef = useRef<FlatList<string>>(null);
 
-  if (imageUrls.length === 0) return null;
+  const urls = imageUrls.filter((url) => url.trim() && !failedUrls[url]);
+  if (urls.length === 0) return null;
 
   const width = Dimensions.get("window").width - spacing.lg * 2 - spacing.xl * 2;
+  const safeIndex = Math.min(activeIndex, urls.length - 1);
+
+  function markFailed(url: string) {
+    setFailedUrls((current) => ({ ...current, [url]: true }));
+  }
 
   function handleHeroMomentumEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-    if (nextIndex >= 0 && nextIndex < imageUrls.length) {
+    if (nextIndex >= 0 && nextIndex < urls.length) {
       setActiveIndex(nextIndex);
     }
   }
@@ -39,7 +46,7 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
   function handleLightboxMomentumEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const screenWidth = Dimensions.get("window").width;
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
-    if (nextIndex >= 0 && nextIndex < imageUrls.length) {
+    if (nextIndex >= 0 && nextIndex < urls.length) {
       setActiveIndex(nextIndex);
     }
   }
@@ -62,7 +69,7 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
       <View style={{ width }}>
         <FlatList
           ref={heroListRef}
-          data={imageUrls}
+          data={urls}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -70,7 +77,11 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
           onMomentumScrollEnd={handleHeroMomentumEnd}
           renderItem={({ item, index }) => (
             <Pressable onPress={() => openLightbox(index)}>
-              <Image source={{ uri: item }} style={[styles.hero, { width }]} />
+              <Image
+                source={{ uri: item }}
+                style={[styles.hero, { width }]}
+                onError={() => markFailed(item)}
+              />
             </Pressable>
           )}
         />
@@ -79,25 +90,26 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
             <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
           </View>
         ) : null}
-        {imageUrls.length > 1 ? (
+        {urls.length > 1 ? (
           <View style={styles.pageDots}>
-            {imageUrls.map((url, index) => (
+            {urls.map((url, index) => (
               <View
                 key={`dot-${url}-${index}`}
-                style={[styles.dot, activeIndex === index ? styles.dotActive : null]}
+                style={[styles.dot, safeIndex === index ? styles.dotActive : null]}
               />
             ))}
           </View>
         ) : null}
       </View>
 
-      {imageUrls.length > 1 ? (
+      {urls.length > 1 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbRow}>
-          {imageUrls.map((url, index) => (
+          {urls.map((url, index) => (
             <Pressable key={`${url}-${index}`} onPress={() => selectThumb(index)}>
               <Image
                 source={{ uri: url }}
-                style={[styles.thumb, activeIndex === index ? styles.thumbActive : null]}
+                style={[styles.thumb, safeIndex === index ? styles.thumbActive : null]}
+                onError={() => markFailed(url)}
               />
             </Pressable>
           ))}
@@ -116,10 +128,10 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
           </Pressable>
           <FlatList
             ref={lightboxListRef}
-            data={imageUrls}
+            data={urls}
             horizontal
             pagingEnabled
-            initialScrollIndex={activeIndex}
+            initialScrollIndex={safeIndex}
             getItemLayout={(_, index) => ({
               length: Dimensions.get("window").width,
               offset: Dimensions.get("window").width * index,
@@ -136,11 +148,12 @@ export function FeedPhotoGallery({ imageUrls, rating }: FeedPhotoGalleryProps) {
                   { width: Dimensions.get("window").width, height: Dimensions.get("window").height * 0.7 },
                 ]}
                 resizeMode="contain"
+                onError={() => markFailed(item)}
               />
             )}
           />
           <Text style={styles.lightboxMeta}>
-            {activeIndex + 1} / {imageUrls.length}
+            {safeIndex + 1} / {urls.length}
           </Text>
         </View>
       </Modal>

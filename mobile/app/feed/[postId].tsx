@@ -302,12 +302,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   header: {
-    gap: spacing.sm,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md,
   },
   timestamp: {
+    flexShrink: 0,
     fontFamily: typography.sans,
     fontSize: typography.caption,
     color: colors.textTertiary,
+    paddingTop: 2,
   },
   badge: {
     alignSelf: "flex-start",
