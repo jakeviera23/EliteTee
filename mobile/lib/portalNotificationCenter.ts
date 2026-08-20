@@ -7,6 +7,7 @@ import { fetchConversations } from "@/lib/api/messages";
 import { fetchIntroductionRequests } from "@/lib/api/introductions";
 import { getCurrentUserId } from "@/lib/api/members";
 import { requireSupabase } from "@/lib/supabase";
+import { INTRODUCTION_WITHDRAWN_RESPONSE } from "./introductionStatus";
 import {
   getLastSeenNetworkActivityAt,
   getSeenIntroductionRequestIds,
@@ -149,6 +150,10 @@ function buildIntroductionNotifications({
     }
 
     if (status === "declined" && request.sender_id === currentUserId) {
+      // Sender withdrawals should not look like the receiver declined.
+      if ((request.response_message ?? "").trim() === INTRODUCTION_WITHDRAWN_RESPONSE) {
+        continue;
+      }
       const isSeen = seenIntroductionRequestIds.has(request.id);
       items.push({
         id: `introduction:declined:${request.id}`,

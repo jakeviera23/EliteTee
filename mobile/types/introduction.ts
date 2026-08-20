@@ -21,6 +21,12 @@ export type MobileIntroductionRequest = {
   response_message?: string | null;
   sender_name?: string;
   receiver_name?: string;
+  sender_photo_url?: string | null;
+  receiver_photo_url?: string | null;
+  sender_primary_club?: string;
+  receiver_primary_club?: string;
+  sender_based_in?: string;
+  receiver_based_in?: string;
 };
 
 export type IntroductionTab = "incoming" | "sent" | "accepted" | "declined";

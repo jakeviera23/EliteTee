@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { MemberCard } from "@/components/discover/MemberCard";
+import { MemberIdentityLink } from "@/components/member/MemberIdentityLink";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -14,13 +15,20 @@ import {
   fetchIntroductionRequests,
   updateIntroductionRequestStatus,
 } from "@/lib/api/introductions";
-import { fetchDiscoverableMembers } from "@/lib/api/members";
+import { fetchDiscoverableMembers, fetchMemberByUserId } from "@/lib/api/members";
+import { buildIntroductionAcceptedMessageDraft } from "@/lib/connectionMessageDraft";
 import {
   categorizeIntroductionRequests,
+  getIntroductionCounterpartContext,
   getIntroductionCounterpartName,
+  getIntroductionCounterpartPhotoUrl,
   getIntroductionCounterpartUserId,
+  getIntroductionDirectionLabel,
+  getIntroductionStatusLabel,
 } from "@/lib/introductionBoard";
+import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
+import { getMemberDisplayName } from "@/lib/memberInitials";
 import { useAuth } from "@/hooks/AuthProvider";
 import {
   INTRODUCTION_REQUEST_TYPES,
@@ -37,10 +45,37 @@ const TAB_LABELS: Record<IntroductionTab, string> = {
   declined: "Declined",
 };
 
+const INTRO_MESSAGE_MIN_LENGTH = 20;
+
+function firstParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0]?.trim() ?? "";
+  return value?.trim() ?? "";
+}
+
+function toMemberFromFetch(
+  member: MobileMemberProfile,
+  fallbackName?: string,
+): MobileMemberProfile {
+  return {
+    ...member,
+    full_name: getMemberDisplayName(member.full_name) || fallbackName || "Member",
+  };
+}
+
 export default function IntroductionsScreen() {
   const router = useRouter();
   const { user, profile } = useAuth();
+  const params = useLocalSearchParams<{
+    targetUserId?: string;
+    targetMemberName?: string;
+    openComposer?: string;
+  }>();
+  const targetUserId = firstParam(params.targetUserId);
+  const targetMemberName = firstParam(params.targetMemberName);
+  const openComposer = firstParam(params.openComposer) === "1" || Boolean(targetUserId);
+
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requests, setRequests] = useState<MobileIntroductionRequest[]>([]);
   const [members, setMembers] = useState<MobileMemberProfile[]>([]);
@@ -51,11 +86,18 @@ export default function IntroductionsScreen() {
   );
   const [requestMessage, setRequestMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const targetApplied = useRef(false);
+  const returnedFromProfile = useRef(Boolean(targetUserId));
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (options?: { pull?: boolean }) => {
+    if (options?.pull) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
     const [requestsResult, membersResult] = await Promise.all([
@@ -73,11 +115,67 @@ export default function IntroductionsScreen() {
           : null,
     );
     setLoading(false);
+    setRefreshing(false);
+    return { members: membersResult.data };
   }, []);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!openComposer || !targetUserId || targetApplied.current) return;
+
+    let active = true;
+    void (async () => {
+      const fromDirectory = members.find((member) => member.user_id === targetUserId);
+      if (fromDirectory) {
+        if (!active) return;
+        setSelectedMember(fromDirectory);
+        targetApplied.current = true;
+        return;
+      }
+
+      if (loading) return;
+
+      const { data } = await fetchMemberByUserId(targetUserId);
+      if (!active) return;
+      if (data) {
+        setSelectedMember(toMemberFromFetch(data, targetMemberName));
+      } else if (targetMemberName) {
+        setSelectedMember({
+          id: targetUserId,
+          user_id: targetUserId,
+          full_name: targetMemberName,
+          email: "",
+          primary_club: "",
+          additional_clubs: [],
+          based_in: "",
+          regions: [],
+          industry: "",
+          golf_interests: [],
+          business_interests: [],
+          current_request: "",
+          traveling_to: "",
+          handicap: "",
+          bucket_list_course_ids: [],
+          club_logo_url: null,
+          cover_photo_url: null,
+          membership_status: "",
+          is_verified: false,
+          founding_member_number: null,
+          portal_access_enabled: true,
+          created_at: "",
+          updated_at: "",
+        });
+      }
+      targetApplied.current = true;
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [openComposer, targetUserId, targetMemberName, members, loading]);
 
   const categorized = useMemo(
     () => categorizeIntroductionRequests(requests, user?.id ?? null),
@@ -95,8 +193,12 @@ export default function IntroductionsScreen() {
     [profile, members, requests],
   );
 
+  const messageLength = requestMessage.trim().length;
+  const canSubmitRequest =
+    Boolean(selectedMember) && messageLength >= INTRO_MESSAGE_MIN_LENGTH && !submitting;
+
   async function handleCreateRequest() {
-    if (!selectedMember || submitting) return;
+    if (!selectedMember || submitting || !canSubmitRequest) return;
 
     setSubmitting(true);
     setActionError(null);
@@ -118,14 +220,22 @@ export default function IntroductionsScreen() {
     setActionSuccess("Introduction request sent.");
     setSelectedMember(null);
     setRequestMessage("");
-    void loadData();
+    await loadData();
+
+    if (returnedFromProfile.current) {
+      setTimeout(() => router.back(), 600);
+    }
   }
 
   async function handleRespond(requestId: string, status: "accepted" | "declined") {
+    if (updatingRequestId) return;
+    setUpdatingRequestId(requestId);
     setActionError(null);
     setActionSuccess(null);
 
     const { error: respondError } = await updateIntroductionRequestStatus(requestId, status);
+    setUpdatingRequestId(null);
+
     if (respondError) {
       setActionError(formatMobileError(respondError.message));
       return;
@@ -136,10 +246,14 @@ export default function IntroductionsScreen() {
   }
 
   async function handleCancel(requestId: string) {
+    if (updatingRequestId) return;
+    setUpdatingRequestId(requestId);
     setActionError(null);
     setActionSuccess(null);
 
     const { error: cancelError } = await cancelIntroductionRequest(requestId);
+    setUpdatingRequestId(null);
+
     if (cancelError) {
       setActionError(formatMobileError(cancelError.message));
       return;
@@ -149,8 +263,26 @@ export default function IntroductionsScreen() {
     void loadData();
   }
 
+  function openMessage(request: MobileIntroductionRequest) {
+    const counterpartUserId = getIntroductionCounterpartUserId(request, user?.id ?? "");
+    const counterpartName = getIntroductionCounterpartName(request, user?.id ?? "");
+    router.push({
+      pathname: "/(app)/messages/[userId]",
+      params: {
+        userId: counterpartUserId,
+        memberName: counterpartName,
+        prefill: buildIntroductionAcceptedMessageDraft(counterpartName),
+      },
+    });
+  }
+
   return (
-    <Screen title="Introductions" subtitle="Recommendations and introduction requests.">
+    <Screen
+      title="Introductions"
+      subtitle="Recommendations and introduction requests."
+      refreshing={refreshing}
+      onRefresh={() => void loadData({ pull: true })}
+    >
       <Button label="Back" variant="ghost" onPress={() => router.back()} />
 
       {loading ? <LoadingState label="Loading introductions…" /> : null}
@@ -158,6 +290,9 @@ export default function IntroductionsScreen() {
       {!loading && error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={() => void loadData()}>
+            <Text style={styles.retry}>Try again</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -184,7 +319,12 @@ export default function IntroductionsScreen() {
           ) : (
             recommendations.map(({ member, reasons }) => (
               <View key={member.id} style={styles.recommendation}>
-                <MemberCard member={member} />
+                <MemberCard
+                  member={member}
+                  onPress={() =>
+                    member.user_id ? router.push(`/members/${member.user_id}`) : undefined
+                  }
+                />
                 {reasons.map((reason) => (
                   <Text key={reason} style={styles.reason}>
                     {reason}
@@ -196,6 +336,8 @@ export default function IntroductionsScreen() {
                   onPress={() => {
                     setSelectedMember(member);
                     setRequestMessage("");
+                    setActionError(null);
+                    setActionSuccess(null);
                   }}
                 />
               </View>
@@ -219,18 +361,48 @@ export default function IntroductionsScreen() {
           {categorized[activeTab].length === 0 ? (
             <EmptyState
               title={`No ${TAB_LABELS[activeTab].toLowerCase()} requests`}
-              body="Introduction activity appears here as members connect."
+              body={
+                activeTab === "declined"
+                  ? "Declined and withdrawn requests appear here."
+                  : "Introduction activity appears here as members connect."
+              }
             />
           ) : (
             categorized[activeTab].map((request) => {
               const counterpartName = getIntroductionCounterpartName(request, user?.id ?? "");
               const counterpartUserId = getIntroductionCounterpartUserId(request, user?.id ?? "");
+              const counterpartPhoto = getIntroductionCounterpartPhotoUrl(request, user?.id ?? "");
+              const counterpartContext = getIntroductionCounterpartContext(
+                request,
+                user?.id ?? "",
+              );
+              const contextLine = formatMemberContextLine([
+                formatPrimaryClubLine(counterpartContext.primaryClub),
+                counterpartContext.basedIn,
+              ]);
+              const busy = updatingRequestId === request.id;
 
               return (
                 <View key={request.id} style={styles.requestCard}>
-                  <Text style={styles.requestName}>{counterpartName}</Text>
+                  <MemberIdentityLink
+                    userId={counterpartUserId}
+                    name={counterpartName}
+                    avatarUrl={counterpartPhoto}
+                    subtitle={contextLine || undefined}
+                    size={44}
+                  />
+                  <View style={styles.badgeRow}>
+                    <Text style={styles.directionBadge}>
+                      {getIntroductionDirectionLabel(request, user?.id ?? "")}
+                    </Text>
+                    <Text style={styles.statusBadge}>
+                      {getIntroductionStatusLabel(request, user?.id ?? "")}
+                    </Text>
+                  </View>
                   <Text style={styles.requestType}>{request.request_type}</Text>
-                  <Text style={styles.requestMessage}>{request.message}</Text>
+                  {request.message?.trim() ? (
+                    <Text style={styles.requestMessage}>{request.message}</Text>
+                  ) : null}
                   <Text style={styles.requestMeta}>
                     {new Date(request.created_at).toLocaleString()}
                   </Text>
@@ -238,35 +410,35 @@ export default function IntroductionsScreen() {
                   {activeTab === "incoming" ? (
                     <View style={styles.actions}>
                       <Button
-                        label="Accept"
+                        label={busy ? "…" : "Accept"}
                         onPress={() => void handleRespond(request.id, "accepted")}
+                        disabled={Boolean(updatingRequestId)}
+                        loading={busy}
                       />
                       <Button
                         label="Decline"
                         variant="secondary"
                         onPress={() => void handleRespond(request.id, "declined")}
+                        disabled={Boolean(updatingRequestId)}
                       />
                     </View>
                   ) : null}
 
                   {activeTab === "sent" ? (
                     <Button
-                      label="Withdraw request"
+                      label={busy ? "…" : "Withdraw request"}
                       variant="ghost"
                       onPress={() => void handleCancel(request.id)}
+                      disabled={Boolean(updatingRequestId)}
+                      loading={busy}
                     />
                   ) : null}
 
                   {activeTab === "accepted" ? (
                     <Button
-                      label="Message"
+                      label="Continue conversation"
                       variant="secondary"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/(app)/messages/[userId]",
-                          params: { userId: counterpartUserId, memberName: counterpartName },
-                        })
-                      }
+                      onPress={() => openMessage(request)}
                     />
                   ) : null}
                 </View>
@@ -279,7 +451,18 @@ export default function IntroductionsScreen() {
       {selectedMember ? (
         <View style={styles.modal}>
           <Text style={styles.sectionTitle}>Request introduction</Text>
-          <Text style={styles.requestName}>{selectedMember.full_name}</Text>
+
+          <Text style={styles.fieldLabel}>Person you would like to meet</Text>
+          <MemberCard
+            member={selectedMember}
+            onPress={() =>
+              selectedMember.user_id
+                ? router.push(`/members/${selectedMember.user_id}`)
+                : undefined
+            }
+          />
+
+          <Text style={styles.fieldLabel}>Why you would like the introduction</Text>
           <View style={styles.typeRow}>
             {INTRODUCTION_REQUEST_TYPES.map((type) => (
               <Pressable
@@ -307,14 +490,29 @@ export default function IntroductionsScreen() {
             style={styles.input}
             textAlignVertical="top"
           />
+          <Text style={styles.hint}>
+            {messageLength >= INTRO_MESSAGE_MIN_LENGTH
+              ? `${INTRO_MESSAGE_MIN_LENGTH} character minimum met`
+              : messageLength === 0
+                ? `${INTRO_MESSAGE_MIN_LENGTH} characters minimum`
+                : `${INTRO_MESSAGE_MIN_LENGTH - messageLength} more characters needed`}
+          </Text>
           <View style={styles.actions}>
             <Button
               label={submitting ? "Sending…" : "Send request"}
               onPress={() => void handleCreateRequest()}
               loading={submitting}
-              disabled={!requestMessage.trim()}
+              disabled={!canSubmitRequest}
             />
-            <Button label="Cancel" variant="ghost" onPress={() => setSelectedMember(null)} />
+            <Button
+              label="Cancel"
+              variant="ghost"
+              onPress={() => {
+                setSelectedMember(null);
+                setRequestMessage("");
+              }}
+              disabled={submitting}
+            />
           </View>
         </View>
       ) : null}
@@ -327,6 +525,11 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansSemibold,
     fontSize: 18,
     color: colors.textPrimary,
+  },
+  fieldLabel: {
+    fontFamily: typography.sansMedium,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   recommendation: {
     gap: spacing.sm,
@@ -370,10 +573,30 @@ const styles = StyleSheet.create({
     borderColor: colors.borderHairline,
     gap: spacing.sm,
   },
-  requestName: {
-    fontFamily: typography.sansSemibold,
-    fontSize: 16,
-    color: colors.textPrimary,
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  directionBadge: {
+    fontFamily: typography.sansMedium,
+    fontSize: 11,
+    color: colors.forest,
+    backgroundColor: colors.forestSoft,
+    overflow: "hidden",
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  statusBadge: {
+    fontFamily: typography.sansMedium,
+    fontSize: 11,
+    color: colors.gold,
+    backgroundColor: colors.goldSoft,
+    overflow: "hidden",
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
   },
   requestType: {
     fontFamily: typography.sansMedium,
@@ -442,15 +665,26 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: colors.textPrimary,
   },
+  hint: {
+    fontFamily: typography.sans,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
   errorBox: {
     padding: spacing.lg,
     backgroundColor: colors.errorSoft,
     borderRadius: radii.lg,
+    gap: spacing.sm,
   },
   errorText: {
     fontFamily: typography.sans,
     fontSize: 14,
     color: colors.error,
+  },
+  retry: {
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    color: colors.forest,
   },
   successBox: {
     padding: spacing.lg,
@@ -462,6 +696,6 @@ const styles = StyleSheet.create({
   successText: {
     fontFamily: typography.sansMedium,
     fontSize: 14,
-    color: colors.ivory,
+    color: colors.forest,
   },
 });

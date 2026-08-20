@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { MemberIdentityLink } from "@/components/member/MemberIdentityLink";
@@ -9,6 +9,7 @@ import { colors, radii, spacing, typography } from "@/constants/theme";
 import { fetchConversations } from "@/lib/api/messages";
 import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
+import { formatConversationListTimestamp } from "@/lib/messageTimestamps";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
   SESSION_CACHE_KEYS,
@@ -23,17 +24,22 @@ export default function MessagesScreen() {
     () => getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations) ?? [],
   );
   const [loading, setLoading] = useState(() => conversations.length === 0);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadConversations = useCallback(async (options?: { background?: boolean }) => {
+  const loadConversations = useCallback(async (options?: { background?: boolean; pull?: boolean }) => {
     const cached = getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations);
     const hasCache = Boolean(cached?.length);
 
     if (hasCache) {
       setConversations(cached!);
       setLoading(false);
-    } else if (!options?.background) {
+    } else if (!options?.background && !options?.pull) {
       setLoading(true);
+    }
+
+    if (options?.pull) {
+      setRefreshing(true);
     }
 
     setError(null);
@@ -44,17 +50,18 @@ export default function MessagesScreen() {
     perfEnd("messages", { conversations: data.length, cached: hasCache });
 
     setConversations(data);
-    if (data.length > 0) {
-      setSessionCache(SESSION_CACHE_KEYS.conversations, data);
-    }
+    setSessionCache(SESSION_CACHE_KEYS.conversations, data);
     setError(fetchError ? formatMobileError(fetchError.message) : null);
     setLoading(false);
+    setRefreshing(false);
   }, []);
 
-  useEffect(() => {
-    const cached = getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations);
-    void loadConversations({ background: Boolean(cached?.length) });
-  }, [loadConversations]);
+  useFocusEffect(
+    useCallback(() => {
+      const cached = getSessionCacheStale<MobileConversationSummary[]>(SESSION_CACHE_KEYS.conversations);
+      void loadConversations({ background: Boolean(cached?.length) });
+    }, [loadConversations]),
+  );
 
   function openConversation(conversation: MobileConversationSummary) {
     router.push({
@@ -66,24 +73,44 @@ export default function MessagesScreen() {
     });
   }
 
-  return (
-    <Screen title="Messages" subtitle="Private conversations with members." branded>
-      {loading && conversations.length === 0 ? <LoadingState label="Loading conversations…" /> : null}
+  const showInitialLoading = loading && conversations.length === 0;
 
-      {!loading && error ? (
+  return (
+    <Screen
+      title="Messages"
+      subtitle="Private conversations with members."
+      branded
+      refreshing={refreshing}
+      onRefresh={() => void loadConversations({ pull: true })}
+    >
+      {showInitialLoading ? <LoadingState label="Loading conversations…" /> : null}
+
+      {!showInitialLoading && error && conversations.length === 0 ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={() => void loadConversations()}>
+            <Text style={styles.retry}>Try again</Text>
+          </Pressable>
         </View>
       ) : null}
 
-      {!loading && !error && conversations.length === 0 ? (
+      {!showInitialLoading && error && conversations.length > 0 ? (
+        <View style={styles.softErrorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={() => void loadConversations({ background: true })}>
+            <Text style={styles.retry}>Refresh</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {!showInitialLoading && !error && conversations.length === 0 ? (
         <EmptyState
           title="No conversations yet"
           body="Start a conversation from Discover or a member profile."
         />
       ) : null}
 
-      {!loading && !error
+      {!showInitialLoading
         ? conversations.map((conversation) => {
             const meta = formatMemberContextLine([
               formatPrimaryClubLine(conversation.otherUserPrimaryClub),
@@ -91,7 +118,11 @@ export default function MessagesScreen() {
             ]);
 
             return (
-              <View key={conversation.otherUserId} style={styles.row}>
+              <Pressable
+                key={conversation.otherUserId}
+                onPress={() => openConversation(conversation)}
+                style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
+              >
                 <MemberIdentityLink
                   userId={conversation.otherUserId}
                   name={conversation.otherUserName}
@@ -100,35 +131,29 @@ export default function MessagesScreen() {
                   avatarOnly
                 />
                 <View style={styles.body}>
-                  <Pressable
-                    onPress={() => router.push(`/members/${conversation.otherUserId}`)}
-                    style={({ pressed }) => [pressed ? styles.pressed : null]}
-                  >
-                    <Text style={styles.name}>{conversation.otherUserName}</Text>
-                    {meta ? (
-                      <Text style={styles.meta} numberOfLines={1}>
-                        {meta}
-                      </Text>
-                    ) : null}
-                  </Pressable>
-                  <Pressable
-                    onPress={() => openConversation(conversation)}
-                    style={({ pressed }) => [pressed ? styles.pressed : null]}
-                  >
-                    <Text style={styles.preview} numberOfLines={2}>
-                      {conversation.lastMessageBody}
+                  <View style={styles.topLine}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {conversation.otherUserName}
                     </Text>
-                  </Pressable>
+                    <Text style={styles.time}>
+                      {formatConversationListTimestamp(conversation.lastMessageAt)}
+                    </Text>
+                  </View>
+                  {meta ? (
+                    <Text style={styles.meta} numberOfLines={1}>
+                      {meta}
+                    </Text>
+                  ) : null}
+                  <Text style={styles.preview} numberOfLines={2}>
+                    {conversation.lastMessageBody}
+                  </Text>
                 </View>
                 {conversation.unreadCount > 0 ? (
-                  <Pressable
-                    onPress={() => openConversation(conversation)}
-                    style={styles.unreadBadge}
-                  >
+                  <View style={styles.unreadBadge}>
                     <Text style={styles.unreadLabel}>{conversation.unreadCount}</Text>
-                  </Pressable>
+                  </View>
                 ) : null}
-              </View>
+              </Pressable>
             );
           })
         : null}
@@ -155,10 +180,23 @@ const styles = StyleSheet.create({
     gap: 2,
     minWidth: 0,
   },
+  topLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   name: {
+    flex: 1,
+    minWidth: 0,
     fontFamily: typography.sansSemibold,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  time: {
+    flexShrink: 0,
+    fontFamily: typography.sans,
+    fontSize: 11,
+    color: colors.textTertiary,
   },
   meta: {
     fontFamily: typography.sans,
@@ -189,10 +227,22 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.errorSoft,
     borderRadius: radii.lg,
+    gap: spacing.sm,
+  },
+  softErrorBox: {
+    padding: spacing.md,
+    backgroundColor: colors.errorSoft,
+    borderRadius: radii.md,
+    gap: spacing.xs,
   },
   errorText: {
     fontFamily: typography.sans,
     fontSize: 14,
     color: colors.error,
+  },
+  retry: {
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    color: colors.forest,
   },
 });

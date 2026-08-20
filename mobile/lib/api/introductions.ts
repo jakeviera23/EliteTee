@@ -1,6 +1,8 @@
 import type { MobileMemberProfile } from "@/types/member";
 import type { IntroductionRequestType, MobileIntroductionRequest } from "@/types/introduction";
+import { INTRODUCTION_WITHDRAWN_RESPONSE } from "../introductionStatus";
 import { getCurrentUserId } from "./members";
+import { resolveMemberMediaUrlMap } from "./memberProfileMedia";
 import { requireSupabase } from "../supabase";
 
 type IntroductionRequestRow = {
@@ -15,7 +17,7 @@ type IntroductionRequestRow = {
   response_message?: string | null;
 };
 
-async function attachProfileNames(
+async function attachProfileDetails(
   requests: IntroductionRequestRow[],
 ): Promise<MobileIntroductionRequest[]> {
   if (requests.length === 0) return [];
@@ -27,20 +29,44 @@ async function attachProfileNames(
 
   const { data: profiles } = await client
     .from("member_profiles")
-    .select("user_id, full_name")
+    .select("user_id, full_name, club_logo_url, primary_club, based_in")
     .in("user_id", userIds);
 
-  const nameByUserId = new Map(
-    (profiles ?? [])
-      .filter((profile) => profile.user_id)
-      .map((profile) => [String(profile.user_id), String(profile.full_name ?? "Member")]),
+  const profileRows = (profiles ?? []).filter((profile) => profile.user_id);
+  const signedByPath = await resolveMemberMediaUrlMap(
+    profileRows.map((profile) => (profile.club_logo_url ? String(profile.club_logo_url) : null)),
   );
 
-  return requests.map((request) => ({
-    ...request,
-    sender_name: nameByUserId.get(request.sender_id),
-    receiver_name: nameByUserId.get(request.receiver_id),
-  }));
+  const profileByUserId = new Map(
+    profileRows.map((profile) => {
+      const rawPhoto = profile.club_logo_url ? String(profile.club_logo_url) : null;
+      return [
+        String(profile.user_id),
+        {
+          name: String(profile.full_name ?? "Member"),
+          photoUrl: rawPhoto ? (signedByPath.get(rawPhoto) ?? rawPhoto) : null,
+          primaryClub: String(profile.primary_club ?? ""),
+          basedIn: String(profile.based_in ?? ""),
+        },
+      ];
+    }),
+  );
+
+  return requests.map((request) => {
+    const sender = profileByUserId.get(request.sender_id);
+    const receiver = profileByUserId.get(request.receiver_id);
+    return {
+      ...request,
+      sender_name: sender?.name,
+      receiver_name: receiver?.name,
+      sender_photo_url: sender?.photoUrl ?? null,
+      receiver_photo_url: receiver?.photoUrl ?? null,
+      sender_primary_club: sender?.primaryClub,
+      receiver_primary_club: receiver?.primaryClub,
+      sender_based_in: sender?.basedIn,
+      receiver_based_in: receiver?.basedIn,
+    };
+  });
 }
 
 export async function fetchIntroductionRequests() {
@@ -56,8 +82,8 @@ export async function fetchIntroductionRequests() {
     return { data: [] as MobileIntroductionRequest[], error };
   }
 
-  const withNames = await attachProfileNames((data ?? []) as IntroductionRequestRow[]);
-  return { data: withNames, error: null };
+  const withProfiles = await attachProfileDetails((data ?? []) as IntroductionRequestRow[]);
+  return { data: withProfiles, error: null };
 }
 
 export async function createIntroductionRequest({
@@ -169,9 +195,13 @@ export async function cancelIntroductionRequest(requestId: string) {
   }
 
   const client = requireSupabase();
+  // DB only supports pending | accepted | declined. Withdraw uses declined + response marker.
   const { data, error } = await client
     .from("introduction_requests")
-    .update({ status: "declined" })
+    .update({
+      status: "declined",
+      response_message: INTRODUCTION_WITHDRAWN_RESPONSE,
+    })
     .eq("id", requestId)
     .eq("sender_id", userId)
     .eq("status", "pending")

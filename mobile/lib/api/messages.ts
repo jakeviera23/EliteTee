@@ -1,4 +1,5 @@
 import { getCurrentUserId } from "./members";
+import { resolveMemberMediaUrlMap } from "./memberProfileMedia";
 import { getMemberDisplayName } from "../memberInitials";
 import { requireSupabase } from "../supabase";
 import type { MobileConversationSummary, MobilePrivateMessage } from "@/types/messages";
@@ -99,21 +100,36 @@ export async function fetchConversations(): Promise<{
       .in("user_id", participantIds)
       .eq("portal_access_enabled", true);
 
+    const rawIdentities = (profiles ?? [])
+      .filter((profile) => profile.user_id)
+      .map((profile) => ({
+        userId: String(profile.user_id),
+        full_name: getMemberDisplayName(String(profile.full_name ?? "")) || "Member",
+        club_logo_url: profile.club_logo_url ? String(profile.club_logo_url) : null,
+        founding_member_number: profile.founding_member_number
+          ? String(profile.founding_member_number)
+          : null,
+        primary_club: String(profile.primary_club ?? ""),
+        based_in: String(profile.based_in ?? ""),
+      }));
+
+    const signedByPath = await resolveMemberMediaUrlMap(
+      rawIdentities.map((identity) => identity.club_logo_url),
+    );
+
     identitiesByUserId = Object.fromEntries(
-      (profiles ?? [])
-        .filter((profile) => profile.user_id)
-        .map((profile) => [
-          String(profile.user_id),
-          {
-            full_name: getMemberDisplayName(String(profile.full_name ?? "")) || "Member",
-            club_logo_url: profile.club_logo_url ? String(profile.club_logo_url) : null,
-            founding_member_number: profile.founding_member_number
-              ? String(profile.founding_member_number)
-              : null,
-            primary_club: String(profile.primary_club ?? ""),
-            based_in: String(profile.based_in ?? ""),
-          },
-        ]),
+      rawIdentities.map((identity) => [
+        identity.userId,
+        {
+          full_name: identity.full_name,
+          club_logo_url: identity.club_logo_url
+            ? (signedByPath.get(identity.club_logo_url) ?? identity.club_logo_url)
+            : null,
+          founding_member_number: identity.founding_member_number,
+          primary_club: identity.primary_club,
+          based_in: identity.based_in,
+        },
+      ]),
     );
   }
 

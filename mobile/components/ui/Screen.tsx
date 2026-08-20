@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +23,8 @@ type ScreenProps = {
   chromeHeader?: boolean;
   branded?: boolean;
   compactHeader?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
 export function Screen({
@@ -34,6 +37,8 @@ export function Screen({
   chromeHeader = false,
   branded = false,
   compactHeader = false,
+  refreshing = false,
+  onRefresh,
 }: ScreenProps) {
   const content = (
     <>
@@ -70,6 +75,11 @@ export function Screen({
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.forest} />
+            ) : undefined
+          }
         >
           {content}
         </ScrollView>

@@ -32,10 +32,13 @@ import {
 } from "@/lib/feedPostEngagement";
 import { cacheFeedPostSnapshot, findCachedFeedPost } from "@/lib/feedPostCache";
 import { formatMobileError } from "@/lib/errors";
+import { buildConnectionMessageDraftFromPost } from "@/lib/connectionMessageDraft";
+import { useAuth } from "@/hooks/AuthProvider";
 import type { MobileFeedComment, MobileFeedPost } from "@/types/feed";
 
 export default function FeedPostDetailScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const normalizedPostId = typeof postId === "string" ? postId.trim() : "";
 
@@ -231,6 +234,24 @@ export default function FeedPostDetailScreen() {
             onCommentPress={() => undefined}
           />
 
+          {post.authorUserId && post.authorUserId !== user?.id ? (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/messages/[userId]",
+                  params: {
+                    userId: post.authorUserId,
+                    memberName: post.authorName,
+                    prefill: buildConnectionMessageDraftFromPost(post),
+                  },
+                })
+              }
+              style={({ pressed }) => [styles.messageMemberButton, pressed ? styles.pressed : null]}
+            >
+              <Text style={styles.messageMemberLabel}>Message {post.authorName.split(" ")[0] || "member"}</Text>
+            </Pressable>
+          ) : null}
+
           <View style={styles.commentsSection}>
             <Text style={styles.commentsTitle}>
               Comments{post.commentCount > 0 ? ` · ${post.commentCount}` : ""}
@@ -420,6 +441,21 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.borderHairline,
+  },
+  messageMemberButton: {
+    marginTop: spacing.sm,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.forestBorder,
+    backgroundColor: colors.forestSoft,
+  },
+  messageMemberLabel: {
+    fontFamily: typography.sansMedium,
+    fontSize: 14,
+    color: colors.forest,
   },
   commentsTitle: {
     fontFamily: typography.sansSemibold,

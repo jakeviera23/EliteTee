@@ -272,7 +272,16 @@ export default function MemberProfileScreen() {
             <Button
               label="Request Introduction"
               variant="secondary"
-              onPress={() => router.push("/introductions")}
+              onPress={() =>
+                router.push({
+                  pathname: "/introductions",
+                  params: {
+                    targetUserId: identity.member.user_id!,
+                    targetMemberName: memberName,
+                    openComposer: "1",
+                  },
+                })
+              }
             />
           </View>
         ) : null}

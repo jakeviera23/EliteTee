@@ -13,9 +13,11 @@ type MemberAvatarProps = {
 
 export function MemberAvatar({ name, imageUrl, size = 44, style }: MemberAvatarProps) {
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setFailed(false);
     const stored = imageUrl?.trim() ?? "";
     if (!stored) {
       setResolvedUrl(null);
@@ -42,7 +44,7 @@ export function MemberAvatar({ name, imageUrl, size = 44, style }: MemberAvatarP
 
   const radius = size / 2;
 
-  if (resolvedUrl) {
+  if (resolvedUrl && !failed) {
     return (
       <Image
         source={{ uri: resolvedUrl }}
@@ -51,6 +53,7 @@ export function MemberAvatar({ name, imageUrl, size = 44, style }: MemberAvatarP
           { width: size, height: size, borderRadius: radius },
           style as ImageStyle,
         ]}
+        onError={() => setFailed(true)}
       />
     );
   }

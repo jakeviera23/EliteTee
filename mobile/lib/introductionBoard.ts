@@ -1,4 +1,5 @@
 import type { IntroductionTab, MobileIntroductionRequest } from "@/types/introduction";
+import { isIntroductionWithdrawn } from "./introductionStatus";
 
 export type CategorizedIntroductionRequests = Record<IntroductionTab, MobileIntroductionRequest[]>;
 
@@ -56,4 +57,53 @@ export function getIntroductionCounterpartUserId(
   currentUserId: string,
 ): string {
   return request.sender_id === currentUserId ? request.receiver_id : request.sender_id;
+}
+
+export function getIntroductionCounterpartPhotoUrl(
+  request: MobileIntroductionRequest,
+  currentUserId: string,
+): string | null {
+  if (request.sender_id === currentUserId) {
+    return request.receiver_photo_url ?? null;
+  }
+  return request.sender_photo_url ?? null;
+}
+
+export function getIntroductionCounterpartContext(
+  request: MobileIntroductionRequest,
+  currentUserId: string,
+): { primaryClub: string; basedIn: string } {
+  if (request.sender_id === currentUserId) {
+    return {
+      primaryClub: request.receiver_primary_club ?? "",
+      basedIn: request.receiver_based_in ?? "",
+    };
+  }
+  return {
+    primaryClub: request.sender_primary_club ?? "",
+    basedIn: request.sender_based_in ?? "",
+  };
+}
+
+export function getIntroductionDirectionLabel(
+  request: MobileIntroductionRequest,
+  currentUserId: string,
+): "Sent" | "Received" {
+  return request.sender_id === currentUserId ? "Sent" : "Received";
+}
+
+export function getIntroductionStatusLabel(
+  request: MobileIntroductionRequest,
+  currentUserId: string,
+): string {
+  const status = request.status.toLowerCase();
+  if (status === "pending") {
+    return request.sender_id === currentUserId ? "Pending response" : "Needs your response";
+  }
+  if (status === "accepted") return "Accepted";
+  if (isIntroductionWithdrawn(request)) {
+    return request.sender_id === currentUserId ? "Withdrawn" : "Withdrawn by requester";
+  }
+  if (status === "declined") return "Declined";
+  return request.status;
 }
