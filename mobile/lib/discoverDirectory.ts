@@ -349,6 +349,8 @@ export function sortDiscoverMembersAlphabetical(
 /**
  * Featured rails for Mobile Discover V1.
  * Empty sections omitted. Members without usable user_id excluded.
+ * Priority dedupe: Suggested → Looking to connect → Traveling soon.
+ * Claimed members may still appear in All members on the screen.
  */
 export function buildFeaturedDiscoverSections(
   members: MobileMemberProfile[],
@@ -359,20 +361,36 @@ export function buildFeaturedDiscoverSections(
       hasUsableDiscoverUserId(member) &&
       member.user_id !== viewer?.user_id,
   );
+  const claimedUserIds = new Set<string>();
   const sections: MobileDiscoverFeaturedSection[] = [];
 
-  const suggested = sortDiscoverMembersByRelevance(others, viewer)
-    .filter((member) => scoreMemberRelevance(viewer, member) > 0)
-    .slice(0, MOBILE_DISCOVER_FEATURED_LIMIT);
+  function takeUnique(candidates: MobileMemberProfile[]): MobileMemberProfile[] {
+    const selected: MobileMemberProfile[] = [];
+    for (const candidate of candidates) {
+      const userId = candidate.user_id?.trim() ?? "";
+      if (!userId || claimedUserIds.has(userId)) continue;
+      claimedUserIds.add(userId);
+      selected.push(candidate);
+      if (selected.length >= MOBILE_DISCOVER_FEATURED_LIMIT) break;
+    }
+    return selected;
+  }
+
+  const suggested = takeUnique(
+    sortDiscoverMembersByRelevance(others, viewer).filter(
+      (member) => scoreMemberRelevance(viewer, member) > 0,
+    ),
+  );
 
   if (suggested.length > 0) {
     sections.push({ id: "suggested", title: "Suggested for you", members: suggested });
   }
 
-  const lookingToConnect = others
-    .filter((member) => isMeaningfulDisplayValue(member.current_request))
-    .sort((a, b) => compareStrings(a.current_request, b.current_request))
-    .slice(0, MOBILE_DISCOVER_FEATURED_LIMIT);
+  const lookingToConnect = takeUnique(
+    others
+      .filter((member) => isMeaningfulDisplayValue(member.current_request))
+      .sort((a, b) => compareStrings(a.current_request, b.current_request)),
+  );
 
   if (lookingToConnect.length > 0) {
     sections.push({
@@ -382,10 +400,11 @@ export function buildFeaturedDiscoverSections(
     });
   }
 
-  const travelingSoon = others
-    .filter((member) => isMeaningfulDisplayValue(member.traveling_to))
-    .sort((a, b) => compareStrings(a.traveling_to, b.traveling_to))
-    .slice(0, MOBILE_DISCOVER_FEATURED_LIMIT);
+  const travelingSoon = takeUnique(
+    others
+      .filter((member) => isMeaningfulDisplayValue(member.traveling_to))
+      .sort((a, b) => compareStrings(a.traveling_to, b.traveling_to)),
+  );
 
   if (travelingSoon.length > 0) {
     sections.push({ id: "traveling-soon", title: "Traveling soon", members: travelingSoon });
@@ -394,8 +413,45 @@ export function buildFeaturedDiscoverSections(
   return sections;
 }
 
+const MAX_INTEREST_CHIP_LENGTH = 28;
+const MAX_INTEREST_CHIP_WORDS = 4;
+
+/** Concise structured interests only — omit sentence-like or noisy values. */
+export function isUsableInterestChip(value: string): boolean {
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  if (!isMeaningfulDisplayValue(trimmed)) return false;
+  if (trimmed.length > MAX_INTEREST_CHIP_LENGTH) return false;
+  if (/[.!?]/.test(trimmed)) return false;
+  if (/[,;:]/.test(trimmed) && trimmed.split(/[,;:]/).length > 2) return false;
+
+  const words = trimmed.split(" ").filter(Boolean);
+  if (words.length === 0 || words.length > MAX_INTEREST_CHIP_WORDS) return false;
+
+  if (
+    /^(i|i'm|im|i’d|id|looking|want|seeking|hope|would|please|trying|interested in)\b/i.test(
+      trimmed,
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 export function selectInterestChips(member: MobileMemberProfile, limit = 3): string[] {
-  return member.golf_interests.filter(isMeaningfulDisplayValue).slice(0, limit);
+  const seen = new Set<string>();
+  const chips: string[] = [];
+
+  for (const interest of member.golf_interests) {
+    if (!isUsableInterestChip(interest)) continue;
+    const normalized = normalizeText(interest);
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    chips.push(interest.trim().replace(/\s+/g, " "));
+    if (chips.length >= limit) break;
+  }
+
+  return chips;
 }
 
 export function truncateDiscoverText(value: string, maxLength = 96): string {

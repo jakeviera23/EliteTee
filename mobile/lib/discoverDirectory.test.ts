@@ -7,6 +7,7 @@ import {
   filterDiscoverMembers,
   parseBasedInParts,
   scoreMemberRelevance,
+  selectInterestChips,
 } from "./discoverDirectory";
 
 function member(
@@ -160,6 +161,25 @@ describe("buildMatchReasons", () => {
     ]);
     expect(buildPrimaryMatchReason(viewer, match)).toBe("Also in Florida");
   });
+
+  it("keeps travel destination reasons like New York / Long Island", () => {
+    const viewer = member({
+      id: "viewer",
+      full_name: "Viewer",
+      based_in: "Bridgehampton, New York, United States",
+      regions: ["New York", "Long Island"],
+    });
+
+    const noah = member({
+      id: "noah",
+      full_name: "Noah Sparrow",
+      traveling_to: "New York / Long Island",
+      based_in: "Chicago, Illinois, United States",
+    });
+
+    expect(buildMatchReasons(viewer, noah)).toContain("Traveling to New York / Long Island");
+    expect(buildPrimaryMatchReason(viewer, noah)).toBe("Traveling to New York / Long Island");
+  });
 });
 
 describe("buildFeaturedDiscoverSections", () => {
@@ -193,13 +213,57 @@ describe("buildFeaturedDiscoverSections", () => {
       viewer,
     );
 
+    expect(sections.map((section) => section.id)).toEqual(["suggested"]);
+    expect(sections[0]?.members.map((entry) => entry.id)).toEqual(["1"]);
+    expect(sections.every((section) => section.members.every((m) => m.user_id))).toBe(true);
+    expect(sections.every((section) => section.members.length <= 6)).toBe(true);
+  });
+
+  it("dedupes members across featured sections by priority", () => {
+    const viewer = member({
+      id: "viewer",
+      full_name: "Viewer",
+      regions: ["Florida"],
+      based_in: "Miami, Florida, United States",
+    });
+
+    const sections = buildFeaturedDiscoverSections(
+      [
+        viewer,
+        member({
+          id: "priority",
+          full_name: "Priority Member",
+          regions: ["Florida"],
+          based_in: "Miami, Florida, United States",
+          traveling_to: "Scotland",
+          current_request: "Looking for a game",
+        }),
+        member({
+          id: "connect-only",
+          full_name: "Connector",
+          current_request: "Open to intros",
+        }),
+        member({
+          id: "travel-only",
+          full_name: "Traveler",
+          traveling_to: "Japan",
+        }),
+      ],
+      viewer,
+    );
+
     expect(sections.map((section) => section.id)).toEqual([
       "suggested",
       "looking-to-connect",
       "traveling-soon",
     ]);
-    expect(sections.every((section) => section.members.every((m) => m.user_id))).toBe(true);
-    expect(sections.every((section) => section.members.length <= 6)).toBe(true);
+    expect(sections[0]?.members.map((entry) => entry.id)).toEqual(["priority"]);
+    expect(sections[1]?.members.map((entry) => entry.id)).toEqual(["connect-only"]);
+    expect(sections[2]?.members.map((entry) => entry.id)).toEqual(["travel-only"]);
+
+    const featuredIds = sections.flatMap((section) => section.members.map((entry) => entry.id));
+    expect(featuredIds).toEqual(["priority", "connect-only", "travel-only"]);
+    expect(new Set(featuredIds).size).toBe(featuredIds.length);
   });
 
   it("omits suggested when no score > 0 matches exist", () => {
@@ -217,9 +281,30 @@ describe("buildFeaturedDiscoverSections", () => {
       viewer,
     );
 
-    expect(sections.map((section) => section.id)).toEqual([
-      "looking-to-connect",
-      "traveling-soon",
-    ]);
+    // Same member qualifies for both lower rails; priority keeps Looking to connect only.
+    expect(sections.map((section) => section.id)).toEqual(["looking-to-connect"]);
+    expect(sections.flatMap((section) => section.members.map((entry) => entry.id))).toEqual(["1"]);
+  });
+});
+
+describe("selectInterestChips", () => {
+  it("keeps concise structured interests and omits sentence-like values", () => {
+    const chips = selectInterestChips(
+      member({
+        id: "1",
+        full_name: "Chip Test",
+        golf_interests: [
+          "Architecture",
+          "Private-club golf",
+          "Looking for weekend games around Palm Beach whenever I travel",
+          "I love links golf and meeting new people on the road!",
+          "Architecture",
+          "Bucket list",
+        ],
+      }),
+      3,
+    );
+
+    expect(chips).toEqual(["Architecture", "Private-club golf", "Bucket list"]);
   });
 });
