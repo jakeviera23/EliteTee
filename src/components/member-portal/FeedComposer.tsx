@@ -9,7 +9,8 @@ import {
 } from "../../data/portalSocial";
 import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
 import { getFeedComposerValidation } from "../../lib/feedComposerValidation";
-import { createMemberFeedPost } from "../../lib/memberFeedPosts";
+import { createMemberFeedPost, createCourseRoundFeedPost } from "../../lib/memberFeedPosts";
+import { submitMemberCourseRound } from "../../lib/memberCourseRounds";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { FeedAvatar } from "./FeedAvatar";
@@ -202,6 +203,55 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
     setIsSubmitting(true);
     setSubmitError(null);
+
+    if (isReview) {
+      const courseName = primaryValue || "Experience";
+      const { data: roundData, error: roundError } = await submitMemberCourseRound({
+        course_name: courseName,
+        location: "Location not set",
+        played_on: new Date().toISOString().slice(0, 10),
+        note: message,
+        would_play_again: true,
+        course_rating: normalizedRating ?? 10,
+        golf_course_id: null,
+      });
+
+      if (roundError || !roundData?.id) {
+        setIsSubmitting(false);
+        setSubmitError(
+          memberFacingPortalError(
+            roundError?.message ?? "Your experience could not be saved.",
+            "feed",
+          ),
+        );
+        return;
+      }
+
+      const { data, error } = await createCourseRoundFeedPost({
+        roundId: roundData.id,
+        courseName,
+        location: "Location not set",
+        note: message,
+        wouldPlayAgain: true,
+        playedOn: new Date().toISOString().slice(0, 10),
+        courseRating: normalizedRating ?? 10,
+      });
+
+      setIsSubmitting(false);
+
+      if (error) {
+        console.error("[FeedComposer] round-review post failed", error.message);
+        setSubmitError(memberFacingPortalError(error.message, "feed"));
+        return;
+      }
+
+      if (data) {
+        onPosted?.(data);
+      }
+
+      reset();
+      return;
+    }
 
     const { data, error } = await createMemberFeedPost({
       composerPostType: postType,

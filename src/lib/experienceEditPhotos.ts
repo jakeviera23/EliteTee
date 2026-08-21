@@ -2,6 +2,7 @@ import {
   resolveEffectiveCoverPhotoId,
   sortPhotosByGalleryOrder,
 } from "./courseRoundCoverPhoto";
+import { isRoundMediaVideo } from "./memberCourseRoundPhotos";
 import type { MemberCourseRoundPhotoRecord } from "../types/memberCourseRoundPhoto";
 
 export type ExperienceEditPhoto = {
@@ -9,6 +10,10 @@ export type ExperienceEditPhoto = {
   previewUrl: string;
   sort_order: number;
   created_at: string;
+  mediaKind?: "image" | "video";
+  user_id?: string;
+  storage_path?: string;
+  poster_storage_path?: string | null;
 };
 
 export function mapActivePhotosForExperienceEdit(
@@ -17,15 +22,22 @@ export function mapActivePhotosForExperienceEdit(
   return sortPhotosByGalleryOrder(
     photos.filter(
       (photo) =>
-        photo.signed_url &&
         photo.moderation_status === "active" &&
-        !photo.hidden_at,
+        !photo.hidden_at &&
+        Boolean(photo.id),
     ),
   ).map((photo) => ({
     id: photo.id,
-    previewUrl: photo.signed_url as string,
+    previewUrl:
+      (isRoundMediaVideo(photo)
+        ? photo.poster_signed_url || photo.signed_url
+        : photo.signed_url) || "",
     sort_order: photo.sort_order,
     created_at: photo.created_at,
+    mediaKind: isRoundMediaVideo(photo) ? "video" : "image",
+    user_id: photo.user_id,
+    storage_path: photo.storage_path,
+    poster_storage_path: photo.poster_storage_path,
   }));
 }
 
@@ -44,12 +56,15 @@ export function buildExperienceEditPhotoRecords(
   return photos.map((photo) => ({
     id: photo.id,
     member_course_round_id: roundId,
-    user_id: "",
-    storage_path: "",
+    user_id: photo.user_id ?? "",
+    storage_path: photo.storage_path ?? "",
+    poster_storage_path: photo.poster_storage_path ?? null,
     sort_order: photo.sort_order,
     is_featured: false,
     moderation_status: "active",
     created_at: photo.created_at,
     signed_url: photo.previewUrl,
+    poster_signed_url: photo.mediaKind === "video" ? photo.previewUrl : null,
+    media_kind: photo.mediaKind ?? "image",
   }));
 }

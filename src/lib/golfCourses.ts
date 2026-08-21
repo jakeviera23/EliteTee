@@ -3,6 +3,69 @@ import { supabase } from "./supabase";
 
 const SEARCH_PAGE_SIZE = 20;
 
+export function normalizeGolfCourseNameKey(name: string): string {
+  return name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function locationsLooselyMatch(a: string, b: string | null | undefined): boolean {
+  const left = a.trim().toLowerCase();
+  const right = (b ?? "").trim().toLowerCase();
+  if (!left || !right) return true;
+  return left.includes(right) || right.includes(left);
+}
+
+/**
+ * Resolve an existing golf_courses row by canonical name (+ optional location).
+ * Never inserts. Used by orphan repair and find-or-create to avoid slug duplicates.
+ */
+export async function resolveExistingGolfCourseForExperience(
+  courseName: string,
+  location: string,
+): Promise<{ id: string; slug: string } | null> {
+  if (!supabase) return null;
+
+  const nameKey = normalizeGolfCourseNameKey(courseName);
+  if (!nameKey) return null;
+
+  const trimmed = courseName.trim();
+  const { data, error } = await supabase
+    .from("golf_courses")
+    .select("id, name, slug, city, region, country")
+    .ilike("name", trimmed)
+    .limit(40);
+
+  let rows = data ?? [];
+  if (error || rows.length === 0) {
+    const fuzzy = await supabase
+      .from("golf_courses")
+      .select("id, name, slug, city, region, country")
+      .ilike("name", `%${trimmed.slice(0, 80)}%`)
+      .limit(40);
+    if (fuzzy.error || !fuzzy.data?.length) return null;
+    rows = fuzzy.data;
+  }
+
+  const nameMatches = rows.filter(
+    (row) => normalizeGolfCourseNameKey(String(row.name ?? "")) === nameKey,
+  );
+  if (nameMatches.length === 0) return null;
+
+  const withLocation = nameMatches.filter((row) => {
+    const blob = [row.city, row.region, row.country].filter(Boolean).join(" ");
+    return locationsLooselyMatch(location, blob) || locationsLooselyMatch(location, row.city);
+  });
+
+  const pool = withLocation.length > 0 ? withLocation : nameMatches;
+  if (pool.length !== 1) return null;
+  return { id: String(pool[0].id), slug: String(pool[0].slug) };
+}
+
 function normalizeCourseRow(row: Record<string, unknown>): GolfCourseSearchResult {
   return {
     id: String(row.id ?? ""),
@@ -98,12 +161,40 @@ export async function findOrCreateMemberGolfCourse(courseName: string, location:
     return { data: null, error: new Error("Supabase is not configured.") };
   }
 
+  const trimmedName = courseName.trim();
+  const trimmedLocation = location.trim();
+
+  // Prefer an existing row before calling the create RPC (avoids slug races).
+  const existing = await resolveExistingGolfCourseForExperience(trimmedName, trimmedLocation);
+  if (existing) {
+    return {
+      data: { id: existing.id, slug: existing.slug, createdNew: false },
+      error: null,
+    };
+  }
+
   const { data, error } = await supabase.rpc("find_or_create_member_golf_course", {
-    p_course_name: courseName.trim(),
-    p_location: location.trim(),
+    p_course_name: trimmedName,
+    p_location: trimmedLocation,
   });
 
   if (error) {
+    const message = (error.message ?? "").toLowerCase();
+    const isSlugConflict =
+      message.includes("golf_courses_slug_key") ||
+      message.includes("duplicate key") ||
+      message.includes("unique constraint");
+
+    if (isSlugConflict) {
+      const recovered = await resolveExistingGolfCourseForExperience(trimmedName, trimmedLocation);
+      if (recovered) {
+        return {
+          data: { id: recovered.id, slug: recovered.slug, createdNew: false },
+          error: null,
+        };
+      }
+    }
+
     return { data: null, error };
   }
 

@@ -284,6 +284,15 @@ export type FeedPostComment = {
   displayTimestamp: string;
 };
 
+export type FeedMediaItem = {
+  id: string;
+  url: string;
+  kind: "image" | "video";
+  posterUrl?: string | null;
+  mimeType?: string | null;
+  caption?: string | null;
+};
+
 export type FeedPost = {
   id: string;
   postType: PostType;
@@ -312,6 +321,10 @@ export type FeedPost = {
   details?: { label: string; value: string }[];
   /** Linked member course round — photos resolved from member_course_round_photos */
   memberCourseRoundId?: string;
+  /** Linked golf course for community hero fallback */
+  golfCourseId?: string;
+  /** Rich media (images + videos) for feed rendering */
+  mediaItems?: FeedMediaItem[];
   /** Author auth user id — used for ownership checks */
   authorUserId?: string;
   createdAt?: string;

@@ -8157,6 +8157,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   display: block;
 }
 
@@ -9029,18 +9030,33 @@
 }
 
 .round-photo-picker-add {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.55rem 0.85rem;
   border: 1px dashed var(--inside-border);
   color: var(--portal-body);
+  background: transparent;
+  font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
 }
 
-.round-photo-picker-add input {
-  display: none;
+.round-photo-picker-add:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Safari will not open file pickers for display:none inputs — keep them visually hidden. */
+.round-photo-picker-add input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.01;
+  cursor: pointer;
+  font-size: 0;
 }
 
 .round-photo-cover-grid {

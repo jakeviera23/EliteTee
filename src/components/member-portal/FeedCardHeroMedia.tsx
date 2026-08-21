@@ -1,18 +1,41 @@
 import { useMemo, useState } from "react";
+import type { FeedMediaItem } from "../../data/portalSocial";
 import type { MemberCourseRoundPhotoRecord } from "../../types/memberCourseRoundPhoto";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
+import { isRoundMediaVideo } from "../../lib/memberCourseRoundPhotos";
 import { RoundPhotoLightbox } from "./RoundPhotoLightbox";
 
 type FeedCardHeroMediaProps = {
-  photos: MemberCourseRoundPhotoRecord[];
+  photos?: MemberCourseRoundPhotoRecord[];
+  mediaItems?: FeedMediaItem[];
   imageAlt?: string;
   rating?: number;
   maxRating?: number;
   variant?: "hero" | "editorial";
 };
 
+function toMediaItems(
+  photos: MemberCourseRoundPhotoRecord[] | undefined,
+  mediaItems: FeedMediaItem[] | undefined,
+): FeedMediaItem[] {
+  if (mediaItems && mediaItems.length > 0) {
+    return mediaItems.filter((item) => item.url);
+  }
+  return (photos ?? [])
+    .filter((photo) => photo.signed_url)
+    .map((photo) => ({
+      id: photo.id,
+      url: photo.signed_url as string,
+      kind: isRoundMediaVideo(photo) ? "video" : "image",
+      posterUrl: photo.poster_signed_url ?? null,
+      mimeType: photo.mime_type ?? null,
+      caption: photo.caption ?? null,
+    }));
+}
+
 export function FeedCardHeroMedia({
   photos,
+  mediaItems,
   imageAlt = "Post photo",
   rating,
   maxRating = 10,
@@ -20,22 +43,35 @@ export function FeedCardHeroMedia({
 }: FeedCardHeroMediaProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const visiblePhotos = useMemo(
-    () => photos.filter((photo) => photo.signed_url),
-    [photos],
-  );
+  const visibleMedia = useMemo(() => toMediaItems(photos, mediaItems), [photos, mediaItems]);
 
   const ratingDisplay = formatCourseRatingDisplay(rating);
 
-  if (visiblePhotos.length === 0) {
+  if (visibleMedia.length === 0) {
     return null;
   }
 
-  const leadPhoto = visiblePhotos[0];
-  const extraCount = visiblePhotos.length - 1;
+  const lead = visibleMedia[0];
+  const extraCount = visibleMedia.length - 1;
   const showThumbStrip = extraCount > 0 && extraCount <= 3;
-  const thumbPhotos = showThumbStrip ? visiblePhotos.slice(1) : [];
+  const thumbMedia = showThumbStrip ? visibleMedia.slice(1) : [];
   const showOverflowOnLead = extraCount > 3;
+
+  const lightboxPhotos: MemberCourseRoundPhotoRecord[] = visibleMedia.map((item, index) => ({
+    id: item.id,
+    member_course_round_id: "",
+    user_id: "",
+    storage_path: "",
+    sort_order: index,
+    is_featured: false,
+    moderation_status: "active",
+    created_at: "",
+    signed_url: item.kind === "video" ? item.posterUrl || item.url : item.url,
+    caption: item.caption,
+    media_kind: item.kind,
+    mime_type: item.mimeType,
+    poster_signed_url: item.posterUrl,
+  }));
 
   function openLightbox(index: number) {
     setLightboxIndex(index);
@@ -45,7 +81,7 @@ export function FeedCardHeroMedia({
     <>
       <div
         className={`feed-card-hero-media feed-card-hero-media--${variant}${
-          thumbPhotos.length ? " feed-card-hero-media--has-thumbs" : ""
+          thumbMedia.length ? " feed-card-hero-media--has-thumbs" : ""
         }`}
       >
         <button
@@ -53,19 +89,36 @@ export function FeedCardHeroMedia({
           className="feed-card-hero-lead"
           onClick={() => openLightbox(0)}
           aria-label={
-            extraCount > 0
-              ? `View photo 1 of ${visiblePhotos.length}. ${extraCount} more photo${
-                  extraCount === 1 ? "" : "s"
-                } available.`
-              : "View photo"
+            lead.kind === "video"
+              ? extraCount > 0
+                ? `Play video 1 of ${visibleMedia.length}. ${extraCount} more media available.`
+                : "Play video"
+              : extraCount > 0
+                ? `View photo 1 of ${visibleMedia.length}. ${extraCount} more photo${
+                    extraCount === 1 ? "" : "s"
+                  } available.`
+                : "View photo"
           }
         >
-          <img
-            src={leadPhoto.signed_url!}
-            alt={leadPhoto.caption?.trim() || imageAlt}
-            loading="lazy"
-            decoding="async"
-          />
+          {lead.kind === "video" ? (
+            <video
+              className="feed-card-hero-video"
+              src={lead.url}
+              poster={lead.posterUrl ?? undefined}
+              muted
+              playsInline
+              preload="metadata"
+              controls
+              onClick={(event) => event.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={lead.url}
+              alt={lead.caption?.trim() || imageAlt}
+              loading="lazy"
+              decoding="async"
+            />
+          )}
           <span className="feed-card-hero-scrim" aria-hidden="true" />
           {showOverflowOnLead ? (
             <span className="feed-card-hero-more" aria-hidden="true">
@@ -83,32 +136,36 @@ export function FeedCardHeroMedia({
           ) : null}
         </button>
 
-        {thumbPhotos.length ? (
-          <div className="feed-card-hero-thumbs" role="list" aria-label="Additional photos">
-            {thumbPhotos.map((photo, index) => {
+        {thumbMedia.length ? (
+          <div className="feed-card-hero-thumbs" role="list" aria-label="Additional media">
+            {thumbMedia.map((item, index) => {
               const photoIndex = index + 1;
-              const isLast = index === thumbPhotos.length - 1;
-              const hiddenCount = visiblePhotos.length - 1 - thumbPhotos.length;
-
               return (
                 <button
-                  key={photo.id}
+                  key={item.id}
                   type="button"
                   role="listitem"
                   className="feed-card-hero-thumb"
                   onClick={() => openLightbox(photoIndex)}
-                  aria-label={`View photo ${photoIndex + 1} of ${visiblePhotos.length}`}
+                  aria-label={
+                    item.kind === "video"
+                      ? `View video ${photoIndex + 1} of ${visibleMedia.length}`
+                      : `View photo ${photoIndex + 1} of ${visibleMedia.length}`
+                  }
                 >
-                  <img
-                    src={photo.signed_url!}
-                    alt={photo.caption?.trim() || `Photo ${photoIndex + 1}`}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  {isLast && hiddenCount > 0 ? (
-                    <span className="feed-card-hero-more feed-card-hero-more--thumb" aria-hidden="true">
-                      +{hiddenCount}
-                    </span>
+                  {item.kind === "video" ? (
+                    <video
+                      src={item.url}
+                      poster={item.posterUrl ?? undefined}
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img src={item.url} alt="" loading="lazy" />
+                  )}
+                  {item.kind === "video" ? (
+                    <span className="feed-card-hero-thumb-video-label">Video</span>
                   ) : null}
                 </button>
               );
@@ -119,8 +176,7 @@ export function FeedCardHeroMedia({
 
       {lightboxIndex !== null ? (
         <RoundPhotoLightbox
-          key={`feed-lightbox-${lightboxIndex}`}
-          photos={visiblePhotos}
+          photos={lightboxPhotos}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
         />

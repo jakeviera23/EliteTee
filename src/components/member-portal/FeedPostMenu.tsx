@@ -1,10 +1,18 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 type FeedPostMenuProps = {
-  onEdit: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  editLabel?: string;
+  deleteLabel?: string;
 };
 
-export function FeedPostMenu({ onEdit }: FeedPostMenuProps) {
+export function FeedPostMenu({
+  onEdit,
+  onDelete,
+  editLabel = "Edit post",
+  deleteLabel = "Delete post",
+}: FeedPostMenuProps) {
   const menuId = useId();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -48,17 +56,32 @@ export function FeedPostMenu({ onEdit }: FeedPostMenuProps) {
 
       {open ? (
         <div id={menuId} className="feed-card-menu-panel" role="menu">
-          <button
-            type="button"
-            className="feed-card-menu-item"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onEdit();
-            }}
-          >
-            Edit post
-          </button>
+          {onEdit ? (
+            <button
+              type="button"
+              className="feed-card-menu-item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onEdit();
+              }}
+            >
+              {editLabel}
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button
+              type="button"
+              className="feed-card-menu-item feed-card-menu-item--danger"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onDelete();
+              }}
+            >
+              {deleteLabel}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

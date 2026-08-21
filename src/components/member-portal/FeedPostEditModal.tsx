@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useId, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { FeedPost } from "../../data/portalSocial";
 import {
   deriveCourseRoundEditDefaults,
@@ -14,9 +14,16 @@ import { memberFacingCoverPhotoError, memberFacingPortalError } from "../../lib/
 import { fetchMemberCourseRoundById } from "../../lib/memberCourseRounds";
 import {
   buildRoundImageUrls,
+  buildRoundMediaItems,
+  deleteOwnCourseRoundPhoto,
   fetchCoverPhotoIdsForRoundIds,
   fetchPhotosForRoundIds,
+  golfCourseHasCuratedImage,
+  isCourseRoundVideoUploadSupported,
+  setCourseCommunityDisplayPhoto,
   setRoundCoverPhoto,
+  updateRoundPhotoSortOrders,
+  uploadCourseRoundPhotos,
 } from "../../lib/memberCourseRoundPhotos";
 import {
   buildExperienceEditPhotoRecords,
@@ -24,18 +31,17 @@ import {
   resolveExperienceEditCoverPhotoId,
   type ExperienceEditPhoto,
 } from "../../lib/experienceEditPhotos";
+import { ensureMemberCourseRoundForFeedPost } from "../../lib/ensureExperienceRoundLink";
 import { fetchGolfCourseById } from "../../lib/golfCourses";
-import {
-  canMemberEditMemberSubmittedCourseLocation,
-  resolveEditableCourseLocation,
-} from "../../lib/memberSubmittedCourseLocation";
-import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { CourseRatingPicker } from "./CourseRatingPicker";
+import { ExperienceMediaEditor } from "./ExperienceMediaEditor";
 import { RoundPhotoCoverGrid } from "./RoundPhotoCoverGrid";
 
 type FeedPostEditModalProps = {
   post: FeedPost;
+  currentUserId?: string | null;
   viewerIsAdmin?: boolean;
   onClose: () => void;
   onSaved: (post: FeedPost) => void;
@@ -43,126 +49,239 @@ type FeedPostEditModalProps = {
 
 export function FeedPostEditModal({
   post,
+  currentUserId = null,
   viewerIsAdmin = false,
   onClose,
   onSaved,
 }: FeedPostEditModalProps) {
   const formId = useId();
   const editMode = getFeedPostEditMode(post);
-  const [message, setMessage] = useState(post.caption ?? "");
-  const [location, setLocation] = useState(post.courseLocation ?? "");
-  const [city, setCity] = useState("");
-  const [region, setRegion] = useState("");
-  const [country, setCountry] = useState("");
-  const [playedOn, setPlayedOn] = useState(post.playedOn ?? "");
-  const [wouldPlayAgain, setWouldPlayAgain] = useState(post.wouldPlayAgain ?? true);
-  const [courseRating, setCourseRating] = useState<number | null>(post.rating ?? 10);
+  const hydrateKey = `${post.id}:${post.memberCourseRoundId ?? ""}`;
+  const defaults = useMemo(() => deriveCourseRoundEditDefaults(post), [hydrateKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [message, setMessage] = useState(defaults.message);
+  const [location, setLocation] = useState(defaults.location);
+  const [playedOn, setPlayedOn] = useState(defaults.playedOn);
+  const [wouldPlayAgain, setWouldPlayAgain] = useState(defaults.wouldPlayAgain);
+  const [courseRating, setCourseRating] = useState<number | null>(defaults.courseRating);
   const [linkedCourse, setLinkedCourse] = useState<GolfCourseSearchResult | null>(null);
-  const [showStructuredLocation, setShowStructuredLocation] = useState(false);
-  const [isLoadingRound, setIsLoadingRound] = useState(false);
+  const [isLoadingRound, setIsLoadingRound] = useState(editMode === "course-round");
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [roundPhotos, setRoundPhotos] = useState<ExperienceEditPhoto[]>([]);
+  const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
+  const [mediaDrafts, setMediaDrafts] = useState<CourseRoundPhotoDraft[]>([]);
   const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
   const [initialCoverPhotoId, setInitialCoverPhotoId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [initialSortSignature, setInitialSortSignature] = useState("");
+  const [canSetCourseDisplay, setCanSetCourseDisplay] = useState(false);
+  const [courseDisplayBusy, setCourseDisplayBusy] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [linkedRoundId, setLinkedRoundId] = useState<string | null>(
+    post.memberCourseRoundId ?? null,
+  );
+  const [mediaLoadError, setMediaLoadError] = useState<string | null>(null);
+
+  // Track user edits so async round hydration cannot clobber typing.
+  const locationDirtyRef = useRef(false);
+  const messageDirtyRef = useRef(false);
+  const metaDirtyRef = useRef(false);
+
   const isOwner = Boolean(currentUserId && post.authorUserId === currentUserId);
   const canEditDetails = isOwner;
+  const fieldsDisabled = isSaving || !canEditDetails;
+  // Allow adding drafts while round metadata loads — only block during save / non-owner.
+  const mediaDisabled = isSaving || !canEditDetails;
+  const effectiveRoundId = linkedRoundId ?? post.memberCourseRoundId ?? null;
   const coverChanged = coverPhotoId !== initialCoverPhotoId;
+  const sortSignature = useMemo(
+    () => roundPhotos.map((photo) => `${photo.id}:${photo.sort_order}`).join("|"),
+    [roundPhotos],
+  );
+  const mediaChanged =
+    removedPhotoIds.length > 0 ||
+    mediaDrafts.length > 0 ||
+    coverChanged ||
+    sortSignature !== initialSortSignature;
 
   useEffect(() => {
-    if (editMode !== "course-round") return;
+    locationDirtyRef.current = false;
+    messageDirtyRef.current = false;
+    metaDirtyRef.current = false;
 
-    const defaults = deriveCourseRoundEditDefaults(post);
-    setMessage(defaults.message);
-    setLocation(defaults.location);
-    setPlayedOn(defaults.playedOn);
-    setWouldPlayAgain(defaults.wouldPlayAgain);
-    setCourseRating(defaults.courseRating);
-
-    if (!post.memberCourseRoundId) return;
-
-    const roundId = post.memberCourseRoundId;
-    let active = true;
-    setIsLoadingRound(true);
+    const nextDefaults = deriveCourseRoundEditDefaults(post);
+    setMessage(nextDefaults.message);
+    setLocation(nextDefaults.location);
+    setPlayedOn(nextDefaults.playedOn);
+    setWouldPlayAgain(nextDefaults.wouldPlayAgain);
+    setCourseRating(nextDefaults.courseRating);
+    setError(null);
+    setUploadProgress(null);
+    setMediaLoadError(null);
+    setRemovedPhotoIds([]);
+    setMediaDrafts([]);
     setRoundPhotos([]);
     setCoverPhotoId(null);
     setInitialCoverPhotoId(null);
+    setInitialSortSignature("");
+    setLinkedCourse(null);
+    setCanSetCourseDisplay(false);
+    setLinkedRoundId(post.memberCourseRoundId ?? null);
+
+    if (editMode !== "course-round") {
+      setIsLoadingRound(false);
+      return;
+    }
+
+    // Optimistic seed from the feed card so the editor is never blank when the post already shows media.
+    const seededFromPost: ExperienceEditPhoto[] = post.mediaItems?.length
+      ? post.mediaItems.map((item, index) => ({
+          id: item.id,
+          previewUrl: item.kind === "video" ? item.posterUrl || item.url : item.url,
+          sort_order: index,
+          created_at: "",
+          mediaKind: item.kind,
+        }))
+      : (post.images ?? []).map((url, index) => ({
+          id: `${post.id}-image-${index}`,
+          previewUrl: url,
+          sort_order: index,
+          created_at: "",
+          mediaKind: "image" as const,
+        }));
+    if (seededFromPost.length > 0) {
+      setRoundPhotos(seededFromPost);
+      setCoverPhotoId(seededFromPost[0]?.id ?? null);
+      setInitialCoverPhotoId(seededFromPost[0]?.id ?? null);
+    }
+
+    let active = true;
+    setIsLoadingRound(true);
 
     void (async () => {
-      const [{ data: round, error: roundError }, { userId }, { data: photos }, { data: coverIds }] =
-        await Promise.all([
+      try {
+        let roundId = post.memberCourseRoundId ?? null;
+
+        if (!roundId) {
+          const { data: ensured, error: ensureError } = await ensureMemberCourseRoundForFeedPost(
+            post,
+          );
+          if (!active) return;
+
+          if (ensureError || !ensured?.memberCourseRoundId) {
+            console.error("[FeedPostEditModal] round ensure failed", ensureError ?? ensured);
+            setMediaLoadError(
+              ensureError?.message ||
+                ensured?.detail ||
+                "This experience is missing its linked round id, so photos cannot be loaded or saved yet.",
+            );
+            return;
+          }
+
+          roundId = ensured.memberCourseRoundId;
+          setLinkedRoundId(roundId);
+        }
+
+        const [
+          { data: round, error: roundError },
+          photosResult,
+          { data: coverIds },
+        ] = await Promise.all([
           fetchMemberCourseRoundById(roundId),
-          getCurrentAuthUserId(),
           fetchPhotosForRoundIds([roundId]),
           fetchCoverPhotoIdsForRoundIds([roundId]),
         ]);
 
-      if (!active) return;
-
-      setCurrentUserId(userId ?? null);
-
-      const editablePhotos = mapActivePhotosForExperienceEdit(photos ?? []);
-      setRoundPhotos(editablePhotos);
-
-      const resolvedCoverId = resolveExperienceEditCoverPhotoId(
-        coverIds?.get(roundId) ?? round?.cover_photo_id,
-        editablePhotos,
-      );
-      setCoverPhotoId(resolvedCoverId);
-      setInitialCoverPhotoId(resolvedCoverId);
-
-      if (round) {
-        setMessage(round.note || defaults.message);
-        setLocation(round.location);
-        setPlayedOn(round.played_on);
-        setWouldPlayAgain(round.would_play_again);
-        setCourseRating(round.course_rating);
-
-        if (!round.golf_course_id) {
-          const parsed = resolveEditableCourseLocation({ roundLocation: round.location });
-          setCity(parsed.city);
-          setRegion(parsed.region);
-          setCountry(parsed.country || "United States");
-          setShowStructuredLocation(false);
-          setIsLoadingRound(false);
-          return;
-        }
-
-        const { data: course } = await fetchGolfCourseById(round.golf_course_id);
         if (!active) return;
 
-        setLinkedCourse(course);
-        const canEditStructured = canMemberEditMemberSubmittedCourseLocation({
-          course,
-          roundOwnerUserId: round.member_user_id,
-          currentUserId: userId,
-        });
-        setShowStructuredLocation(canEditStructured);
+        setLinkedRoundId(roundId);
 
-        const parsed = resolveEditableCourseLocation({
-          course,
-          roundLocation: round.location,
-        });
-        setCity(parsed.city);
-        setRegion(parsed.region);
-        setCountry(parsed.country || "United States");
-        setLocation(parsed.city || parsed.region || parsed.country ? round.location : defaults.location);
-        setIsLoadingRound(false);
-        return;
+        if (photosResult.error) {
+          console.error("[FeedPostEditModal] photo load failed", photosResult.error);
+          setMediaLoadError(
+            photosResult.error.message ||
+              "Photos could not be loaded. You can still add new photos and save.",
+          );
+        } else {
+          setMediaLoadError(null);
+          const editablePhotos = mapActivePhotosForExperienceEdit(photosResult.data ?? []);
+          if (editablePhotos.length > 0) {
+            setRoundPhotos(editablePhotos);
+            setInitialSortSignature(
+              editablePhotos.map((photo) => `${photo.id}:${photo.sort_order}`).join("|"),
+            );
+            const resolvedCoverId = resolveExperienceEditCoverPhotoId(
+              coverIds?.get(roundId) ?? round?.cover_photo_id,
+              editablePhotos,
+            );
+            setCoverPhotoId(resolvedCoverId);
+            setInitialCoverPhotoId(resolvedCoverId);
+          } else if (seededFromPost.length === 0) {
+            setRoundPhotos([]);
+            setInitialSortSignature("");
+            setCoverPhotoId(null);
+            setInitialCoverPhotoId(null);
+          }
+        }
+
+        // Video support is optional and must never block photo editing.
+        void isCourseRoundVideoUploadSupported()
+          .then((supported) => {
+            if (active) setVideoEnabled(supported);
+          })
+          .catch((videoError) => {
+            console.warn("[FeedPostEditModal] video capability check failed", videoError);
+            if (active) setVideoEnabled(false);
+          });
+
+        if (round) {
+          if (!messageDirtyRef.current) {
+            setMessage(round.note || nextDefaults.message);
+          }
+          if (!locationDirtyRef.current) {
+            setLocation((round.location ?? "").trim() || nextDefaults.location);
+          }
+          if (!metaDirtyRef.current) {
+            setPlayedOn(round.played_on);
+            setWouldPlayAgain(round.would_play_again);
+            setCourseRating(round.course_rating);
+          }
+
+          if (round.golf_course_id) {
+            const [{ data: course }, { data: curated }] = await Promise.all([
+              fetchGolfCourseById(round.golf_course_id),
+              golfCourseHasCuratedImage(round.golf_course_id),
+            ]);
+            if (!active) return;
+            setLinkedCourse(course);
+            setCanSetCourseDisplay(!curated);
+          }
+        } else if (roundError) {
+          console.warn("[FeedPostEditModal] round metadata load failed", roundError.message);
+          setMediaLoadError(
+            (current) =>
+              current ?? `Round details could not be loaded: ${roundError.message}`,
+          );
+        }
+      } catch (loadError) {
+        console.error("[FeedPostEditModal] media hydration failed", loadError);
+        if (active) {
+          setMediaLoadError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Photos could not be loaded. You can still add new photos and save.",
+          );
+        }
+      } finally {
+        if (active) setIsLoadingRound(false);
       }
-
-      if (roundError && import.meta.env.DEV) {
-        console.warn("[FeedPostEditModal] round metadata load failed", roundError.message);
-      }
-
-      setIsLoadingRound(false);
     })();
 
     return () => {
       active = false;
     };
-  }, [editMode, post]);
+  }, [editMode, hydrateKey]); // intentionally stable: do not reset while typing
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -175,12 +294,108 @@ export function FeedPostEditModal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSaving, onClose]);
 
-  function buildUpdatedImageUrls(nextCoverPhotoId: string | null) {
-    if (!post.memberCourseRoundId) return post.images;
-    return buildRoundImageUrls(
-      buildExperienceEditPhotoRecords(roundPhotos, post.memberCourseRoundId),
-      nextCoverPhotoId,
-    );
+  function buildUpdatedMedia(nextCoverPhotoId: string | null, photos: ExperienceEditPhoto[]) {
+    if (!post.memberCourseRoundId) {
+      return { images: post.images, mediaItems: post.mediaItems };
+    }
+    const records = buildExperienceEditPhotoRecords(photos, post.memberCourseRoundId);
+    return {
+      images: buildRoundImageUrls(records, nextCoverPhotoId),
+      mediaItems: buildRoundMediaItems(records, nextCoverPhotoId),
+    };
+  }
+
+  async function persistMediaChanges(roundId: string) {
+    const remaining = roundPhotos.filter((photo) => !removedPhotoIds.includes(photo.id));
+
+    for (const photoId of removedPhotoIds) {
+      const photo = roundPhotos.find((item) => item.id === photoId);
+      if (!photo?.user_id || !photo.storage_path) continue;
+      const { error: deleteError } = await deleteOwnCourseRoundPhoto({
+        id: photo.id,
+        member_course_round_id: roundId,
+        user_id: photo.user_id,
+        storage_path: photo.storage_path,
+        poster_storage_path: photo.poster_storage_path ?? null,
+        sort_order: photo.sort_order,
+        is_featured: false,
+        moderation_status: "active",
+        created_at: photo.created_at,
+        media_kind: photo.mediaKind ?? "image",
+      });
+      if (deleteError) {
+        return { photos: remaining, error: deleteError };
+      }
+    }
+
+    let nextPhotos = remaining.map((photo, index) => ({ ...photo, sort_order: index }));
+    if (sortSignature !== initialSortSignature || removedPhotoIds.length > 0) {
+      const { error: sortError } = await updateRoundPhotoSortOrders(
+        nextPhotos.map((photo) => ({ id: photo.id, sort_order: photo.sort_order })),
+      );
+      if (sortError) {
+        return { photos: nextPhotos, error: sortError };
+      }
+    }
+
+    let uploadedMapped: ExperienceEditPhoto[] = [];
+    if (mediaDrafts.length > 0) {
+      setUploadProgress(
+        `Uploading ${mediaDrafts.length} new item${mediaDrafts.length === 1 ? "" : "s"}…`,
+      );
+      const { data: uploadResult, error: uploadError } = await uploadCourseRoundPhotos(
+        roundId,
+        mediaDrafts.map((draft, index) => ({
+          file: draft.file,
+          caption: draft.caption,
+          sortOrder: nextPhotos.length + index,
+        })),
+      );
+      setUploadProgress(null);
+      if (uploadError) {
+        return { photos: nextPhotos, error: uploadError };
+      }
+      if (uploadResult?.failed.length) {
+        return {
+          photos: nextPhotos,
+          error: new Error(uploadResult.failed[0]?.message ?? "Media upload failed."),
+        };
+      }
+
+      uploadedMapped = mapActivePhotosForExperienceEdit(uploadResult?.uploaded ?? []);
+      nextPhotos = [...nextPhotos, ...uploadedMapped];
+    }
+
+    let effectiveCoverId = coverPhotoId;
+    if (effectiveCoverId && mediaDrafts.some((draft) => draft.id === effectiveCoverId)) {
+      const draftIndex = mediaDrafts.findIndex((draft) => draft.id === effectiveCoverId);
+      effectiveCoverId = uploadedMapped[draftIndex]?.id ?? nextPhotos[0]?.id ?? null;
+    }
+    if (effectiveCoverId && !nextPhotos.some((photo) => photo.id === effectiveCoverId)) {
+      effectiveCoverId = nextPhotos[0]?.id ?? null;
+    }
+
+    if (effectiveCoverId && (coverChanged || mediaDrafts.length > 0 || removedPhotoIds.length > 0)) {
+      const { error: coverError } = await setRoundCoverPhoto(roundId, effectiveCoverId);
+      if (coverError) {
+        return { photos: nextPhotos, coverId: effectiveCoverId, error: coverError };
+      }
+    }
+
+    return { photos: nextPhotos, coverId: effectiveCoverId, error: null };
+  }
+
+  async function handleUseAsCourseDisplay(photoId: string) {
+    if (!linkedCourse?.id || !canSetCourseDisplay) return;
+    setCourseDisplayBusy(true);
+    setError(null);
+    const { error: featureError } = await setCourseCommunityDisplayPhoto(linkedCourse.id, photoId);
+    setCourseDisplayBusy(false);
+    if (featureError) {
+      setError(featureError.message);
+      return;
+    }
+    setUploadProgress("Course display photo updated.");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -188,6 +403,7 @@ export function FeedPostEditModal({
     if (isSaving) return;
 
     setError(null);
+    setUploadProgress(null);
 
     if (editMode === "text") {
       if (!canEditDetails) {
@@ -239,7 +455,11 @@ export function FeedPostEditModal({
         return;
       }
 
-      onSaved({ ...post, images: buildUpdatedImageUrls(coverPhotoId) });
+      onSaved({
+        ...post,
+        ...buildUpdatedMedia(coverPhotoId, roundPhotos),
+        golfCourseId: linkedCourse?.id ?? post.golfCourseId,
+      });
       return;
     }
 
@@ -249,9 +469,6 @@ export function FeedPostEditModal({
       playedOn,
       wouldPlayAgain,
       location,
-      city: showStructuredLocation ? city : undefined,
-      region: showStructuredLocation ? region : undefined,
-      country: showStructuredLocation ? country : undefined,
     });
 
     if (!validation.ok) {
@@ -266,9 +483,6 @@ export function FeedPostEditModal({
       playedOn,
       wouldPlayAgain,
       location,
-      city: showStructuredLocation ? city : undefined,
-      region: showStructuredLocation ? region : undefined,
-      country: showStructuredLocation ? country : undefined,
     });
 
     if (saveError || !data) {
@@ -277,22 +491,88 @@ export function FeedPostEditModal({
       return;
     }
 
-    let savedPost = data;
-    let coverWarning: string | null = null;
+    let savedPost: FeedPost = {
+      ...data,
+      courseLocation: location.trim(),
+      golfCourseId: linkedCourse?.id ?? data.golfCourseId ?? post.golfCourseId,
+    };
+    let mediaWarning: string | null = null;
 
-    if (coverChanged && post.memberCourseRoundId && coverPhotoId) {
-      const { error: coverError } = await setRoundCoverPhoto(post.memberCourseRoundId, coverPhotoId);
-      if (coverError) {
-        coverWarning = memberFacingCoverPhotoError(coverError.message);
+    if (mediaChanged) {
+      let roundIdForMedia = effectiveRoundId;
+      if (!roundIdForMedia) {
+        const { data: ensured, error: ensureError } = await ensureMemberCourseRoundForFeedPost(
+          post,
+        );
+        if (ensureError || !ensured?.memberCourseRoundId) {
+          setIsSaving(false);
+          setError(
+            ensureError?.message ||
+              ensured?.detail ||
+              "This experience is missing its linked round id, so photos cannot be saved. Refresh and try again.",
+          );
+          return;
+        }
+        roundIdForMedia = ensured.memberCourseRoundId;
+        setLinkedRoundId(roundIdForMedia);
+      }
+
+      const mediaResult = await persistMediaChanges(roundIdForMedia);
+      if (mediaResult.error) {
+        console.error("[FeedPostEditModal] media save failed", mediaResult.error);
+        mediaWarning =
+          mediaResult.error.message.includes("cover")
+            ? memberFacingCoverPhotoError(mediaResult.error.message)
+            : mediaResult.error.message;
       } else {
-        savedPost = { ...savedPost, images: buildUpdatedImageUrls(coverPhotoId) };
+        savedPost = {
+          ...savedPost,
+          memberCourseRoundId: roundIdForMedia,
+          ...buildUpdatedMedia(mediaResult.coverId ?? coverPhotoId, mediaResult.photos),
+        };
+        setMediaDrafts([]);
+        setRemovedPhotoIds([]);
+        setRoundPhotos(mediaResult.photos);
+        setInitialCoverPhotoId(mediaResult.coverId ?? coverPhotoId);
+        setCoverPhotoId(mediaResult.coverId ?? coverPhotoId);
+        setInitialSortSignature(
+          mediaResult.photos.map((photo) => `${photo.id}:${photo.sort_order}`).join("|"),
+        );
+
+        // Prefer community display photo over TB placeholder when course has no curated image.
+        const displayPhotoId = mediaResult.coverId ?? mediaResult.photos[0]?.id ?? null;
+        const courseIdForDisplay = linkedCourse?.id ?? savedPost.golfCourseId ?? null;
+        if (displayPhotoId && courseIdForDisplay && canSetCourseDisplay) {
+          const { error: featureError } = await setCourseCommunityDisplayPhoto(
+            courseIdForDisplay,
+            displayPhotoId,
+          );
+          if (featureError) {
+            console.warn(
+              "[FeedPostEditModal] community display photo not set (migration 060 may be required)",
+              featureError.message,
+            );
+          }
+        }
+      }
+    } else if (coverChanged && effectiveRoundId && coverPhotoId) {
+      const { error: coverError } = await setRoundCoverPhoto(effectiveRoundId, coverPhotoId);
+      if (coverError) {
+        mediaWarning = memberFacingCoverPhotoError(coverError.message);
+      } else {
+        savedPost = {
+          ...savedPost,
+          memberCourseRoundId: effectiveRoundId,
+          ...buildUpdatedMedia(coverPhotoId, roundPhotos),
+        };
       }
     }
 
     setIsSaving(false);
+    setUploadProgress(null);
     onSaved(savedPost);
-    if (coverWarning) {
-      setError(coverWarning);
+    if (mediaWarning) {
+      setError(mediaWarning);
     }
   }
 
@@ -323,7 +603,7 @@ export function FeedPostEditModal({
         <form id={formId} className="feed-edit-form" onSubmit={handleSubmit}>
           {editMode === "course-round" && isLoadingRound ? (
             <p className="feed-edit-loading" aria-live="polite">
-              Loading round details…
+              Loading media…
             </p>
           ) : null}
 
@@ -334,13 +614,61 @@ export function FeedPostEditModal({
             </p>
           ) : null}
 
-          {editMode === "course-round" && roundPhotos.length > 0 ? (
+          {!canEditDetails && !viewerIsAdmin ? (
+            <p className="feed-edit-error" role="alert">
+              Only the member who posted this experience can edit location, review, and media.
+            </p>
+          ) : null}
+
+          {editMode === "course-round" && canEditDetails ? (
+            <div className="feed-edit-field feed-edit-field--wide">
+              <span className="feed-edit-field-label">Photos & videos</span>
+              {mediaLoadError ? (
+                <p className="feed-edit-error" role="alert">
+                  {mediaLoadError}
+                </p>
+              ) : null}
+              {isLoadingRound ? (
+                <p className="feed-edit-loading" aria-live="polite">
+                  Loading existing photos…
+                </p>
+              ) : null}
+              <ExperienceMediaEditor
+                existing={roundPhotos}
+                drafts={mediaDrafts}
+                coverId={coverPhotoId}
+                onCoverIdChange={setCoverPhotoId}
+                onExistingChange={setRoundPhotos}
+                onDraftsChange={setMediaDrafts}
+                onRemoveExisting={(id) => {
+                  setRemovedPhotoIds((current) =>
+                    current.includes(id) ? current : [...current, id],
+                  );
+                  const next = roundPhotos
+                    .filter((photo) => photo.id !== id)
+                    .map((photo, index) => ({ ...photo, sort_order: index }));
+                  setRoundPhotos(next);
+                  if (coverPhotoId === id) {
+                    setCoverPhotoId(next[0]?.id ?? mediaDrafts[0]?.id ?? null);
+                  }
+                }}
+                disabled={mediaDisabled}
+                videoEnabled={videoEnabled}
+                canUseAsCourseDisplay={canSetCourseDisplay}
+                onUseAsCourseDisplay={handleUseAsCourseDisplay}
+                courseDisplayBusy={courseDisplayBusy}
+              />
+            </div>
+          ) : null}
+
+          {editMode === "course-round" && !canEditDetails && roundPhotos.length > 0 ? (
             <div className="feed-edit-field feed-edit-field--wide">
               <span className="feed-edit-field-label">Change cover photo</span>
               <RoundPhotoCoverGrid
                 items={roundPhotos.map((photo) => ({
                   id: photo.id,
                   previewUrl: photo.previewUrl,
+                  mediaKind: photo.mediaKind,
                 }))}
                 coverId={coverPhotoId}
                 onCoverIdChange={setCoverPhotoId}
@@ -354,63 +682,34 @@ export function FeedPostEditModal({
             <textarea
               rows={4}
               value={message}
-              onChange={(event) => setMessage(event.target.value)}
+              onChange={(event) => {
+                messageDirtyRef.current = true;
+                setMessage(event.target.value);
+              }}
               required
-              disabled={isSaving || isLoadingRound || !canEditDetails}
+              disabled={fieldsDisabled}
             />
           </label>
 
           {editMode === "course-round" ? (
             <>
-              {showStructuredLocation ? (
-                <>
-                  <p className="feed-edit-field-hint">
-                    Correct the directory location for this community-added course. This updates the
-                    course library grouping for {linkedCourse?.name ?? "your experience"}.
-                  </p>
-                  <label className="feed-edit-field">
-                    <span>City</span>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(event) => setCity(event.target.value)}
-                      required
-                      disabled={isSaving || isLoadingRound || !canEditDetails}
-                    />
-                  </label>
-                  <label className="feed-edit-field">
-                    <span>State / Region</span>
-                    <input
-                      type="text"
-                      value={region}
-                      onChange={(event) => setRegion(event.target.value)}
-                      required
-                      disabled={isSaving || isLoadingRound || !canEditDetails}
-                    />
-                  </label>
-                  <label className="feed-edit-field">
-                    <span>Country</span>
-                    <input
-                      type="text"
-                      value={country}
-                      onChange={(event) => setCountry(event.target.value)}
-                      required
-                      disabled={isSaving || isLoadingRound || !canEditDetails}
-                    />
-                  </label>
-                </>
-              ) : (
-                <label className="feed-edit-field feed-edit-field--wide">
-                  <span>Location</span>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(event) => setLocation(event.target.value)}
-                    required
-                    disabled={isSaving || isLoadingRound || !canEditDetails}
-                  />
-                </label>
-              )}
+              <label className="feed-edit-field feed-edit-field--wide">
+                <span>Location</span>
+                <input
+                  type="text"
+                  name="experience-location"
+                  autoComplete="address-level2"
+                  value={location}
+                  onChange={(event) => {
+                    locationDirtyRef.current = true;
+                    setLocation(event.target.value);
+                  }}
+                  required
+                  disabled={fieldsDisabled}
+                  readOnly={false}
+                  placeholder="e.g. Bridgehampton, NY"
+                />
+              </label>
 
               <label className="feed-edit-field">
                 <span>Date played</span>
@@ -418,25 +717,28 @@ export function FeedPostEditModal({
                   type="date"
                   value={playedOn}
                   max={new Date().toISOString().slice(0, 10)}
-                  onChange={(event) => setPlayedOn(event.target.value)}
+                  onChange={(event) => {
+                    metaDirtyRef.current = true;
+                    setPlayedOn(event.target.value);
+                  }}
                   required
-                  disabled={isSaving || isLoadingRound || !canEditDetails}
+                  disabled={fieldsDisabled}
                 />
               </label>
 
               <div className="feed-edit-field feed-edit-field--wide">
                 <CourseRatingPicker
                   value={courseRating}
-                  onChange={setCourseRating}
-                  disabled={isSaving || isLoadingRound || !canEditDetails}
+                  onChange={(value) => {
+                    metaDirtyRef.current = true;
+                    setCourseRating(value);
+                  }}
+                  disabled={fieldsDisabled}
                   error={error && courseRating == null ? error : null}
                 />
               </div>
 
-              <fieldset
-                className="feed-edit-choice"
-                disabled={isSaving || isLoadingRound || !canEditDetails}
-              >
+              <fieldset className="feed-edit-choice" disabled={fieldsDisabled}>
                 <legend>Would play again?</legend>
                 <div className="feed-edit-choice-options">
                   <label className="feed-edit-choice-option">
@@ -444,7 +746,10 @@ export function FeedPostEditModal({
                       type="radio"
                       name={`${formId}-would-play-again`}
                       checked={wouldPlayAgain}
-                      onChange={() => setWouldPlayAgain(true)}
+                      onChange={() => {
+                        metaDirtyRef.current = true;
+                        setWouldPlayAgain(true);
+                      }}
                     />
                     <span>Yes</span>
                   </label>
@@ -453,13 +758,22 @@ export function FeedPostEditModal({
                       type="radio"
                       name={`${formId}-would-play-again`}
                       checked={!wouldPlayAgain}
-                      onChange={() => setWouldPlayAgain(false)}
+                      onChange={() => {
+                        metaDirtyRef.current = true;
+                        setWouldPlayAgain(false);
+                      }}
                     />
                     <span>No</span>
                   </label>
                 </div>
               </fieldset>
             </>
+          ) : null}
+
+          {uploadProgress ? (
+            <p className="feed-edit-loading" aria-live="polite">
+              {uploadProgress}
+            </p>
           ) : null}
 
           {error ? (
@@ -480,7 +794,7 @@ export function FeedPostEditModal({
             <button
               type="submit"
               className="et-btn et-btn--primary"
-              disabled={isSaving || isLoadingRound}
+              disabled={isSaving}
             >
               {isSaving ? "Saving…" : "Save changes"}
             </button>

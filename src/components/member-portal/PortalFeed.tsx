@@ -140,6 +140,10 @@ export function PortalFeed({
     );
   }
 
+  function handlePostDeleted(postId: string) {
+    setMemberPosts((current) => current.filter((post) => post.id !== postId));
+  }
+
   const founderWelcome = useMemo(() => getFounderWelcomePost(), []);
   const hasMemberPosts = memberPosts.length > 0;
 
@@ -215,6 +219,7 @@ export function PortalFeed({
                 onToast={showToast}
                 onViewAuthor={onViewMemberProfile}
                 onPostUpdated={handlePostUpdated}
+                onPostDeleted={handlePostDeleted}
               />
             ))}
           </div>

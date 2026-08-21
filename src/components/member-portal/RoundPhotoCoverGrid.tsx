@@ -2,6 +2,7 @@ type RoundPhotoCoverGridItem = {
   id: string;
   previewUrl: string;
   alt?: string;
+  mediaKind?: "image" | "video";
 };
 
 type RoundPhotoCoverGridProps = {
@@ -34,21 +35,26 @@ export function RoundPhotoCoverGrid({
 
   return (
     <div className="round-photo-cover-grid" role="group" aria-label="Choose cover photo">
-      <p className="round-photo-cover-grid-label">Tap a photo to use as the cover in the feed and gallery.</p>
+      <p className="round-photo-cover-grid-label">Tap a photo or video to use as the cover in the feed and gallery.</p>
       <ul className="round-photo-cover-grid-list">
         {items.map((item) => {
           const isCover = item.id === effectiveCoverId;
+          const isVideo = item.mediaKind === "video" || item.alt === "Video";
 
           return (
             <li key={item.id} className="round-photo-cover-grid-item">
               <div
                 className={`round-photo-cover-thumb${isCover ? " round-photo-cover-thumb--selected" : ""}`}
               >
-                <img src={item.previewUrl} alt={item.alt ?? ""} loading="lazy" />
+                {isVideo ? (
+                  <video src={item.previewUrl} muted playsInline preload="metadata" />
+                ) : (
+                  <img src={item.previewUrl} alt={item.alt ?? ""} loading="lazy" />
+                )}
                 {isCover ? (
                   <span className="round-photo-cover-badge">
                     <CoverStarIcon />
-                    Cover photo
+                    Cover
                   </span>
                 ) : (
                   <button

@@ -6,6 +6,8 @@ import { FEED_CARD_ICON_CLASSES } from "../../lib/feedCardScope";
 import { resolveFeedCardBadgeLabel } from "../../lib/feedPostDisplay";
 import { canShowFeedPostEditMenu, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
+import { deleteOwnFeedPost } from "../../lib/memberFeedPosts";
+import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { getFeedContentFlags } from "../../lib/feedContentAudit";
 import {
   applyLikeToggle,
@@ -25,6 +27,7 @@ import {
   isCourseRoundPost,
   type FeedMetaChipTone,
 } from "../../lib/feedCardMeta";
+import { CourseImage } from "./CourseImage";
 import { FeedAvatar } from "./FeedAvatar";
 import { FeedCardHeroMedia } from "./FeedCardHeroMedia";
 import { FeedPostEditModal } from "./FeedPostEditModal";
@@ -40,6 +43,7 @@ type FeedCardProps = {
   onToast?: (message: string) => void;
   onViewAuthor?: (userId: string, memberName: string) => void;
   onPostUpdated?: (post: FeedPost) => void;
+  onPostDeleted?: (postId: string) => void;
 };
 
 function HeartIcon({ filled }: { filled?: boolean }) {
@@ -204,9 +208,13 @@ export function FeedCard({
   onToast,
   onViewAuthor,
   onPostUpdated,
+  onPostDeleted,
 }: FeedCardProps) {
   const isFounder = variant === "founder";
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const engagementEnabled = !isFounder && isPersistedFeedPostId(post.id);
   const [liked, setLiked] = useState(Boolean(post.isLiked));
   const [saved, setSaved] = useState(Boolean(post.isSaved));
@@ -256,15 +264,19 @@ export function FeedCard({
   const canEdit =
     !isFounder &&
     canShowFeedPostEditMenu(post, { userId: currentUserId, isAdmin: viewerIsAdmin });
+  const canDelete =
+    !isFounder &&
+    Boolean(currentUserId && post.authorUserId && post.authorUserId === currentUserId);
   const showEditedLabel = isFeedPostEdited(post.createdAt, post.updatedAt);
   const roundLabel = resolveFeedCardBadgeLabel(post) || postTypeLabels[post.postType];
-  const hasImages = (post.images?.length ?? 0) > 0;
+  const hasMedia =
+    (post.mediaItems?.length ?? 0) > 0 || (post.images?.length ?? 0) > 0;
   const photoRecords = useMemo(
     () =>
-      hasImages
+      !post.mediaItems?.length && (post.images?.length ?? 0) > 0
         ? signedUrlsToPhotoRecords(post.images, post.memberCourseRoundId ?? "")
         : [],
-    [hasImages, post.images, post.memberCourseRoundId],
+    [post.mediaItems, post.images, post.memberCourseRoundId],
   );
   const metaChips = buildFeedMetaChips(post);
   const badgeTone = badgeToneForPost(post);
@@ -426,20 +438,46 @@ export function FeedCard({
           onViewAuthor={handleViewAuthor}
           showEditedLabel={showEditedLabel}
         />
-        {canEdit ? <FeedPostMenu onEdit={() => setEditing(true)} /> : null}
+        {canEdit || canDelete ? (
+          <FeedPostMenu
+            onEdit={canEdit ? () => setEditing(true) : undefined}
+            onDelete={
+              canDelete
+                ? () => {
+                    setDeleteError(null);
+                    setConfirmingDelete(true);
+                  }
+                : undefined
+            }
+            editLabel={isCourseRound ? "Edit experience" : "Edit post"}
+            deleteLabel={isCourseRound ? "Delete experience" : "Delete post"}
+          />
+        ) : null}
       </header>
 
-      {hasImages ? (
+      {hasMedia ? (
         <FeedCardHeroMedia
           photos={photoRecords}
+          mediaItems={post.mediaItems}
           imageAlt={post.imageAlt}
           rating={isCourseRound ? (ratingDisplay ? post.rating : undefined) : undefined}
           maxRating={MAX_RATING}
           variant={isCourseRound ? "hero" : "editorial"}
         />
+      ) : isCourseRound && post.golfCourseId ? (
+        <div className="feed-card-course-fallback" aria-hidden={false}>
+          <CourseImage
+            name={post.courseName || "Course"}
+            imageUrl={null}
+            thumbnailUrl={null}
+            golfCourseId={post.golfCourseId}
+            variant="card"
+            className="feed-card-course-fallback-image"
+          />
+        </div>
       ) : isCourseRound ? (
-        <div className="feed-card-photo-placeholder" role="img" aria-label="No course photo available">
-          <span className="feed-card-photo-placeholder-label">Course photo unavailable</span>
+        <div className="feed-card-photo-placeholder feed-card-photo-placeholder--compact" role="img" aria-label="No photos yet">
+          <span className="feed-card-photo-placeholder-label">No photos yet</span>
         </div>
       ) : null}
 
@@ -454,7 +492,7 @@ export function FeedCard({
           {post.courseLocation ? (
             <p className="feed-card-course-location">{post.courseLocation}</p>
           ) : null}
-          {ratingDisplay && !hasImages ? (
+          {ratingDisplay && !hasMedia ? (
             <div
               className="feed-card-rating feed-card-rating--inline"
               title={`Rated ${ratingDisplay} out of ${MAX_RATING.toFixed(1)}`}
@@ -643,6 +681,7 @@ export function FeedCard({
       {editing ? (
         <FeedPostEditModal
           post={post}
+          currentUserId={currentUserId}
           viewerIsAdmin={viewerIsAdmin}
           onClose={() => setEditing(false)}
           onSaved={(updatedPost) => {
@@ -651,6 +690,83 @@ export function FeedCard({
             onToast?.("Post updated");
           }}
         />
+      ) : null}
+
+      {confirmingDelete ? (
+        <div
+          className="feed-edit-backdrop"
+          role="presentation"
+          onClick={isDeleting ? undefined : () => setConfirmingDelete(false)}
+        >
+          <div
+            className="feed-edit-modal feed-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`delete-${post.id}-title`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="feed-edit-modal-head">
+              <h2 id={`delete-${post.id}-title`} className="feed-edit-modal-title">
+                {isCourseRound ? "Delete experience?" : "Delete post?"}
+              </h2>
+              <button
+                type="button"
+                className="feed-edit-modal-close"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={isDeleting}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </header>
+            <div className="feed-edit-form">
+              <p className="feed-edit-field-hint">
+                This permanently removes the {isCourseRound ? "experience" : "post"}
+                {isCourseRound ? ", its photos/videos, and feed engagement" : " and its engagement"}.
+                This cannot be undone. The golf course itself will not be deleted.
+              </p>
+              {deleteError ? (
+                <p className="feed-edit-error" role="alert">
+                  {deleteError}
+                </p>
+              ) : null}
+              <div className="feed-edit-actions">
+                <button
+                  type="button"
+                  className="et-btn et-btn--secondary"
+                  onClick={() => setConfirmingDelete(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="et-btn feed-delete-confirm-btn"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    void (async () => {
+                      setIsDeleting(true);
+                      setDeleteError(null);
+                      const { error } = await deleteOwnFeedPost(post.id);
+                      setIsDeleting(false);
+                      if (error) {
+                        setDeleteError(
+                          memberFacingPortalError(error.message ?? "unknown", "feed"),
+                        );
+                        return;
+                      }
+                      setConfirmingDelete(false);
+                      onPostDeleted?.(post.id);
+                      onToast?.(isCourseRound ? "Experience deleted" : "Post deleted");
+                    })();
+                  }}
+                >
+                  {isDeleting ? "Deleting…" : "Delete permanently"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
     </article>
   );

@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
 import {
-  getOversizedRoundPhotoMessage,
-  getUnsupportedRoundPhotoMessage,
-  isAcceptedRoundPhotoType,
+  detectRoundMediaKind,
+  getOversizedRoundMediaMessage,
+  getRoundMediaLimitsHelpText,
+  getUnsupportedRoundMediaMessage,
+  isAcceptedRoundMediaType,
+  MAX_ROUND_MEDIA,
   MAX_ROUND_PHOTO_BYTES,
-  MAX_ROUND_PHOTOS,
-} from "../../lib/courseRoundImageProcessing";
+  MAX_ROUND_VIDEO_BYTES,
+} from "../../lib/courseRoundMediaProcessing";
 import type { CourseRoundPhotoDraft } from "../../types/memberCourseRoundPhoto";
 import { RoundPhotoCoverGrid } from "./RoundPhotoCoverGrid";
 
@@ -45,9 +48,9 @@ export function RoundPhotoPicker({
   function addFiles(fileList: FileList | null) {
     if (!fileList || disabled) return;
 
-    const remainingSlots = MAX_ROUND_PHOTOS - drafts.length;
+    const remainingSlots = MAX_ROUND_MEDIA - drafts.length;
     if (remainingSlots <= 0) {
-      setPickerError(`You can add up to ${MAX_ROUND_PHOTOS} photos per round.`);
+      setPickerError(`You can add up to ${MAX_ROUND_MEDIA} photos or videos per round.`);
       return;
     }
 
@@ -56,13 +59,15 @@ export function RoundPhotoPicker({
     const nextDrafts: CourseRoundPhotoDraft[] = [];
 
     for (const file of incoming) {
-      if (file.size > MAX_ROUND_PHOTO_BYTES) {
-        errors.push(getOversizedRoundPhotoMessage(file));
+      const kind = detectRoundMediaKind(file);
+      const maxBytes = kind === "video" ? MAX_ROUND_VIDEO_BYTES : MAX_ROUND_PHOTO_BYTES;
+      if (file.size > maxBytes) {
+        errors.push(getOversizedRoundMediaMessage(file));
         continue;
       }
 
-      if (!isAcceptedRoundPhotoType(file)) {
-        errors.push(getUnsupportedRoundPhotoMessage(file));
+      if (!isAcceptedRoundMediaType(file)) {
+        errors.push(getUnsupportedRoundMediaMessage(file));
         continue;
       }
 
@@ -72,6 +77,7 @@ export function RoundPhotoPicker({
         previewUrl: URL.createObjectURL(file),
         caption: "",
         sortOrder: drafts.length + nextDrafts.length,
+        mediaKind: kind,
       });
     }
 
@@ -125,14 +131,15 @@ export function RoundPhotoPicker({
   return (
     <div className="round-photo-picker">
       <div className="round-photo-picker-head">
-        <span>Course photos (optional)</span>
+        <span>Course photos & videos (optional)</span>
         <span className="round-photo-picker-count">
-          {drafts.length}/{MAX_ROUND_PHOTOS}
+          {drafts.length}/{MAX_ROUND_MEDIA}
         </span>
       </div>
+      <p className="round-photo-picker-help">{getRoundMediaLimitsHelpText()}</p>
       <p className="round-photo-picker-help">
-        Add up to {MAX_ROUND_PHOTOS} JPEG, PNG, or WebP photos (12 MB each). Images are resized before
-        upload. Choose one as the cover photo for the feed.
+        Images are resized before upload. Videos keep their original file. Choose one item as the
+        cover for the feed.
       </p>
 
       {drafts.length > 0 ? (
@@ -141,6 +148,7 @@ export function RoundPhotoPicker({
             items={drafts.map((draft) => ({
               id: draft.id,
               previewUrl: draft.previewUrl,
+              mediaKind: draft.mediaKind,
             }))}
             coverId={coverDraftId}
             onCoverIdChange={onCoverDraftIdChange}
@@ -150,10 +158,28 @@ export function RoundPhotoPicker({
           <ul className="round-photo-picker-list">
             {drafts.map((draft, index) => (
               <li key={draft.id} className="round-photo-picker-item">
-                <img src={draft.previewUrl} alt="" className="round-photo-picker-thumb" loading="lazy" />
+                {draft.mediaKind === "video" ? (
+                  <video
+                    src={draft.previewUrl}
+                    className="round-photo-picker-thumb"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <img
+                    src={draft.previewUrl}
+                    alt=""
+                    className="round-photo-picker-thumb"
+                    loading="lazy"
+                  />
+                )}
                 <div className="round-photo-picker-item-body">
                   <label className="portal-profile-field portal-profile-field--full">
-                    <span>Caption (optional)</span>
+                    <span>
+                      Caption (optional)
+                      {draft.mediaKind === "video" ? " · Video" : ""}
+                    </span>
                     <input
                       type="text"
                       value={draft.caption}
@@ -168,7 +194,7 @@ export function RoundPhotoPicker({
                       className="round-photo-picker-move"
                       onClick={() => moveDraft(draft.id, -1)}
                       disabled={disabled || index === 0}
-                      aria-label="Move photo earlier"
+                      aria-label="Move media earlier"
                     >
                       ↑
                     </button>
@@ -177,7 +203,7 @@ export function RoundPhotoPicker({
                       className="round-photo-picker-move"
                       onClick={() => moveDraft(draft.id, 1)}
                       disabled={disabled || index === drafts.length - 1}
-                      aria-label="Move photo later"
+                      aria-label="Move media later"
                     >
                       ↓
                     </button>
@@ -197,17 +223,17 @@ export function RoundPhotoPicker({
         </>
       ) : null}
 
-      {drafts.length < MAX_ROUND_PHOTOS ? (
+      {drafts.length < MAX_ROUND_MEDIA ? (
         <label className="round-photo-picker-add">
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
             multiple
             disabled={disabled}
             onChange={(event) => addFiles(event.target.files)}
           />
-          <span>{drafts.length === 0 ? "Add photos" : "Add more photos"}</span>
+          <span>{drafts.length === 0 ? "Add photos or videos" : "Add more media"}</span>
         </label>
       ) : null}
 

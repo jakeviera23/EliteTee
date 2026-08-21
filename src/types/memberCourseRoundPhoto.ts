@@ -1,3 +1,5 @@
+export type CourseRoundMediaKind = "image" | "video";
+
 export type MemberCourseRoundPhotoRecord = {
   id: string;
   member_course_round_id: string;
@@ -10,6 +12,9 @@ export type MemberCourseRoundPhotoRecord = {
   height?: number | null;
   file_size_bytes?: number | null;
   mime_type?: string | null;
+  media_kind?: CourseRoundMediaKind;
+  duration_seconds?: number | null;
+  poster_storage_path?: string | null;
   is_featured: boolean;
   moderation_status: string;
   hidden_at?: string | null;
@@ -17,6 +22,8 @@ export type MemberCourseRoundPhotoRecord = {
   created_at: string;
   /** Populated client-side after signing storage paths */
   signed_url?: string | null;
+  /** Signed poster for videos */
+  poster_signed_url?: string | null;
   /** Populated when fetching course gallery */
   member_name?: string;
   played_on?: string;
@@ -28,6 +35,7 @@ export type CourseRoundPhotoDraft = {
   previewUrl: string;
   caption: string;
   sortOrder: number;
+  mediaKind?: CourseRoundMediaKind;
 };
 
 export type CourseRoundPhotoUploadResult = {

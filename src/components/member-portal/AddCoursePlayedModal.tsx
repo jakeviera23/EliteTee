@@ -3,7 +3,7 @@ import { experienceCopy } from "../../data/portalSocial";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { searchGolfCourses } from "../../lib/golfCourses";
 import { createCourseRoundFeedPost } from "../../lib/memberFeedPosts";
-import { uploadCourseRoundPhotos, setRoundCoverPhoto } from "../../lib/memberCourseRoundPhotos";
+import { uploadCourseRoundPhotos, setRoundCoverPhoto, setCourseCommunityDisplayPhoto, golfCourseHasCuratedImage, isRoundMediaVideo } from "../../lib/memberCourseRoundPhotos";
 import { submitMemberCourseRound } from "../../lib/memberCourseRounds";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { formatGolfCourseLocation } from "../../types/golfCourse";
@@ -309,6 +309,21 @@ export function AddCoursePlayedModal({
           setSubmitted(true);
           onSubmitted?.();
           return;
+        }
+
+        const golfCourseId =
+          roundData.golf_course_id ?? form.golf_course_id ?? coverPhoto.golf_course_id;
+        if (golfCourseId) {
+          const { data: curated } = await golfCourseHasCuratedImage(golfCourseId);
+          const displayCandidate =
+            uploadResult?.uploaded.find(
+              (photo) => !isRoundMediaVideo(photo) && photo.id === coverPhoto.id,
+            ) ??
+            uploadResult?.uploaded.find((photo) => !isRoundMediaVideo(photo)) ??
+            null;
+          if (!curated && displayCandidate) {
+            await setCourseCommunityDisplayPhoto(golfCourseId, displayCandidate.id);
+          }
         }
       }
 

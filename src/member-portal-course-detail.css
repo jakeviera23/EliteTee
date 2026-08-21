@@ -53,29 +53,62 @@
   overflow: hidden;
 }
 
+/*
+  Hero media is a deliberate frame — never the source image's natural height.
+  Absolute fill + object-fit:cover keeps portrait/community photos from blowing
+  up the page (Safari is especially sensitive to intrinsic img sizing).
+*/
 .et-course-detail-hero-media {
   position: relative;
-  min-height: 14rem;
+  width: 100%;
   aspect-ratio: 16 / 9;
+  max-height: min(22rem, 42vh);
+  min-height: 11rem;
+  overflow: hidden;
   background: var(--et-bg-inset);
+  isolation: isolate;
 }
 
 @media (min-width: 48rem) {
   .et-course-detail-hero-media {
-    min-height: 18rem;
+    aspect-ratio: 16 / 9;
+    max-height: min(28rem, 46vh);
+    min-height: 14rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .et-course-detail-hero-media {
+    max-height: min(32rem, 48vh);
   }
 }
 
 .et-course-detail-hero-media .course-image,
-.et-course-detail-hero-media .course-image img,
-.et-course-detail-hero-media .course-image-placeholder {
+.et-course-detail-hero-media .course-image--hero {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: inherit;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  border: 0;
 }
 
-.et-course-detail-hero-media .course-image img {
+.et-course-detail-hero-media .course-image img,
+.et-course-detail-hero-media .course-image-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
   object-fit: cover;
+  object-position: center center;
+  display: block;
 }
 
 .et-course-detail-hero-media .course-image-placeholder {

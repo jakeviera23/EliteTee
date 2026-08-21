@@ -114,10 +114,28 @@ export function validateCourseRoundPostEditInput(
   return { ok: true };
 }
 
+export function resolveCourseExperienceLocation(input: {
+  roundLocation?: string | null;
+  details?: Array<{ label: string; value: string }> | null;
+}): string {
+  const fromRound = input.roundLocation?.trim() ?? "";
+  if (fromRound) return fromRound;
+
+  const fromDetails =
+    input.details
+      ?.find((detail) => detail.label.trim().toLowerCase() === "location")
+      ?.value?.trim() ?? "";
+  if (fromDetails) return fromDetails;
+
+  // Never fall back to member profile based_in — that is not the experience location.
+  return "";
+}
+
 export function deriveCourseRoundEditDefaults(post: FeedPost): CourseRoundPostEditInput {
-  const locationDetail =
-    post.details?.find((detail) => detail.label.toLowerCase() === "location")?.value ??
-    post.courseLocation;
+  const locationDetail = resolveCourseExperienceLocation({
+    details: post.details,
+    roundLocation: post.courseLocation,
+  });
   const wouldPlayAgainDetail = post.details?.find((detail) =>
     detail.label.toLowerCase().includes("would play"),
   )?.value;
@@ -129,7 +147,7 @@ export function deriveCourseRoundEditDefaults(post: FeedPost): CourseRoundPostEd
     wouldPlayAgain:
       post.wouldPlayAgain ??
       (wouldPlayAgainDetail ? wouldPlayAgainDetail.toLowerCase() === "yes" : true),
-    location: locationDetail ?? "",
+    location: locationDetail,
   };
 }
 

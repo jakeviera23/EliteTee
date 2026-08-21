@@ -260,7 +260,6 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
   const isMemberSubmitted = isMemberSubmittedCourse(course);
-  const hasHeroImage = Boolean(course.image_url?.trim());
   const architectYear = formatArchitectYearLine(course.architect, course.year_opened);
   const courseDetailFacts = buildCourseDetailFacts(course);
   const memberRating =
@@ -288,25 +287,21 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
               ← Back to Courses
             </button>
 
-            <header
-              className={`et-course-detail-hero${hasHeroImage ? "" : " et-course-detail-hero--no-image"}`}
-            >
-              {hasHeroImage ? (
-                <div className="et-course-detail-hero-media">
-                  <CourseImage
-                    name={course.name}
-                    city={course.city}
-                    region={course.region}
-                    country={course.country}
-                    imageUrl={course.image_url}
-                    thumbnailUrl={course.thumbnail_url}
-                    golfCourseId={course.id}
-                    variant="hero"
-                    overlay
-                    loading="eager"
-                  />
-                </div>
-              ) : null}
+            <header className="et-course-detail-hero">
+              <div className="et-course-detail-hero-media">
+                <CourseImage
+                  name={course.name}
+                  city={course.city}
+                  region={course.region}
+                  country={course.country}
+                  imageUrl={course.image_url}
+                  thumbnailUrl={course.thumbnail_url}
+                  golfCourseId={course.id}
+                  variant="hero"
+                  overlay
+                  loading="eager"
+                />
+              </div>
               <div className="et-course-detail-hero-body">
                 <p className="et-course-detail-eyebrow">Course Profile</p>
                 <h1 id="course-detail-heading" className="et-course-detail-title">

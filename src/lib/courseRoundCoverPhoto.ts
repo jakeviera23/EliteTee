@@ -37,6 +37,11 @@ export function orderPhotosWithCoverFirst<T extends SortablePhoto>(
 
 export function photoUrlsFromOrderedPhotos(photos: MemberCourseRoundPhotoRecord[]): string[] {
   return photos
-    .map((photo) => photo.signed_url)
+    .map((photo) => {
+      if (photo.media_kind === "video" || photo.mime_type?.toLowerCase().startsWith("video/")) {
+        return photo.poster_signed_url || photo.signed_url || null;
+      }
+      return photo.signed_url || null;
+    })
     .filter((url): url is string => Boolean(url));
 }

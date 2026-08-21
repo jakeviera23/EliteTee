@@ -7,6 +7,7 @@ import {
   getFeedPostEditMode,
   isFeedPostEdited,
   mergeFeedPostAfterEdit,
+  resolveCourseExperienceLocation,
   validateCourseRoundPostEditInput,
   validateTextPostEditInput,
 } from "./feedPostEditing";
@@ -245,6 +246,35 @@ describe("deriveCourseRoundEditDefaults", () => {
     expect(defaults.location).toBe("Scottsdale, AZ");
     expect(defaults.wouldPlayAgain).toBe(true);
     expect(defaults.courseRating).toBe(9);
+  });
+});
+
+describe("resolveCourseExperienceLocation", () => {
+  it("prefers round location over feed detail location", () => {
+    expect(
+      resolveCourseExperienceLocation({
+        roundLocation: "Bridgehampton, NY",
+        details: [{ label: "Location", value: "FL and NY" }],
+      }),
+    ).toBe("Bridgehampton, NY");
+  });
+
+  it("uses Location detail when round location is empty", () => {
+    expect(
+      resolveCourseExperienceLocation({
+        roundLocation: "  ",
+        details: [{ label: "Location", value: "Bridgehampton, NY" }],
+      }),
+    ).toBe("Bridgehampton, NY");
+  });
+
+  it("does not invent a location when round and details are empty", () => {
+    expect(
+      resolveCourseExperienceLocation({
+        roundLocation: null,
+        details: [{ label: "Played", value: "Aug 1, 2026" }],
+      }),
+    ).toBe("");
   });
 });
 

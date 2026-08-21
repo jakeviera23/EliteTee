@@ -1,4 +1,4 @@
-import type { ComposerPostType, FeedPost, PortalGolfer } from "../data/portalSocial";
+import type { ComposerPostType, FeedMediaItem, FeedPost, PortalGolfer } from "../data/portalSocial";
 import { composerPostTypeBadges, experienceCopy } from "../data/portalSocial";
 import type {
   MemberFeedPostAuthorProfile,
@@ -8,13 +8,20 @@ import type {
 } from "../types/memberFeedPost";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchOwnMemberProfile } from "./memberProfiles";
-import { fetchPhotosForRoundIds, fetchCoverPhotoIdsForRoundIds, buildRoundImageUrls } from "./memberCourseRoundPhotos";
+import {
+  buildRoundImageUrls,
+  buildRoundMediaItems,
+  fetchCoverPhotoIdsForRoundIds,
+  fetchRoundFeedMetaForRoundIds,
+  fetchPhotosForRoundIds,
+} from "./memberCourseRoundPhotos";
 import { formatPlayedOnDate } from "./memberCourseRounds";
 import { formatCourseRatingDisplay, validateCourseRating } from "./courseRating";
 import {
   validateCourseRoundPostEditInput,
   validateTextPostEditInput,
   buildCourseRoundEditPayload,
+  resolveCourseExperienceLocation,
   type CourseRoundPostEditInput,
 } from "./feedPostEditing";
 import { supabase } from "./supabase";
@@ -182,14 +189,19 @@ export function memberFeedPostToFeedPost(
   row: MemberFeedPostRecord,
   profile: MemberFeedPostAuthorProfile | null,
   imageUrls: string[] = [],
+  extras: {
+    golfCourseId?: string | null;
+    mediaItems?: FeedMediaItem[];
+    roundLocation?: string | null;
+  } = {},
 ): FeedPost {
   const parsed = parseFeedPostContent(row.content);
   const composerType = DB_TYPE_TO_COMPOSER[row.post_type] ?? parsed.composerPostType;
   const badge = parsed.badge ?? composerPostTypeBadges[composerType];
-  const courseLocation =
-    parsed.details?.find((detail) => detail.label === "Location")?.value ??
-    profile?.based_in ??
-    "";
+  const courseLocation = resolveCourseExperienceLocation({
+    roundLocation: extras.roundLocation,
+    details: parsed.details,
+  });
 
   return {
     id: row.id,
@@ -208,6 +220,8 @@ export function memberFeedPostToFeedPost(
     rating: parsed.rating,
     playedWith: parsed.playedWith,
     memberCourseRoundId: row.member_course_round_id ?? undefined,
+    golfCourseId: extras.golfCourseId ?? undefined,
+    mediaItems: extras.mediaItems,
     authorUserId: row.user_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -276,9 +290,13 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
     ),
   ];
 
-  const { data: roundPhotos } = await fetchPhotosForRoundIds(roundIds);
-  const { data: coverPhotoIds } = await fetchCoverPhotoIdsForRoundIds(roundIds);
-  const photosByRoundId = new Map<string, typeof roundPhotos>();
+  const [{ data: roundPhotos }, { data: coverPhotoIds }, { data: roundMeta }] =
+    await Promise.all([
+      fetchPhotosForRoundIds(roundIds),
+      fetchCoverPhotoIdsForRoundIds(roundIds),
+      fetchRoundFeedMetaForRoundIds(roundIds),
+    ]);
+  const photosByRoundId = new Map<string, NonNullable<typeof roundPhotos>>();
 
   for (const photo of roundPhotos ?? []) {
     const existing = photosByRoundId.get(photo.member_course_round_id) ?? [];
@@ -287,24 +305,29 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
   }
 
   const imagesByRoundId = new Map<string, string[]>();
+  const mediaByRoundId = new Map<string, FeedMediaItem[]>();
 
   for (const roundId of roundIds) {
     const photos = photosByRoundId.get(roundId) ?? [];
-    imagesByRoundId.set(
-      roundId,
-      buildRoundImageUrls(photos, coverPhotoIds?.get(roundId)),
-    );
+    const coverId = coverPhotoIds?.get(roundId);
+    imagesByRoundId.set(roundId, buildRoundImageUrls(photos, coverId));
+    mediaByRoundId.set(roundId, buildRoundMediaItems(photos, coverId));
   }
 
   return records.map((record) => {
     const profile = normalizeAuthorProfile(
       rows.find((row) => String((row as { id?: string }).id ?? "") === record.id)?.member_profiles,
     );
-    const imageUrls = record.member_course_round_id
-      ? imagesByRoundId.get(record.member_course_round_id) ?? []
-      : [];
+    const roundId = record.member_course_round_id;
+    const imageUrls = roundId ? imagesByRoundId.get(roundId) ?? [] : [];
+    const mediaItems = roundId ? mediaByRoundId.get(roundId) : undefined;
+    const meta = roundId ? roundMeta?.get(roundId) : undefined;
 
-    return memberFeedPostToFeedPost(record, profile, imageUrls);
+    return memberFeedPostToFeedPost(record, profile, imageUrls, {
+      golfCourseId: meta?.golfCourseId,
+      mediaItems,
+      roundLocation: meta?.location,
+    });
   });
 }
 
@@ -446,6 +469,19 @@ export async function createMemberFeedPost(
     };
   }
 
+  const requiresRoundLink =
+    payload.composerPostType === "round-review" ||
+    payload.internalPostType === "course-review";
+
+  if (requiresRoundLink && !memberCourseRoundId) {
+    return {
+      data: null,
+      error: new Error(
+        "Course experiences must be linked to a course round. Use Share Experience, or create the round before posting.",
+      ),
+    };
+  }
+
   const { data: profile, error: profileError } = await fetchOwnMemberProfile();
   if (profileError) {
     return { data: null, error: profileError };
@@ -473,24 +509,44 @@ export async function createMemberFeedPost(
   }
 
   const record = normalizeFeedPostRow(data as Record<string, unknown>);
+
+  if (requiresRoundLink && !record.member_course_round_id) {
+    return {
+      data: null,
+      error: new Error(
+        "Experience was created without a round link. Please try Share Experience again.",
+      ),
+    };
+  }
   const authorProfile = normalizeAuthorProfile(
     (data as MemberFeedPostWithProfile).member_profiles,
   );
 
   let imageUrls: string[] = [];
+  let mediaItems: FeedMediaItem[] | undefined;
+  let golfCourseId: string | null | undefined;
+  let roundLocation: string | null | undefined;
   if (record.member_course_round_id) {
-    const [{ data: photos }, { data: coverPhotoIds }] = await Promise.all([
-      fetchPhotosForRoundIds([record.member_course_round_id]),
-      fetchCoverPhotoIdsForRoundIds([record.member_course_round_id]),
-    ]);
-    imageUrls = buildRoundImageUrls(
-      photos ?? [],
-      coverPhotoIds?.get(record.member_course_round_id),
-    );
+    const roundId = record.member_course_round_id;
+    const [{ data: photos }, { data: coverPhotoIds }, { data: roundMeta }] =
+      await Promise.all([
+        fetchPhotosForRoundIds([roundId]),
+        fetchCoverPhotoIdsForRoundIds([roundId]),
+        fetchRoundFeedMetaForRoundIds([roundId]),
+      ]);
+    const coverId = coverPhotoIds?.get(roundId);
+    imageUrls = buildRoundImageUrls(photos ?? [], coverId);
+    mediaItems = buildRoundMediaItems(photos ?? [], coverId);
+    golfCourseId = roundMeta?.get(roundId)?.golfCourseId;
+    roundLocation = roundMeta?.get(roundId)?.location;
   }
 
   return {
-    data: memberFeedPostToFeedPost(record, authorProfile, imageUrls),
+    data: memberFeedPostToFeedPost(record, authorProfile, imageUrls, {
+      golfCourseId,
+      mediaItems,
+      roundLocation,
+    }),
     error: null,
   };
 }
@@ -556,18 +612,29 @@ async function mapEditedFeedPostRow(
     normalizeAuthorProfile(row.member_profiles) ?? existingProfile ?? null;
 
   let imageUrls: string[] = [];
+  let mediaItems: FeedMediaItem[] | undefined;
+  let golfCourseId: string | null | undefined;
+  let roundLocation: string | null | undefined;
   if (record.member_course_round_id) {
-    const [{ data: photos }, { data: coverPhotoIds }] = await Promise.all([
-      fetchPhotosForRoundIds([record.member_course_round_id]),
-      fetchCoverPhotoIdsForRoundIds([record.member_course_round_id]),
-    ]);
-    imageUrls = buildRoundImageUrls(
-      photos ?? [],
-      coverPhotoIds?.get(record.member_course_round_id),
-    );
+    const roundId = record.member_course_round_id;
+    const [{ data: photos }, { data: coverPhotoIds }, { data: roundMeta }] =
+      await Promise.all([
+        fetchPhotosForRoundIds([roundId]),
+        fetchCoverPhotoIdsForRoundIds([roundId]),
+        fetchRoundFeedMetaForRoundIds([roundId]),
+      ]);
+    const coverId = coverPhotoIds?.get(roundId);
+    imageUrls = buildRoundImageUrls(photos ?? [], coverId);
+    mediaItems = buildRoundMediaItems(photos ?? [], coverId);
+    golfCourseId = roundMeta?.get(roundId)?.golfCourseId;
+    roundLocation = roundMeta?.get(roundId)?.location;
   }
 
-  return memberFeedPostToFeedPost(record, authorProfile, imageUrls);
+  return memberFeedPostToFeedPost(record, authorProfile, imageUrls, {
+    golfCourseId,
+    mediaItems,
+    roundLocation,
+  });
 }
 
 function profileToFeedAuthorProfile(
@@ -684,6 +751,35 @@ export async function updateCourseRoundFeedPost(postId: string, input: CourseRou
   );
 
   return { data: feedPost, error: null };
+}
+
+export async function deleteOwnFeedPost(postId: string) {
+  if (!supabase) {
+    return { error: new Error("Supabase is not configured.") };
+  }
+
+  const normalizedId = postId.trim();
+  if (!normalizedId) {
+    return { error: new Error("Post id is required.") };
+  }
+
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+  if (sessionError || !userId) {
+    return {
+      error: sessionError ?? new Error("You must be signed in to delete a post."),
+    };
+  }
+
+  const { error } = await supabase.rpc("delete_own_feed_post", {
+    p_post_id: normalizedId,
+  });
+
+  if (error) {
+    logSupabaseOperation("delete_own_feed_post", error, { postId: normalizedId });
+    return { error };
+  }
+
+  return { error: null };
 }
 
 export { FEED_PAGE_SIZE };

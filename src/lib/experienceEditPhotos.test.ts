@@ -37,8 +37,14 @@ describe("mapActivePhotosForExperienceEdit", () => {
       makePhoto({ id: "photo-unsigned", sort_order: 3, signed_url: null }),
     ]);
 
-    expect(photos.map((photo) => photo.id)).toEqual(["photo-a", "photo-b"]);
+    // Keep unsigned rows so a signed-URL failure cannot wipe the editor to 0/10.
+    expect(photos.map((photo) => photo.id)).toEqual([
+      "photo-a",
+      "photo-b",
+      "photo-unsigned",
+    ]);
     expect(photos[0]?.previewUrl).toBe("https://example.com/photo-1.jpg");
+    expect(photos[2]?.previewUrl).toBe("");
   });
 });
 
