@@ -149,7 +149,7 @@ export async function updateOwnProfile(updates: MobileMemberProfileUpdate) {
 }
 
 const DISCOVER_SELECT =
-  "id, user_id, full_name, primary_club, additional_clubs, based_in, industry, golf_interests, business_interests, current_request, traveling_to, club_logo_url, founding_member_number, is_verified, portal_access_enabled, membership_status, created_at, updated_at";
+  "id, user_id, full_name, primary_club, additional_clubs, based_in, regions, industry, golf_interests, business_interests, current_request, traveling_to, club_logo_url, founding_member_number, is_verified, portal_access_enabled, membership_status, created_at, updated_at";
 
 export async function fetchDiscoverableMembers(): Promise<{
   data: MobileMemberProfile[];

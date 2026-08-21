@@ -54,7 +54,7 @@ export function CourseCard({ course, onPress }: CourseCardProps) {
             ) : null}
             {(course.member_count ?? 0) > 0 ? (
               <Text style={styles.stat}>
-                {course.member_count} experience{course.member_count === 1 ? "" : "s"}
+                {course.member_count} member{course.member_count === 1 ? "" : "s"} played
               </Text>
             ) : null}
             {(course.round_count ?? 0) > 0 ? (
