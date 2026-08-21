@@ -21,6 +21,13 @@ type FeedPhotoGalleryProps = {
   contentWidth?: number;
 };
 
+function isUsableImageUrl(url: string) {
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  // Signed media and public HTTPS only — never render storage paths or placeholders.
+  return /^https?:\/\//i.test(trimmed);
+}
+
 export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -28,7 +35,7 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
   const heroListRef = useRef<FlatList<string>>(null);
   const lightboxListRef = useRef<FlatList<string>>(null);
 
-  const urls = imageUrls.filter((url) => url.trim() && !failedUrls[url]);
+  const urls = imageUrls.filter((url) => isUsableImageUrl(url) && !failedUrls[url]);
   if (urls.length === 0) return null;
 
   const width =
@@ -83,6 +90,7 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
               <Image
                 source={{ uri: item }}
                 style={[styles.hero, { width }]}
+                resizeMode="cover"
                 onError={() => markFailed(item)}
               />
             </Pressable>
@@ -112,6 +120,7 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
               <Image
                 source={{ uri: url }}
                 style={[styles.thumb, safeIndex === index ? styles.thumbActive : null]}
+                resizeMode="cover"
                 onError={() => markFailed(url)}
               />
             </Pressable>

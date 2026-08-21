@@ -72,6 +72,7 @@ function ProfileEditForm({
   const [favoriteCourses, setFavoriteCourses] = useState(
     formatListInput(profile.additional_clubs),
   );
+  const [regions, setRegions] = useState(formatListInput(profile.regions));
   const [handicap, setHandicap] = useState(profile.handicap);
   const [currentRequest, setCurrentRequest] = useState(profile.current_request);
   const [golfInterests, setGolfInterests] = useState(formatListInput(profile.golf_interests));
@@ -100,6 +101,7 @@ function ProfileEditForm({
       primaryClub.trim() !== profile.primary_club.trim() ||
       formatListInput(parseListInput(favoriteCourses)) !==
         formatListInput(profile.additional_clubs) ||
+      formatListInput(parseListInput(regions)) !== formatListInput(profile.regions) ||
       handicap.trim() !== profile.handicap.trim() ||
       currentRequest.trim() !== profile.current_request.trim() ||
       formatListInput(parseListInput(golfInterests)) !==
@@ -116,6 +118,7 @@ function ProfileEditForm({
     industry,
     primaryClub,
     favoriteCourses,
+    regions,
     handicap,
     currentRequest,
     golfInterests,
@@ -212,7 +215,7 @@ function ProfileEditForm({
       based_in: basedIn.trim(),
       industry: industry.trim(),
       additional_clubs: parseListInput(favoriteCourses),
-      regions: profile.regions,
+      regions: parseListInput(regions),
       golf_interests: parseListInput(golfInterests),
       business_interests: parseListInput(businessInterests),
       current_request: currentRequest.trim(),
@@ -361,6 +364,13 @@ function ProfileEditForm({
         value={travelingTo}
         onChangeText={setTravelingTo}
         placeholder="Destinations or timing"
+      />
+      <Field
+        label="Regions"
+        value={regions}
+        onChangeText={setRegions}
+        multiline
+        hint="One per line, or comma-separated — shown under Travel on your profile"
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}

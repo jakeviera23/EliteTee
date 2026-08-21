@@ -19,6 +19,11 @@ import {
   type MemberProfileIdentity,
   type MemberProfileSecondary,
 } from "@/lib/api/memberProfile";
+import { attachPhotosToRounds } from "@/lib/api/courseRoundPhotos";
+import {
+  resolveFeedPostsMedia,
+  stripFeedPostSignedMedia,
+} from "@/lib/api/feed";
 import { formatMobileError } from "@/lib/errors";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
@@ -35,6 +40,19 @@ import {
 } from "@/lib/profilePageDisplay";
 import { useAuth } from "@/hooks/AuthProvider";
 import type { MobileFeedPost } from "@/types/feed";
+
+function stripSecondarySignedMedia(secondary: MemberProfileSecondary): MemberProfileSecondary {
+  return {
+    ...secondary,
+    courseRounds: secondary.courseRounds.map((round) => ({
+      ...round,
+      photos: (round.photos ?? []).map((photo) => ({
+        ...photo,
+        signed_url: undefined,
+      })),
+    })),
+  };
+}
 
 function ProfileSection({ title, children }: { title: string; children: ReactNode }) {
   const items = Children.toArray(children).filter(Boolean);
@@ -73,12 +91,20 @@ export default function MemberProfileScreen() {
   const [identity, setIdentity] = useState<MemberProfileIdentity | null>(() =>
     userId ? getSessionCacheStale<MemberProfileIdentity>(SESSION_CACHE_KEYS.profileIdentity(userId)) : null,
   );
-  const [secondary, setSecondary] = useState<MemberProfileSecondary | null>(() =>
-    userId ? getSessionCacheStale<MemberProfileSecondary>(SESSION_CACHE_KEYS.profileSecondary(userId)) : null,
-  );
-  const [recentFeedPosts, setRecentFeedPosts] = useState<MobileFeedPost[]>(() =>
-    userId ? getSessionCacheStale<MobileFeedPost[]>(SESSION_CACHE_KEYS.profileFeedPosts(userId)) ?? [] : [],
-  );
+  const [secondary, setSecondary] = useState<MemberProfileSecondary | null>(() => {
+    if (!userId) return null;
+    const cached = getSessionCacheStale<MemberProfileSecondary>(
+      SESSION_CACHE_KEYS.profileSecondary(userId),
+    );
+    return cached ? stripSecondarySignedMedia(cached) : null;
+  });
+  const [recentFeedPosts, setRecentFeedPosts] = useState<MobileFeedPost[]>(() => {
+    if (!userId) return [];
+    const cached = getSessionCacheStale<MobileFeedPost[]>(
+      SESSION_CACHE_KEYS.profileFeedPosts(userId),
+    );
+    return cached ? stripFeedPostSignedMedia(cached) : [];
+  });
   const [loadingIdentity, setLoadingIdentity] = useState(() => !identity);
   const [loadingSecondary, setLoadingSecondary] = useState(() => !secondary);
   const [loadingFeedPosts, setLoadingFeedPosts] = useState(() => recentFeedPosts.length === 0);
@@ -93,12 +119,18 @@ export default function MemberProfileScreen() {
     const cachedIdentity = getSessionCacheStale<MemberProfileIdentity>(
       SESSION_CACHE_KEYS.profileIdentity(userId),
     );
-    const cachedSecondary = getSessionCacheStale<MemberProfileSecondary>(
+    const cachedSecondaryRaw = getSessionCacheStale<MemberProfileSecondary>(
       SESSION_CACHE_KEYS.profileSecondary(userId),
     );
-    const cachedFeedPosts = getSessionCacheStale<MobileFeedPost[]>(
+    const cachedSecondary = cachedSecondaryRaw
+      ? stripSecondarySignedMedia(cachedSecondaryRaw)
+      : null;
+    const cachedFeedPostsRaw = getSessionCacheStale<MobileFeedPost[]>(
       SESSION_CACHE_KEYS.profileFeedPosts(userId),
     );
+    const cachedFeedPosts = cachedFeedPostsRaw
+      ? stripFeedPostSignedMedia(cachedFeedPostsRaw)
+      : null;
 
     if (cachedIdentity) {
       setIdentity(cachedIdentity);
@@ -110,6 +142,10 @@ export default function MemberProfileScreen() {
     if (cachedSecondary) {
       setSecondary(cachedSecondary);
       setLoadingSecondary(false);
+      void attachPhotosToRounds(cachedSecondary.courseRounds).then((rounds) => {
+        if (!active) return;
+        setSecondary({ ...cachedSecondary, courseRounds: rounds });
+      });
     } else {
       setLoadingSecondary(true);
     }
@@ -117,6 +153,10 @@ export default function MemberProfileScreen() {
     if (cachedFeedPosts?.length) {
       setRecentFeedPosts(cachedFeedPosts);
       setLoadingFeedPosts(false);
+      void resolveFeedPostsMedia(cachedFeedPosts).then((resolved) => {
+        if (!active) return;
+        setRecentFeedPosts(resolved);
+      });
     } else {
       setLoadingFeedPosts(true);
     }
@@ -168,12 +208,18 @@ export default function MemberProfileScreen() {
       }
 
       setSecondary(secondaryResult.data);
-      setSessionCache(SESSION_CACHE_KEYS.profileSecondary(userId), secondaryResult.data);
+      setSessionCache(
+        SESSION_CACHE_KEYS.profileSecondary(userId),
+        stripSecondarySignedMedia(secondaryResult.data),
+      );
       setLoadingSecondary(false);
 
       setRecentFeedPosts(feedResult.data);
       if (feedResult.data.length > 0) {
-        setSessionCache(SESSION_CACHE_KEYS.profileFeedPosts(userId), feedResult.data);
+        setSessionCache(
+          SESSION_CACHE_KEYS.profileFeedPosts(userId),
+          stripFeedPostSignedMedia(feedResult.data),
+        );
       }
       setLoadingFeedPosts(false);
     })();
@@ -448,6 +494,7 @@ export default function MemberProfileScreen() {
             {recentRounds.map((round) => (
               <RoundReviewCard
                 key={round.id}
+                variant="compact"
                 round={{
                   ...round,
                   member_name: memberName || "Member",

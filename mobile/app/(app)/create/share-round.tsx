@@ -19,6 +19,7 @@ import { publishRoundReview } from "@/lib/api/publishRoundReview";
 import { getFeedComposerValidation } from "@/lib/feedComposerValidation";
 import { COURSE_RATING_MAX, COURSE_RATING_MIN, validateCourseRating } from "@/lib/courseRating";
 import { invalidateSessionCache, SESSION_CACHE_KEYS } from "@/lib/sessionCache";
+import { getCurrentUserId } from "@/lib/api/members";
 import { formatGolfCourseLocation, type MobileGolfCourse } from "@/types/course";
 import type { MobileRoundPhotoDraft } from "@/types/courseRoundPhoto";
 
@@ -145,6 +146,11 @@ export default function ShareRoundScreen() {
     }
 
     invalidateSessionCache(SESSION_CACHE_KEYS.homeFeed);
+    const { userId } = await getCurrentUserId();
+    if (userId) {
+      invalidateSessionCache(SESSION_CACHE_KEYS.profileFeedPosts(userId));
+      invalidateSessionCache(SESSION_CACHE_KEYS.profileSecondary(userId));
+    }
     setSuccess(true);
     setPending(null);
     setTimeout(() => {

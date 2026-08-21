@@ -12,51 +12,87 @@ import { isMeaningfulDisplayValue } from "@/lib/display";
 
 type RoundReviewCardProps = {
   round: MobileCourseRoundRecord;
+  /**
+   * `default` — Course Detail member experience (member identity + full note).
+   * `compact` — Profile Recent Experiences (course name + truncated note).
+   */
+  variant?: "default" | "compact";
 };
 
 /**
- * Course-detail experience card.
+ * Course experience card.
  * - Body tap → linked feed post when feed_post_id exists
- * - Member identity → /members/[userId]
+ * - Compact fallback → course detail when a slug is available
+ * - Member identity → /members/[userId] (default variant only)
  * - Photos → shared FeedPhotoGallery lightbox (no post navigation)
  */
-export function RoundReviewCard({ round }: RoundReviewCardProps) {
+export function RoundReviewCard({ round, variant = "default" }: RoundReviewCardProps) {
   const router = useRouter();
+  const compact = variant === "compact";
   const ratingDisplay = formatCourseRatingDisplay(round.course_rating);
   const imageUrls = useMemo(
     () => buildRoundImageUrls(round.photos ?? [], round.cover_photo_id),
     [round.photos, round.cover_photo_id],
   );
   const feedPostId = round.feed_post_id?.trim() || null;
+  const courseSlug = round.course_slug?.trim() || "";
+  const courseName = round.course_name?.trim() || "Course experience";
   const canOpenPost = Boolean(feedPostId);
+  const canOpenCourse = Boolean(courseSlug);
+  const canOpenBody = canOpenPost || (compact && canOpenCourse);
   const galleryWidth =
     Dimensions.get("window").width - layout.pagePadding * 2 - spacing.lg * 2;
 
-  function openPost() {
-    if (!feedPostId) return;
-    router.push(`/feed/${feedPostId}`);
+  function openBody() {
+    if (feedPostId) {
+      router.push(`/feed/${feedPostId}`);
+      return;
+    }
+    if (compact && courseSlug) {
+      router.push({
+        pathname: "/courses/[slug]",
+        params: { slug: courseSlug, highlightRoundId: round.id },
+      });
+    }
   }
+
+  const openHint = canOpenPost
+    ? "View full post"
+    : compact && canOpenCourse
+      ? "View course"
+      : null;
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <MemberIdentityLink
-          userId={round.member_user_id}
-          name={round.member_name?.trim() || "Member"}
-          size={40}
-          style={styles.identity}
-        />
-        <Text style={styles.date}>{formatPlayedOnDate(round.played_on)}</Text>
-      </View>
+      {compact ? (
+        <View style={styles.compactHeader}>
+          <Text style={styles.courseName} numberOfLines={2}>
+            {courseName}
+          </Text>
+          <Text style={styles.date}>{formatPlayedOnDate(round.played_on)}</Text>
+        </View>
+      ) : (
+        <View style={styles.header}>
+          <MemberIdentityLink
+            userId={round.member_user_id}
+            name={round.member_name?.trim() || "Member"}
+            size={40}
+            style={styles.identity}
+          />
+          <Text style={styles.date}>{formatPlayedOnDate(round.played_on)}</Text>
+        </View>
+      )}
 
       <Pressable
-        onPress={openPost}
-        disabled={!canOpenPost}
-        accessibilityRole={canOpenPost ? "button" : undefined}
-        accessibilityLabel={canOpenPost ? "Open review post" : undefined}
+        onPress={openBody}
+        disabled={!canOpenBody}
+        accessibilityRole={canOpenBody ? "button" : undefined}
+        accessibilityLabel={
+          canOpenPost ? "Open review post" : canOpenCourse ? "Open course" : undefined
+        }
         style={({ pressed }) => [
           styles.body,
-          canOpenPost && pressed ? styles.bodyPressed : null,
+          canOpenBody && pressed ? styles.bodyPressed : null,
         ]}
       >
         {ratingDisplay ? <Text style={styles.rating}>{ratingDisplay}/10</Text> : null}
@@ -66,9 +102,11 @@ export function RoundReviewCard({ round }: RoundReviewCardProps) {
           <Text style={styles.wouldPlay}>Would play again · Yes</Text>
         ) : null}
         {isMeaningfulDisplayValue(round.note) ? (
-          <Text style={styles.note}>{round.note}</Text>
+          <Text style={styles.note} numberOfLines={compact ? 4 : undefined}>
+            {round.note}
+          </Text>
         ) : null}
-        {canOpenPost ? <Text style={styles.openHint}>View full post</Text> : null}
+        {openHint ? <Text style={styles.openHint}>{openHint}</Text> : null}
       </Pressable>
 
       {/* Gallery stays outside the body press target so lightbox taps do not open the post. */}
@@ -96,9 +134,18 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.md,
   },
+  compactHeader: {
+    gap: spacing.xs,
+  },
   identity: {
     flex: 1,
     minWidth: 0,
+  },
+  courseName: {
+    fontFamily: typography.serifSemibold,
+    fontSize: 18,
+    color: colors.textPrimary,
+    letterSpacing: -0.2,
   },
   date: {
     fontFamily: typography.sans,

@@ -284,6 +284,20 @@ async function hydrateFeedPosts(posts: MobileFeedPost[]) {
   });
 }
 
+/**
+ * Re-resolve round photo signed URLs via the canonical hydrator.
+ * Use after reading profile session cache so expired signed URLs are not shown.
+ */
+export async function resolveFeedPostsMedia(posts: MobileFeedPost[]) {
+  if (posts.length === 0) return posts;
+  return hydrateFeedPostsWithPhotos(posts);
+}
+
+/** Cache-safe copy — never persist short-lived signed media URLs. */
+export function stripFeedPostSignedMedia(posts: MobileFeedPost[]): MobileFeedPost[] {
+  return posts.map((post) => ({ ...post, imageUrls: [] }));
+}
+
 export async function fetchMemberFeedPostsForUser(
   userId: string,
   limit = 3,
