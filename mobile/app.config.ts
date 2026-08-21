@@ -71,7 +71,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: "club.elitetee.mobile",
-    buildNumber: "1",
     infoPlist: {
       CFBundleDisplayName: "EliteTee",
       NSPhotoLibraryUsageDescription:

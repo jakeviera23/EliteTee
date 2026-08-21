@@ -34,6 +34,7 @@ function isValidAnonKey(key) {
 
 const url = normalize(process.env.EXPO_PUBLIC_SUPABASE_URL);
 const anonKey = normalize(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+const siteUrl = normalize(process.env.EXPO_PUBLIC_SITE_URL);
 
 const missing = [];
 if (!isValidSupabaseUrl(url)) missing.push("EXPO_PUBLIC_SUPABASE_URL");
@@ -51,4 +52,16 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log("Preview env preflight OK (EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_ANON_KEY).");
+if (siteUrl && siteUrl !== "https://www.elitetee.club") {
+  console.warn(
+    `Note: EXPO_PUBLIC_SITE_URL is set to a non-default host (${siteUrl}). Expected https://www.elitetee.club for production portal links.`,
+  );
+} else if (!siteUrl) {
+  console.log(
+    "Note: EXPO_PUBLIC_SITE_URL unset; app defaults to https://www.elitetee.club.",
+  );
+}
+
+console.log(
+  "Preview env preflight OK (EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_ANON_KEY).",
+);
