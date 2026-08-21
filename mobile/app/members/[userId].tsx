@@ -24,6 +24,7 @@ import {
   resolveFeedPostsMedia,
   stripFeedPostSignedMedia,
 } from "@/lib/api/feed";
+import { resolveMemberProfileMedia } from "@/lib/api/memberProfileMedia";
 import { formatMobileError } from "@/lib/errors";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
@@ -51,6 +52,13 @@ function stripSecondarySignedMedia(secondary: MemberProfileSecondary): MemberPro
         signed_url: undefined,
       })),
     })),
+  };
+}
+
+function stripIdentitySignedMedia(identity: MemberProfileIdentity): MemberProfileIdentity {
+  return {
+    ...identity,
+    media: { coverImageUrl: null, avatarImageUrl: null },
   };
 }
 
@@ -88,9 +96,13 @@ export default function MemberProfileScreen() {
   const { user } = useAuth();
   const params = useLocalSearchParams<{ userId: string }>();
   const userId = firstParam(params.userId);
-  const [identity, setIdentity] = useState<MemberProfileIdentity | null>(() =>
-    userId ? getSessionCacheStale<MemberProfileIdentity>(SESSION_CACHE_KEYS.profileIdentity(userId)) : null,
-  );
+  const [identity, setIdentity] = useState<MemberProfileIdentity | null>(() => {
+    if (!userId) return null;
+    const cached = getSessionCacheStale<MemberProfileIdentity>(
+      SESSION_CACHE_KEYS.profileIdentity(userId),
+    );
+    return cached ? stripIdentitySignedMedia(cached) : null;
+  });
   const [secondary, setSecondary] = useState<MemberProfileSecondary | null>(() => {
     if (!userId) return null;
     const cached = getSessionCacheStale<MemberProfileSecondary>(
@@ -133,8 +145,15 @@ export default function MemberProfileScreen() {
       : null;
 
     if (cachedIdentity) {
-      setIdentity(cachedIdentity);
+      setIdentity(stripIdentitySignedMedia(cachedIdentity));
       setLoadingIdentity(false);
+      void resolveMemberProfileMedia(cachedIdentity.member).then((media) => {
+        if (!active) return;
+        setIdentity({
+          member: { ...cachedIdentity.member, email: "" },
+          media,
+        });
+      });
     } else {
       setLoadingIdentity(true);
     }
@@ -185,7 +204,7 @@ export default function MemberProfileScreen() {
       };
 
       setIdentity(safeIdentity);
-      setSessionCache(SESSION_CACHE_KEYS.profileIdentity(userId), safeIdentity);
+      setSessionCache(SESSION_CACHE_KEYS.profileIdentity(userId), stripIdentitySignedMedia(safeIdentity));
       setLoadingIdentity(false);
 
       const own = user?.id === userId;

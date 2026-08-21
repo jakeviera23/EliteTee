@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 import {
   Dimensions,
   FlatList,
@@ -25,7 +25,10 @@ function isUsableImageUrl(url: string) {
   const trimmed = url.trim();
   if (!trimmed) return false;
   // Signed media and public HTTPS only — never render storage paths or placeholders.
-  return /^https?:\/\//i.test(trimmed);
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+  // Never pass raw video URLs into <Image>.
+  if (/\.(mp4|mov|m4v|webm|avi)(\?|$)/i.test(trimmed)) return false;
+  return true;
 }
 
 export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoGalleryProps) {
@@ -61,17 +64,62 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
     }
   }
 
+  function scrollToIndexSafely(
+    listRef: RefObject<FlatList<string> | null>,
+    index: number,
+    animated: boolean,
+  ) {
+    const clamped = Math.max(0, Math.min(index, urls.length - 1));
+    try {
+      listRef.current?.scrollToIndex({ index: clamped, animated });
+    } catch {
+      listRef.current?.scrollToOffset({
+        offset: clamped * (listRef === lightboxListRef ? Dimensions.get("window").width : width),
+        animated,
+      });
+    }
+  }
+
   function openLightbox(index: number) {
     setActiveIndex(index);
     setLightboxOpen(true);
     requestAnimationFrame(() => {
-      lightboxListRef.current?.scrollToIndex({ index, animated: false });
+      scrollToIndexSafely(lightboxListRef, index, false);
     });
   }
 
   function selectThumb(index: number) {
     setActiveIndex(index);
-    heroListRef.current?.scrollToIndex({ index, animated: true });
+    scrollToIndexSafely(heroListRef, index, true);
+  }
+
+  function handleScrollToIndexFailed(info: {
+    index: number;
+    highestMeasuredFrameIndex: number;
+    averageItemLength: number;
+  }) {
+    const target = Math.max(0, Math.min(info.index, urls.length - 1));
+    const offset = target * width;
+    heroListRef.current?.scrollToOffset({ offset, animated: false });
+    requestAnimationFrame(() => {
+      scrollToIndexSafely(heroListRef, target, false);
+    });
+  }
+
+  function handleLightboxScrollToIndexFailed(info: {
+    index: number;
+    highestMeasuredFrameIndex: number;
+    averageItemLength: number;
+  }) {
+    const target = Math.max(0, Math.min(info.index, urls.length - 1));
+    const screenWidth = Dimensions.get("window").width;
+    lightboxListRef.current?.scrollToOffset({
+      offset: target * screenWidth,
+      animated: false,
+    });
+    requestAnimationFrame(() => {
+      scrollToIndexSafely(lightboxListRef, target, false);
+    });
   }
 
   return (
@@ -85,6 +133,7 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
           showsHorizontalScrollIndicator={false}
           keyExtractor={(url, index) => `${url}-${index}`}
           onMomentumScrollEnd={handleHeroMomentumEnd}
+          onScrollToIndexFailed={handleScrollToIndexFailed}
           renderItem={({ item, index }) => (
             <Pressable onPress={() => openLightbox(index)}>
               <Image
@@ -152,6 +201,7 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
             showsHorizontalScrollIndicator={false}
             keyExtractor={(url, index) => `lightbox-${url}-${index}`}
             onMomentumScrollEnd={handleLightboxMomentumEnd}
+            onScrollToIndexFailed={handleLightboxScrollToIndexFailed}
             renderItem={({ item }) => (
               <Image
                 source={{ uri: item }}

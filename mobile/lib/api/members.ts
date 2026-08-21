@@ -1,6 +1,5 @@
 import { requireSupabase } from "../supabase";
 import { coerceProfileStringList, extractRpcProfileRow } from "../memberProfileParse";
-import { resolveMemberMediaUrlMap } from "./memberProfileMedia";
 import type { MobileMemberProfile, MobileMemberProfileUpdate, PortalAccessState } from "@/types/member";
 
 function asStringArray(value: unknown): string[] {
@@ -78,10 +77,21 @@ export async function fetchPortalAccess(): Promise<{
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data) {
+  // Network/API failure: do NOT fabricate hasAccess: false.
+  if (error) {
+    return { data: null, error };
+  }
+
+  // No profile row is a verified “no access” outcome.
+  if (!data) {
     return {
-      data: { hasAccess: false, membershipStatus: null, foundingMemberNumber: null },
-      error: error ?? null,
+      data: {
+        hasAccess: false,
+        membershipStatus: null,
+        foundingMemberNumber: null,
+        verified: true,
+      },
+      error: null,
     };
   }
 
@@ -92,6 +102,7 @@ export async function fetchPortalAccess(): Promise<{
       foundingMemberNumber: data.founding_member_number
         ? String(data.founding_member_number)
         : null,
+      verified: true,
     },
     error: null,
   };
@@ -166,22 +177,13 @@ export async function fetchDiscoverableMembers(): Promise<{
     return { data: [], error };
   }
 
+  // Keep canonical storage paths — MemberAvatar re-signs on render.
+  // Never persist short-lived signed URLs into Discover session cache.
   const members = (data ?? []).map((row) =>
     normalizeMemberProfile({ ...(row as Record<string, unknown>), email: "" }),
   );
 
-  const avatarPaths = members.map((member) => member.club_logo_url);
-  const resolvedAvatars = await resolveMemberMediaUrlMap(avatarPaths);
-
-  return {
-    data: members.map((member) => {
-      const stored = member.club_logo_url?.trim() ?? "";
-      if (!stored) return member;
-      const resolved = resolvedAvatars.get(stored);
-      return resolved ? { ...member, club_logo_url: resolved } : member;
-    }),
-    error: null,
-  };
+  return { data: members, error: null };
 }
 
 const PORTAL_MEMBER_SELECT =

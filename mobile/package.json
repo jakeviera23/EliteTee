@@ -9,7 +9,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "check:preview-env": "node ./scripts/check-preview-env.mjs",
+    "test": "cd .. && npx vitest run mobile/lib"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",

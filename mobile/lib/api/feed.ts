@@ -4,7 +4,6 @@ import {
   fetchCoverPhotoIdsForRoundIds,
   fetchPhotosForRoundIds,
 } from "./courseRoundPhotos";
-import { resolveMemberMediaUrlMap } from "./memberProfileMedia";
 import { getCurrentUserId } from "./members";
 import { fetchFeedEngagementForPosts } from "../feedPostEngagement";
 import { formatPrimaryClubLine } from "../display";
@@ -175,17 +174,9 @@ async function fetchRoundCourseLinksByRoundIds(roundIds: string[]) {
 }
 
 async function hydrateAuthorAvatars(posts: MobileFeedPost[]) {
-  const resolvedByPath = await resolveMemberMediaUrlMap(
-    posts.map((post) => post.authorAvatarUrl),
-  );
-
-  return posts.map((post) => {
-    const stored = post.authorAvatarUrl?.trim() ?? "";
-    if (!stored) return post;
-    if (/^https?:\/\//i.test(stored)) return post;
-    const resolved = resolvedByPath.get(stored);
-    return resolved ? { ...post, authorAvatarUrl: resolved } : post;
-  });
+  // Keep canonical storage paths on authorAvatarUrl.
+  // MemberAvatar re-signs at render — never bake signed URLs into feed models.
+  return posts;
 }
 
 async function hydrateFeedPostsWithPhotos(posts: MobileFeedPost[]) {
@@ -293,10 +284,7 @@ export async function resolveFeedPostsMedia(posts: MobileFeedPost[]) {
   return hydrateFeedPostsWithPhotos(posts);
 }
 
-/** Cache-safe copy — never persist short-lived signed media URLs. */
-export function stripFeedPostSignedMedia(posts: MobileFeedPost[]): MobileFeedPost[] {
-  return posts.map((post) => ({ ...post, imageUrls: [] }));
-}
+export { stripFeedPostSignedMedia } from "../feedSignedMedia";
 
 export async function fetchMemberFeedPostsForUser(
   userId: string,

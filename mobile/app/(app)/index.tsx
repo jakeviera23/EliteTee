@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,13 +15,12 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { MemberAvatar } from "@/components/ui/MemberAvatar";
 import { colors, layout, radii, spacing, typography } from "@/constants/theme";
-import { fetchFeedPage } from "@/lib/api/feed";
+import { fetchFeedPage, resolveFeedPostsMedia, stripFeedPostSignedMedia } from "@/lib/api/feed";
 import { formatMobileError } from "@/lib/errors";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
   SESSION_CACHE_KEYS,
   getSessionCacheStale,
-  invalidateSessionCache,
   setSessionCache,
 } from "@/lib/sessionCache";
 import { useAuth } from "@/hooks/AuthProvider";
@@ -44,9 +43,12 @@ function readHomeFeedCache(): HomeFeedCache | null {
   const cached = getSessionCacheStale<HomeFeedCache | MobileFeedPost[]>(SESSION_CACHE_KEYS.homeFeed);
   if (!cached) return null;
   if (Array.isArray(cached)) {
-    return { posts: cached, hasMore: true, nextCursor: null };
+    return { posts: stripFeedPostSignedMedia(cached), hasMore: true, nextCursor: null };
   }
-  return cached;
+  return {
+    ...cached,
+    posts: stripFeedPostSignedMedia(cached.posts ?? []),
+  };
 }
 
 function mergeUniquePosts(existing: MobileFeedPost[], incoming: MobileFeedPost[]) {
@@ -79,17 +81,32 @@ export default function HomeScreen() {
 
   const persistCache = useCallback(
     (nextPosts: MobileFeedPost[], nextHasMore: boolean, cursor: FeedCursor | null) => {
-      for (const post of nextPosts) {
+      const cacheSafe = stripFeedPostSignedMedia(nextPosts);
+      for (const post of cacheSafe) {
         cacheFeedPostSnapshot(post);
       }
       setSessionCache(SESSION_CACHE_KEYS.homeFeed, {
-        posts: nextPosts,
+        posts: cacheSafe,
         hasMore: nextHasMore,
         nextCursor: cursor,
       } satisfies HomeFeedCache);
     },
     [],
   );
+
+  // Re-sign media for session-cached posts on mount (never persist signed URLs).
+  useEffect(() => {
+    const cached = readHomeFeedCache();
+    if (!cached?.posts.length) return;
+    let active = true;
+    void resolveFeedPostsMedia(cached.posts).then((resolved) => {
+      if (!active) return;
+      setPosts(resolved);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const loadFeed = useCallback(
     async (options?: { background?: boolean; refresh?: boolean }) => {
@@ -104,6 +121,10 @@ export default function HomeScreen() {
         setHasMore(cached!.hasMore);
         setNextCursor(cached!.nextCursor);
         setLoading(false);
+        void resolveFeedPostsMedia(cached!.posts).then((resolved) => {
+          if (currentRequest !== requestId.current) return;
+          setPosts(resolved);
+        });
       } else if (!options?.background) {
         setLoading(true);
       }
@@ -120,15 +141,19 @@ export default function HomeScreen() {
 
       perfEnd("home", { posts: data.posts.length, cached: hasCache });
 
+      if (feedError) {
+        // Soft-fail: keep stale posts and cache; never replace with [].
+        setError(formatMobileError(feedError.message));
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
       setPosts(data.posts);
       setHasMore(data.hasMore);
       setNextCursor(data.nextCursor);
-      if (data.posts.length > 0) {
-        persistCache(data.posts, data.hasMore, data.nextCursor);
-      } else {
-        invalidateSessionCache(SESSION_CACHE_KEYS.homeFeed);
-      }
-      setError(feedError ? formatMobileError(feedError.message) : null);
+      persistCache(data.posts, data.hasMore, data.nextCursor);
+      setError(null);
       setLoading(false);
       setRefreshing(false);
     },
@@ -217,6 +242,15 @@ export default function HomeScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <Pressable onPress={() => void loadFeed()}>
             <Text style={styles.retry}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {!showInitialLoading && error && posts.length > 0 ? (
+        <View style={styles.softErrorCard}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={() => void loadFeed({ refresh: true })}>
+            <Text style={styles.retry}>Refresh</Text>
           </Pressable>
         </View>
       ) : null}
@@ -352,6 +386,12 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     backgroundColor: colors.errorSoft,
     gap: spacing.sm,
+  },
+  softErrorCard: {
+    padding: spacing.md,
+    borderRadius: radii.md,
+    backgroundColor: colors.errorSoft,
+    gap: spacing.xs,
   },
   pageErrorCard: {
     padding: spacing.lg,

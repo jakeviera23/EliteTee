@@ -29,6 +29,7 @@ export default function PortalPendingScreen() {
     return <Redirect href="/(app)" />;
   }
 
+  const accessCheckFailed = status === "access_check_failed";
   const setupUrl = pendingInviteToken ? getInviteUrl(pendingInviteToken) : getLoginUrl();
 
   async function handleOpenWeb() {
@@ -38,7 +39,9 @@ export default function PortalPendingScreen() {
       await openExternalEliteTeeUrl(setupUrl);
     } catch (openError) {
       logAuthError("open membership setup", openError);
-      setError(`Unable to open ${describeSiteHost()}. Try again, or visit ${getPublicSiteUrl()} in your browser.`);
+      setError(
+        `Unable to open ${describeSiteHost()}. Try again, or visit ${getPublicSiteUrl()} in your browser.`,
+      );
     } finally {
       setOpening(false);
     }
@@ -55,6 +58,30 @@ export default function PortalPendingScreen() {
     } finally {
       setRefreshing(false);
     }
+  }
+
+  if (accessCheckFailed) {
+    return (
+      <Screen scroll={false} contentStyle={styles.screen}>
+        <View style={styles.hero}>
+          <EliteTeeMark size={56} />
+          <Text style={styles.title}>Couldn’t verify access</Text>
+          <Text style={styles.subtitle}>
+            We couldn’t confirm your membership right now. This is usually a temporary network
+            issue — your account was not marked as pending.
+          </Text>
+        </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Button
+          label="Try again"
+          onPress={() => void handleRefresh()}
+          loading={refreshing}
+        />
+        <Button label="Sign out" variant="ghost" onPress={() => void signOut()} />
+      </Screen>
+    );
   }
 
   return (

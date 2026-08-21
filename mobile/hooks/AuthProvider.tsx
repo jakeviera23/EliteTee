@@ -24,7 +24,12 @@ import { clearSessionCaches } from "@/lib/sessionCache";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { MobileMemberProfile } from "@/types/member";
 
-export type AuthStatus = "booting" | "signed_out" | "portal_pending" | "ready";
+export type AuthStatus =
+  | "booting"
+  | "signed_out"
+  | "portal_pending"
+  | "access_check_failed"
+  | "ready";
 
 type AuthContextValue = {
   isConfigured: boolean;
@@ -51,10 +56,12 @@ function clearLocalAuthState(
   setSession: (session: Session | null) => void,
   setProfile: (profile: MobileMemberProfile | null) => void,
   setHasPortalAccess: (value: boolean) => void,
+  setPortalAccessCheckFailed: (value: boolean) => void,
 ) {
   setSession(null);
   setProfile(null);
   setHasPortalAccess(false);
+  setPortalAccessCheckFailed(false);
   clearCurrentUserIdCache();
   clearSessionCaches();
 }
@@ -64,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<MobileMemberProfile | null>(null);
   const [hasPortalAccess, setHasPortalAccess] = useState(false);
+  const [portalAccessCheckFailed, setPortalAccessCheckFailed] = useState(false);
   const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
   const bootstrapGeneration = useRef(0);
 
@@ -75,19 +83,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshPortalAccess = useCallback(async () => {
     if (!session) {
       setHasPortalAccess(false);
+      setPortalAccessCheckFailed(false);
       return;
     }
 
-    let { data: access } = await fetchPortalAccess();
-    if (!access?.hasAccess) {
+    let { data: access, error: accessError } = await fetchPortalAccess();
+    if (accessError || !access?.verified) {
+      logAuthError("portal access refresh failed", accessError ?? new Error("Unverified"));
+      // Preserve last known valid access — do not flip a member to portal_pending.
+      setPortalAccessCheckFailed(true);
+      return;
+    }
+
+    if (!access.hasAccess) {
       const redemption = await tryCompleteAuthenticatedInviteRedemption();
       if (redemption.completed) {
         const retry = await fetchPortalAccess();
+        if (retry.error || !retry.data?.verified) {
+          logAuthError("portal access retry failed", retry.error ?? new Error("Unverified"));
+          setPortalAccessCheckFailed(true);
+          setPendingInviteToken(await readPendingInviteToken());
+          return;
+        }
         access = retry.data;
         setPendingInviteToken(await readPendingInviteToken());
       }
     }
 
+    setPortalAccessCheckFailed(false);
     setHasPortalAccess(Boolean(access?.hasAccess));
     if (access?.hasAccess) {
       const { data } = await fetchOwnProfile();
@@ -116,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!nextSession) {
       setProfile(null);
       setHasPortalAccess(false);
+      setPortalAccessCheckFailed(false);
       clearCurrentUserIdCache();
       clearSessionCaches();
       return;
@@ -125,17 +149,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let { data: access, error: accessError } = await fetchPortalAccess();
       if (generation !== bootstrapGeneration.current) return;
 
-      if (accessError) {
-        logAuthError("portal access lookup failed", accessError);
+      if (accessError || !access?.verified) {
+        logAuthError("portal access lookup failed", accessError ?? new Error("Unverified"));
+        // Soft-fail: keep prior access if we already knew the member was valid.
+        // On cold boot prior is false → access_check_failed (retry), not portal_pending.
+        setPortalAccessCheckFailed(true);
+        return;
       }
 
-      if (!access?.hasAccess) {
+      if (!access.hasAccess) {
         const redemption = await tryCompleteAuthenticatedInviteRedemption();
         if (generation !== bootstrapGeneration.current) return;
 
         if (redemption.completed) {
           const retry = await fetchPortalAccess();
           if (generation !== bootstrapGeneration.current) return;
+          if (retry.error || !retry.data?.verified) {
+            logAuthError("portal access retry failed", retry.error ?? new Error("Unverified"));
+            setPortalAccessCheckFailed(true);
+            const remaining = await readPendingInviteToken();
+            setPendingInviteToken(remaining);
+            return;
+          }
           access = retry.data;
           const remaining = await readPendingInviteToken();
           setPendingInviteToken(remaining);
@@ -151,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (generation !== bootstrapGeneration.current) return;
 
+      setPortalAccessCheckFailed(false);
       setHasPortalAccess(Boolean(access?.hasAccess));
 
       if (access?.hasAccess) {
@@ -163,8 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       logAuthError("session bootstrap failed", error);
       if (generation !== bootstrapGeneration.current) return;
-      setHasPortalAccess(false);
-      setProfile(null);
+      // Soft-fail: do not claim the member lacks portal access.
+      setPortalAccessCheckFailed(true);
     }
   }, []);
 
@@ -194,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         logAuthError("getSession failed", error);
-        clearLocalAuthState(setSession, setProfile, setHasPortalAccess);
+        clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
         setBooting(false);
         return;
       }
@@ -218,14 +254,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logAuthError("failed to open web recovery", error);
           }
           await client.auth.signOut();
-          clearLocalAuthState(setSession, setProfile, setHasPortalAccess);
+          clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
         })();
         return;
       }
 
       if (event === "SIGNED_OUT") {
         bootstrapGeneration.current += 1;
-        clearLocalAuthState(setSession, setProfile, setHasPortalAccess);
+        clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
         return;
       }
 
@@ -333,7 +369,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     bootstrapGeneration.current += 1;
-    clearLocalAuthState(setSession, setProfile, setHasPortalAccess);
+    clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
 
     if (!supabase) return;
 
@@ -353,7 +389,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? "signed_out"
       : hasPortalAccess
         ? "ready"
-        : "portal_pending";
+        : portalAccessCheckFailed
+          ? "access_check_failed"
+          : "portal_pending";
 
   const value = useMemo<AuthContextValue>(
     () => ({

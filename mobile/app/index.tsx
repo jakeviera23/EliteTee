@@ -20,7 +20,7 @@ export default function IndexRoute() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  if (status === "portal_pending") {
+  if (status === "portal_pending" || status === "access_check_failed") {
     return <Redirect href="/(auth)/portal-pending" />;
   }
 

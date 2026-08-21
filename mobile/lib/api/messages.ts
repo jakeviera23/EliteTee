@@ -1,5 +1,4 @@
 import { getCurrentUserId } from "./members";
-import { resolveMemberMediaUrlMap } from "./memberProfileMedia";
 import { getMemberDisplayName } from "../memberInitials";
 import { requireSupabase } from "../supabase";
 import type { MobileConversationSummary, MobilePrivateMessage } from "@/types/messages";
@@ -105,6 +104,7 @@ export async function fetchConversations(): Promise<{
       .map((profile) => ({
         userId: String(profile.user_id),
         full_name: getMemberDisplayName(String(profile.full_name ?? "")) || "Member",
+        // Keep storage paths — MemberAvatar re-signs; do not cache signed URLs.
         club_logo_url: profile.club_logo_url ? String(profile.club_logo_url) : null,
         founding_member_number: profile.founding_member_number
           ? String(profile.founding_member_number)
@@ -113,18 +113,12 @@ export async function fetchConversations(): Promise<{
         based_in: String(profile.based_in ?? ""),
       }));
 
-    const signedByPath = await resolveMemberMediaUrlMap(
-      rawIdentities.map((identity) => identity.club_logo_url),
-    );
-
     identitiesByUserId = Object.fromEntries(
       rawIdentities.map((identity) => [
         identity.userId,
         {
           full_name: identity.full_name,
-          club_logo_url: identity.club_logo_url
-            ? (signedByPath.get(identity.club_logo_url) ?? identity.club_logo_url)
-            : null,
+          club_logo_url: identity.club_logo_url,
           founding_member_number: identity.founding_member_number,
           primary_club: identity.primary_club,
           based_in: identity.based_in,

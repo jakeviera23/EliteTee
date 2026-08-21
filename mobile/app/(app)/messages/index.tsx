@@ -49,9 +49,17 @@ export default function MessagesScreen() {
 
     perfEnd("messages", { conversations: data.length, cached: hasCache });
 
+    if (fetchError) {
+      // Soft-fail: keep last known inbox; never overwrite cache with [].
+      setError(formatMobileError(fetchError.message));
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     setConversations(data);
     writeConversationsCache(data);
-    setError(fetchError ? formatMobileError(fetchError.message) : null);
+    setError(null);
     setLoading(false);
     setRefreshing(false);
   }, []);

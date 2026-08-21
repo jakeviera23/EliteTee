@@ -45,4 +45,9 @@ export type PortalAccessState = {
   hasAccess: boolean;
   membershipStatus: string | null;
   foundingMemberNumber: string | null;
+  /**
+   * True when portal access was read successfully from the API.
+   * False means verification failed — do not treat as “no access.”
+   */
+  verified: boolean;
 };

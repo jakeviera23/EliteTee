@@ -1,4 +1,5 @@
 import type { MobileCourseRoundPhoto, MobileCourseRoundRecord, MobileRoundPhotoDraft } from "@/types/courseRoundPhoto";
+import { isVideoRoundPhoto } from "../courseRoundCoverPhoto";
 import { getCachedSignedUrl, setCachedSignedUrl } from "../signedUrlCache";
 import { getCurrentUserId } from "./members";
 import { requireSupabase } from "../supabase";
@@ -7,8 +8,9 @@ export const COURSE_ROUND_PHOTOS_BUCKET = "course-round-photos";
 export const MAX_ROUND_PHOTOS = 8;
 const SIGNED_URL_TTL_SECONDS = 3600;
 
-const PHOTO_SELECT =
+const PHOTO_SELECT_BASE =
   "id, member_course_round_id, user_id, golf_course_id, storage_path, caption, sort_order, width, height, file_size_bytes, mime_type, moderation_status, created_at";
+const PHOTO_SELECT_WITH_MEDIA_KIND = `${PHOTO_SELECT_BASE}, media_kind, poster_storage_path`;
 
 function randomUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
@@ -18,6 +20,10 @@ function randomUuid() {
   });
 }
 
+function normalizeMediaKind(value: unknown): "image" | "video" {
+  return String(value ?? "").toLowerCase() === "video" ? "video" : "image";
+}
+
 function normalizePhoto(row: Record<string, unknown>): MobileCourseRoundPhoto {
   return {
     id: String(row.id ?? ""),
@@ -25,6 +31,9 @@ function normalizePhoto(row: Record<string, unknown>): MobileCourseRoundPhoto {
     storage_path: String(row.storage_path ?? ""),
     caption: row.caption ? String(row.caption) : null,
     sort_order: Number(row.sort_order ?? 0),
+    mime_type: row.mime_type ? String(row.mime_type) : null,
+    media_kind: row.media_kind !== undefined ? normalizeMediaKind(row.media_kind) : undefined,
+    poster_storage_path: row.poster_storage_path ? String(row.poster_storage_path) : null,
   };
 }
 
@@ -68,22 +77,52 @@ export async function fetchPhotosForRoundIds(roundIds: string[]) {
   }
 
   const client = requireSupabase();
-  const { data, error } = await client
+  let rows: Record<string, unknown>[] | null = null;
+  let error: { message: string } | null = null;
+
+  const primary = await client
     .from("member_course_round_photos")
-    .select(PHOTO_SELECT)
+    .select(PHOTO_SELECT_WITH_MEDIA_KIND)
     .in("member_course_round_id", roundIds)
     .eq("moderation_status", "active")
     .is("hidden_at", null)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
+  if (primary.error) {
+    // Older schemas without media_kind / poster_storage_path still work.
+    const fallback = await client
+      .from("member_course_round_photos")
+      .select(PHOTO_SELECT_BASE)
+      .in("member_course_round_id", roundIds)
+      .eq("moderation_status", "active")
+      .is("hidden_at", null)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    rows = (fallback.data ?? null) as Record<string, unknown>[] | null;
+    error = fallback.error;
+  } else {
+    rows = (primary.data ?? null) as Record<string, unknown>[] | null;
+    error = null;
+  }
+
   if (error) {
     return { data: [] as MobileCourseRoundPhoto[], error };
   }
 
-  const photos = (data ?? []).map((row) => normalizePhoto(row as Record<string, unknown>));
+  const photos = (rows ?? []).map((row) => normalizePhoto(row));
   const withUrls = await Promise.all(
     photos.map(async (photo) => {
+      // Never sign raw video into Image-bound signed_url.
+      if (isVideoRoundPhoto(photo)) {
+        const posterPath = photo.poster_storage_path?.trim() ?? "";
+        if (!posterPath) {
+          return { ...photo, signed_url: null };
+        }
+        const { url } = await createSignedPhotoUrl(posterPath);
+        return { ...photo, signed_url: url };
+      }
+
       const { url } = await createSignedPhotoUrl(photo.storage_path);
       return { ...photo, signed_url: url };
     }),
@@ -157,7 +196,7 @@ export async function uploadCourseRoundPhotos(
           mime_type: draft.mimeType,
           file_size_bytes: blob.size,
         })
-        .select(PHOTO_SELECT)
+        .select(PHOTO_SELECT_BASE)
         .single();
 
       if (insertError) {

@@ -3,6 +3,55 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 const IVORY = "#f4f1ea";
 const FOREST = "#244a3a";
 
+const PLACEHOLDER_VALUES = new Set([
+  "undefined",
+  "null",
+  "your_supabase_url",
+  "your-project.supabase.co",
+  "your_anon_key",
+  "your_supabase_anon_key",
+]);
+
+function normalizeEnv(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isValidSupabaseUrl(url: string): boolean {
+  if (!url || PLACEHOLDER_VALUES.has(url.toLowerCase())) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidAnonKey(key: string): boolean {
+  if (!key || PLACEHOLDER_VALUES.has(key.toLowerCase())) return false;
+  return key.length >= 20;
+}
+
+/** Fail EAS builds early when public Supabase env is missing (no secrets written to git). */
+function assertEasPreviewEnv() {
+  const isEasBuild = process.env.EAS_BUILD === "true";
+  if (!isEasBuild) return;
+
+  const url = normalizeEnv(process.env.EXPO_PUBLIC_SUPABASE_URL);
+  const anonKey = normalizeEnv(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+
+  if (!isValidSupabaseUrl(url) || !isValidAnonKey(anonKey)) {
+    throw new Error(
+      [
+        "EAS build is missing required public Supabase env.",
+        "Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in EAS secrets/env for this profile.",
+        "Run: npm run check:preview-env",
+      ].join(" "),
+    );
+  }
+}
+
+assertEasPreviewEnv();
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "EliteTee",
@@ -27,10 +76,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       CFBundleDisplayName: "EliteTee",
       NSPhotoLibraryUsageDescription:
         "EliteTee uses your photo library so you can attach round photos to member posts.",
-      NSPhotoLibraryAddUsageDescription:
-        "EliteTee can save round photos you choose to share with the member network.",
-      NSCameraUsageDescription:
-        "EliteTee uses the camera so you can capture round photos for member posts.",
     },
   },
   android: {
@@ -55,8 +100,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         photosPermission:
           "EliteTee uses your photo library so you can attach round photos to member posts.",
-        cameraPermission:
-          "EliteTee uses the camera so you can capture round photos for member posts.",
       },
     ],
   ],

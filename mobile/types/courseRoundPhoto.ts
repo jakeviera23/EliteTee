@@ -32,5 +32,9 @@ export type MobileCourseRoundPhoto = {
   storage_path: string;
   caption: string | null;
   sort_order: number;
+  mime_type?: string | null;
+  media_kind?: "image" | "video";
+  poster_storage_path?: string | null;
+  /** Signed image URL, or signed poster URL for video rows (never raw video). */
   signed_url?: string | null;
 };

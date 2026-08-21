@@ -21,7 +21,7 @@ import {
 } from "@/components/member/MemberIdentityLink";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { colors, layout, radii, spacing, typography } from "@/constants/theme";
-import { fetchFeedPostById } from "@/lib/api/feed";
+import { fetchFeedPostById, resolveFeedPostsMedia } from "@/lib/api/feed";
 import { buildFeedMetaChips } from "@/lib/feedCardMeta";
 import { formatCourseRatingDisplay } from "@/lib/courseRating";
 import {
@@ -65,6 +65,10 @@ export default function FeedPostDetailScreen() {
       setPost(seeded);
       setLoading(false);
       setRefreshing(true);
+      void resolveFeedPostsMedia([seeded]).then((resolved) => {
+        const next = resolved[0];
+        if (next) setPost(next);
+      });
     } else {
       setLoading(true);
     }
