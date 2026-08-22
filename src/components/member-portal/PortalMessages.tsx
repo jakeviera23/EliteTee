@@ -514,7 +514,7 @@ export function PortalMessages({
                 />
                 <button
                   type="submit"
-                  className="et-btn et-btn--forest"
+                  className="et-btn et-btn--forest et-messages-send"
                   disabled={isSending || !composeText.trim() || isLoadingThread}
                   aria-label={messagesCopy.send}
                 >

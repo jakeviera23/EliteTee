@@ -51,6 +51,7 @@ export function RoundPhotoLightbox({
   const photo = photos[safeIndex];
   const navigation = getPhotoGalleryNavigation(safeIndex, photos.length);
   const imageUrl = imageUrlOverride ?? photo?.signed_url ?? null;
+  const showSideNav = photos.length > 1;
 
   useEffect(() => {
     if (!allowDelete) return;
@@ -158,6 +159,15 @@ export function RoundPhotoLightbox({
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
       >
+        <button
+          type="button"
+          className="round-photo-lightbox-close"
+          onClick={onClose}
+          aria-label="Close gallery"
+        >
+          ×
+        </button>
+
         <header className="round-photo-lightbox-head">
           <div className="round-photo-lightbox-head-copy">
             <p className="round-photo-lightbox-counter">
@@ -170,14 +180,6 @@ export function RoundPhotoLightbox({
               <p className="round-photo-lightbox-date">{formatPlayedOnDate(photo.played_on)}</p>
             ) : null}
           </div>
-          <button
-            type="button"
-            className="round-photo-lightbox-close"
-            onClick={onClose}
-            aria-label="Close gallery"
-          >
-            ×
-          </button>
         </header>
 
         <div
@@ -195,6 +197,17 @@ export function RoundPhotoLightbox({
             if (delta < 0 && navigation.canGoNext) goNext();
           }}
         >
+          {showSideNav && navigation.canGoPrev ? (
+            <button
+              type="button"
+              className="round-photo-lightbox-side-nav round-photo-lightbox-side-nav--prev"
+              onClick={goPrev}
+              aria-label="Previous photo"
+            >
+              ‹
+            </button>
+          ) : null}
+
           {imageUrl ? (
             <img
               key={photo.id}
@@ -209,6 +222,17 @@ export function RoundPhotoLightbox({
           ) : (
             <p className="round-photo-lightbox-missing">This photo is no longer available.</p>
           )}
+
+          {showSideNav && navigation.canGoNext ? (
+            <button
+              type="button"
+              className="round-photo-lightbox-side-nav round-photo-lightbox-side-nav--next"
+              onClick={goNext}
+              aria-label="Next photo"
+            >
+              ›
+            </button>
+          ) : null}
         </div>
 
         {photo.caption?.trim() ? (
@@ -221,28 +245,8 @@ export function RoundPhotoLightbox({
           </p>
         ) : null}
 
-        <div className="round-photo-lightbox-nav">
-          {photos.length > 1 ? (
-            <>
-              <button
-                type="button"
-                className="round-photo-lightbox-nav-btn"
-                onClick={goPrev}
-                disabled={!navigation.canGoPrev}
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                className="round-photo-lightbox-nav-btn"
-                onClick={goNext}
-                disabled={!navigation.canGoNext}
-              >
-                Next
-              </button>
-            </>
-          ) : null}
-          {canDelete ? (
+        {canDelete ? (
+          <div className="round-photo-lightbox-nav">
             <button
               type="button"
               className="round-photo-lightbox-delete"
@@ -251,8 +255,8 @@ export function RoundPhotoLightbox({
             >
               {deleting ? "Deleting…" : "Delete photo"}
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body,

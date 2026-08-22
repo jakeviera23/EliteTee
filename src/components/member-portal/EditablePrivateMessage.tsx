@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { formatOwnMessageReadReceipt } from "../../lib/messageReadReceipt";
 import {
   editPrivateMessage,
   isPrivateMessageEditable,
@@ -138,6 +139,9 @@ export function EditablePrivateMessage({
           <div className="et-messages-meta">
             <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
             {message.edited_at ? <span className="et-messages-edited">Edited</span> : null}
+            {isOwn ? (
+              <span className="et-messages-receipt">{formatOwnMessageReadReceipt(message.read_at)}</span>
+            ) : null}
           </div>
         </>
       )}
