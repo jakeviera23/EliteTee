@@ -12,6 +12,7 @@ import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { AdminMembers } from "./pages/AdminMembers";
 import { RequestIntroductionPage } from "./pages/RequestIntroductionPage";
 import { InviteSignup } from "./pages/InviteSignup";
+import { JoinReferral } from "./pages/JoinReferral";
 import { AuthCallback } from "./pages/AuthCallback";
 import { NotFound } from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -63,6 +64,7 @@ export default function App() {
       <Route path="/inside" element={<InsideEliteTee />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/invite/:token" element={<InviteSignup />} />
+      <Route path="/join/:code" element={<JoinReferral />} />
       <Route
         path="/members/:userId"
         element={

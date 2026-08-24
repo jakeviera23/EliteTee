@@ -9,6 +9,8 @@ export type MembershipApplicationInsert = {
   instagram?: string;
   golf_love: string;
   why_join: string;
+  /** Resolved server-side from referral_code_used; never set by clients. */
+  referral_code_used?: string | null;
 };
 
 export type MembershipApplicationRecord = MembershipApplicationInsert & {
@@ -26,6 +28,9 @@ export type MembershipApplicationRecord = MembershipApplicationInsert & {
   invite_token: string | null;
   invite_token_created_at: string | null;
   invite_redeemed_at: string | null;
+  referrer_member_user_id: string | null;
+  referral_code_used: string | null;
+  referral_captured_at: string | null;
   created_at: string;
   updated_at: string;
 };

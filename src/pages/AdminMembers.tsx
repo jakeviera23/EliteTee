@@ -33,6 +33,10 @@ import type { ApproveApplicationResult } from "../lib/membershipApplications";
 import type { AiAdminDashboard } from "../types/askEliteTee";
 import type { MembershipApplicationRecord } from "../types/membershipApplication";
 import {
+  enrichApplicationsWithReferrers,
+  type MembershipApplicationWithReferrer,
+} from "../lib/adminApplicationReferrals";
+import {
   copyInviteLinkToClipboard,
   getApplicationInviteLink,
 } from "../lib/membershipInvites";
@@ -110,16 +114,15 @@ export function AdminMembers() {
   );
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [pendingApplications, setPendingApplications] = useState<MembershipApplicationRecord[]>(
-    [],
-  );
-  const [approvedApplications, setApprovedApplications] = useState<MembershipApplicationRecord[]>(
-    [],
-  );
+  const [pendingApplications, setPendingApplications] = useState<
+    MembershipApplicationWithReferrer[]
+  >([]);
+  const [approvedApplications, setApprovedApplications] = useState<
+    MembershipApplicationWithReferrer[]
+  >([]);
   const [pendingCount, setPendingCount] = useState(0);
-  const [viewingApplication, setViewingApplication] = useState<MembershipApplicationRecord | null>(
-    null,
-  );
+  const [viewingApplication, setViewingApplication] =
+    useState<MembershipApplicationWithReferrer | null>(null);
   const [invitationDraft, setInvitationDraft] = useState<ApproveApplicationResult | null>(null);
   const [applicationActionId, setApplicationActionId] = useState<string | null>(null);
   const [applicationMessage, setApplicationMessage] = useState<string | null>(null);
@@ -161,8 +164,12 @@ export function AdminMembers() {
 
     setDashboardCounts(counts);
     setAllMembers(members.data);
-    setPendingApplications(pending.data);
-    setApprovedApplications(approved.data);
+    const [pendingWithReferrers, approvedWithReferrers] = await Promise.all([
+      enrichApplicationsWithReferrers(pending.data),
+      enrichApplicationsWithReferrers(approved.data),
+    ]);
+    setPendingApplications(pendingWithReferrers);
+    setApprovedApplications(approvedWithReferrers);
     setPendingCount(pendingTotal);
     setPortalActiveMembers(portalActive);
 
@@ -392,7 +399,8 @@ export function AdminMembers() {
 
     if (data) {
       setApplicationMessage(`Invite link regenerated for ${data.application.full_name}.`);
-      setViewingApplication(data.application);
+      const [enriched] = await enrichApplicationsWithReferrers([data.application]);
+      setViewingApplication(enriched ?? null);
     }
 
     void refreshAdminData();

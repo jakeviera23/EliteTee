@@ -5,6 +5,7 @@ import type {
 } from "../types/membershipApplication";
 import { buildInvitationEmailDraft } from "./invitationEmail";
 import { buildInviteLink, generateInviteToken } from "./membershipInvites";
+import { readStoredReferralCode, clearStoredReferralCode } from "./memberReferrals";
 import { createMemberProfileFromApproval } from "./memberProfiles";
 import { supabase } from "./supabase";
 
@@ -38,6 +39,11 @@ function normalizeApplication(row: Record<string, unknown>): MembershipApplicati
       ? String(row.invite_token_created_at)
       : null,
     invite_redeemed_at: row.invite_redeemed_at ? String(row.invite_redeemed_at) : null,
+    referrer_member_user_id: row.referrer_member_user_id
+      ? String(row.referrer_member_user_id)
+      : null,
+    referral_code_used: row.referral_code_used ? String(row.referral_code_used) : null,
+    referral_captured_at: row.referral_captured_at ? String(row.referral_captured_at) : null,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
   };
@@ -47,6 +53,9 @@ export async function submitMembershipApplication(application: MembershipApplica
   if (!supabase) {
     return { error: new Error("Supabase is not configured.") };
   }
+
+  const referralCodeUsed =
+    application.referral_code_used?.trim() || readStoredReferralCode() || null;
 
   const payload = {
     full_name: application.full_name.trim(),
@@ -58,6 +67,7 @@ export async function submitMembershipApplication(application: MembershipApplica
     golf_love: application.golf_love.trim(),
     why_join: application.why_join.trim(),
     status: "pending_review" as const,
+    ...(referralCodeUsed ? { referral_code_used: referralCodeUsed } : {}),
   };
 
   const { error } = await supabase.from("membership_applications").insert(payload);
@@ -73,6 +83,7 @@ export async function submitMembershipApplication(application: MembershipApplica
     return { error };
   }
 
+  clearStoredReferralCode();
   return { error: null };
 }
 

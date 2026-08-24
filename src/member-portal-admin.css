@@ -299,6 +299,22 @@
   color: var(--et-text-primary);
 }
 
+.et-admin-app-card-meta-wide {
+  grid-column: 1 / -1;
+}
+
+.et-admin-app-card-meta-wide dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--et-space-2);
+}
+
+.et-admin-app-card-referrer {
+  color: var(--et-text-primary);
+  font-size: 0.875rem;
+}
+
 .et-admin-app-card-copy {
   display: grid;
   gap: var(--et-space-2);

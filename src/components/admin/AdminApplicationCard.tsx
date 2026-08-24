@@ -1,9 +1,10 @@
 import { adminCopy } from "../../data/adminCopy";
+import { formatApplicationReferrerLine } from "../../lib/adminApplicationReferrals";
 import { truncateAdminText } from "../../lib/adminDashboard";
-import type { MembershipApplicationRecord } from "../../types/membershipApplication";
+import type { MembershipApplicationWithReferrer } from "../../lib/adminApplicationReferrals";
 
 type AdminApplicationCardProps = {
-  application: MembershipApplicationRecord;
+  application: MembershipApplicationWithReferrer;
   variant: "pending" | "approved";
   isActionPending?: boolean;
   isInviteActionPending?: boolean;
@@ -38,6 +39,7 @@ export function AdminApplicationCard({
   onRegenerateInvite,
   inviteStatus,
 }: AdminApplicationCardProps) {
+  const referrerLine = formatApplicationReferrerLine(application.referrer_display);
   const statusBadge =
     variant === "pending"
       ? adminCopy.applications.pendingBadge
@@ -82,6 +84,17 @@ export function AdminApplicationCard({
           <div>
             <dt>FM #</dt>
             <dd>{application.founding_member_number}</dd>
+          </div>
+        ) : null}
+        {referrerLine ? (
+          <div className="et-admin-app-card-meta-wide">
+            <dt>Referral</dt>
+            <dd>
+              <span className="et-admin-badge et-admin-badge--forest">Member referral</span>
+              <span className="et-admin-app-card-referrer">
+                Referred by: {referrerLine}
+              </span>
+            </dd>
           </div>
         ) : null}
       </dl>

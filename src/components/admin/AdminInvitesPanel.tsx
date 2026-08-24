@@ -1,16 +1,16 @@
 import { adminCopy } from "../../data/adminCopy";
 import { getApplicationInviteStatus } from "../../lib/adminDashboard";
-import type { MembershipApplicationRecord } from "../../types/membershipApplication";
+import type { MembershipApplicationWithReferrer } from "../../lib/adminApplicationReferrals";
 import { AdminApplicationCard } from "./AdminApplicationCard";
 
 type AdminInvitesPanelProps = {
-  approvedApplications: MembershipApplicationRecord[];
+  approvedApplications: MembershipApplicationWithReferrer[];
   isLoading: boolean;
   inviteActionId: string | null;
-  onView: (application: MembershipApplicationRecord) => void;
-  onCopyInvite: (application: MembershipApplicationRecord) => void;
-  onCopyInvitationEmail: (application: MembershipApplicationRecord) => void;
-  onViewInvitation: (application: MembershipApplicationRecord) => void;
+  onView: (application: MembershipApplicationWithReferrer) => void;
+  onCopyInvite: (application: MembershipApplicationWithReferrer) => void;
+  onCopyInvitationEmail: (application: MembershipApplicationWithReferrer) => void;
+  onViewInvitation: (application: MembershipApplicationWithReferrer) => void;
   onRegenerateInvite: (applicationId: string) => void;
 };
 
@@ -29,12 +29,12 @@ function InviteGroup({
   title: string;
   emptyTitle: string;
   emptyCopy: string;
-  applications: MembershipApplicationRecord[];
+  applications: MembershipApplicationWithReferrer[];
   inviteActionId: string | null;
-  onView: (application: MembershipApplicationRecord) => void;
-  onCopyInvite: (application: MembershipApplicationRecord) => void;
-  onCopyInvitationEmail: (application: MembershipApplicationRecord) => void;
-  onViewInvitation: (application: MembershipApplicationRecord) => void;
+  onView: (application: MembershipApplicationWithReferrer) => void;
+  onCopyInvite: (application: MembershipApplicationWithReferrer) => void;
+  onCopyInvitationEmail: (application: MembershipApplicationWithReferrer) => void;
+  onViewInvitation: (application: MembershipApplicationWithReferrer) => void;
   onRegenerateInvite: (applicationId: string) => void;
 }) {
   return (

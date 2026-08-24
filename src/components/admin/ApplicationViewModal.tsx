@@ -1,4 +1,5 @@
-import type { MembershipApplicationRecord } from "../../types/membershipApplication";
+import type { MembershipApplicationWithReferrer } from "../../lib/adminApplicationReferrals";
+import { formatApplicationReferrerLine } from "../../lib/adminApplicationReferrals";
 import { getInvitationEmailDraftForApplication } from "../../lib/adminMemberInvites";
 import {
   copyInviteLinkToClipboard,
@@ -6,10 +7,10 @@ import {
 } from "../../lib/membershipInvites";
 
 type ApplicationViewModalProps = {
-  application: MembershipApplicationRecord;
+  application: MembershipApplicationWithReferrer;
   onClose: () => void;
   onRegenerateInvite?: (applicationId: string) => void;
-  onViewInvitation?: (application: MembershipApplicationRecord) => void;
+  onViewInvitation?: (application: MembershipApplicationWithReferrer) => void;
   isRegeneratingInvite?: boolean;
 };
 
@@ -37,6 +38,7 @@ export function ApplicationViewModal({
   const inviteLink = isApproved ? getApplicationInviteLink(application) : null;
   const inviteRedeemed = Boolean(application.invite_redeemed_at);
   const invitationEmailDraft = inviteLink ? getInvitationEmailDraftForApplication(application) : null;
+  const referrerLine = formatApplicationReferrerLine(application.referrer_display);
 
   async function handleCopyInviteLink() {
     if (!inviteLink) return;
@@ -113,6 +115,30 @@ export function ApplicationViewModal({
             <dt>Status</dt>
             <dd>{application.status.replace("_", " ")}</dd>
           </div>
+          {referrerLine ? (
+            <>
+              <div>
+                <dt>Referral source</dt>
+                <dd>Member referral</dd>
+              </div>
+              <div>
+                <dt>Referred by</dt>
+                <dd>{referrerLine}</dd>
+              </div>
+              {application.referral_code_used ? (
+                <div>
+                  <dt>Referral code</dt>
+                  <dd>{application.referral_code_used}</dd>
+                </div>
+              ) : null}
+              {application.referral_captured_at ? (
+                <div>
+                  <dt>Referral captured</dt>
+                  <dd>{formatDate(application.referral_captured_at)}</dd>
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <div className="et-admin-application-details-wide">
             <dt>What they love about golf</dt>
             <dd>{application.golf_love}</dd>
