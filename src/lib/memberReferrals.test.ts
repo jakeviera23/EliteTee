@@ -4,6 +4,8 @@ import {
   clearStoredReferralCode,
   extractReferralCodeFromPath,
   normalizeReferralCode,
+  parseMemberReferralInvite,
+  parseMemberReferralStats,
   readStoredReferralCode,
   storeReferralCode,
 } from "./memberReferrals";
@@ -75,5 +77,35 @@ describe("referral session storage", () => {
     storeReferralCode("abc123def456789012345678");
     clearStoredReferralCode();
     expect(readStoredReferralCode()).toBeNull();
+  });
+});
+
+describe("parseMemberReferralInvite", () => {
+  it("parses invite RPC payloads", () => {
+    expect(parseMemberReferralInvite({ code: "abc123def456789012345678" })).toEqual({
+      code: "abc123def456789012345678",
+      referralUrl: "https://www.elitetee.club/join/abc123def456789012345678",
+    });
+  });
+
+  it("rejects invalid invite payloads", () => {
+    expect(parseMemberReferralInvite(null)).toBeNull();
+    expect(parseMemberReferralInvite({ code: "bad" })).toBeNull();
+  });
+});
+
+describe("parseMemberReferralStats", () => {
+  it("parses stats RPC payloads", () => {
+    expect(parseMemberReferralStats({ pending_count: 2, joined_count: 1 })).toEqual({
+      pendingCount: 2,
+      joinedCount: 1,
+    });
+  });
+
+  it("defaults missing counts to zero", () => {
+    expect(parseMemberReferralStats({})).toEqual({
+      pendingCount: 0,
+      joinedCount: 0,
+    });
   });
 });

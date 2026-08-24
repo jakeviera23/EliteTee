@@ -37,6 +37,7 @@ import { ProfileBucketList } from "./profile/ProfileBucketList";
 import { ProfileCoursesPlayed } from "./profile/ProfileCoursesPlayed";
 import { ProfileMemberAvatar } from "./profile/ProfileMemberAvatar";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { InviteGolfer } from "./InviteGolfer";
 
 function ProfileEmptyState({ title, hint }: { title: string; hint: string }) {
   return (
@@ -539,6 +540,8 @@ export function GolferProfilePage({
             </div>
 
             <aside className="et-profile-aside">
+              {!isViewingOther ? <InviteGolfer variant="full" /> : null}
+
               <ProfileSection title="Golf" description="Where they play and what they love.">
                 <dl className="et-profile-aside-block">
                   <div>

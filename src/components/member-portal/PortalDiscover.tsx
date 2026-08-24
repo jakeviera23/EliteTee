@@ -27,6 +27,7 @@ import { DiscoverFilterDrawer } from "./discover/DiscoverFilterDrawer";
 import { DiscoverFiltersBar } from "./discover/DiscoverFiltersBar";
 import { DiscoverGeoBrowse } from "./discover/DiscoverGeoBrowse";
 import { IntroductionRequestModal } from "./IntroductionRequestModal";
+import { InviteGolfer } from "./InviteGolfer";
 import { usePortalToast } from "./PortalToastProvider";
 
 type PortalDiscoverProps = {
@@ -143,6 +144,8 @@ export function PortalDiscover({
           </p>
         ) : null}
       </header>
+
+      <InviteGolfer variant="compact" />
 
       <DiscoverFiltersBar
         filters={filters}

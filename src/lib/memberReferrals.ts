@@ -1,4 +1,5 @@
 import { getPublicSiteUrl } from "./siteUrl";
+import { supabase } from "./supabase";
 
 export const REFERRAL_CODE_STORAGE_KEY = "elitetee_referral_code";
 
@@ -45,4 +46,61 @@ export function extractReferralCodeFromPath(pathname: string): string | null {
   } catch {
     return null;
   }
+}
+
+export function parseMemberReferralInvite(data: unknown): { code: string; referralUrl: string } | null {
+  if (!data || typeof data !== "object") return null;
+
+  const row = data as Record<string, unknown>;
+  const code = normalizeReferralCode(String(row.code ?? ""));
+  if (!code) return null;
+
+  return {
+    code,
+    referralUrl: buildMemberReferralLink(code),
+  };
+}
+
+export function parseMemberReferralStats(data: unknown): { pendingCount: number; joinedCount: number } | null {
+  if (!data || typeof data !== "object") return null;
+
+  const row = data as Record<string, unknown>;
+  return {
+    pendingCount: Number(row.pending_count ?? 0) || 0,
+    joinedCount: Number(row.joined_count ?? 0) || 0,
+  };
+}
+
+export async function fetchMemberReferralInvite() {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("get_or_create_member_referral_code");
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return {
+    data: parseMemberReferralInvite(data),
+    error: null,
+  };
+}
+
+export async function fetchMemberReferralStats() {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  const { data, error } = await supabase.rpc("get_member_referral_stats");
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return {
+    data: parseMemberReferralStats(data),
+    error: null,
+  };
 }
