@@ -128,6 +128,14 @@
   text-align: center;
 }
 
+.et-admin-nav-badge--attention {
+  background: var(--admin-burgundy);
+}
+
+.et-admin-nav-btn .et-admin-nav-badge + .et-admin-nav-badge {
+  margin-left: 0.25rem;
+}
+
 .et-admin-stack {
   display: grid;
   gap: var(--et-space-6);
@@ -145,6 +153,135 @@
 
 .et-admin-section--muted {
   background: var(--admin-stone);
+}
+
+.et-admin-section--attention {
+  border-color: color-mix(in srgb, var(--admin-burgundy) 25%, var(--et-border-hairline));
+  background: color-mix(in srgb, var(--admin-burgundy-soft) 35%, var(--et-bg-surface) 65%);
+}
+
+.et-admin-section-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--et-space-3);
+}
+
+.et-admin-filter--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--et-space-2);
+  min-width: min(100%, 14rem);
+}
+
+.et-admin-filter--inline label {
+  font-size: 0.8125rem;
+  color: var(--et-text-secondary);
+  white-space: nowrap;
+}
+
+.et-admin-onboarding {
+  display: grid;
+  gap: var(--et-space-3);
+  padding: var(--et-space-3);
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.75rem;
+  background: var(--et-bg-inset);
+}
+
+.et-admin-onboarding--compact {
+  padding: var(--et-space-2);
+  gap: var(--et-space-2);
+}
+
+.et-admin-onboarding-attention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--et-space-2);
+  margin: 0;
+}
+
+.et-admin-onboarding-attention-copy {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--et-text-secondary);
+}
+
+.et-admin-onboarding-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.et-admin-onboarding-step {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 3.25rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.5rem;
+  background: var(--et-bg-surface);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.et-admin-onboarding-step-label {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.et-admin-onboarding-step-detail {
+  color: var(--et-text-secondary);
+  font-size: 0.625rem;
+}
+
+.et-admin-onboarding-step.is-complete {
+  border-color: color-mix(in srgb, var(--admin-forest) 30%, transparent);
+  background: var(--admin-forest-soft);
+}
+
+.et-admin-onboarding-step.is-current {
+  border-color: color-mix(in srgb, var(--admin-gold) 35%, transparent);
+  background: color-mix(in srgb, var(--admin-gold-soft) 55%, white 45%);
+}
+
+.et-admin-onboarding-step.is-incomplete {
+  opacity: 0.75;
+}
+
+.et-admin-onboarding-step.is-unknown {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.et-admin-onboarding-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--et-space-2);
+  margin: 0;
+}
+
+.et-admin-onboarding-meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.et-admin-onboarding-meta dt {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--admin-slate);
+}
+
+.et-admin-onboarding-meta dd {
+  margin: 0;
+  font-size: 0.8125rem;
 }
 
 .et-admin-section-head {
@@ -651,6 +788,12 @@
   margin: 0.15rem 0 0;
   color: var(--et-text-primary);
   line-height: 1.5;
+}
+
+.et-admin-application-details--compact {
+  margin-top: var(--et-space-2);
+  padding-top: var(--et-space-2);
+  border-top: 1px solid var(--et-border-hairline);
 }
 
 .et-admin-invite-panel,

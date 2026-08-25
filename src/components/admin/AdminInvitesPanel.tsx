@@ -1,10 +1,11 @@
 import { adminCopy } from "../../data/adminCopy";
-import { getApplicationInviteStatus } from "../../lib/adminDashboard";
+import type { AdminOnboardingSnapshot } from "../../lib/adminOnboarding";
 import type { MembershipApplicationWithReferrer } from "../../lib/adminApplicationReferrals";
 import { AdminApplicationCard } from "./AdminApplicationCard";
 
 type AdminInvitesPanelProps = {
   approvedApplications: MembershipApplicationWithReferrer[];
+  getOnboardingSnapshot: (application: MembershipApplicationWithReferrer) => AdminOnboardingSnapshot;
   isLoading: boolean;
   inviteActionId: string | null;
   onView: (application: MembershipApplicationWithReferrer) => void;
@@ -19,6 +20,7 @@ function InviteGroup({
   emptyTitle,
   emptyCopy,
   applications,
+  getOnboardingSnapshot,
   inviteActionId,
   onView,
   onCopyInvite,
@@ -30,6 +32,7 @@ function InviteGroup({
   emptyTitle: string;
   emptyCopy: string;
   applications: MembershipApplicationWithReferrer[];
+  getOnboardingSnapshot: (application: MembershipApplicationWithReferrer) => AdminOnboardingSnapshot;
   inviteActionId: string | null;
   onView: (application: MembershipApplicationWithReferrer) => void;
   onCopyInvite: (application: MembershipApplicationWithReferrer) => void;
@@ -50,26 +53,30 @@ function InviteGroup({
       ) : (
         <div className="et-admin-card-grid">
           {applications.map((application) => {
-            const inviteStatus = getApplicationInviteStatus(application);
+            const onboardingSnapshot = getOnboardingSnapshot(application);
+            const hasCopyableInvite =
+              onboardingSnapshot.inviteStatus === "valid" ||
+              onboardingSnapshot.inviteStatus === "expired";
+
             return (
               <AdminApplicationCard
                 key={application.id}
                 application={application}
                 variant="approved"
-                inviteStatus={inviteStatus}
+                onboardingSnapshot={onboardingSnapshot}
                 isInviteActionPending={inviteActionId === application.id}
                 onView={() => onView(application)}
-                onCopyInvite={
-                  inviteStatus === "ready" ? () => onCopyInvite(application) : undefined
-                }
+                onCopyInvite={hasCopyableInvite ? () => onCopyInvite(application) : undefined}
                 onCopyInvitationEmail={
-                  inviteStatus === "ready" ? () => onCopyInvitationEmail(application) : undefined
+                  hasCopyableInvite ? () => onCopyInvitationEmail(application) : undefined
                 }
                 onViewInvitation={
-                  inviteStatus === "ready" ? () => onViewInvitation(application) : undefined
+                  onboardingSnapshot.inviteStatus === "valid"
+                    ? () => onViewInvitation(application)
+                    : undefined
                 }
                 onRegenerateInvite={
-                  inviteStatus === "missing"
+                  onboardingSnapshot.inviteStatus === "missing"
                     ? () => onRegenerateInvite(application.id)
                     : undefined
                 }
@@ -84,6 +91,7 @@ function InviteGroup({
 
 export function AdminInvitesPanel({
   approvedApplications,
+  getOnboardingSnapshot,
   isLoading,
   inviteActionId,
   onView,
@@ -92,14 +100,15 @@ export function AdminInvitesPanel({
   onViewInvitation,
   onRegenerateInvite,
 }: AdminInvitesPanelProps) {
-  const awaiting = approvedApplications.filter(
-    (application) => getApplicationInviteStatus(application) === "ready",
-  );
+  const awaiting = approvedApplications.filter((application) => {
+    const status = getOnboardingSnapshot(application).inviteStatus;
+    return status === "valid" || status === "expired";
+  });
   const redeemed = approvedApplications.filter(
-    (application) => getApplicationInviteStatus(application) === "redeemed",
+    (application) => getOnboardingSnapshot(application).inviteStatus === "redeemed",
   );
   const missing = approvedApplications.filter(
-    (application) => getApplicationInviteStatus(application) === "missing",
+    (application) => getOnboardingSnapshot(application).inviteStatus === "missing",
   );
 
   if (isLoading) {
@@ -118,6 +127,7 @@ export function AdminInvitesPanel({
         emptyTitle={adminCopy.invites.emptyAwaitingTitle}
         emptyCopy={adminCopy.invites.emptyAwaitingCopy}
         applications={awaiting}
+        getOnboardingSnapshot={getOnboardingSnapshot}
         inviteActionId={inviteActionId}
         onView={onView}
         onCopyInvite={onCopyInvite}
@@ -131,6 +141,7 @@ export function AdminInvitesPanel({
         emptyTitle={adminCopy.invites.emptyRedeemedTitle}
         emptyCopy={adminCopy.invites.emptyRedeemedCopy}
         applications={redeemed}
+        getOnboardingSnapshot={getOnboardingSnapshot}
         inviteActionId={inviteActionId}
         onView={onView}
         onCopyInvite={onCopyInvite}
@@ -145,6 +156,7 @@ export function AdminInvitesPanel({
           emptyTitle={adminCopy.invites.linkMissing}
           emptyCopy={adminCopy.invites.regenerate}
           applications={missing}
+          getOnboardingSnapshot={getOnboardingSnapshot}
           inviteActionId={inviteActionId}
           onView={onView}
           onCopyInvite={onCopyInvite}

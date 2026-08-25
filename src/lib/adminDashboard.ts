@@ -16,6 +16,7 @@ export type AdminOverviewMetrics = {
   portalActiveMembers: number | null;
   invitesAwaiting: number;
   invitesRedeemed: number;
+  needsAttention: number;
   askQueriesToday: number | null;
   askQueries7d: number | null;
   aiFailures7d: number | null;
@@ -65,6 +66,7 @@ export function buildOverviewMetrics({
   profilesCreated,
   portalActiveMembers,
   inviteMetrics,
+  needsAttention,
   aiDashboard,
 }: {
   pendingApplications: number;
@@ -72,6 +74,7 @@ export function buildOverviewMetrics({
   profilesCreated: number;
   portalActiveMembers: number | null;
   inviteMetrics: InviteMetrics;
+  needsAttention: number;
   aiDashboard: AiAdminDashboard | null;
 }): AdminOverviewMetrics {
   return {
@@ -81,6 +84,7 @@ export function buildOverviewMetrics({
     portalActiveMembers,
     invitesAwaiting: inviteMetrics.awaitingRedemption,
     invitesRedeemed: inviteMetrics.redeemed,
+    needsAttention,
     askQueriesToday: aiDashboard?.queries_today ?? null,
     askQueries7d: aiDashboard?.queries_7d ?? null,
     aiFailures7d: aiDashboard?.failures_7d ?? null,
@@ -227,4 +231,74 @@ export async function fetchMemberProfilesForAdmin(options: { search?: string; li
     })),
     error: null,
   };
+}
+
+export async function fetchMemberProfilesForOnboarding(
+  profileIds: string[],
+  emails: string[],
+) {
+  if (!supabase) {
+    return { data: [] as AdminMemberRow[], error: null };
+  }
+
+  const normalizedIds = [...new Set(profileIds.map((id) => id.trim()).filter(Boolean))];
+  const normalizedEmails = [
+    ...new Set(emails.map((email) => email.trim().toLowerCase()).filter(Boolean)),
+  ];
+
+  if (normalizedIds.length === 0 && normalizedEmails.length === 0) {
+    return { data: [] as AdminMemberRow[], error: null };
+  }
+
+  const select =
+    "id, full_name, email, primary_club, based_in, membership_status, is_verified, founding_member_number, portal_access_enabled, created_at, user_id";
+
+  const rows = new Map<string, AdminMemberRow>();
+
+  function addRows(data: Record<string, unknown>[] | null) {
+    for (const row of data ?? []) {
+      const mapped: AdminMemberRow = {
+        id: String(row.id ?? ""),
+        full_name: String(row.full_name ?? ""),
+        email: String(row.email ?? ""),
+        primary_club: String(row.primary_club ?? ""),
+        based_in: String(row.based_in ?? ""),
+        membership_status: String(row.membership_status ?? ""),
+        is_verified: Boolean(row.is_verified),
+        founding_member_number: row.founding_member_number
+          ? String(row.founding_member_number)
+          : null,
+        portal_access_enabled: Boolean(row.portal_access_enabled),
+        created_at: String(row.created_at ?? ""),
+        user_id: row.user_id ? String(row.user_id) : null,
+      };
+      rows.set(mapped.id, mapped);
+    }
+  }
+
+  if (normalizedIds.length > 0) {
+    const { data, error } = await supabase
+      .from("member_profiles")
+      .select(select)
+      .in("id", normalizedIds);
+    if (error) {
+      logAdminQueryError("fetchMemberProfilesForOnboarding.byId", error);
+      return { data: [] as AdminMemberRow[], error };
+    }
+    addRows(data);
+  }
+
+  if (normalizedEmails.length > 0) {
+    const { data, error } = await supabase
+      .from("member_profiles")
+      .select(select)
+      .in("email", normalizedEmails);
+    if (error) {
+      logAdminQueryError("fetchMemberProfilesForOnboarding.byEmail", error);
+      return { data: [] as AdminMemberRow[], error };
+    }
+    addRows(data);
+  }
+
+  return { data: [...rows.values()], error: null };
 }

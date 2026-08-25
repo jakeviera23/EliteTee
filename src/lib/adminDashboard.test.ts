@@ -84,6 +84,7 @@ describe("buildOverviewMetrics", () => {
         profilesCreated: 12,
         portalActiveMembers: 8,
         inviteMetrics: { awaitingRedemption: 3, redeemed: 5, missingLink: 1 },
+        needsAttention: 2,
         aiDashboard: {
           settings: {
             enabled: true,
@@ -106,6 +107,7 @@ describe("buildOverviewMetrics", () => {
     ).toMatchObject({
       pendingApplications: 2,
       invitesAwaiting: 3,
+      needsAttention: 2,
       askQueriesToday: 4,
       aiFailures7d: 1,
     });

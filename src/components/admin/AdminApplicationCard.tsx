@@ -1,11 +1,14 @@
 import { adminCopy } from "../../data/adminCopy";
 import { formatApplicationReferrerLine } from "../../lib/adminApplicationReferrals";
 import { truncateAdminText } from "../../lib/adminDashboard";
+import type { AdminOnboardingSnapshot } from "../../lib/adminOnboarding";
 import type { MembershipApplicationWithReferrer } from "../../lib/adminApplicationReferrals";
+import { AdminOnboardingSummary } from "./AdminOnboardingSummary";
 
 type AdminApplicationCardProps = {
   application: MembershipApplicationWithReferrer;
   variant: "pending" | "approved";
+  onboardingSnapshot?: AdminOnboardingSnapshot;
   isActionPending?: boolean;
   isInviteActionPending?: boolean;
   onApprove?: () => void;
@@ -15,7 +18,6 @@ type AdminApplicationCardProps = {
   onCopyInvitationEmail?: () => void;
   onViewInvitation?: () => void;
   onRegenerateInvite?: () => void;
-  inviteStatus?: "ready" | "redeemed" | "missing";
 };
 
 function formatAdminDate(value: string) {
@@ -28,6 +30,7 @@ function formatAdminDate(value: string) {
 export function AdminApplicationCard({
   application,
   variant,
+  onboardingSnapshot,
   isActionPending = false,
   isInviteActionPending = false,
   onApprove,
@@ -37,7 +40,6 @@ export function AdminApplicationCard({
   onCopyInvitationEmail,
   onViewInvitation,
   onRegenerateInvite,
-  inviteStatus,
 }: AdminApplicationCardProps) {
   const referrerLine = formatApplicationReferrerLine(application.referrer_display);
   const statusBadge =
@@ -110,25 +112,8 @@ export function AdminApplicationCard({
         </p>
       </div>
 
-      {variant === "approved" && inviteStatus ? (
-        <p className="et-admin-app-card-invite">
-          Invite:{" "}
-          <span
-            className={`et-admin-badge${
-              inviteStatus === "redeemed"
-                ? " et-admin-badge--forest"
-                : inviteStatus === "ready"
-                  ? " et-admin-badge--gold"
-                  : " et-admin-badge--burgundy"
-            }`}
-          >
-            {inviteStatus === "redeemed"
-              ? adminCopy.invites.redeemed
-              : inviteStatus === "ready"
-                ? adminCopy.invites.linkReady
-                : adminCopy.invites.linkMissing}
-          </span>
-        </p>
+      {variant === "approved" && onboardingSnapshot ? (
+        <AdminOnboardingSummary snapshot={onboardingSnapshot} compact />
       ) : null}
 
       <div className="et-admin-app-card-actions">
@@ -153,25 +138,25 @@ export function AdminApplicationCard({
           </>
         ) : null}
 
-        {variant === "approved" && inviteStatus === "ready" && onCopyInvite ? (
+        {variant === "approved" && onCopyInvite ? (
           <button type="button" className="et-btn et-btn--forest" onClick={onCopyInvite}>
             {adminCopy.invites.copyLink}
           </button>
         ) : null}
 
-        {variant === "approved" && inviteStatus === "ready" && onCopyInvitationEmail ? (
+        {variant === "approved" && onCopyInvitationEmail ? (
           <button type="button" className="et-btn et-btn--secondary" onClick={onCopyInvitationEmail}>
             {adminCopy.invites.copyInvitationEmail}
           </button>
         ) : null}
 
-        {variant === "approved" && inviteStatus === "ready" && onViewInvitation ? (
+        {variant === "approved" && onViewInvitation ? (
           <button type="button" className="et-btn et-btn--secondary" onClick={onViewInvitation}>
             {adminCopy.invites.viewInvitation}
           </button>
         ) : null}
 
-        {variant === "approved" && inviteStatus === "missing" && onRegenerateInvite ? (
+        {variant === "approved" && onRegenerateInvite ? (
           <button
             type="button"
             className="et-btn et-btn--secondary"

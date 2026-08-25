@@ -1,13 +1,16 @@
 import type { MembershipApplicationWithReferrer } from "../../lib/adminApplicationReferrals";
 import { formatApplicationReferrerLine } from "../../lib/adminApplicationReferrals";
+import type { AdminOnboardingSnapshot } from "../../lib/adminOnboarding";
 import { getInvitationEmailDraftForApplication } from "../../lib/adminMemberInvites";
 import {
   copyInviteLinkToClipboard,
   getApplicationInviteLink,
 } from "../../lib/membershipInvites";
+import { AdminOnboardingSummary } from "./AdminOnboardingSummary";
 
 type ApplicationViewModalProps = {
   application: MembershipApplicationWithReferrer;
+  onboardingSnapshot?: AdminOnboardingSnapshot | null;
   onClose: () => void;
   onRegenerateInvite?: (applicationId: string) => void;
   onViewInvitation?: (application: MembershipApplicationWithReferrer) => void;
@@ -29,6 +32,7 @@ function formatDate(value: string) {
 
 export function ApplicationViewModal({
   application,
+  onboardingSnapshot = null,
   onClose,
   onRegenerateInvite,
   onViewInvitation,
@@ -37,6 +41,7 @@ export function ApplicationViewModal({
   const isApproved = application.status === "approved";
   const inviteLink = isApproved ? getApplicationInviteLink(application) : null;
   const inviteRedeemed = Boolean(application.invite_redeemed_at);
+  const detailedInviteStatus = onboardingSnapshot?.inviteStatus;
   const invitationEmailDraft = inviteLink ? getInvitationEmailDraftForApplication(application) : null;
   const referrerLine = formatApplicationReferrerLine(application.referrer_display);
 
@@ -149,6 +154,13 @@ export function ApplicationViewModal({
           </div>
         </dl>
 
+        {isApproved && onboardingSnapshot ? (
+          <div className="et-admin-invite-panel">
+            <h4>Onboarding status</h4>
+            <AdminOnboardingSummary snapshot={onboardingSnapshot} />
+          </div>
+        ) : null}
+
         {isApproved ? (
           <div className="et-admin-invite-panel">
             <h4>Private invite link</h4>
@@ -158,6 +170,15 @@ export function ApplicationViewModal({
               </p>
             ) : inviteLink ? (
               <>
+                {application.invite_token_created_at ? (
+                  <p className="et-admin-note">
+                    Invite created {formatDate(application.invite_token_created_at)}
+                    {onboardingSnapshot?.inviteExpiresAt
+                      ? ` · Expires ${formatDate(onboardingSnapshot.inviteExpiresAt)}`
+                      : null}
+                    {detailedInviteStatus === "expired" ? " · Expired" : null}
+                  </p>
+                ) : null}
                 <p className="et-admin-invitation-link">
                   <span>Invite link</span>
                   <a href={inviteLink} target="_blank" rel="noreferrer">
@@ -181,7 +202,7 @@ export function ApplicationViewModal({
                       Copy invitation email
                     </button>
                   ) : null}
-                  {onViewInvitation ? (
+                  {onViewInvitation && detailedInviteStatus === "valid" ? (
                     <button
                       type="button"
                       className="et-btn et-btn--forest"
@@ -209,6 +230,23 @@ export function ApplicationViewModal({
                 ) : null}
               </>
             )}
+
+            {onboardingSnapshot ? (
+              <dl className="et-admin-application-details et-admin-application-details--compact">
+                <div>
+                  <dt>Profile linked</dt>
+                  <dd>{onboardingSnapshot.profileLinked ? "Yes" : "No"}</dd>
+                </div>
+                <div>
+                  <dt>Portal access</dt>
+                  <dd>{onboardingSnapshot.portalAccessEnabled ? "Enabled" : "Disabled"}</dd>
+                </div>
+                <div>
+                  <dt>Membership activated</dt>
+                  <dd>{onboardingSnapshot.membershipActivated ? "Yes" : "No"}</dd>
+                </div>
+              </dl>
+            ) : null}
           </div>
         ) : null}
       </div>

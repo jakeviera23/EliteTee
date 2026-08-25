@@ -47,6 +47,12 @@ export function AdminMetricGrid({ metrics, isLoading }: AdminMetricGridProps) {
       hint: metrics.portalActiveMembers === null ? adminCopy.overview.unavailableHint : undefined,
     },
     {
+      key: "needs-attention",
+      label: adminCopy.overview.needsAttention,
+      value: formatMetricValue(metrics.needsAttention, isLoading),
+      tone: metrics.needsAttention > 0 ? "burgundy" : "default",
+    },
+    {
       key: "invites-awaiting",
       label: adminCopy.overview.invitesAwaiting,
       value: formatMetricValue(metrics.invitesAwaiting, isLoading),

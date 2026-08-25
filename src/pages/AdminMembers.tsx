@@ -15,6 +15,7 @@ import {
   buildOverviewMetrics,
   computeInviteMetrics,
   fetchMemberProfilesForAdmin,
+  fetchMemberProfilesForOnboarding,
   fetchPortalActiveMemberCount,
   filterAdminMembers,
   logAdminQueryError,
@@ -36,6 +37,13 @@ import {
   enrichApplicationsWithReferrers,
   type MembershipApplicationWithReferrer,
 } from "../lib/adminApplicationReferrals";
+import {
+  buildOnboardingProfileMaps,
+  computeNeedsAttentionCount,
+  deriveAdminOnboardingSnapshot,
+  resolveOnboardingProfile,
+  type AdminOnboardingProfile,
+} from "../lib/adminOnboarding";
 import {
   copyInviteLinkToClipboard,
   getApplicationInviteLink,
@@ -120,6 +128,7 @@ export function AdminMembers() {
   const [approvedApplications, setApprovedApplications] = useState<
     MembershipApplicationWithReferrer[]
   >([]);
+  const [onboardingProfiles, setOnboardingProfiles] = useState<AdminOnboardingProfile[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [viewingApplication, setViewingApplication] =
     useState<MembershipApplicationWithReferrer | null>(null);
@@ -170,6 +179,24 @@ export function AdminMembers() {
     ]);
     setPendingApplications(pendingWithReferrers);
     setApprovedApplications(approvedWithReferrers);
+
+    const profileIds = approvedWithReferrers
+      .map((application) => application.member_profile_id)
+      .filter((id): id is string => Boolean(id));
+    const emails = approvedWithReferrers.map((application) => application.email);
+    const onboardingProfilesResult = await fetchMemberProfilesForOnboarding(profileIds, emails);
+    if (onboardingProfilesResult.error) {
+      logAdminQueryError("refreshAdminData.onboardingProfiles", onboardingProfilesResult.error);
+    }
+    setOnboardingProfiles(
+      onboardingProfilesResult.data.map((profile) => ({
+        id: profile.id,
+        email: profile.email,
+        user_id: profile.user_id,
+        portal_access_enabled: profile.portal_access_enabled,
+      })),
+    );
+
     setPendingCount(pendingTotal);
     setPortalActiveMembers(portalActive);
 
@@ -205,6 +232,33 @@ export function AdminMembers() {
     [approvedApplications],
   );
 
+  const onboardingProfileMaps = useMemo(
+    () => buildOnboardingProfileMaps(onboardingProfiles),
+    [onboardingProfiles],
+  );
+
+  const getOnboardingSnapshot = useCallback(
+    (application: MembershipApplicationWithReferrer) => {
+      const profile = resolveOnboardingProfile(
+        application,
+        onboardingProfileMaps.profilesById,
+        onboardingProfileMaps.profilesByEmail,
+      );
+      return deriveAdminOnboardingSnapshot(application, profile);
+    },
+    [onboardingProfileMaps],
+  );
+
+  const needsAttentionCount = useMemo(
+    () =>
+      computeNeedsAttentionCount(
+        approvedApplications,
+        onboardingProfileMaps.profilesById,
+        onboardingProfileMaps.profilesByEmail,
+      ),
+    [approvedApplications, onboardingProfileMaps],
+  );
+
   const overviewMetrics = useMemo(
     () =>
       buildOverviewMetrics({
@@ -213,9 +267,17 @@ export function AdminMembers() {
         profilesCreated: dashboardCounts.profilesCreated,
         portalActiveMembers,
         inviteMetrics,
+        needsAttention: needsAttentionCount,
         aiDashboard,
       }),
-    [pendingCount, dashboardCounts, portalActiveMembers, inviteMetrics, aiDashboard],
+    [
+      pendingCount,
+      dashboardCounts,
+      portalActiveMembers,
+      inviteMetrics,
+      needsAttentionCount,
+      aiDashboard,
+    ],
   );
 
   const filteredMembers = useMemo(
@@ -458,6 +520,7 @@ export function AdminMembers() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           pendingCount={pendingCount}
+          needsAttentionCount={needsAttentionCount}
         />
 
         {loadError ? (
@@ -491,6 +554,8 @@ export function AdminMembers() {
           <AdminApplicationsPanel
             pendingApplications={pendingApplications}
             approvedApplications={approvedApplications}
+            getOnboardingSnapshot={getOnboardingSnapshot}
+            needsAttentionCount={needsAttentionCount}
             isLoading={isLoadingDashboard}
             pendingLoadWarning={pendingLoadWarning}
             approvedLoadWarning={approvedLoadWarning}
@@ -511,6 +576,7 @@ export function AdminMembers() {
         {activeTab === "invites" ? (
           <AdminInvitesPanel
             approvedApplications={approvedApplications}
+            getOnboardingSnapshot={getOnboardingSnapshot}
             isLoading={isLoadingDashboard}
             inviteActionId={inviteActionId}
             onView={setViewingApplication}
@@ -818,6 +884,7 @@ export function AdminMembers() {
       {viewingApplication ? (
         <ApplicationViewModal
           application={viewingApplication}
+          onboardingSnapshot={getOnboardingSnapshot(viewingApplication)}
           onClose={() => setViewingApplication(null)}
           onRegenerateInvite={
             viewingApplication.status === "approved" && !viewingApplication.invite_redeemed_at
