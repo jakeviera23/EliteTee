@@ -847,3 +847,23 @@
   color: var(--et-text-secondary);
   font-size: 0.9375rem;
 }
+
+/* Compact Discover CTA only — high-contrast chrome green + gold */
+.et-invite-golfer--collapsed .et-invite-golfer-cta > .et-btn.et-btn--forest {
+  color: var(--et-chrome-accent, var(--et-accent));
+  background: var(--et-chrome-bg);
+  border-color: color-mix(in srgb, var(--et-chrome-accent, var(--et-accent)) 42%, transparent);
+}
+
+.et-invite-golfer--collapsed .et-invite-golfer-cta > .et-btn.et-btn--forest:hover:not(:disabled) {
+  color: var(--et-chrome-accent, var(--et-accent));
+  background: var(--et-chrome-bg-elevated, #243830);
+  border-color: color-mix(in srgb, var(--et-chrome-accent, var(--et-accent)) 58%, transparent);
+}
+
+.et-invite-golfer--collapsed .et-invite-golfer-cta > .et-btn.et-btn--forest:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--et-bg-surface, #fbfaf7),
+    0 0 0 4px color-mix(in srgb, var(--et-chrome-accent, var(--et-accent)) 55%, transparent);
+}
