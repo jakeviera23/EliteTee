@@ -26,9 +26,7 @@ import { DiscoverFeaturedSections } from "./discover/DiscoverFeaturedSections";
 import { DiscoverFilterDrawer } from "./discover/DiscoverFilterDrawer";
 import { DiscoverFiltersBar } from "./discover/DiscoverFiltersBar";
 import { DiscoverGeoBrowse } from "./discover/DiscoverGeoBrowse";
-import { IntroductionRequestModal } from "./IntroductionRequestModal";
 import { InviteGolfer } from "./InviteGolfer";
-import { usePortalToast } from "./PortalToastProvider";
 
 type PortalDiscoverProps = {
   onViewCourse?: (courseId: string) => void;
@@ -39,11 +37,10 @@ type PortalDiscoverProps = {
 
 export function PortalDiscover({
   onViewCourse: _onViewCourse,
-  onNavigate,
+  onNavigate: _onNavigate,
   onViewMemberProfile,
   onMessageMember,
 }: PortalDiscoverProps) {
-  const { showToast } = usePortalToast();
   const [filters, setFilters] = useState<DiscoverFilters>(DEFAULT_DISCOVER_FILTERS);
   const debouncedFilters = useDebouncedValue(filters, 250);
   const [sortBy, setSortBy] = useState<DiscoverSortOption>("most-relevant");
@@ -52,7 +49,6 @@ export function PortalDiscover({
   const [viewer, setViewer] = useState<MemberProfileRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
 
   const loadMembers = useCallback(async () => {
     setIsLoading(true);
@@ -107,14 +103,15 @@ export function PortalDiscover({
     onMessageMember(userId, member.full_name);
   }
 
-  function handleIntroductionSubmitted() {
-    showToast("Introduction request submitted");
-    onNavigate?.("introductions");
-  }
-
   function handleResetFilters() {
     setFilters(DEFAULT_DISCOVER_FILTERS);
     setSortBy("most-relevant");
+  }
+
+  function handleViewAllMembers() {
+    const target = document.getElementById("discover-results-heading");
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    target?.focus({ preventScroll: true });
   }
 
   function handleApplyGeoFilter(partial: Partial<DiscoverFilters>) {
@@ -190,8 +187,8 @@ export function PortalDiscover({
                 sections={featuredSections}
                 viewer={viewer}
                 onViewProfile={handleViewProfile}
-                onRequestIntroduction={setIntroRequestMember}
                 onMessageMember={onMessageMember ? handleMessageMember : undefined}
+                onViewAllMembers={handleViewAllMembers}
               />
               <DiscoverGeoBrowse groups={geoGroups} onApplyFilter={handleApplyGeoFilter} />
             </>
@@ -199,8 +196,12 @@ export function PortalDiscover({
 
           <section className="et-discover-results" aria-labelledby="discover-results-heading">
             <div className="et-discover-results-head">
-              <h3 id="discover-results-heading" className="et-discover-section-title">
-                {hasActiveFilters ? "Filtered members" : "All members"}
+              <h3
+                id="discover-results-heading"
+                className="et-discover-section-title"
+                tabIndex={-1}
+              >
+                {hasActiveFilters ? "Filtered members" : "All Members"}
               </h3>
               <p className="et-discover-featured-count" aria-live="polite">
                 {filteredMembers.length} result{filteredMembers.length === 1 ? "" : "s"}
@@ -224,9 +225,7 @@ export function PortalDiscover({
                     <DiscoverDirectoryCard
                       member={member}
                       viewer={viewer}
-                      showMatchReasons={sortBy === "most-relevant" && Boolean(viewer)}
                       onViewProfile={handleViewProfile}
-                      onRequestIntroduction={setIntroRequestMember}
                       onMessageMember={onMessageMember ? handleMessageMember : undefined}
                     />
                   </li>
@@ -246,14 +245,6 @@ export function PortalDiscover({
         sortBy={sortBy}
         onSortChange={setSortBy}
       />
-
-      {introRequestMember ? (
-        <IntroductionRequestModal
-          member={introRequestMember}
-          onClose={() => setIntroRequestMember(null)}
-          onSubmitted={handleIntroductionSubmitted}
-        />
-      ) : null}
     </section>
   );
 }

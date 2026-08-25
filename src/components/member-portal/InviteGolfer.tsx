@@ -13,9 +13,11 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
   const [referralUrl, setReferralUrl] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [joinedCount, setJoinedCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(variant === "full");
   const [error, setError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [expanded, setExpanded] = useState(variant === "full");
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const loadReferral = useCallback(async () => {
     setLoading(true);
@@ -40,12 +42,21 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
       setJoinedCount(statsResult.data.joinedCount);
     }
 
+    setHasLoaded(true);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    void loadReferral();
-  }, [loadReferral]);
+    if (variant === "full") {
+      void loadReferral();
+    }
+  }, [loadReferral, variant]);
+
+  useEffect(() => {
+    if (variant === "compact" && expanded && !hasLoaded) {
+      void loadReferral();
+    }
+  }, [expanded, hasLoaded, loadReferral, variant]);
 
   async function handleCopyLink() {
     if (!referralUrl) return;
@@ -89,10 +100,37 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
     }
   }
 
-  const sectionClassName =
-    variant === "compact"
-      ? "et-invite-golfer et-invite-golfer--compact et-profile-section"
-      : "et-invite-golfer et-profile-section";
+  const isCompact = variant === "compact";
+  const sectionClassName = [
+    "et-invite-golfer",
+    "et-profile-section",
+    isCompact ? "et-invite-golfer--compact" : "",
+    isCompact && !expanded ? "et-invite-golfer--collapsed" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (isCompact && !expanded) {
+    return (
+      <section className={sectionClassName} aria-labelledby="invite-golfer-heading">
+        <div className="et-invite-golfer-cta">
+          <div className="et-invite-golfer-cta-copy">
+            <h3 id="invite-golfer-heading" className="et-invite-golfer-cta-title">
+              Invite a Golfer
+            </h3>
+            <p className="et-invite-golfer-cta-lead">Know a golfer who belongs in EliteTee?</p>
+          </div>
+          <button
+            type="button"
+            className="et-btn et-btn--forest"
+            onClick={() => setExpanded(true)}
+          >
+            Invite a Golfer
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   if (loading) {
     return (
@@ -113,9 +151,16 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
         <p className="et-invite-golfer-error" role="alert">
           {error}
         </p>
-        <button type="button" className="et-btn et-btn--secondary" onClick={() => void loadReferral()}>
-          Try again
-        </button>
+        <div className="et-invite-golfer-actions">
+          <button type="button" className="et-btn et-btn--secondary" onClick={() => void loadReferral()}>
+            Try again
+          </button>
+          {isCompact ? (
+            <button type="button" className="et-btn et-btn--ghost" onClick={() => setExpanded(false)}>
+              Close
+            </button>
+          ) : null}
+        </div>
       </section>
     );
   }
@@ -127,8 +172,9 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
           Invite a Golfer
         </h3>
         <p className="et-profile-section-lead">
-          EliteTee grows through golfers you trust. Invite someone you&apos;d genuinely want to meet,
-          play with, or have in the network.
+          {isCompact
+            ? "Know a golfer who belongs in EliteTee? Share your personal invite link."
+            : "EliteTee grows through golfers you trust. Invite someone you'd genuinely want to meet, play with, or have in the network."}
         </p>
       </header>
 
@@ -156,6 +202,11 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
         >
           {sharing ? "Sharing…" : "Share"}
         </button>
+        {isCompact ? (
+          <button type="button" className="et-btn et-btn--ghost" onClick={() => setExpanded(false)}>
+            Close
+          </button>
+        ) : null}
       </div>
 
       <p className="et-invite-golfer-stats">

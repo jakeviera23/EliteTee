@@ -312,6 +312,7 @@ export function AskEliteTee({
                       member={profile}
                       viewer={null}
                       matchReasonsOverride={memberMap.get(member.user_id) ?? []}
+                      showRequestIntroduction
                       onViewProfile={handleViewProfile}
                       onRequestIntroduction={setIntroMember}
                     />

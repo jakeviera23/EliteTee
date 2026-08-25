@@ -6,16 +6,16 @@ type DiscoverFeaturedSectionsProps = {
   sections: DiscoverFeaturedSection[];
   viewer: MemberProfileRecord | null;
   onViewProfile: (member: MemberProfileRecord) => void;
-  onRequestIntroduction: (member: MemberProfileRecord) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
+  onViewAllMembers?: () => void;
 };
 
 export function DiscoverFeaturedSections({
   sections,
   viewer,
   onViewProfile,
-  onRequestIntroduction,
   onMessageMember,
+  onViewAllMembers,
 }: DiscoverFeaturedSectionsProps) {
   if (sections.length === 0) return null;
 
@@ -31,9 +31,20 @@ export function DiscoverFeaturedSections({
             <h3 id={`discover-featured-${section.id}`} className="et-discover-featured-title">
               {section.title}
             </h3>
-            <p className="et-discover-featured-count">
-              {section.members.length} member{section.members.length === 1 ? "" : "s"}
-            </p>
+            <div className="et-discover-featured-head-actions">
+              <p className="et-discover-featured-count">
+                {section.members.length} member{section.members.length === 1 ? "" : "s"}
+              </p>
+              {section.id === "new-members" && onViewAllMembers ? (
+                <button
+                  type="button"
+                  className="et-btn et-btn--ghost et-discover-view-all"
+                  onClick={onViewAllMembers}
+                >
+                  View All Members
+                </button>
+              ) : null}
+            </div>
           </div>
           <ul className="et-discover-featured-grid">
             {section.members.map((member) => (
@@ -41,9 +52,7 @@ export function DiscoverFeaturedSections({
                 <DiscoverDirectoryCard
                   member={member}
                   viewer={viewer}
-                  showMatchReasons={section.id === "suggested"}
                   onViewProfile={onViewProfile}
-                  onRequestIntroduction={onRequestIntroduction}
                   onMessageMember={onMessageMember}
                 />
               </li>

@@ -35,7 +35,7 @@ export type DiscoverFilterOptions = {
 };
 
 export type DiscoverFeaturedSection = {
-  id: "suggested" | "new-members" | "traveling-soon" | "looking-to-connect" | "founding-members";
+  id: "suggested" | "traveling-soon" | "new-members";
   title: string;
   members: MemberProfileRecord[];
 };
@@ -63,6 +63,7 @@ export const DISCOVER_SORT_LABELS: Record<DiscoverSortOption, string> = {
 };
 
 const FEATURED_SECTION_LIMIT = 6;
+const NEW_MEMBERS_SECTION_LIMIT = 4;
 
 function compareStrings(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: "base" });
@@ -421,14 +422,6 @@ export function buildFeaturedDiscoverSections(
     sections.push({ id: "suggested", title: "Suggested for You", members: suggested });
   }
 
-  const newMembers = sortDiscoverMembers(others, "recently-joined")
-    .filter((member) => member.created_at.trim() || member.updated_at.trim())
-    .slice(0, FEATURED_SECTION_LIMIT);
-
-  if (newMembers.length > 0) {
-    sections.push({ id: "new-members", title: "New Members", members: newMembers });
-  }
-
   const travelingSoon = others
     .filter((member) => member.traveling_to.trim())
     .sort((a, b) => compareStrings(a.traveling_to, b.traveling_to))
@@ -438,28 +431,12 @@ export function buildFeaturedDiscoverSections(
     sections.push({ id: "traveling-soon", title: "Traveling Soon", members: travelingSoon });
   }
 
-  const lookingToConnect = others
-    .filter((member) => member.current_request.trim())
-    .sort((a, b) => compareStrings(a.current_request, b.current_request))
-    .slice(0, FEATURED_SECTION_LIMIT);
+  const newMembers = sortDiscoverMembers(others, "recently-joined")
+    .filter((member) => member.created_at.trim() || member.updated_at.trim())
+    .slice(0, NEW_MEMBERS_SECTION_LIMIT);
 
-  if (lookingToConnect.length > 0) {
-    sections.push({
-      id: "looking-to-connect",
-      title: "Looking to Connect",
-      members: lookingToConnect,
-    });
-  }
-
-  const foundingMembers = others
-    .filter((member) => member.founding_member_number?.trim())
-    .sort((a, b) =>
-      compareStrings(a.founding_member_number ?? "", b.founding_member_number ?? ""),
-    )
-    .slice(0, FEATURED_SECTION_LIMIT);
-
-  if (foundingMembers.length > 0) {
-    sections.push({ id: "founding-members", title: "Founding Members", members: foundingMembers });
+  if (newMembers.length > 0) {
+    sections.push({ id: "new-members", title: "New Members", members: newMembers });
   }
 
   return sections;
@@ -531,9 +508,20 @@ export function formatMemberActivitySummary(updatedAt: string): string | null {
   return null;
 }
 
-export function selectInterestChips(member: MemberProfileRecord, limit = 4): string[] {
-  const combined = [...member.golf_interests, ...member.business_interests].filter(Boolean);
-  return combined.slice(0, limit);
+export function isShortDiscoverInterest(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (trimmed.length > 28) return false;
+  if (trimmed.split(/\s+/).length > 4) return false;
+  if (/[.!?]|:/.test(trimmed)) return false;
+  return true;
+}
+
+export function selectInterestChips(member: MemberProfileRecord, limit = 2): string[] {
+  const combined = [...member.golf_interests, ...member.business_interests]
+    .map((value) => value.trim())
+    .filter(isShortDiscoverInterest);
+  return [...new Set(combined)].slice(0, limit);
 }
 
 export function truncateDiscoverText(value: string, maxLength = 96): string {

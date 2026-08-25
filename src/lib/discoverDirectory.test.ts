@@ -6,6 +6,7 @@ import {
   filterDiscoverMembers,
   parseBasedInParts,
   scoreMemberRelevance,
+  selectInterestChips,
   sortDiscoverMembers,
 } from "./discoverDirectory";
 
@@ -148,11 +149,50 @@ describe("buildFeaturedDiscoverSections", () => {
     );
 
     expect(sections.map((section) => section.id)).toEqual([
-      "new-members",
       "traveling-soon",
-      "looking-to-connect",
-      "founding-members",
+      "new-members",
     ]);
+  });
+
+  it("limits new members and skips empty travel sections", () => {
+    const viewer = member({ id: "viewer", full_name: "Viewer" });
+    const members = [
+      viewer,
+      ...Array.from({ length: 8 }, (_, index) =>
+        member({
+          id: `m${index}`,
+          full_name: `Member ${index}`,
+          created_at: `2026-08-${String(20 - index).padStart(2, "0")}T12:00:00.000Z`,
+        }),
+      ),
+    ];
+
+    const sections = buildFeaturedDiscoverSections(members, viewer);
+    const newMembers = sections.find((section) => section.id === "new-members");
+
+    expect(sections.some((section) => section.id === "traveling-soon")).toBe(false);
+    expect(newMembers?.members).toHaveLength(4);
+  });
+});
+
+describe("selectInterestChips", () => {
+  it("keeps only short structured interests", () => {
+    const chips = selectInterestChips(
+      member({
+        id: "1",
+        full_name: "Golfer",
+        golf_interests: [
+          "Links",
+          "I am looking for a long-term golf travel partner across Europe",
+          "Match play",
+          "Networking: please reach out anytime",
+        ],
+        business_interests: ["Private equity", "A whole sentence about business strategy and goals"],
+      }),
+      2,
+    );
+
+    expect(chips).toEqual(["Links", "Match play"]);
   });
 });
 

@@ -815,3 +815,35 @@
 .et-invite-golfer--compact .et-profile-section-lead {
   font-size: 0.875rem;
 }
+
+.et-invite-golfer--collapsed {
+  padding-block: var(--et-space-3);
+}
+
+.et-invite-golfer-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.et-invite-golfer-cta-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.et-invite-golfer-cta-title {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: 1.15rem;
+  color: var(--et-text-primary);
+}
+
+.et-invite-golfer-cta-lead {
+  margin: 0;
+  color: var(--et-text-secondary);
+  font-size: 0.9375rem;
+}
