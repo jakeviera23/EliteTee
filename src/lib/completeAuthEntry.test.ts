@@ -6,6 +6,7 @@ import {
   resetAuthEntryInFlightForTests,
   type AuthEntryClient,
 } from "./completeAuthEntry";
+import { INVITE_ACTIVATION_RECOVERY_MESSAGE } from "./inviteCompletion";
 
 const mockSession = {
   access_token: "token",
@@ -22,15 +23,6 @@ const mockSession = {
     created_at: "2026-01-01T00:00:00.000Z",
   },
 } as Session;
-
-vi.mock("./membershipInviteRedemption", () => ({
-  tryCompleteAuthenticatedInviteRedemption: vi.fn(async () => ({
-    completed: true,
-    method: "approved_application",
-    data: { completed: true },
-    error: null,
-  })),
-}));
 
 vi.mock("./supabase", () => ({
   supabase: null,
@@ -58,13 +50,21 @@ afterEach(() => {
 });
 
 describe("completeAuthEntryFromCallback", () => {
-  it("sends confirmed sessions into the member portal", async () => {
+  it("sends activated sessions into the member portal", async () => {
     const auth = createAuth();
     const snapshot = parseAuthCallbackParams(
       "https://www.elitetee.club/#access_token=abc&type=signup",
     );
 
-    await expect(completeAuthEntryFromCallback(auth, snapshot)).resolves.toEqual({
+    await expect(
+      completeAuthEntryFromCallback(auth, snapshot, {
+        finishInviteActivationAfterAuth: vi.fn(async () => ({
+          ok: true as const,
+          reason: "completed" as const,
+          redemption: null,
+        })),
+      }),
+    ).resolves.toEqual({
       kind: "portal",
     });
   });
@@ -75,7 +75,11 @@ describe("completeAuthEntryFromCallback", () => {
       "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
     );
 
-    await expect(completeAuthEntryFromCallback(auth, snapshot)).resolves.toEqual({
+    await expect(
+      completeAuthEntryFromCallback(auth, snapshot, {
+        finishInviteActivationAfterAuth: vi.fn(),
+      }),
+    ).resolves.toEqual({
       kind: "recovery",
     });
   });
@@ -90,7 +94,13 @@ describe("completeAuthEntryFromCallback", () => {
       "https://www.elitetee.club/auth/callback?token_hash=hash123&type=signup",
     );
 
-    await completeAuthEntryFromCallback(auth, snapshot);
+    await completeAuthEntryFromCallback(auth, snapshot, {
+      finishInviteActivationAfterAuth: vi.fn(async () => ({
+        ok: true as const,
+        reason: "already_active" as const,
+        redemption: null,
+      })),
+    });
 
     expect(verifyOtp).toHaveBeenCalledWith({
       token_hash: "hash123",
@@ -112,6 +122,27 @@ describe("completeAuthEntryFromCallback", () => {
     await expect(completeAuthEntryFromCallback(auth, snapshot)).resolves.toEqual({
       kind: "login_error",
       message: AUTH_CALLBACK_EXPIRED_MESSAGE,
+    });
+  });
+
+  it("does not route unactivated confirmed users into the portal", async () => {
+    const auth = createAuth();
+    const snapshot = parseAuthCallbackParams(
+      "https://www.elitetee.club/auth/callback#access_token=abc&type=signup",
+    );
+
+    await expect(
+      completeAuthEntryFromCallback(auth, snapshot, {
+        finishInviteActivationAfterAuth: vi.fn(async () => ({
+          ok: false as const,
+          reason: "redemption_failed" as const,
+          message: INVITE_ACTIVATION_RECOVERY_MESSAGE,
+          redemption: null,
+        })),
+      }),
+    ).resolves.toEqual({
+      kind: "login_error",
+      message: INVITE_ACTIVATION_RECOVERY_MESSAGE,
     });
   });
 });

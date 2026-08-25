@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { isAdminEmail } from "../lib/admin";
+import { INVITE_ACTIVATION_RECOVERY_MESSAGE } from "../lib/inviteCompletion";
 import { fetchMemberPortalAccess } from "../lib/memberProfiles";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { RouteLoading } from "./RouteLoading";
@@ -76,14 +77,16 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     return (
       <div className="portal-access-pending">
         <div className="portal-access-pending-card">
-          <h1>Portal access pending</h1>
-          <p>
-            Your login is active, but portal access has not been enabled yet. Founding Member
-            approvals are reviewed individually — you will receive an invitation when approved.
-          </p>
-          <a href="/login" className="portal-btn portal-btn--gold">
-            Return to sign in
-          </a>
+          <h1>Finish your invitation</h1>
+          <p>{INVITE_ACTIVATION_RECOVERY_MESSAGE}</p>
+          <div className="portal-access-pending-actions">
+            <Link to="/login" className="portal-btn portal-btn--gold">
+              Return to sign in
+            </Link>
+            <a href="mailto:membership@elitetee.club" className="portal-btn portal-btn--outline">
+              Contact membership
+            </a>
+          </div>
         </div>
       </div>
     );

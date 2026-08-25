@@ -6,12 +6,15 @@ import {
 } from "../lib/membershipInvites";
 import {
   storePendingInviteToken,
-  tryCompleteAuthenticatedInviteRedemption,
 } from "../lib/membershipInviteRedemption";
+import { finishInviteActivationAfterAuth } from "../lib/inviteCompletion";
 import {
   establishInviteSignupSession,
-  mapInviteSignupCompletionError,
+  INVITE_SIGNUP_SIGN_IN_TO_FINISH_LEAD,
+  INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE,
   resendInviteSignupVerification,
+  signInInviteSession,
+  toInviteSignupSignInUiState,
   toInviteSignupUiState,
   validateInviteSignupForm,
   type InviteSignupUiState,
@@ -138,8 +141,8 @@ export function InviteSignup() {
       if (sessionEmail !== invite.email.trim().toLowerCase()) return;
 
       void (async () => {
-        const result = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
-        if (!result.completed) return;
+        const activation = await finishInviteActivationAfterAuth({ inviteToken: token });
+        if (!activation.ok) return;
 
         clearLegacySharedProfileExtras();
         navigate("/member-portal", { replace: true });
@@ -166,12 +169,12 @@ export function InviteSignup() {
       const sessionEmail = session.user.email.trim().toLowerCase();
       if (sessionEmail !== invite.email.trim().toLowerCase()) return;
 
-      const result = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
+      const activation = await finishInviteActivationAfterAuth({ inviteToken: token });
       if (!active) return;
 
-      if (!result.completed) {
-        if (result.error && import.meta.env.DEV) {
-          console.error("[InviteSignup] invite redemption failed", result.error);
+      if (!activation.ok) {
+        if (activation.redemption?.error && import.meta.env.DEV) {
+          console.error("[InviteSignup] invite redemption failed", activation.redemption.error);
         }
         return;
       }
@@ -225,6 +228,92 @@ export function InviteSignup() {
     }
   }
 
+  async function completeInviteAfterSession(normalizedEmail: string) {
+    const activation = await finishInviteActivationAfterAuth({ inviteToken: token });
+    if (!activation.ok) {
+      setUiState({
+        kind: "activation_recovery",
+        message: activation.message,
+      });
+      setSubmitError(activation.message);
+      return false;
+    }
+
+    clearLegacySharedProfileExtras();
+
+    const {
+      data: { user },
+    } = await supabase!.auth.getUser();
+
+    if (user?.id && invite?.handicap?.trim()) {
+      const { data: profile } = await fetchOwnMemberProfile();
+      if (profile) {
+        await updateOwnMemberProfile({
+          ...memberProfileToSelfUpdate(profile),
+          handicap: invite.handicap.trim(),
+        });
+      }
+    }
+
+    if (import.meta.env.DEV) {
+      console.info("[InviteSignup] invite redeemed for member profile", {
+        email: normalizedEmail,
+        foundingMemberNumber: invite?.founding_member_number,
+      });
+    }
+
+    navigate("/member-portal", { replace: true });
+    return true;
+  }
+
+  async function handleSignInToFinish(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitError(null);
+    setSubmitInfo(null);
+
+    if (!invite || !isSupabaseConfigured || !supabase) {
+      setSubmitError("Account setup is temporarily unavailable. Please try again later.");
+      return;
+    }
+
+    if (sessionConflict) {
+      setSubmitError(
+        inviteSignupSessionConflictMessage(
+          sessionConflict.signedInEmail,
+          sessionConflict.inviteEmail,
+        ),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      setSubmitError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    storePendingInviteToken(token);
+
+    try {
+      const authResult = await signInInviteSession(
+        supabase.auth,
+        invite.email.trim().toLowerCase(),
+        password,
+      );
+
+      if (authResult.status !== "session") {
+        setSubmitError(authResult.message);
+        return;
+      }
+
+      await completeInviteAfterSession(invite.email.trim().toLowerCase());
+    } catch {
+      setSubmitError("We couldn't finish setting up your account. Please try again in a moment.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
@@ -271,42 +360,22 @@ export function InviteSignup() {
       );
 
       if (authResult.status === "session") {
-        const redemption = await tryCompleteAuthenticatedInviteRedemption({ inviteToken: token });
-        if (!redemption.completed) {
-          setSubmitError(mapInviteSignupCompletionError(redemption.error));
-          return;
-        }
-
-        clearLegacySharedProfileExtras();
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user?.id && invite.handicap?.trim()) {
-          const { data: profile } = await fetchOwnMemberProfile();
-          if (profile) {
-            await updateOwnMemberProfile({
-              ...memberProfileToSelfUpdate(profile),
-              handicap: invite.handicap.trim(),
-            });
-          }
-        }
-
-        if (import.meta.env.DEV) {
-          console.info("[InviteSignup] invite redeemed for member profile", {
-            email: validation.normalizedEmail,
-            foundingMemberNumber: invite.founding_member_number,
-          });
-        }
-
-        navigate("/member-portal", { replace: true });
+        const finished = await completeInviteAfterSession(validation.normalizedEmail);
+        if (!finished) return;
         return;
       }
 
-      if (authResult.status === "pending_verification" || authResult.status === "account_exists") {
+      if (authResult.status === "pending_verification") {
         setUiState(toInviteSignupUiState(authResult));
         setSubmitInfo(authResult.message);
+        return;
+      }
+
+      if (authResult.status === "account_exists") {
+        setUiState(toInviteSignupUiState(authResult));
+        setSubmitInfo(authResult.message);
+        setPassword("");
+        setConfirmPassword("");
         return;
       }
 
@@ -318,7 +387,10 @@ export function InviteSignup() {
     }
   }
 
-  const showFollowUpActions = uiState.kind !== "form";
+  const showPendingVerification = uiState.kind === "pending_verification";
+  const showSignInToFinish =
+    uiState.kind === "sign_in_to_finish" || uiState.kind === "activation_recovery";
+  const showFollowUpActions = showPendingVerification;
 
   return (
     <div className="inside-page invite-page">
@@ -372,22 +444,20 @@ export function InviteSignup() {
                   ) : null}
 
                   <div className="invite-actions">
-                    <Link to="/login" className="portal-btn portal-btn--gold invite-action-link">
-                      Sign in
-                    </Link>
+                    <button
+                      type="button"
+                      className="portal-btn portal-btn--gold invite-action-button"
+                      onClick={() => {
+                        setUiState(toInviteSignupSignInUiState());
+                        setSubmitInfo(null);
+                        setSubmitError(null);
+                        setPassword("");
+                      }}
+                    >
+                      {INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE}
+                    </button>
 
                     {uiState.kind === "pending_verification" && uiState.canResend ? (
-                      <button
-                        type="button"
-                        className="portal-btn portal-btn--outline invite-action-button"
-                        onClick={() => void handleResendVerification()}
-                        disabled={isResending}
-                      >
-                        {isResending ? "Sending verification email..." : "Resend verification email"}
-                      </button>
-                    ) : null}
-
-                    {uiState.kind === "account_exists" ? (
                       <button
                         type="button"
                         className="portal-btn portal-btn--outline invite-action-button"
@@ -403,6 +473,67 @@ export function InviteSignup() {
                     Do not create another account with the same email. The confirmation link opens
                     EliteTee and finishes your invitation. If that link has expired, sign in with the
                     password you just created.
+                  </p>
+                </div>
+              ) : showSignInToFinish ? (
+                <div className="invite-followup">
+                  <h2 className="invite-access-title">{INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE}</h2>
+                  <p className="invite-lead">{INVITE_SIGNUP_SIGN_IN_TO_FINISH_LEAD}</p>
+
+                  {submitInfo ? (
+                    <p className="invite-info" role="status">
+                      {submitInfo}
+                    </p>
+                  ) : null}
+
+                  <form className="invite-form" onSubmit={handleSignInToFinish}>
+                    <label className="invite-field">
+                      <span>Email</span>
+                      <input type="email" value={email} autoComplete="email" required readOnly />
+                    </label>
+
+                    <label className="invite-field">
+                      <span>Password</span>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        autoComplete="current-password"
+                        minLength={8}
+                        required
+                      />
+                    </label>
+
+                    {submitError ? (
+                      <p className="invite-error" role="alert">
+                        {submitError}
+                      </p>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      className="portal-btn portal-btn--gold invite-submit"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Finishing setup..." : INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE}
+                    </button>
+                  </form>
+
+                  <div className="invite-actions">
+                    <Link to="/login" className="portal-btn portal-btn--outline invite-action-link">
+                      Reset password / sign in
+                    </Link>
+                    <a
+                      href="mailto:membership@elitetee.club"
+                      className="portal-btn portal-btn--outline invite-action-link"
+                    >
+                      Contact membership
+                    </a>
+                  </div>
+
+                  <p className="invite-note">
+                    Do not create another account with the same email. If you forgot your password,
+                    use reset password, then return to this invitation link.
                   </p>
                 </div>
               ) : sessionConflict ? (
@@ -495,8 +626,21 @@ export function InviteSignup() {
                   </button>
 
                   <p className="invite-note invite-note--center">
-                    Already confirmed your email?{" "}
-                    <Link to="/login">Sign in</Link>.
+                    Already have an EliteTee account for this email?{" "}
+                    <button
+                      type="button"
+                      className="invite-inline-link"
+                      onClick={() => {
+                        setUiState(toInviteSignupSignInUiState());
+                        setSubmitInfo(null);
+                        setSubmitError(null);
+                        setPassword("");
+                        setConfirmPassword("");
+                      }}
+                    >
+                      Sign in to finish setup
+                    </button>
+                    .
                   </p>
                 </form>
               )}

@@ -13,7 +13,7 @@ import {
   whyEliteTee,
 } from "../data/insidePreview";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-import { tryCompleteAuthenticatedInviteRedemption } from "../lib/membershipInviteRedemption";
+import { finishInviteActivationAfterAuth } from "../lib/inviteCompletion";
 import { getEmailRedirectTo } from "../lib/siteUrl";
 import "../inside-elitetee.css";
 
@@ -130,8 +130,13 @@ export function InsideEliteTee() {
 
       if (event === "SIGNED_IN" && session && !expectsRecovery && !loginState?.recoveryVerified) {
         void (async () => {
-          await tryCompleteAuthenticatedInviteRedemption();
-          if (active) navigate("/member-portal", { replace: true });
+          const activation = await finishInviteActivationAfterAuth();
+          if (!active) return;
+          if (activation.ok) {
+            navigate("/member-portal", { replace: true });
+            return;
+          }
+          setLoginError(activation.message);
         })();
       }
     });
@@ -152,8 +157,13 @@ export function InsideEliteTee() {
       }
 
       if (sessionData.session) {
-        await tryCompleteAuthenticatedInviteRedemption();
-        if (active) navigate("/member-portal", { replace: true });
+        const activation = await finishInviteActivationAfterAuth();
+        if (!active) return;
+        if (activation.ok) {
+          navigate("/member-portal", { replace: true });
+          return;
+        }
+        setLoginError(activation.message);
       }
     });
 
@@ -206,7 +216,11 @@ export function InsideEliteTee() {
         return;
       }
 
-      await tryCompleteAuthenticatedInviteRedemption();
+      const activation = await finishInviteActivationAfterAuth();
+      if (!activation.ok) {
+        setLoginError(activation.message);
+        return;
+      }
 
       navigate("/member-portal", { replace: true });
     } catch (error) {
@@ -284,11 +298,22 @@ export function InsideEliteTee() {
         return;
       }
 
+      const activation = await finishInviteActivationAfterAuth();
+      if (activation.ok) {
+        navigate("/member-portal", { replace: true });
+        return;
+      }
+
       await supabase.auth.signOut();
       setPassword("");
       setConfirmPassword("");
       setAccessMode("sign-in");
-      setAccessMessage("Password updated. Sign in with your new password.");
+      setAccessMessage(
+        "Password updated. Sign in with your new password to finish enabling portal access.",
+      );
+      if (activation.message) {
+        setLoginError(activation.message);
+      }
       navigate("/login", { replace: true });
     } catch {
       setLoginError("We couldn't update your password. Request a new secure link and try again.");

@@ -7,7 +7,12 @@ export const INVITE_SIGNUP_PENDING_VERIFICATION_MESSAGE =
   "Your account was created. Open the confirmation email we just sent — that link will take you into EliteTee.";
 
 export const INVITE_SIGNUP_ACCOUNT_EXISTS_MESSAGE =
-  "An account already exists for this email. Sign in instead, or resend the verification email if you have not confirmed your address yet.";
+  "An EliteTee account already exists for this email. Sign in to finish setup — do not create another account.";
+
+export const INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE = "Sign in to finish setup";
+
+export const INVITE_SIGNUP_SIGN_IN_TO_FINISH_LEAD =
+  "Use the password for your existing EliteTee account. We will finish linking this invitation and open the member portal.";
 
 export const INVITE_SIGNUP_PASSWORD_MISMATCH_MESSAGE = "Passwords do not match.";
 
@@ -53,6 +58,14 @@ export type InviteSignupUiState =
     }
   | {
       kind: "account_exists";
+      message: string;
+    }
+  | {
+      kind: "sign_in_to_finish";
+      message: string;
+    }
+  | {
+      kind: "activation_recovery";
       message: string;
     };
 
@@ -211,12 +224,48 @@ export function toInviteSignupUiState(result: InviteSignupAuthResult): InviteSig
 
   if (result.status === "account_exists") {
     return {
-      kind: "account_exists",
+      kind: "sign_in_to_finish",
       message: result.message,
     };
   }
 
   return { kind: "form" };
+}
+
+export function toInviteSignupSignInUiState(message?: string): InviteSignupUiState {
+  return {
+    kind: "sign_in_to_finish",
+    message: message ?? INVITE_SIGNUP_ACCOUNT_EXISTS_MESSAGE,
+  };
+}
+
+export async function signInInviteSession(
+  auth: Pick<InviteSignupAuthClient, "signInWithPassword">,
+  email: string,
+  password: string,
+): Promise<InviteSignupAuthResult> {
+  const signIn = await auth.signInWithPassword({ email, password });
+
+  if (signIn.data.session) {
+    return { status: "session", session: signIn.data.session };
+  }
+
+  if (signIn.error) {
+    logInviteSignupDevError("signInWithPassword", signIn.error);
+  }
+
+  const message = getAuthErrorMessage(signIn.error).toLowerCase();
+  if (message.includes("invalid login credentials") || message.includes("invalid credentials")) {
+    return {
+      status: "error",
+      message: "The email or password is incorrect. Please try again or reset your password.",
+    };
+  }
+
+  return {
+    status: "error",
+    message: mapInviteSignupAuthError(signIn.error),
+  };
 }
 
 export async function establishInviteSignupSession(

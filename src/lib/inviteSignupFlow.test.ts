@@ -5,6 +5,8 @@ import {
   INVITE_SIGNUP_PASSWORD_MISMATCH_MESSAGE,
   establishInviteSignupSession,
   isEmailRateLimitError,
+  signInInviteSession,
+  toInviteSignupUiState,
   validateInviteSignupForm,
   type InviteSignupAuthClient,
 } from "./inviteSignupFlow";
@@ -155,6 +157,52 @@ describe("establishInviteSignupSession", () => {
       status: "account_exists",
       message: INVITE_SIGNUP_ACCOUNT_EXISTS_MESSAGE,
     });
+  });
+});
+
+describe("toInviteSignupUiState", () => {
+  it("maps account_exists into Sign in to finish setup", () => {
+    expect(
+      toInviteSignupUiState({
+        status: "account_exists",
+        message: INVITE_SIGNUP_ACCOUNT_EXISTS_MESSAGE,
+      }),
+    ).toEqual({
+      kind: "sign_in_to_finish",
+      message: INVITE_SIGNUP_ACCOUNT_EXISTS_MESSAGE,
+    });
+  });
+});
+
+describe("signInInviteSession", () => {
+  it("returns a session for correct credentials on an existing Auth account", async () => {
+    const auth = createAuthClient({
+      signInWithPassword: vi.fn(async () => ({
+        data: { session: mockSession },
+        error: null,
+      })),
+    });
+
+    await expect(signInInviteSession(auth, "weskpatt@gmail.com", "password123")).resolves.toEqual({
+      status: "session",
+      session: mockSession,
+    });
+  });
+
+  it("keeps wrong-password users on the invite page without inventing success", async () => {
+    const auth = createAuthClient({
+      signInWithPassword: vi.fn(async () => ({
+        data: { session: null },
+        error: { message: "Invalid login credentials" },
+      })),
+    });
+
+    await expect(signInInviteSession(auth, "weskpatt@gmail.com", "wrong-password")).resolves.toEqual(
+      {
+        status: "error",
+        message: "The email or password is incorrect. Please try again or reset your password.",
+      },
+    );
   });
 });
 

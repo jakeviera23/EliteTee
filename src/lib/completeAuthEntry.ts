@@ -8,7 +8,7 @@ import {
   isPasswordRecoveryCallback,
   type AuthCallbackParams,
 } from "./authCallbackParams";
-import { tryCompleteAuthenticatedInviteRedemption } from "./membershipInviteRedemption";
+import { finishInviteActivationAfterAuth, type InviteActivationResult } from "./inviteCompletion";
 import { supabase } from "./supabase";
 
 export type AuthEntryResult =
@@ -31,6 +31,12 @@ export type AuthEntryClient = {
   }>;
 };
 
+export type AuthEntryActivation = {
+  finishInviteActivationAfterAuth: (
+    options?: { inviteToken?: string },
+  ) => Promise<InviteActivationResult>;
+};
+
 let inFlight: Promise<AuthEntryResult> | null = null;
 
 function asAuthEntryClient(): AuthEntryClient | null {
@@ -38,12 +44,17 @@ function asAuthEntryClient(): AuthEntryClient | null {
   return supabase.auth;
 }
 
+const defaultActivation: AuthEntryActivation = {
+  finishInviteActivationAfterAuth,
+};
+
 export async function completeAuthEntryFromCallback(
   auth: AuthEntryClient | null = asAuthEntryClient(),
   snapshot: AuthCallbackParams | null = getCapturedAuthCallback(),
+  activation: AuthEntryActivation = defaultActivation,
 ): Promise<AuthEntryResult> {
   if (!inFlight) {
-    inFlight = runCompleteAuthEntry(auth, snapshot);
+    inFlight = runCompleteAuthEntry(auth, snapshot, activation);
   }
   return inFlight;
 }
@@ -55,6 +66,7 @@ export function resetAuthEntryInFlightForTests() {
 async function runCompleteAuthEntry(
   auth: AuthEntryClient | null,
   snapshot: AuthCallbackParams | null,
+  activation: AuthEntryActivation,
 ): Promise<AuthEntryResult> {
   if (!snapshot || !hasAuthCallbackWork(snapshot)) {
     return { kind: "none" };
@@ -96,8 +108,15 @@ async function runCompleteAuthEntry(
   }
 
   if (data.session) {
-    await tryCompleteAuthenticatedInviteRedemption();
-    return { kind: "portal" };
+    const result = await activation.finishInviteActivationAfterAuth();
+    if (result.ok) {
+      return { kind: "portal" };
+    }
+
+    return {
+      kind: "login_error",
+      message: result.message,
+    };
   }
 
   return {

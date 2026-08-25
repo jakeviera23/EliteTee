@@ -8071,6 +8071,13 @@
   color: var(--portal-muted);
 }
 
+.portal-access-pending-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
 @media (max-width: 767px) {
   .admin-applications-table .admin-application-actions {
     flex-direction: column;

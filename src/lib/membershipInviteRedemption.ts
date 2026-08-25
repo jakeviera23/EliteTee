@@ -63,16 +63,25 @@ export function didCompleteInviteRedemption(data: unknown): boolean {
   );
 }
 
+export type InviteRedemptionMethod = "invite_token" | "approved_application";
+
+export type InviteRedemptionResult = {
+  completed: boolean;
+  method: InviteRedemptionMethod;
+  data: unknown;
+  error: { message?: string } | null;
+};
+
 export async function tryCompleteAuthenticatedInviteRedemption(options?: {
   inviteToken?: string;
-}) {
+}): Promise<InviteRedemptionResult> {
   const explicitToken = options?.inviteToken?.trim() || readPendingInviteToken();
 
   if (explicitToken) {
     const { data, error } = await completeMembershipInvite(explicitToken);
     if (!error && didCompleteInviteRedemption(data)) {
       clearPendingInviteToken();
-      return { completed: true, method: "invite_token" as const, data, error: null };
+      return { completed: true, method: "invite_token", data, error: null };
     }
 
     if (error) {
@@ -83,7 +92,7 @@ export async function tryCompleteAuthenticatedInviteRedemption(options?: {
         message.includes("invalid or already used");
 
       if (!alreadyUsed) {
-        return { completed: false, method: "invite_token" as const, data: null, error };
+        return { completed: false, method: "invite_token", data: null, error };
       }
     }
   }
@@ -91,12 +100,12 @@ export async function tryCompleteAuthenticatedInviteRedemption(options?: {
   const { data, error } = await completePendingMembershipInviteForUser();
   if (!error && didCompleteInviteRedemption(data)) {
     clearPendingInviteToken();
-    return { completed: true, method: "approved_application" as const, data, error: null };
+    return { completed: true, method: "approved_application", data, error: null };
   }
 
   return {
     completed: false,
-    method: explicitToken ? ("invite_token" as const) : ("approved_application" as const),
+    method: explicitToken ? "invite_token" : "approved_application",
     data,
     error,
   };

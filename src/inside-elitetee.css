@@ -818,6 +818,25 @@
   text-align: center;
 }
 
+.invite-inline-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--inside-gold, #c4a35a);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.invite-access-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 1.35rem;
+  color: var(--inside-heading, inherit);
+}
+
 .invite-submit,
 .invite-back-link {
   width: 100%;
