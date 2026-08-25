@@ -459,6 +459,8 @@ export function FeedCard({
         <FeedCardHeroMedia
           photos={photoRecords}
           mediaItems={post.mediaItems}
+          memberCourseRoundId={post.memberCourseRoundId}
+          totalPhotoCount={post.roundPhotoCount}
           imageAlt={post.imageAlt}
           rating={isCourseRound ? (ratingDisplay ? post.rating : undefined) : undefined}
           maxRating={MAX_RATING}

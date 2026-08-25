@@ -7,6 +7,7 @@ import type { FeedMediaItem } from "../data/portalSocial";
 import {
   orderPhotosWithCoverFirst,
   photoUrlsFromOrderedPhotos,
+  pickListCoverPhoto,
 } from "./courseRoundCoverPhoto";
 import type { ProcessedCourseRoundImage } from "./courseRoundImageProcessing";
 import { processCourseRoundImage } from "./courseRoundImageProcessing";
@@ -149,6 +150,156 @@ export async function attachSignedUrls(photos: MemberCourseRoundPhotoRecord[]) {
   );
 
   return withUrls;
+}
+
+export async function fetchListCoverPhotosForRoundIds(roundIds: string[]) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  if (roundIds.length === 0) {
+    return { data: new Map<string, MemberCourseRoundPhotoRecord[]>(), error: null };
+  }
+
+  const { data: coverPhotoIdsByRoundId, error: coverError } =
+    await fetchCoverPhotoIdsForRoundIds(roundIds);
+  if (coverError) {
+    return { data: null, error: coverError };
+  }
+
+  const coverMap = coverPhotoIdsByRoundId ?? new Map<string, string | null>();
+  const explicitCoverIds = [
+    ...new Set(
+      roundIds
+        .map((roundId) => coverMap.get(roundId))
+        .filter((photoId): photoId is string => Boolean(photoId)),
+    ),
+  ];
+
+  let coverPhotosById = new Map<string, MemberCourseRoundPhotoRecord>();
+  if (explicitCoverIds.length > 0) {
+    const { data, error } = await supabase
+      .from("member_course_round_photos")
+      .select(PHOTO_SELECT)
+      .in("id", explicitCoverIds)
+      .eq("moderation_status", "active")
+      .is("hidden_at", null);
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    coverPhotosById = new Map(
+      (data ?? []).map((row) => {
+        const photo = normalizePhoto(row as Record<string, unknown>);
+        return [photo.id, photo] as const;
+      }),
+    );
+  }
+
+  const coverPhotoByRoundId = new Map<string, MemberCourseRoundPhotoRecord>();
+  for (const roundId of roundIds) {
+    const coverId = coverMap.get(roundId);
+    if (!coverId) continue;
+    const photo = coverPhotosById.get(coverId);
+    if (photo) {
+      coverPhotoByRoundId.set(roundId, photo);
+    }
+  }
+
+  const roundsNeedingFallback = roundIds.filter((roundId) => !coverPhotoByRoundId.has(roundId));
+  const fallbackPhotoByRoundId = new Map<string, MemberCourseRoundPhotoRecord>();
+
+  if (roundsNeedingFallback.length > 0) {
+    const { data, error } = await supabase
+      .from("member_course_round_photos")
+      .select(PHOTO_SELECT)
+      .in("member_course_round_id", roundsNeedingFallback)
+      .eq("moderation_status", "active")
+      .is("hidden_at", null)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    const photosByRoundId = new Map<string, MemberCourseRoundPhotoRecord[]>();
+    for (const row of data ?? []) {
+      const photo = normalizePhoto(row as Record<string, unknown>);
+      const existing = photosByRoundId.get(photo.member_course_round_id) ?? [];
+      existing.push(photo);
+      photosByRoundId.set(photo.member_course_round_id, existing);
+    }
+
+    for (const roundId of roundsNeedingFallback) {
+      const roundPhotos = photosByRoundId.get(roundId) ?? [];
+      const picked = pickListCoverPhoto(roundPhotos, null);
+      if (picked) {
+        fallbackPhotoByRoundId.set(roundId, picked);
+      }
+    }
+  }
+
+  const photosToSign: MemberCourseRoundPhotoRecord[] = [];
+  for (const roundId of roundIds) {
+    const photo = coverPhotoByRoundId.get(roundId) ?? fallbackPhotoByRoundId.get(roundId);
+    if (photo) {
+      photosToSign.push(photo);
+    }
+  }
+
+  const signedPhotos = await attachSignedUrls(photosToSign);
+  const signedById = new Map(signedPhotos.map((photo) => [photo.id, photo]));
+  const result = new Map<string, MemberCourseRoundPhotoRecord[]>();
+
+  for (const roundId of roundIds) {
+    const photo = coverPhotoByRoundId.get(roundId) ?? fallbackPhotoByRoundId.get(roundId);
+    if (!photo) {
+      result.set(roundId, []);
+      continue;
+    }
+
+    const signedPhoto = signedById.get(photo.id);
+    const hasDisplayUrl = Boolean(signedPhoto?.signed_url || signedPhoto?.poster_signed_url);
+    result.set(roundId, hasDisplayUrl && signedPhoto ? [signedPhoto] : []);
+  }
+
+  return { data: result, error: null };
+}
+
+export async function fetchActivePhotoCountsForRoundIds(roundIds: string[]) {
+  if (!supabase) {
+    return { data: null, error: new Error("Supabase is not configured.") };
+  }
+
+  if (roundIds.length === 0) {
+    return { data: new Map<string, number>(), error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("member_course_round_photos")
+    .select("id, member_course_round_id")
+    .in("member_course_round_id", roundIds)
+    .eq("moderation_status", "active")
+    .is("hidden_at", null);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const countsByRoundId = new Map<string, number>();
+  for (const roundId of roundIds) {
+    countsByRoundId.set(roundId, 0);
+  }
+
+  for (const row of data ?? []) {
+    const roundId = String(row.member_course_round_id ?? "");
+    if (!roundId) continue;
+    countsByRoundId.set(roundId, (countsByRoundId.get(roundId) ?? 0) + 1);
+  }
+
+  return { data: countsByRoundId, error: null };
 }
 
 export async function fetchPhotosForRoundIds(roundIds: string[]) {

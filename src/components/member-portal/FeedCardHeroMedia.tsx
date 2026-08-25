@@ -1,13 +1,21 @@
 import { useMemo, useState } from "react";
 import type { FeedMediaItem } from "../../data/portalSocial";
 import type { MemberCourseRoundPhotoRecord } from "../../types/memberCourseRoundPhoto";
+import { feedListPhotoMoreCount, orderPhotosWithCoverFirst } from "../../lib/courseRoundCoverPhoto";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
-import { isRoundMediaVideo } from "../../lib/memberCourseRoundPhotos";
+import {
+  buildRoundMediaItems,
+  fetchCoverPhotoIdsForRoundIds,
+  fetchPhotosForRoundIds,
+  isRoundMediaVideo,
+} from "../../lib/memberCourseRoundPhotos";
 import { RoundPhotoLightbox } from "./RoundPhotoLightbox";
 
 type FeedCardHeroMediaProps = {
   photos?: MemberCourseRoundPhotoRecord[];
   mediaItems?: FeedMediaItem[];
+  memberCourseRoundId?: string;
+  totalPhotoCount?: number;
   imageAlt?: string;
   rating?: number;
   maxRating?: number;
@@ -33,31 +41,8 @@ function toMediaItems(
     }));
 }
 
-export function FeedCardHeroMedia({
-  photos,
-  mediaItems,
-  imageAlt = "Post photo",
-  rating,
-  maxRating = 10,
-  variant = "hero",
-}: FeedCardHeroMediaProps) {
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
-  const visibleMedia = useMemo(() => toMediaItems(photos, mediaItems), [photos, mediaItems]);
-
-  const ratingDisplay = formatCourseRatingDisplay(rating);
-
-  if (visibleMedia.length === 0) {
-    return null;
-  }
-
-  const lead = visibleMedia[0];
-  const extraCount = visibleMedia.length - 1;
-  const showThumbStrip = extraCount > 0 && extraCount <= 3;
-  const thumbMedia = showThumbStrip ? visibleMedia.slice(1) : [];
-  const showOverflowOnLead = extraCount > 3;
-
-  const lightboxPhotos: MemberCourseRoundPhotoRecord[] = visibleMedia.map((item, index) => ({
+function mediaItemsToLightboxPhotos(items: FeedMediaItem[]): MemberCourseRoundPhotoRecord[] {
+  return items.map((item, index) => ({
     id: item.id,
     member_course_round_id: "",
     user_id: "",
@@ -72,9 +57,63 @@ export function FeedCardHeroMedia({
     mime_type: item.mimeType,
     poster_signed_url: item.posterUrl,
   }));
+}
 
-  function openLightbox(index: number) {
+export function FeedCardHeroMedia({
+  photos,
+  mediaItems,
+  memberCourseRoundId,
+  totalPhotoCount,
+  imageAlt = "Post photo",
+  rating,
+  maxRating = 10,
+  variant = "hero",
+}: FeedCardHeroMediaProps) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [galleryMedia, setGalleryMedia] = useState<FeedMediaItem[] | null>(null);
+
+  const visibleMedia = useMemo(() => toMediaItems(photos, mediaItems), [photos, mediaItems]);
+  const lightboxMedia = galleryMedia ?? visibleMedia;
+  const lightboxPhotos = useMemo(
+    () => mediaItemsToLightboxPhotos(lightboxMedia),
+    [lightboxMedia],
+  );
+
+  const galleryPhotoCount = totalPhotoCount ?? visibleMedia.length;
+  const moreCount = feedListPhotoMoreCount(galleryPhotoCount);
+  const showMoreBadge = moreCount !== null && visibleMedia.length <= 1;
+
+  const ratingDisplay = formatCourseRatingDisplay(rating);
+
+  if (visibleMedia.length === 0) {
+    return null;
+  }
+
+  const lead = visibleMedia[0];
+  const extraCount = visibleMedia.length - 1;
+  const showThumbStrip = extraCount > 0 && extraCount <= 3;
+  const thumbMedia = showThumbStrip ? visibleMedia.slice(1) : [];
+
+  async function openLightbox(index: number) {
     setLightboxIndex(index);
+
+    const roundId = memberCourseRoundId?.trim();
+    if (!roundId) return;
+
+    const [{ data: photosForRound }, { data: coverPhotoIds }] = await Promise.all([
+      fetchPhotosForRoundIds([roundId]),
+      fetchCoverPhotoIdsForRoundIds([roundId]),
+    ]);
+
+    const ordered = orderPhotosWithCoverFirst(
+      photosForRound ?? [],
+      coverPhotoIds?.get(roundId),
+    );
+    setGalleryMedia(buildRoundMediaItems(ordered, coverPhotoIds?.get(roundId)));
+  }
+
+  function closeLightbox() {
+    setLightboxIndex(null);
   }
 
   return (
@@ -87,15 +126,15 @@ export function FeedCardHeroMedia({
         <button
           type="button"
           className="feed-card-hero-lead"
-          onClick={() => openLightbox(0)}
+          onClick={() => void openLightbox(0)}
           aria-label={
             lead.kind === "video"
-              ? extraCount > 0
-                ? `Play video 1 of ${visibleMedia.length}. ${extraCount} more media available.`
+              ? galleryPhotoCount > 1
+                ? `Play video 1 of ${galleryPhotoCount}. ${galleryPhotoCount - 1} more media available.`
                 : "Play video"
-              : extraCount > 0
-                ? `View photo 1 of ${visibleMedia.length}. ${extraCount} more photo${
-                    extraCount === 1 ? "" : "s"
+              : galleryPhotoCount > 1
+                ? `View photo 1 of ${galleryPhotoCount}. ${galleryPhotoCount - 1} more photo${
+                    galleryPhotoCount - 1 === 1 ? "" : "s"
                   } available.`
                 : "View photo"
           }
@@ -120,9 +159,9 @@ export function FeedCardHeroMedia({
             />
           )}
           <span className="feed-card-hero-scrim" aria-hidden="true" />
-          {showOverflowOnLead ? (
+          {showMoreBadge ? (
             <span className="feed-card-hero-more" aria-hidden="true">
-              +{extraCount}
+              +{moreCount}
             </span>
           ) : null}
           {variant === "hero" && ratingDisplay ? (
@@ -146,7 +185,7 @@ export function FeedCardHeroMedia({
                   type="button"
                   role="listitem"
                   className="feed-card-hero-thumb"
-                  onClick={() => openLightbox(photoIndex)}
+                  onClick={() => void openLightbox(photoIndex)}
                   aria-label={
                     item.kind === "video"
                       ? `View video ${photoIndex + 1} of ${visibleMedia.length}`
@@ -176,9 +215,10 @@ export function FeedCardHeroMedia({
 
       {lightboxIndex !== null ? (
         <RoundPhotoLightbox
+          key={`feed-lightbox-${lightboxIndex}-${lightboxPhotos.length}`}
           photos={lightboxPhotos}
           initialIndex={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
+          onClose={closeLightbox}
         />
       ) : null}
     </>

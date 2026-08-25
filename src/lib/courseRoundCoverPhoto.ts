@@ -45,3 +45,38 @@ export function photoUrlsFromOrderedPhotos(photos: MemberCourseRoundPhotoRecord[
     })
     .filter((url): url is string => Boolean(url));
 }
+
+/** Pick the single list-cover photo: explicit cover wins, else first gallery photo. */
+export function pickListCoverPhoto<T extends SortablePhoto>(
+  photos: T[],
+  coverPhotoId?: string | null,
+): T | null {
+  if (photos.length === 0) return null;
+
+  const sorted = sortPhotosByGalleryOrder(photos);
+  const effectiveCoverId = resolveEffectiveCoverPhotoId(coverPhotoId, sorted);
+  if (effectiveCoverId) {
+    return sorted.find((photo) => photo.id === effectiveCoverId) ?? sorted[0] ?? null;
+  }
+
+  return sorted[0] ?? null;
+}
+
+export function buildListCoverImageUrls(
+  photos: MemberCourseRoundPhotoRecord[],
+  coverPhotoId?: string | null,
+): string[] {
+  const cover = pickListCoverPhoto(photos, coverPhotoId);
+  if (!cover) return [];
+  if (cover.media_kind === "video" || cover.mime_type?.toLowerCase().startsWith("video/")) {
+    const url = cover.poster_signed_url || cover.signed_url;
+    return url ? [url] : [];
+  }
+  return cover.signed_url ? [cover.signed_url] : [];
+}
+
+/** +N label for feed list hero when more photos exist beyond the cover. */
+export function feedListPhotoMoreCount(totalPhotoCount: number): number | null {
+  if (totalPhotoCount <= 1) return null;
+  return totalPhotoCount - 1;
+}

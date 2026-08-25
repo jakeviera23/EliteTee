@@ -321,6 +321,8 @@ export type FeedPost = {
   details?: { label: string; value: string }[];
   /** Linked member course round — photos resolved from member_course_round_photos */
   memberCourseRoundId?: string;
+  /** Active photos on the linked round (metadata count; list view may sign only the cover). */
+  roundPhotoCount?: number;
   /** Linked golf course for community hero fallback */
   golfCourseId?: string;
   /** Rich media (images + videos) for feed rendering */

@@ -11,7 +11,9 @@ import { fetchOwnMemberProfile } from "./memberProfiles";
 import {
   buildRoundImageUrls,
   buildRoundMediaItems,
+  fetchActivePhotoCountsForRoundIds,
   fetchCoverPhotoIdsForRoundIds,
+  fetchListCoverPhotosForRoundIds,
   fetchRoundFeedMetaForRoundIds,
   fetchPhotosForRoundIds,
 } from "./memberCourseRoundPhotos";
@@ -193,6 +195,7 @@ export function memberFeedPostToFeedPost(
     golfCourseId?: string | null;
     mediaItems?: FeedMediaItem[];
     roundLocation?: string | null;
+    roundPhotoCount?: number;
   } = {},
 ): FeedPost {
   const parsed = parseFeedPostContent(row.content);
@@ -222,6 +225,7 @@ export function memberFeedPostToFeedPost(
     memberCourseRoundId: row.member_course_round_id ?? undefined,
     golfCourseId: extras.golfCourseId ?? undefined,
     mediaItems: extras.mediaItems,
+    roundPhotoCount: extras.roundPhotoCount,
     authorUserId: row.user_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -290,25 +294,23 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
     ),
   ];
 
-  const [{ data: roundPhotos }, { data: coverPhotoIds }, { data: roundMeta }] =
-    await Promise.all([
-      fetchPhotosForRoundIds(roundIds),
-      fetchCoverPhotoIdsForRoundIds(roundIds),
-      fetchRoundFeedMetaForRoundIds(roundIds),
-    ]);
-  const photosByRoundId = new Map<string, NonNullable<typeof roundPhotos>>();
-
-  for (const photo of roundPhotos ?? []) {
-    const existing = photosByRoundId.get(photo.member_course_round_id) ?? [];
-    existing.push(photo);
-    photosByRoundId.set(photo.member_course_round_id, existing);
-  }
+  const [
+    { data: listCoverPhotosByRoundId },
+    { data: coverPhotoIds },
+    { data: roundMeta },
+    { data: photoCountsByRoundId },
+  ] = await Promise.all([
+    fetchListCoverPhotosForRoundIds(roundIds),
+    fetchCoverPhotoIdsForRoundIds(roundIds),
+    fetchRoundFeedMetaForRoundIds(roundIds),
+    fetchActivePhotoCountsForRoundIds(roundIds),
+  ]);
 
   const imagesByRoundId = new Map<string, string[]>();
   const mediaByRoundId = new Map<string, FeedMediaItem[]>();
 
   for (const roundId of roundIds) {
-    const photos = photosByRoundId.get(roundId) ?? [];
+    const photos = listCoverPhotosByRoundId?.get(roundId) ?? [];
     const coverId = coverPhotoIds?.get(roundId);
     imagesByRoundId.set(roundId, buildRoundImageUrls(photos, coverId));
     mediaByRoundId.set(roundId, buildRoundMediaItems(photos, coverId));
@@ -327,6 +329,7 @@ async function mapRowsToFeedPosts(rows: MemberFeedPostWithProfile[]): Promise<Fe
       golfCourseId: meta?.golfCourseId,
       mediaItems,
       roundLocation: meta?.location,
+      roundPhotoCount: roundId ? photoCountsByRoundId?.get(roundId) : undefined,
     });
   });
 }

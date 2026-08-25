@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildListCoverImageUrls,
+  feedListPhotoMoreCount,
   orderPhotosWithCoverFirst,
+  pickListCoverPhoto,
   resolveEffectiveCoverPhotoId,
   sortPhotosByGalleryOrder,
 } from "./courseRoundCoverPhoto";
+import type { MemberCourseRoundPhotoRecord } from "../types/memberCourseRoundPhoto";
 
 const photos = [
   { id: "photo-a", sort_order: 0, created_at: "2026-01-01T00:00:00.000Z" },
@@ -68,5 +72,67 @@ describe("orderPhotosWithCoverFirst", () => {
       "photo-b",
       "photo-c",
     ]);
+  });
+});
+
+describe("pickListCoverPhoto", () => {
+  it("returns null when no photos exist", () => {
+    expect(pickListCoverPhoto([], "photo-b")).toBeNull();
+  });
+
+  it("uses the explicit cover photo when valid", () => {
+    expect(pickListCoverPhoto(photos, "photo-c")?.id).toBe("photo-c");
+  });
+
+  it("falls back to the first sorted photo when cover metadata is missing", () => {
+    expect(pickListCoverPhoto(photos, null)?.id).toBe("photo-a");
+  });
+
+  it("falls back to the first sorted photo when cover id is stale", () => {
+    expect(pickListCoverPhoto(photos, "missing-photo")?.id).toBe("photo-a");
+  });
+});
+
+describe("buildListCoverImageUrls", () => {
+  function signedPhoto(
+    id: string,
+    sortOrder: number,
+    url: string,
+  ): MemberCourseRoundPhotoRecord {
+    return {
+      id,
+      member_course_round_id: "round-1",
+      user_id: "user-1",
+      storage_path: `${id}.jpg`,
+      sort_order: sortOrder,
+      is_featured: false,
+      moderation_status: "active",
+      created_at: "2026-01-01T00:00:00.000Z",
+      signed_url: url,
+    };
+  }
+
+  it("returns at most one signed url", () => {
+    const urls = buildListCoverImageUrls(
+      [
+        signedPhoto("photo-a", 0, "https://example/a.jpg"),
+        signedPhoto("photo-b", 1, "https://example/b.jpg"),
+      ],
+      "photo-b",
+    );
+
+    expect(urls).toEqual(["https://example/b.jpg"]);
+  });
+});
+
+describe("feedListPhotoMoreCount", () => {
+  it("returns null for a single photo", () => {
+    expect(feedListPhotoMoreCount(1)).toBeNull();
+    expect(feedListPhotoMoreCount(0)).toBeNull();
+  });
+
+  it("returns total minus one for multi-photo rounds", () => {
+    expect(feedListPhotoMoreCount(10)).toBe(9);
+    expect(feedListPhotoMoreCount(2)).toBe(1);
   });
 });
