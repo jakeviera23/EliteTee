@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { InviteGolfer } from "@/components/referrals/InviteGolfer";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MemberAvatar } from "@/components/ui/MemberAvatar";
@@ -42,6 +43,8 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Card>
+
+      <InviteGolfer />
 
       {showCompleteness ? (
         <Pressable

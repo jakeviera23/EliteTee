@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { InviteGolfer } from "@/components/referrals/InviteGolfer";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { MemberCard } from "@/components/discover/MemberCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -339,6 +340,8 @@ export default function DiscoverScreen() {
 
   const memberListHeader = (
     <View style={styles.membersHeader}>
+      <InviteGolfer variant="compact" />
+
       {membersError ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{membersError}</Text>
