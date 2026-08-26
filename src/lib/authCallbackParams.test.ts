@@ -1,11 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   AUTH_CALLBACK_EXPIRED_MESSAGE,
+  captureAuthCallbackFromLocation,
+  capturedAuthCallbackHasWork,
+  clearCapturedAuthCallback,
   getAuthCallbackErrorMessage,
+  getCapturedAuthCallback,
   hasAuthCallbackWork,
   isPasswordRecoveryCallback,
   parseAuthCallbackParams,
 } from "./authCallbackParams";
+
+afterEach(() => {
+  clearCapturedAuthCallback();
+});
 
 describe("parseAuthCallbackParams", () => {
   it("reads implicit grant tokens from the URL hash", () => {
@@ -46,5 +54,21 @@ describe("parseAuthCallbackParams", () => {
     );
 
     expect(getAuthCallbackErrorMessage(params)).toBe(AUTH_CALLBACK_EXPIRED_MESSAGE);
+  });
+});
+
+describe("captured auth callback consume", () => {
+  it("clears sticky recovery capture so hasWork becomes false", () => {
+    captureAuthCallbackFromLocation(
+      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+    );
+
+    expect(capturedAuthCallbackHasWork()).toBe(true);
+    expect(getCapturedAuthCallback()?.type).toBe("recovery");
+
+    clearCapturedAuthCallback();
+
+    expect(capturedAuthCallbackHasWork()).toBe(false);
+    expect(getCapturedAuthCallback()).toBeNull();
   });
 });

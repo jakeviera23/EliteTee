@@ -127,6 +127,10 @@ export function getCapturedAuthCallback(): AuthCallbackParams | null {
   return capturedAuthCallback;
 }
 
+export function clearCapturedAuthCallback() {
+  capturedAuthCallback = null;
+}
+
 export function capturedAuthCallbackHasWork(): boolean {
   return capturedAuthCallback ? hasAuthCallbackWork(capturedAuthCallback) : false;
 }

@@ -14,6 +14,10 @@ import {
 } from "../data/insidePreview";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { finishInviteActivationAfterAuth } from "../lib/inviteCompletion";
+import {
+  consumeAuthEntryCallback,
+  shouldEnterSetPasswordMode,
+} from "../lib/completeAuthEntry";
 import { getEmailRedirectTo } from "../lib/siteUrl";
 import "../inside-elitetee.css";
 
@@ -102,7 +106,7 @@ export function InsideEliteTee() {
       return;
     }
 
-    if (loginState?.recoveryVerified) {
+    if (shouldEnterSetPasswordMode({ recoveryVerifiedFromRouter: Boolean(loginState?.recoveryVerified) })) {
       setRecoverySessionVerified(true);
       setAccessMode("set-password");
       setLoginError(null);
@@ -115,7 +119,7 @@ export function InsideEliteTee() {
 
     let active = true;
     const expectsRecovery = new URLSearchParams(window.location.search).get("recovery") === "1";
-    let recoveryValidated = loginState?.recoveryVerified ?? false;
+    let recoveryValidated = Boolean(loginState?.recoveryVerified);
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
@@ -144,14 +148,7 @@ export function InsideEliteTee() {
     void supabase.auth.getSession().then(async ({ data: sessionData }) => {
       if (!active) return;
 
-      if (expectsRecovery && sessionData.session) {
-        recoveryValidated = true;
-        setRecoverySessionVerified(true);
-        setAccessMode("set-password");
-        setLoginError(null);
-        return;
-      }
-
+      // Bare ?recovery=1 must wait for PASSWORD_RECOVERY — do not trust any existing session.
       if (expectsRecovery) {
         return;
       }
@@ -298,8 +295,15 @@ export function InsideEliteTee() {
         return;
       }
 
+      // End recovery mode before navigation so sticky callback cannot reopen set-password.
+      consumeAuthEntryCallback();
+      setRecoverySessionVerified(false);
+
       const activation = await finishInviteActivationAfterAuth();
       if (activation.ok) {
+        setAccessMode("sign-in");
+        setPassword("");
+        setConfirmPassword("");
         navigate("/member-portal", { replace: true });
         return;
       }

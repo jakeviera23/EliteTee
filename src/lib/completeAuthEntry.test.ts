@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@supabase/supabase-js";
-import { AUTH_CALLBACK_EXPIRED_MESSAGE, parseAuthCallbackParams } from "./authCallbackParams";
+import {
+  AUTH_CALLBACK_EXPIRED_MESSAGE,
+  captureAuthCallbackFromLocation,
+  capturedAuthCallbackHasWork,
+  clearCapturedAuthCallback,
+  parseAuthCallbackParams,
+} from "./authCallbackParams";
 import {
   completeAuthEntryFromCallback,
+  consumeAuthEntryCallback,
   resetAuthEntryInFlightForTests,
+  shouldEnterSetPasswordMode,
   type AuthEntryClient,
 } from "./completeAuthEntry";
 import { INVITE_ACTIVATION_RECOVERY_MESSAGE } from "./inviteCompletion";
@@ -47,6 +55,7 @@ function createAuth(handlers: Partial<AuthEntryClient> = {}): AuthEntryClient {
 
 afterEach(() => {
   resetAuthEntryInFlightForTests();
+  clearCapturedAuthCallback();
 });
 
 describe("completeAuthEntryFromCallback", () => {
@@ -144,5 +153,37 @@ describe("completeAuthEntryFromCallback", () => {
       kind: "login_error",
       message: INVITE_ACTIVATION_RECOVERY_MESSAGE,
     });
+  });
+
+  it("handles a recovery callback once only after consume", async () => {
+    const auth = createAuth();
+    const snapshot = parseAuthCallbackParams(
+      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+    );
+    captureAuthCallbackFromLocation(
+      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+    );
+
+    const first = await completeAuthEntryFromCallback(auth, snapshot, {
+      finishInviteActivationAfterAuth: vi.fn(),
+    });
+    expect(first).toEqual({ kind: "recovery" });
+
+    consumeAuthEntryCallback();
+
+    expect(capturedAuthCallbackHasWork()).toBe(false);
+
+    const second = await completeAuthEntryFromCallback(auth, null, {
+      finishInviteActivationAfterAuth: vi.fn(),
+    });
+    expect(second).toEqual({ kind: "none" });
+  });
+});
+
+describe("shouldEnterSetPasswordMode", () => {
+  it("requires router-verified recovery or PASSWORD_RECOVERY event", () => {
+    expect(shouldEnterSetPasswordMode({})).toBe(false);
+    expect(shouldEnterSetPasswordMode({ recoveryVerifiedFromRouter: true })).toBe(true);
+    expect(shouldEnterSetPasswordMode({ passwordRecoveryEvent: true })).toBe(true);
   });
 });

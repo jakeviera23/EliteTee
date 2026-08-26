@@ -1,6 +1,7 @@
 import type { EmailOtpType, Session } from "@supabase/supabase-js";
 import {
   AUTH_CALLBACK_EXPIRED_MESSAGE,
+  clearCapturedAuthCallback,
   getAuthCallbackErrorMessage,
   getCapturedAuthCallback,
   hasAuthCallbackWork,
@@ -59,8 +60,26 @@ export async function completeAuthEntryFromCallback(
   return inFlight;
 }
 
+/** Clear sticky callback capture + cached completion so recovery cannot re-fire. */
+export function consumeAuthEntryCallback() {
+  clearCapturedAuthCallback();
+  inFlight = null;
+}
+
 export function resetAuthEntryInFlightForTests() {
   inFlight = null;
+}
+
+/**
+ * Enter set-password only with genuine recovery proof.
+ * Router-verified recovery from AuthEntryHandler, or a PASSWORD_RECOVERY auth event.
+ * A bare ?recovery=1 query + any session is not enough.
+ */
+export function shouldEnterSetPasswordMode(input: {
+  recoveryVerifiedFromRouter?: boolean;
+  passwordRecoveryEvent?: boolean;
+}): boolean {
+  return Boolean(input.recoveryVerifiedFromRouter || input.passwordRecoveryEvent);
 }
 
 async function runCompleteAuthEntry(

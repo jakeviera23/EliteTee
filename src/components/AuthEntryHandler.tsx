@@ -1,33 +1,48 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { capturedAuthCallbackHasWork } from "../lib/authCallbackParams";
-import { completeAuthEntryFromCallback } from "../lib/completeAuthEntry";
+import {
+  completeAuthEntryFromCallback,
+  consumeAuthEntryCallback,
+} from "../lib/completeAuthEntry";
 import { RouteLoading } from "./RouteLoading";
 
 export function AuthEntryHandler({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   const [blocking, setBlocking] = useState(() => capturedAuthCallbackHasWork());
+  const handledRef = useRef(false);
 
   useEffect(() => {
-    if (!capturedAuthCallbackHasWork()) return;
+    if (handledRef.current) return;
+    if (!capturedAuthCallbackHasWork()) {
+      setBlocking(false);
+      return;
+    }
 
+    handledRef.current = true;
     let active = true;
 
     void completeAuthEntryFromCallback()
       .then((result) => {
+        // Consume before navigating so pathname changes cannot re-process recovery.
+        consumeAuthEntryCallback();
         if (!active) return;
 
         if (result.kind === "portal") {
-          navigate("/member-portal", { replace: true });
+          navigateRef.current("/member-portal", { replace: true });
         } else if (result.kind === "recovery") {
-          navigate("/login", { replace: true, state: { recoveryVerified: true } });
+          navigateRef.current("/login", { replace: true, state: { recoveryVerified: true } });
         } else if (result.kind === "login_error") {
-          navigate("/login", { replace: true, state: { authError: result.message } });
+          navigateRef.current("/login", { replace: true, state: { authError: result.message } });
         }
       })
       .catch(() => {
+        consumeAuthEntryCallback();
         if (!active) return;
-        navigate("/login", {
+        navigateRef.current("/login", {
           replace: true,
           state: {
             authError:
@@ -42,7 +57,7 @@ export function AuthEntryHandler({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, []);
 
   if (blocking) {
     return <RouteLoading label="Opening EliteTee" />;
