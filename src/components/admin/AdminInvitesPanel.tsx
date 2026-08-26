@@ -76,7 +76,8 @@ function InviteGroup({
                     : undefined
                 }
                 onRegenerateInvite={
-                  onboardingSnapshot.inviteStatus === "missing"
+                  onboardingSnapshot.inviteStatus === "missing" ||
+                  onboardingSnapshot.inviteStatus === "expired"
                     ? () => onRegenerateInvite(application.id)
                     : undefined
                 }

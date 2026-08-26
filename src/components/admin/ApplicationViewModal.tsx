@@ -211,6 +211,16 @@ export function ApplicationViewModal({
                       View invitation
                     </button>
                   ) : null}
+                  {onRegenerateInvite && detailedInviteStatus === "expired" ? (
+                    <button
+                      type="button"
+                      className="et-btn et-btn--forest"
+                      disabled={isRegeneratingInvite}
+                      onClick={() => onRegenerateInvite(application.id)}
+                    >
+                      {isRegeneratingInvite ? "Regenerating…" : "Regenerate invite link"}
+                    </button>
+                  ) : null}
                 </div>
               </>
             ) : (

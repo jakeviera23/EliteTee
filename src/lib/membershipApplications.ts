@@ -3,6 +3,7 @@ import type {
   MembershipApplicationRecord,
   MembershipApplicationStatus,
 } from "../types/membershipApplication";
+import { getDetailedInviteStatus } from "./adminOnboarding";
 import { buildInvitationEmailDraft } from "./invitationEmail";
 import { buildInviteLink, generateInviteToken } from "./membershipInvites";
 import { readStoredReferralCode, clearStoredReferralCode } from "./memberReferrals";
@@ -163,16 +164,22 @@ export async function regenerateApplicationInviteToken(applicationId: string) {
   }
 
   const application = normalizeApplication(applicationRow as Record<string, unknown>);
+  const inviteStatus = getDetailedInviteStatus(application);
 
-  if (application.invite_token) {
+  if (inviteStatus === "redeemed") {
+    return { data: null, error: new Error("This invitation has already been redeemed.") };
+  }
+
+  if (inviteStatus === "valid") {
     return {
       data: null,
-      error: new Error("Invite token already exists. Use Copy Invite Link instead."),
+      error: new Error("Invite is still valid. Use Copy Invite Link instead."),
     };
   }
 
-  if (application.invite_redeemed_at) {
-    return { data: null, error: new Error("This invitation has already been redeemed.") };
+  // Allow only missing or expired (approved + unredeemed already enforced above).
+  if (inviteStatus !== "missing" && inviteStatus !== "expired") {
+    return { data: null, error: new Error("Invite cannot be regenerated.") };
   }
 
   const inviteToken = generateInviteToken();
@@ -201,11 +208,20 @@ export async function regenerateApplicationInviteToken(applicationId: string) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", applicationId)
+    .eq("status", "approved")
+    .is("invite_redeemed_at", null)
     .select("*")
-    .single();
+    .maybeSingle();
 
   if (updateError) {
     return { data: null, error: updateError };
+  }
+
+  if (!updatedRow) {
+    return {
+      data: null,
+      error: new Error("This invitation has already been redeemed or is no longer eligible."),
+    };
   }
 
   return {
