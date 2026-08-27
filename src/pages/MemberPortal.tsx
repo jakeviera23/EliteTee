@@ -18,13 +18,18 @@ import type { IntroductionTab } from "../lib/introductionBoard";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import {
   computePortalNotificationBadgeCountFromSources,
+  fetchFeedLikesOnOwnPosts,
   fetchPortalNotificationFeed,
+  resolvePortalNotificationDestination,
+  type FeedPostLikeRow,
   type PortalNotificationItem,
 } from "../lib/portalNotificationCenter";
 import {
   formatNotificationCount,
   getNotificationBadgeDisplay,
+  getSeenFeedLikeKeys,
   getSeenIntroductionRequestIds,
+  markFeedLikesSeen,
   markIntroductionRequestsSeen,
 } from "../lib/portalNotifications";
 import {
@@ -139,6 +144,8 @@ function MemberPortalContent() {
   const [seenIntroductionRequestIds, setSeenIntroductionRequestIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [seenFeedLikeKeys, setSeenFeedLikeKeys] = useState<Set<string>>(() => new Set());
+  const [feedLikeRows, setFeedLikeRows] = useState<FeedPostLikeRow[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
@@ -151,6 +158,7 @@ function MemberPortalContent() {
     null,
   );
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
+  const [pendingFeedPostId, setPendingFeedPostId] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
   const resolvedView: PortalTab = isCoursesRoute ? "courses" : activeView;
 
@@ -161,8 +169,17 @@ function MemberPortalContent() {
         introductionRequests,
         currentUserId,
         seenIntroductionRequestIds,
+        feedLikes: feedLikeRows,
+        seenFeedLikeKeys,
       }),
-    [currentUserId, introductionRequests, seenIntroductionRequestIds, unreadMessageCount],
+    [
+      currentUserId,
+      feedLikeRows,
+      introductionRequests,
+      seenFeedLikeKeys,
+      seenIntroductionRequestIds,
+      unreadMessageCount,
+    ],
   );
 
   useEffect(() => {
@@ -202,7 +219,15 @@ function MemberPortalContent() {
   }, []);
 
   const refreshNotificationCounts = useCallback(async () => {
-    await Promise.all([refreshUnreadMessageCount(), refreshIntroductionRequests()]);
+    const { userId } = await getCurrentAuthUserId();
+    const [_, feedLikesResult] = await Promise.all([
+      Promise.all([refreshUnreadMessageCount(), refreshIntroductionRequests()]),
+      userId ? fetchFeedLikesOnOwnPosts(userId) : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (!feedLikesResult.error) {
+      setFeedLikeRows(feedLikesResult.data ?? []);
+    }
   }, [refreshIntroductionRequests, refreshUnreadMessageCount]);
 
   const loadNotificationPanel = useCallback(async () => {
@@ -220,6 +245,7 @@ function MemberPortalContent() {
 
     setIntroductionRequests(result.introductionRequests);
     setNotificationItems(result.notifications);
+    setFeedLikeRows(result.feedLikes);
 
     const unreadFromConversations = result.conversations.reduce(
       (total, conversation) => total + conversation.unreadCount,
@@ -240,10 +266,12 @@ function MemberPortalContent() {
   useEffect(() => {
     if (!currentUserId) {
       setSeenIntroductionRequestIds(new Set());
+      setSeenFeedLikeKeys(new Set());
       return;
     }
 
     setSeenIntroductionRequestIds(getSeenIntroductionRequestIds(currentUserId));
+    setSeenFeedLikeKeys(getSeenFeedLikeKeys(currentUserId));
   }, [currentUserId]);
 
   useEffect(() => {
@@ -447,15 +475,28 @@ function MemberPortalContent() {
       setSeenIntroductionRequestIds(getSeenIntroductionRequestIds(currentUserId));
     }
 
-    if (notification.messageTarget) {
-      setPendingConversation(notification.messageTarget);
+    if (notification.acknowledgeFeedLikeKey && currentUserId) {
+      markFeedLikesSeen(currentUserId, [notification.acknowledgeFeedLikeKey]);
+      setSeenFeedLikeKeys(getSeenFeedLikeKeys(currentUserId));
+    }
+
+    const destination = resolvePortalNotificationDestination(notification);
+
+    if (destination?.view === "messages") {
+      setPendingConversation(destination.messageTarget);
       transitionTo("messages");
       return;
     }
 
-    if (notification.introductionTarget) {
-      setPendingIntroductionTab(notification.introductionTarget.tab);
+    if (destination?.view === "introductions") {
+      setPendingIntroductionTab(destination.introductionTarget.tab);
       transitionTo("introductions");
+      return;
+    }
+
+    if (destination?.view === "feed") {
+      setPendingFeedPostId(destination.postId);
+      transitionTo("feed");
     }
   }
 
@@ -577,6 +618,8 @@ function MemberPortalContent() {
               showComposer
               composerId={FEED_COMPOSER_ID}
               isActive={resolvedView === "feed"}
+              focusPostId={pendingFeedPostId}
+              onFocusPostConsumed={() => setPendingFeedPostId(null)}
               onViewMemberProfile={handleViewMemberProfile}
             />
           </div>

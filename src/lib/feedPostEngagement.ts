@@ -74,6 +74,19 @@ export type FeedPostEngagementSummary = {
   latestComment?: FeedPostComment;
 };
 
+export type FeedPostLiker = {
+  userId: string;
+  name: string;
+  avatarUrl?: string;
+  likedAt: string;
+  displayTimestamp: string;
+};
+
+type FeedPostLikeUserRow = {
+  user_id: string;
+  created_at: string;
+};
+
 type EngagementRow = {
   post_id: string;
 };
@@ -250,6 +263,22 @@ function formatCommentTimestamp(value: string) {
   });
 }
 
+export function mapFeedPostLikers(
+  rows: FeedPostLikeUserRow[],
+  identitiesByUserId: Record<string, { full_name: string; club_logo_url: string | null }>,
+): FeedPostLiker[] {
+  return rows.map((row) => {
+    const identity = identitiesByUserId[row.user_id];
+    return {
+      userId: row.user_id,
+      name: identity?.full_name?.trim() || "Member",
+      avatarUrl: identity?.club_logo_url?.trim() || undefined,
+      likedAt: row.created_at,
+      displayTimestamp: formatCommentTimestamp(row.created_at),
+    };
+  });
+}
+
 function mapCommentRow(
   row: CommentRow,
   author?: { full_name: string; club_logo_url: string | null },
@@ -369,6 +398,35 @@ export async function attachFeedPostEngagement(posts: FeedPost[], viewerUserId?:
 
   return {
     data: posts.map((post) => mergeEngagementIntoFeedPost(post, summaries.get(post.id))),
+    error: null,
+  };
+}
+
+export async function fetchFeedPostLikers(postId: string) {
+  if (!supabase) {
+    return { data: [] as FeedPostLiker[], error: new Error("Supabase is not configured.") };
+  }
+
+  if (!isPersistedFeedPostId(postId)) {
+    return { data: [] as FeedPostLiker[], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("feed_post_likes")
+    .select("user_id, created_at")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { data: [] as FeedPostLiker[], error: normalizeSupabaseError(error) };
+  }
+
+  const rows = (data ?? []) as FeedPostLikeUserRow[];
+  const likerUserIds = [...new Set(rows.map((row) => row.user_id))];
+  const identitiesByUserId = await loadCommentAuthors(likerUserIds);
+
+  return {
+    data: mapFeedPostLikers(rows, identitiesByUserId),
     error: null,
   };
 }

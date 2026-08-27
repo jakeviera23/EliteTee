@@ -23,6 +23,8 @@ type PortalFeedProps = {
   showComposer?: boolean;
   composerId?: string;
   isActive?: boolean;
+  focusPostId?: string | null;
+  onFocusPostConsumed?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
@@ -30,6 +32,8 @@ export function PortalFeed({
   showComposer = true,
   composerId = "feed-composer",
   isActive = true,
+  focusPostId = null,
+  onFocusPostConsumed,
   onViewMemberProfile,
 }: PortalFeedProps) {
   const { showToast } = usePortalToast();
@@ -98,6 +102,29 @@ export function PortalFeed({
     hasLoadedInitialRef.current = true;
     void loadInitialPage();
   }, [isActive, loadInitialPage]);
+
+  useEffect(() => {
+    if (!isActive || !focusPostId) return;
+
+    const focusElement = () => {
+      const element = document.getElementById(`feed-post-${focusPostId}`);
+      if (!element) return false;
+
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.classList.add("feed-card--focused");
+      window.setTimeout(() => element.classList.remove("feed-card--focused"), 2400);
+      onFocusPostConsumed?.();
+      return true;
+    };
+
+    if (focusElement()) return;
+
+    const timer = window.setTimeout(() => {
+      focusElement();
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [focusPostId, isActive, memberPosts, onFocusPostConsumed]);
 
   async function loadMorePosts() {
     if (!hasMore || isLoadingMore || !nextCursor) return;

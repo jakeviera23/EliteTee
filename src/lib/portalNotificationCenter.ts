@@ -11,7 +11,13 @@ import {
   buildApprovedMemberIdentityMap,
   fetchApprovedMemberProfilesByUserIds,
 } from "./memberProfiles";
-import { getSeenIntroductionRequestIds } from "./portalNotifications";
+import {
+  buildFeedLikeSeenKey,
+  getSeenFeedLikeKeys,
+  getSeenIntroductionRequestIds,
+} from "./portalNotifications";
+import { supabase } from "./supabase";
+import { filterPersistedFeedPostIds } from "./feedPostEngagement";
 import type { DirectConversationSummary } from "../types/privateMessage";
 import type { IntroductionRequestRecord } from "../types/introductionRequest";
 
@@ -19,7 +25,16 @@ export type PortalNotificationKind =
   | "unread_message"
   | "introduction_pending"
   | "introduction_accepted"
-  | "introduction_declined";
+  | "introduction_declined"
+  | "feed_like";
+
+export type FeedPostLikeRow = {
+  post_id: string;
+  user_id: string;
+  created_at: string;
+};
+
+const FEED_LIKE_NOTIFICATION_POST_LIMIT = 100;
 
 export type PortalNotificationItem = {
   id: string;
@@ -38,7 +53,11 @@ export type PortalNotificationItem = {
     tab: IntroductionTab;
     requestId: string;
   };
+  feedTarget?: {
+    postId: string;
+  };
   acknowledgeIntroductionRequestId?: string;
+  acknowledgeFeedLikeKey?: string;
 };
 
 const TYPE_LABELS: Record<PortalNotificationKind, string> = {
@@ -46,6 +65,7 @@ const TYPE_LABELS: Record<PortalNotificationKind, string> = {
   introduction_pending: "Introduction request",
   introduction_accepted: "Introduction accepted",
   introduction_declined: "Introduction declined",
+  feed_like: "Like",
 };
 
 export function formatNotificationTimestamp(isoTimestamp: string | null | undefined): string | null {
@@ -171,16 +191,50 @@ function buildIntroductionNotifications({
   return items;
 }
 
+export function buildFeedLikeNotifications({
+  likes,
+  likerProfilesByUserId,
+  seenFeedLikeKeys,
+}: {
+  likes: FeedPostLikeRow[];
+  likerProfilesByUserId: Record<string, { full_name: string }>;
+  seenFeedLikeKeys: Set<string>;
+}): PortalNotificationItem[] {
+  return likes.map((like) => {
+    const memberName = likerProfilesByUserId[like.user_id]?.full_name?.trim() || "Member";
+    const seenKey = buildFeedLikeSeenKey(like.post_id, like.user_id);
+
+    return {
+      id: `like:${seenKey}`,
+      kind: "feed_like",
+      typeLabel: TYPE_LABELS.feed_like,
+      memberName,
+      description: `${memberName} liked your post.`,
+      timestampLabel: formatNotificationTimestamp(like.created_at),
+      sortTimestamp: new Date(like.created_at).getTime() || 0,
+      countsTowardBadge: !seenFeedLikeKeys.has(seenKey),
+      feedTarget: { postId: like.post_id },
+      acknowledgeFeedLikeKey: seenKey,
+    };
+  });
+}
+
 export function buildPortalNotifications({
   conversations,
   introductionRequests,
   currentUserId,
   seenIntroductionRequestIds,
+  feedLikes = [],
+  seenFeedLikeKeys = new Set<string>(),
+  likerProfilesByUserId = {},
 }: {
   conversations: DirectConversationSummary[];
   introductionRequests: IntroductionRequestRecord[];
   currentUserId: string | null;
   seenIntroductionRequestIds: Set<string>;
+  feedLikes?: FeedPostLikeRow[];
+  seenFeedLikeKeys?: Set<string>;
+  likerProfilesByUserId?: Record<string, { full_name: string }>;
 }): PortalNotificationItem[] {
   if (!currentUserId) return [];
 
@@ -190,8 +244,50 @@ export function buildPortalNotifications({
     currentUserId,
     seenIntroductionRequestIds,
   });
+  const feedLikeItems = buildFeedLikeNotifications({
+    likes: feedLikes,
+    likerProfilesByUserId,
+    seenFeedLikeKeys,
+  });
 
-  return sortNotifications([...messageItems, ...introductionItems]);
+  return sortNotifications([...messageItems, ...feedLikeItems, ...introductionItems]);
+}
+
+export function resolvePortalNotificationDestination(notification: PortalNotificationItem) {
+  if (notification.messageTarget) {
+    return {
+      view: "messages" as const,
+      messageTarget: notification.messageTarget,
+    };
+  }
+
+  if (notification.introductionTarget) {
+    return {
+      view: "introductions" as const,
+      introductionTarget: notification.introductionTarget,
+    };
+  }
+
+  if (notification.feedTarget) {
+    return {
+      view: "feed" as const,
+      postId: notification.feedTarget.postId,
+    };
+  }
+
+  return null;
+}
+
+export function countUnseenFeedLikeNotifications({
+  feedLikes,
+  seenFeedLikeKeys,
+}: {
+  feedLikes: FeedPostLikeRow[];
+  seenFeedLikeKeys: Set<string>;
+}) {
+  return feedLikes.filter(
+    (like) => !seenFeedLikeKeys.has(buildFeedLikeSeenKey(like.post_id, like.user_id)),
+  ).length;
 }
 
 export function computePortalNotificationBadgeCount(items: PortalNotificationItem[]): number {
@@ -214,12 +310,16 @@ export function computePortalNotificationBadgeCountFromSources({
   currentUserId,
   seenIntroductionRequestIds,
   conversations,
+  feedLikes = [],
+  seenFeedLikeKeys = new Set<string>(),
 }: {
   unreadMessageCount: number;
   introductionRequests: IntroductionRequestRecord[];
   currentUserId: string | null;
   seenIntroductionRequestIds: Set<string>;
   conversations?: DirectConversationSummary[];
+  feedLikes?: FeedPostLikeRow[];
+  seenFeedLikeKeys?: Set<string>;
 }): number {
   if (conversations && conversations.length > 0) {
     return computePortalNotificationBadgeCount(
@@ -228,6 +328,8 @@ export function computePortalNotificationBadgeCountFromSources({
         introductionRequests,
         currentUserId,
         seenIntroductionRequestIds,
+        feedLikes,
+        seenFeedLikeKeys,
       }),
     );
   }
@@ -258,13 +360,15 @@ export function computePortalNotificationBadgeCountFromSources({
     }
   }
 
+  count += countUnseenFeedLikeNotifications({ feedLikes, seenFeedLikeKeys });
+
   return count;
 }
 
 export const PORTAL_NOTIFICATIONS_EMPTY_MESSAGE = "You're all caught up.";
 
 export type PortalNotificationSection = {
-  id: "messages" | "introductions";
+  id: "messages" | "feed" | "introductions";
   label: string;
   showHeader: boolean;
   items: PortalNotificationItem[];
@@ -274,7 +378,10 @@ export function groupPortalNotifications(
   items: PortalNotificationItem[],
 ): PortalNotificationSection[] {
   const messages = items.filter((item) => item.kind === "unread_message");
-  const introductions = items.filter((item) => item.kind !== "unread_message");
+  const feed = items.filter((item) => item.kind === "feed_like");
+  const introductions = items.filter(
+    (item) => item.kind !== "unread_message" && item.kind !== "feed_like",
+  );
 
   const sections: PortalNotificationSection[] = [];
 
@@ -284,6 +391,15 @@ export function groupPortalNotifications(
       label: "Messages",
       showHeader: false,
       items: messages,
+    });
+  }
+
+  if (feed.length > 0) {
+    sections.push({
+      id: "feed",
+      label: "Feed",
+      showHeader: false,
+      items: feed,
     });
   }
 
@@ -307,13 +423,65 @@ export type PortalNotificationFeedResult = {
   notifications: PortalNotificationItem[];
   introductionRequests: IntroductionRequestRecord[];
   conversations: DirectConversationSummary[];
+  feedLikes: FeedPostLikeRow[];
   error: null;
 } | {
   notifications: PortalNotificationItem[];
   introductionRequests: IntroductionRequestRecord[];
   conversations: DirectConversationSummary[];
+  feedLikes: FeedPostLikeRow[];
   error: string;
 };
+
+export function excludeSelfFeedLikes(likes: FeedPostLikeRow[], currentUserId: string) {
+  const normalizedUserId = currentUserId.trim();
+  return likes.filter((like) => like.user_id.trim() !== normalizedUserId);
+}
+
+export async function fetchFeedLikesOnOwnPosts(currentUserId: string) {
+  if (!supabase) {
+    return { data: [] as FeedPostLikeRow[], error: new Error("Supabase is not configured.") };
+  }
+
+  const { data: ownPosts, error: postsError } = await supabase
+    .from("member_feed_posts")
+    .select("id")
+    .eq("user_id", currentUserId)
+    .order("created_at", { ascending: false })
+    .limit(FEED_LIKE_NOTIFICATION_POST_LIMIT);
+
+  if (postsError) {
+    return { data: [] as FeedPostLikeRow[], error: postsError };
+  }
+
+  const postIds = filterPersistedFeedPostIds((ownPosts ?? []).map((row) => String(row.id ?? "")));
+  if (postIds.length === 0) {
+    return { data: [] as FeedPostLikeRow[], error: null };
+  }
+
+  const { data: likes, error: likesError } = await supabase
+    .from("feed_post_likes")
+    .select("post_id, user_id, created_at")
+    .in("post_id", postIds)
+    .neq("user_id", currentUserId)
+    .order("created_at", { ascending: false });
+
+  if (likesError) {
+    return { data: [] as FeedPostLikeRow[], error: likesError };
+  }
+
+  return {
+    data: excludeSelfFeedLikes(
+      (likes ?? []).map((row) => ({
+        post_id: String(row.post_id ?? ""),
+        user_id: String(row.user_id ?? ""),
+        created_at: String(row.created_at ?? ""),
+      })),
+      currentUserId,
+    ),
+    error: null,
+  };
+}
 
 export async function fetchPortalNotificationFeed(): Promise<PortalNotificationFeedResult> {
   const { userId, error: sessionError } = await getCurrentAuthUserId();
@@ -323,6 +491,7 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
       notifications: [],
       introductionRequests: [],
       conversations: [],
+      feedLikes: [],
       error: PORTAL_NOTIFICATIONS_LOAD_ERROR,
     };
   }
@@ -332,20 +501,23 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
       notifications: [],
       introductionRequests: [],
       conversations: [],
+      feedLikes: [],
       error: null,
     };
   }
 
-  const [messagesResult, introductionResult] = await Promise.all([
+  const [messagesResult, introductionResult, feedLikesResult] = await Promise.all([
     fetchDirectPrivateMessages(),
     fetchIntroductionRequests(),
+    fetchFeedLikesOnOwnPosts(userId),
   ]);
 
-  if (messagesResult.error || introductionResult.error) {
+  if (messagesResult.error || introductionResult.error || feedLikesResult.error) {
     if (import.meta.env.DEV) {
       console.error("[PortalNotifications] feed load failed", {
         messagesError: messagesResult.error,
         introductionError: introductionResult.error,
+        feedLikesError: feedLikesResult.error,
       });
     }
 
@@ -353,31 +525,49 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
       notifications: [],
       introductionRequests: introductionResult.data ?? [],
       conversations: [],
+      feedLikes: [],
       error: PORTAL_NOTIFICATIONS_LOAD_ERROR,
     };
   }
 
   const messages = messagesResult.data ?? [];
   const introductionRequests = introductionResult.data ?? [];
+  const feedLikes = feedLikesResult.data ?? [];
   const participantIds = extractDirectMessageParticipantUserIds(messages, userId);
-  const { data: profiles } = await fetchApprovedMemberProfilesByUserIds(participantIds);
+  const likerUserIds = [...new Set(feedLikes.map((like) => like.user_id))];
+  const { data: profiles } = await fetchApprovedMemberProfilesByUserIds([
+    ...participantIds,
+    ...likerUserIds,
+  ]);
+  const memberIdentitiesByUserId = buildApprovedMemberIdentityMap(profiles ?? []);
   const conversations = buildDirectConversationSummaries({
     messages,
     currentUserId: userId,
-    memberIdentitiesByUserId: buildApprovedMemberIdentityMap(profiles ?? []),
+    memberIdentitiesByUserId,
   });
   const seenIntroductionRequestIds = getSeenIntroductionRequestIds(userId);
+  const seenFeedLikeKeys = getSeenFeedLikeKeys(userId);
+  const likerProfilesByUserId = Object.fromEntries(
+    likerUserIds.map((likerUserId) => [
+      likerUserId,
+      { full_name: memberIdentitiesByUserId[likerUserId]?.full_name ?? "Member" },
+    ]),
+  );
   const notifications = buildPortalNotifications({
     conversations,
     introductionRequests,
     currentUserId: userId,
     seenIntroductionRequestIds,
+    feedLikes,
+    seenFeedLikeKeys,
+    likerProfilesByUserId,
   });
 
   return {
     notifications,
     introductionRequests,
     conversations,
+    feedLikes,
     error: null,
   };
 }

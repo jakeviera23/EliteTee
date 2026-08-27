@@ -1,14 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { IntroductionRequestRecord } from "../types/introductionRequest";
 import type { DirectConversationSummary } from "../types/privateMessage";
 import {
   PORTAL_NOTIFICATIONS_EMPTY_MESSAGE,
+  buildFeedLikeNotifications,
   buildPortalNotifications,
   computePortalNotificationBadgeCount,
   computePortalNotificationBadgeCountFromSources,
+  excludeSelfFeedLikes,
   groupPortalNotifications,
+  resolvePortalNotificationDestination,
 } from "./portalNotificationCenter";
-import { getNotificationBadgeDisplay, PORTAL_NOTIFICATION_PANEL_WIDTH } from "./portalNotifications";
+import {
+  buildFeedLikeSeenKey,
+  getNotificationBadgeDisplay,
+  getSeenFeedLikeKeys,
+  markFeedLikesSeen,
+  PORTAL_NOTIFICATION_PANEL_WIDTH,
+} from "./portalNotifications";
 
 function introductionRequest(
   overrides: Partial<IntroductionRequestRecord> & Pick<IntroductionRequestRecord, "id">,
@@ -115,6 +124,154 @@ describe("buildPortalNotifications", () => {
   });
 });
 
+const POST_ID = "11111111-1111-4111-8111-111111111111";
+
+describe("buildFeedLikeNotifications", () => {
+  it("creates a like notification for another member", () => {
+    const notifications = buildFeedLikeNotifications({
+      likes: [
+        {
+          post_id: POST_ID,
+          user_id: "member-2",
+          created_at: "2026-07-04T12:00:00.000Z",
+        },
+      ],
+      likerProfilesByUserId: {
+        "member-2": { full_name: "Alex Kim" },
+      },
+      seenFeedLikeKeys: new Set(),
+    });
+
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      kind: "feed_like",
+      memberName: "Alex Kim",
+      description: "Alex Kim liked your post.",
+      countsTowardBadge: true,
+      feedTarget: { postId: POST_ID },
+      acknowledgeFeedLikeKey: buildFeedLikeSeenKey(POST_ID, "member-2"),
+    });
+  });
+
+  it("drops notifications when the like row is no longer present", () => {
+    const notifications = buildFeedLikeNotifications({
+      likes: [],
+      likerProfilesByUserId: {},
+      seenFeedLikeKeys: new Set(),
+    });
+
+    expect(notifications).toEqual([]);
+  });
+
+  it("suppresses the badge after the like has been acknowledged", () => {
+    const seenKey = buildFeedLikeSeenKey(POST_ID, "member-2");
+    const notifications = buildFeedLikeNotifications({
+      likes: [
+        {
+          post_id: POST_ID,
+          user_id: "member-2",
+          created_at: "2026-07-04T12:00:00.000Z",
+        },
+      ],
+      likerProfilesByUserId: {
+        "member-2": { full_name: "Alex Kim" },
+      },
+      seenFeedLikeKeys: new Set([seenKey]),
+    });
+
+    expect(notifications[0]?.countsTowardBadge).toBe(false);
+    expect(
+      computePortalNotificationBadgeCountFromSources({
+        unreadMessageCount: 0,
+        currentUserId: "member-1",
+        seenIntroductionRequestIds: new Set(),
+        introductionRequests: [],
+        feedLikes: [
+          {
+            post_id: POST_ID,
+            user_id: "member-2",
+            created_at: "2026-07-04T12:00:00.000Z",
+          },
+        ],
+        seenFeedLikeKeys: new Set([seenKey]),
+      }),
+    ).toBe(0);
+  });
+});
+
+describe("excludeSelfFeedLikes", () => {
+  it("excludes self-likes from notification rows", () => {
+    const likes = excludeSelfFeedLikes(
+      [
+        {
+          post_id: POST_ID,
+          user_id: "member-1",
+          created_at: "2026-07-04T12:00:00.000Z",
+        },
+        {
+          post_id: POST_ID,
+          user_id: "member-2",
+          created_at: "2026-07-04T12:01:00.000Z",
+        },
+      ],
+      "member-1",
+    );
+
+    expect(likes).toEqual([
+      {
+        post_id: POST_ID,
+        user_id: "member-2",
+        created_at: "2026-07-04T12:01:00.000Z",
+      },
+    ]);
+  });
+});
+
+describe("resolvePortalNotificationDestination", () => {
+  it("routes like notifications to the feed post target", () => {
+    const notification = buildFeedLikeNotifications({
+      likes: [
+        {
+          post_id: POST_ID,
+          user_id: "member-2",
+          created_at: "2026-07-04T12:00:00.000Z",
+        },
+      ],
+      likerProfilesByUserId: {
+        "member-2": { full_name: "Alex Kim" },
+      },
+      seenFeedLikeKeys: new Set(),
+    })[0];
+
+    expect(resolvePortalNotificationDestination(notification!)).toEqual({
+      view: "feed",
+      postId: POST_ID,
+    });
+  });
+});
+
+describe("feed like seen keys", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("persists acknowledged like keys in localStorage", () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        storage.set(key, value);
+      },
+    });
+
+    const seenKey = buildFeedLikeSeenKey(POST_ID, "member-2");
+    markFeedLikesSeen("member-1", [seenKey]);
+
+    expect(getSeenFeedLikeKeys("member-1").has(seenKey)).toBe(true);
+  });
+});
+
 describe("computePortalNotificationBadgeCount", () => {
   it("combines unread messages with actionable introduction items", () => {
     const notifications = buildPortalNotifications({
@@ -205,13 +362,22 @@ describe("groupPortalNotifications", () => {
           status: "pending",
         }),
       ],
+      feedLikes: [
+        {
+          post_id: POST_ID,
+          user_id: "member-4",
+          created_at: "2026-07-04T12:00:00.000Z",
+        },
+      ],
+      likerProfilesByUserId: {
+        "member-4": { full_name: "Taylor Reed" },
+      },
     });
 
     const sections = groupPortalNotifications(notifications);
 
-    expect(sections).toHaveLength(2);
-    expect(sections[0]?.id).toBe("messages");
-    expect(sections[1]?.id).toBe("introductions");
+    expect(sections).toHaveLength(3);
+    expect(sections.map((section) => section.id)).toEqual(["messages", "feed", "introductions"]);
     expect(sections.every((section) => section.showHeader)).toBe(true);
   });
 });

@@ -1,6 +1,33 @@
 import type { IntroductionRequestRecord } from "../types/introductionRequest";
 
 const SEEN_INTRO_REQUESTS_KEY = (userId: string) => `elitetee-seen-intro-requests:${userId}`;
+const SEEN_FEED_LIKE_KEYS_KEY = (userId: string) => `elitetee-seen-feed-likes:${userId}`;
+
+export function buildFeedLikeSeenKey(postId: string, likerUserId: string) {
+  return `${postId.trim()}:${likerUserId.trim()}`;
+}
+
+export function getSeenFeedLikeKeys(userId: string) {
+  try {
+    const raw = localStorage.getItem(SEEN_FEED_LIKE_KEYS_KEY(userId));
+    if (!raw) return new Set<string>();
+
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set<string>();
+
+    return new Set(parsed.map(String));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+export function markFeedLikesSeen(userId: string, seenKeys: string[]) {
+  if (seenKeys.length === 0) return;
+
+  const seen = getSeenFeedLikeKeys(userId);
+  seenKeys.forEach((key) => seen.add(key));
+  localStorage.setItem(SEEN_FEED_LIKE_KEYS_KEY(userId), JSON.stringify([...seen]));
+}
 
 export function formatNotificationCount(count: number) {
   if (count > 9) return "9+";

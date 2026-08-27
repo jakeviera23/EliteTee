@@ -8,6 +8,7 @@ import {
   isDuplicateEngagementError,
   isMissingEngagementTableError,
   isPersistedFeedPostId,
+  mapFeedPostLikers,
   mergeEngagementIntoFeedPost,
   validateFeedPostCommentBody,
 } from "./feedPostEngagement";
@@ -195,6 +196,38 @@ describe("buildEngagementSummaryMap", () => {
         body: "Well played.",
       },
     });
+  });
+});
+
+describe("mapFeedPostLikers", () => {
+  it("returns an empty list when there are no likes", () => {
+    expect(mapFeedPostLikers([], {})).toEqual([]);
+  });
+
+  it("maps approved member identity fields onto liker rows", () => {
+    const likers = mapFeedPostLikers(
+      [
+        {
+          user_id: "user-a",
+          created_at: "2026-07-01T12:00:00.000Z",
+        },
+      ],
+      {
+        "user-a": {
+          full_name: "Alex Kim",
+          club_logo_url: "https://example.com/avatar.png",
+        },
+      },
+    );
+
+    expect(likers).toHaveLength(1);
+    expect(likers[0]).toMatchObject({
+      userId: "user-a",
+      name: "Alex Kim",
+      avatarUrl: "https://example.com/avatar.png",
+      likedAt: "2026-07-01T12:00:00.000Z",
+    });
+    expect(likers[0]?.displayTimestamp).toBeTruthy();
   });
 });
 

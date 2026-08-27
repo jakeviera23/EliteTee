@@ -941,6 +941,108 @@
   font-variant-numeric: tabular-nums;
 }
 
+.et-feed-card-scope .feed-card-like-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.et-feed-card-scope .feed-card-action--like {
+  padding-right: 0.45rem;
+}
+
+.et-feed-card-scope .feed-card-like-count {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.35rem;
+  font-size: var(--et-text-body-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--feed-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--et-radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--et-duration-fast) var(--et-ease-out),
+    background var(--et-duration-fast) var(--et-ease-out),
+    border-color var(--et-duration-fast) var(--et-ease-out);
+}
+
+.et-feed-card-scope .feed-card-like-count:hover,
+.et-feed-card-scope .feed-card-like-count:focus-visible {
+  color: var(--feed-text-primary);
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--feed-forest-soft);
+}
+
+.et-feed-card-scope .feed-card--focused {
+  outline: 2px solid var(--feed-forest);
+  outline-offset: 4px;
+}
+
+.feed-likers-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.25rem 1rem 1rem;
+}
+
+.feed-likers-status,
+.feed-likers-error p {
+  margin: 0;
+  color: var(--et-text-secondary);
+  font-size: var(--et-text-body-sm);
+}
+
+.feed-likers-error {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.feed-likers-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.feed-likers-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.55rem 0.35rem;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--et-radius-sm);
+  cursor: pointer;
+}
+
+.feed-likers-item:hover,
+.feed-likers-item:focus-visible {
+  background: var(--et-bg-inset);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--feed-forest-soft);
+}
+
+.feed-likers-item-text {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.feed-likers-item-name {
+  color: var(--et-text-primary);
+  font-size: var(--et-text-body-sm);
+  font-weight: 600;
+}
+
+.feed-likers-item-time {
+  color: var(--et-text-secondary);
+  font-size: var(--et-text-caption);
+}
+
 /* —— Comments —— */
 .et-feed-card-scope .feed-card-comment-preview,
 .et-feed-card-scope .feed-card-comments {

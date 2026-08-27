@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FeedPost, FeedPostComment } from "../../data/portalSocial";
+import type { FeedPostLiker } from "../../lib/feedPostEngagement";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { FEED_CARD_ICON_CLASSES } from "../../lib/feedCardScope";
@@ -16,6 +17,7 @@ import {
   createFeedPostComment,
   deleteFeedPostComment,
   fetchFeedPostComments,
+  fetchFeedPostLikers,
   formatFeedEngagementError,
   isPersistedFeedPostId,
   toggleFeedPostLike,
@@ -31,6 +33,7 @@ import { CourseImage } from "./CourseImage";
 import { FeedAvatar } from "./FeedAvatar";
 import { FeedCardHeroMedia } from "./FeedCardHeroMedia";
 import { FeedPostEditModal } from "./FeedPostEditModal";
+import { FeedPostLikersModal } from "./FeedPostLikersModal";
 import { FeedPostMenu } from "./FeedPostMenu";
 import { VerifiedBadge } from "./VerifiedBadge";
 
@@ -228,6 +231,10 @@ export function FeedCard({
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isTogglingSave, setIsTogglingSave] = useState(false);
+  const [likersOpen, setLikersOpen] = useState(false);
+  const [likers, setLikers] = useState<FeedPostLiker[]>([]);
+  const [isLoadingLikers, setIsLoadingLikers] = useState(false);
+  const [likersError, setLikersError] = useState<string | null>(null);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
@@ -329,6 +336,38 @@ export function FeedCard({
     setLiked(nextLiked);
   }
 
+  async function loadLikers() {
+    setIsLoadingLikers(true);
+    setLikersError(null);
+
+    const { data, error } = await fetchFeedPostLikers(post.id);
+
+    if (error) {
+      setLikersError(formatFeedEngagementError(error));
+      setLikers([]);
+      setIsLoadingLikers(false);
+      return;
+    }
+
+    setLikers(data);
+    setIsLoadingLikers(false);
+  }
+
+  function handleOpenLikers() {
+    if (likeCount <= 0) return;
+    setLikersOpen(true);
+    void loadLikers();
+  }
+
+  function handleCloseLikers() {
+    setLikersOpen(false);
+  }
+
+  function handleViewLiker(userId: string, memberName: string) {
+    setLikersOpen(false);
+    onViewAuthor?.(userId, memberName);
+  }
+
   async function toggleSave() {
     if (!engagementEnabled || isTogglingSave) return;
 
@@ -428,6 +467,7 @@ export function FeedCard({
 
   return (
     <article
+      id={`feed-post-${post.id}`}
       className={`feed-card feed-card--${cardKind}`}
       style={entranceStyle}
     >
@@ -543,17 +583,28 @@ export function FeedCard({
         ) : null}
 
         <div className="feed-card-actions" role="group" aria-label="Post actions">
-          <button
-            type="button"
-            className={`feed-card-action${liked ? " is-active is-liked" : ""}`}
-            onClick={() => void toggleLike()}
-            aria-pressed={liked}
-            disabled={!engagementEnabled || isTogglingLike}
-          >
-            <HeartIcon filled={liked} />
-            <span className="feed-card-action-count">{likeCount}</span>
-            <span className="visually-hidden">likes</span>
-          </button>
+          <div className="feed-card-like-group">
+            <button
+              type="button"
+              className={`feed-card-action feed-card-action--like${liked ? " is-active is-liked" : ""}`}
+              onClick={() => void toggleLike()}
+              aria-pressed={liked}
+              disabled={!engagementEnabled || isTogglingLike}
+            >
+              <HeartIcon filled={liked} />
+              <span className="visually-hidden">{liked ? "Unlike" : "Like"}</span>
+            </button>
+            {likeCount > 0 ? (
+              <button
+                type="button"
+                className="feed-card-like-count"
+                onClick={handleOpenLikers}
+                aria-label={`${likeCount} like${likeCount === 1 ? "" : "s"}. View who liked this post.`}
+              >
+                {likeCount}
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
             className={`feed-card-action${showComments ? " is-active" : ""}`}
@@ -693,6 +744,16 @@ export function FeedCard({
           }}
         />
       ) : null}
+
+      <FeedPostLikersModal
+        isOpen={likersOpen}
+        isLoading={isLoadingLikers}
+        errorMessage={likersError}
+        likers={likers}
+        onClose={handleCloseLikers}
+        onRetry={() => void loadLikers()}
+        onViewLiker={handleViewLiker}
+      />
 
       {confirmingDelete ? (
         <div
