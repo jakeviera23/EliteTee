@@ -1,5 +1,12 @@
 import type { DirectConversationSummary, ConversationParticipantIdentity, PrivateMessageRecord } from "../types/privateMessage";
 import { getCurrentAuthUserId } from "./authUserLinking";
+import {
+  fetchAttachmentsForMessageIds,
+  formatMessagePreviewBody,
+  signPrivateMessageAttachments,
+  uploadPrivateMessageImages,
+  validatePrivateMessageImageFiles,
+} from "./privateMessageMedia";
 import { supabase } from "./supabase";
 
 type PrivateMessageInsertPayload = {
@@ -18,10 +25,10 @@ export const PRIVATE_MESSAGE_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const DIRECT_MESSAGE_SELECT =
   "id, introduction_request_id, sender_id, receiver_id, body, created_at, read_at, edited_at";
 
-function validateMessageBody(body: string) {
+function validateMessageBody(body: string, { allowEmpty = false }: { allowEmpty?: boolean } = {}) {
   const trimmedBody = body.trim();
 
-  if (!trimmedBody) {
+  if (!trimmedBody && !allowEmpty) {
     return { trimmedBody: "", error: new Error("Message cannot be empty.") };
   }
 
@@ -120,18 +127,26 @@ export function buildDirectConversationSummaries({
         otherUserFoundingNumber: identity?.founding_member_number ?? null,
         otherUserPrimaryClub: identity?.primary_club ?? "",
         otherUserBasedIn: identity?.based_in ?? "",
-        lastMessageBody: message.body,
+        lastMessageBody: formatMessagePreviewBody(
+          message.body,
+          message.attachments?.length ?? 0,
+        ),
         lastMessageAt: message.created_at,
         lastMessageWasEdited: Boolean(message.edited_at),
+        lastMessageAttachmentCount: message.attachments?.length ?? 0,
         unreadCount:
           message.receiver_id === currentUserId && !message.read_at ? 1 : 0,
       });
       continue;
     }
 
-    existing.lastMessageBody = message.body;
+    existing.lastMessageBody = formatMessagePreviewBody(
+      message.body,
+      message.attachments?.length ?? 0,
+    );
     existing.lastMessageAt = message.created_at;
     existing.lastMessageWasEdited = Boolean(message.edited_at);
+    existing.lastMessageAttachmentCount = message.attachments?.length ?? 0;
     if (!existing.otherUserName || existing.otherUserName === "Member") {
       existing.otherUserName = otherUserName;
     }
@@ -184,6 +199,39 @@ async function verifyAcceptedIntroductionRequest(introductionRequestId: string, 
   return { data, error: null };
 }
 
+async function hydrateMessagesWithAttachments(messages: PrivateMessageRecord[]) {
+  if (messages.length === 0) {
+    return { data: messages, error: null as Error | null };
+  }
+
+  const { data: attachments, error } = await fetchAttachmentsForMessageIds(
+    messages.map((message) => message.id),
+  );
+  if (error) {
+    return { data: messages, error };
+  }
+
+  const byMessageId = new Map<string, typeof attachments>();
+  for (const attachment of attachments) {
+    const list = byMessageId.get(attachment.message_id) ?? [];
+    list.push(attachment);
+    byMessageId.set(attachment.message_id, list);
+  }
+
+  const hydrated = await Promise.all(
+    messages.map(async (message) => {
+      const rows = byMessageId.get(message.id) ?? [];
+      const signed = await signPrivateMessageAttachments(rows);
+      return {
+        ...message,
+        attachments: signed,
+      };
+    }),
+  );
+
+  return { data: hydrated, error: null };
+}
+
 export async function fetchDirectPrivateMessages() {
   const { userId, error: sessionError } = await getSessionUserId();
   if (sessionError || !userId) {
@@ -201,7 +249,11 @@ export async function fetchDirectPrivateMessages() {
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .order("created_at", { ascending: true });
 
-  return { data: (data ?? []) as PrivateMessageRecord[], error };
+  if (error) {
+    return { data: [] as PrivateMessageRecord[], error };
+  }
+
+  return hydrateMessagesWithAttachments((data ?? []) as PrivateMessageRecord[]);
 }
 
 export async function fetchDirectMessageThread(otherUserId: string) {
@@ -223,19 +275,37 @@ export async function fetchDirectMessageThread(otherUserId: string) {
     )
     .order("created_at", { ascending: true });
 
-  return { data: (data ?? []) as PrivateMessageRecord[], error };
+  if (error) {
+    return { data: [] as PrivateMessageRecord[], error };
+  }
+
+  return hydrateMessagesWithAttachments((data ?? []) as PrivateMessageRecord[]);
 }
 
 export async function sendDirectPrivateMessage({
   receiverUserId,
   body,
+  imageFiles = [],
 }: {
   receiverUserId: string;
   body: string;
+  imageFiles?: File[];
 }) {
-  const { trimmedBody, error: validationError } = validateMessageBody(body);
+  const files = imageFiles.slice(0, 3);
+  const imageValidationError = validatePrivateMessageImageFiles(files);
+  if (imageValidationError) {
+    return { data: null, error: new Error(imageValidationError) };
+  }
+
+  const { trimmedBody, error: validationError } = validateMessageBody(body, {
+    allowEmpty: files.length > 0,
+  });
   if (validationError) {
     return { data: null, error: validationError };
+  }
+
+  if (!trimmedBody && files.length === 0) {
+    return { data: null, error: new Error("Message cannot be empty.") };
   }
 
   const { userId, error: sessionError } = await getSessionUserId();
@@ -268,7 +338,7 @@ export async function sendDirectPrivateMessage({
     return { data: null, error: buildPrivateMessageError(error, insertPayload) };
   }
 
-  if (!data) {
+  if (!data?.id) {
     return {
       data: null,
       error: new Error(
@@ -277,7 +347,26 @@ export async function sendDirectPrivateMessage({
     };
   }
 
-  return { data, error: null };
+  const messageId = String(data.id);
+
+  if (files.length > 0) {
+    const uploadResult = await uploadPrivateMessageImages({
+      messageId,
+      files,
+    });
+
+    if (uploadResult.error || uploadResult.data.length === 0) {
+      if (!trimmedBody) {
+        await supabase.from("private_messages").delete().eq("id", messageId).eq("sender_id", userId);
+      }
+      return {
+        data: null,
+        error: uploadResult.error ?? new Error("Images could not be attached."),
+      };
+    }
+  }
+
+  return { data: { id: messageId }, error: null };
 }
 
 export async function markDirectMessagesAsRead(otherUserId: string) {
@@ -290,13 +379,9 @@ export async function markDirectMessagesAsRead(otherUserId: string) {
     return { error: sessionError };
   }
 
-  const { error } = await supabase
-    .from("private_messages")
-    .update({ read_at: new Date().toISOString() })
-    .is("introduction_request_id", null)
-    .eq("sender_id", otherUserId)
-    .eq("receiver_id", userId)
-    .is("read_at", null);
+  const { error } = await supabase.rpc("mark_direct_private_messages_read", {
+    p_other_user_id: otherUserId,
+  });
 
   return { error };
 }
@@ -322,7 +407,11 @@ export async function fetchPrivateMessages(introductionRequestId: string) {
     .eq("introduction_request_id", introductionRequestId)
     .order("created_at", { ascending: true });
 
-  return { data: data as PrivateMessageRecord[] | null, error };
+  if (error) {
+    return { data: null, error };
+  }
+
+  return hydrateMessagesWithAttachments((data ?? []) as PrivateMessageRecord[]);
 }
 
 export async function sendPrivateMessage({
@@ -429,12 +518,9 @@ export async function markIntroductionMessagesAsRead(introductionRequestId: stri
     return { error: sessionError };
   }
 
-  const { error } = await supabase
-    .from("private_messages")
-    .update({ read_at: new Date().toISOString() })
-    .eq("introduction_request_id", introductionRequestId)
-    .eq("receiver_id", userId)
-    .is("read_at", null);
+  const { error } = await supabase.rpc("mark_introduction_private_messages_read", {
+    p_introduction_request_id: introductionRequestId,
+  });
 
   return { error };
 }
@@ -499,5 +585,6 @@ export function mergeEditedPrivateMessage(
     ...existing,
     body: update.body,
     edited_at: update.edited_at,
+    attachments: existing.attachments,
   };
 }
