@@ -74,6 +74,27 @@ describe("buildCourseDirectoryAnswer", () => {
     expect(answer).not.toContain("highly rated");
     expect(answer).not.toContain("members recommend");
   });
+
+  it("ranks by member reviews without inventing ratings when sparse", () => {
+    const ranked = buildCourseDirectoryAnswer(sampleCourses, {
+      locationQuery: "",
+      accessType: null,
+      courseType: null,
+      rankByReviews: true,
+    });
+    expect(ranked).toContain("top-rated courses");
+    expect(ranked).toContain("Shinnecock Hills");
+    expect(ranked).toContain("avg rating 4.5");
+    expect(ranked).not.toContain("National Golf Links");
+
+    const sparse = buildCourseDirectoryAnswer([sampleCourses[0]!], {
+      locationQuery: "",
+      accessType: null,
+      courseType: null,
+      rankByReviews: true,
+    });
+    expect(sparse).toBe("EliteTee does not yet have enough member review ratings to rank courses.");
+  });
 });
 
 describe("filterCoursesByDirectoryFilters", () => {

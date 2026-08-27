@@ -6,6 +6,13 @@ import {
   buildNoCourseDirectoryResultsAnswer,
   filterCoursesByDirectoryFilters,
 } from "../_shared/ai/course-directory-answer.ts";
+import { buildCoursePlayEvidenceByMember } from "../_shared/ai/course-play-evidence.ts";
+import {
+  buildIntroductionMembersAnswer,
+  isGenericInsufficientDataAnswer,
+} from "../_shared/ai/introduction-answer.ts";
+import { buildMemberDestinationSearchPlans } from "../_shared/ai/member-location.ts";
+import { resolvePlayedCourseAnswerPath } from "../_shared/ai/played-course-answer-path.ts";
 import { getProviderForTask } from "../_shared/ai/provider-registry.ts";
 import { rankMembers, sanitizeUntrustedText } from "../_shared/ai/scoring.ts";
 import {
@@ -191,6 +198,7 @@ Deno.serve(async (req) => {
   let members: RetrievedMember[] = [];
   let courses: RetrievedCourse[] = [];
   let rounds: RoundSummary[] = [];
+  let coursePlayEvidence: ReturnType<typeof buildCoursePlayEvidenceByMember> = {};
   const sources: AskEliteTeeResponse["sources"] = [];
 
   const { data: requestorProfile } = await supabase
@@ -263,13 +271,24 @@ Deno.serve(async (req) => {
     }
     const retrieved = (courseRows ?? []) as RetrievedCourse[];
     courses = filterCoursesByDirectoryFilters(retrieved, filters.courseDirectoryFilters);
+    if (filters.courseDirectoryFilters.rankByReviews) {
+      courses = courses
+        .filter((course) => (course.round_count ?? 0) > 0 || (course.avg_rating ?? 0) > 0)
+        .sort(
+          (left, right) =>
+            (right.avg_rating ?? 0) - (left.avg_rating ?? 0) ||
+            (right.round_count ?? 0) - (left.round_count ?? 0),
+        );
+    }
     sources.push("Course directory");
     if (courses.some((course) => (course.avg_rating ?? 0) > 0 || (course.round_count ?? 0) > 0)) {
       sources.push("Member reviews");
     }
 
     if (courses.length === 0) {
-      const noResultsAnswer = buildNoCourseDirectoryResultsAnswer(filters.courseDirectoryFilters.locationQuery);
+      const noResultsAnswer = filters.courseDirectoryFilters.rankByReviews
+        ? "EliteTee does not yet have enough member review ratings to rank courses."
+        : buildNoCourseDirectoryResultsAnswer(filters.courseDirectoryFilters.locationQuery);
       const noResultsResponse: AskEliteTeeResponse = {
         status: "ok",
         intent: "find_courses",
@@ -325,37 +344,125 @@ Deno.serve(async (req) => {
     directoryResponse.query_id = directoryQueryRow?.id ? String(directoryQueryRow.id) : null;
     return jsonResponse(directoryResponse);
   } else {
-    const { data: memberRows, error: memberError } = await supabase.rpc("ai_search_portal_members", {
-      p_filters: filters.memberFilters,
-      p_limit: 30,
+    type CourseMemberRpcRow = RetrievedMember & {
+      round_count?: number | null;
+      avg_course_rating?: number | null;
+    };
+
+    let focusCourse: RetrievedCourse | null = null;
+    let focusCourseMembers: CourseMemberRpcRow[] = [];
+
+    // OR-style destination plans: never AND location+travel for the same place.
+    const limitedPlans = buildMemberDestinationSearchPlans({
+      location: String(filters.memberFilters.location ?? ""),
+      travel: String(filters.memberFilters.travel ?? ""),
+      maxPlans: 4,
     });
-    if (memberError) {
-      console.error("ai_search_portal_members failed:", memberError.message, filters.memberFilters);
+    const mergedMembers = new Map<string, RetrievedMember>();
+
+    for (const plan of limitedPlans) {
+      const { data: memberRows, error: memberError } = await supabase.rpc("ai_search_portal_members", {
+        p_filters: {
+          ...filters.memberFilters,
+          location: plan.location,
+          travel: plan.travel,
+        },
+        p_limit: 30,
+      });
+      if (memberError) {
+        console.error("ai_search_portal_members failed:", memberError.message, {
+          ...filters.memberFilters,
+          location: plan.location,
+          travel: plan.travel,
+        });
+        continue;
+      }
+      for (const member of (memberRows ?? []) as RetrievedMember[]) {
+        if (pendingIntroIds.has(member.user_id)) continue;
+        if (!mergedMembers.has(member.user_id)) {
+          mergedMembers.set(member.user_id, member);
+        }
+      }
     }
 
-    members = ((memberRows ?? []) as RetrievedMember[]).filter(
-      (member) => !pendingIntroIds.has(member.user_id),
-    );
+    members = [...mergedMembers.values()];
     sources.push("Member profiles");
 
     const courseName = extractCourseNameFromQuestion(question);
     if (courseName) {
       const { data: courseMatches } = await supabase.rpc("ai_search_golf_courses", {
         p_query: courseName,
-        p_limit: 1,
+        p_limit: 5,
       });
-      const matchedCourse = (courseMatches ?? [])[0] as RetrievedCourse | undefined;
+      const matches = (courseMatches ?? []) as RetrievedCourse[];
+      const queryLower = courseName.toLowerCase();
+      const matchedCourse =
+        matches.find((course) => course.name?.toLowerCase() === queryLower) ??
+        matches.find((course) => course.name?.toLowerCase().startsWith(queryLower)) ??
+        matches.find((course) => course.name?.toLowerCase().includes(queryLower)) ??
+        null;
+
       if (matchedCourse?.id) {
+        focusCourse = matchedCourse;
         const { data: courseMembers } = await supabase.rpc("ai_members_by_course", {
           p_course_id: matchedCourse.id,
         });
-        const byCourse = (courseMembers ?? []) as RetrievedMember[];
-        const merged = new Map(members.map((member) => [member.user_id, member]));
-        for (const member of byCourse) {
-          if (!pendingIntroIds.has(member.user_id)) merged.set(member.user_id, member);
-        }
-        members = [...merged.values()];
-        sources.push("Member reviews");
+        focusCourseMembers = (courseMembers ?? []) as CourseMemberRpcRow[];
+      }
+
+      const playedRows = focusCourseMembers.filter((member) => !pendingIntroIds.has(member.user_id));
+      const playedPath = resolvePlayedCourseAnswerPath({
+        extractedCourseName: courseName,
+        matchedCourse: focusCourse
+          ? { id: focusCourse.id, name: focusCourse.name, slug: focusCourse.slug }
+          : null,
+        playRows: playedRows,
+      });
+
+      // Specific-course played-by questions never fall through to generic member ranking.
+      if (playedPath.kind === "deterministic") {
+        sources.push("Member profiles", "Member reviews");
+        const playedResponse: AskEliteTeeResponse = {
+          status: "ok",
+          intent,
+          answer: playedPath.answer,
+          sources: [...new Set(sources)],
+          members: playedPath.playRows.slice(0, 8) as RetrievedMember[],
+          courses: focusCourse ? [focusCourse] : [],
+          reasons: playedPath.playRows.slice(0, 8).map((member) => ({
+            target_id: member.user_id,
+            target_type: "member" as const,
+            signals: [`Recorded rounds at ${playedPath.courseName}`],
+          })),
+          query_id: null,
+        };
+
+        const { data: playedQueryRow } = await supabase
+          .from("ai_queries")
+          .insert({
+            user_id: user.id,
+            intent,
+            status: "ok",
+            latency_ms: Date.now() - started,
+            model: "deterministic",
+          })
+          .select("id")
+          .maybeSingle();
+
+        playedResponse.query_id = playedQueryRow?.id ? String(playedQueryRow.id) : null;
+        return jsonResponse(playedResponse);
+      }
+
+      if (playedPath.kind === "insufficient") {
+        const insufficient = buildInsufficientDataResponse(intent);
+        await supabase.from("ai_queries").insert({
+          user_id: user.id,
+          intent,
+          status: "insufficient_data",
+          latency_ms: Date.now() - started,
+          error_code: "NO_PLAY_ROWS",
+        });
+        return jsonResponse(insufficient);
       }
     }
 
@@ -367,6 +474,14 @@ Deno.serve(async (req) => {
       rounds = (roundRows ?? []) as RoundSummary[];
       if (rounds.length > 0) sources.push("Member reviews");
     }
+
+    // Attach structured course-play evidence for any later LLM fallback bundle.
+    coursePlayEvidence = buildCoursePlayEvidenceByMember({
+      rounds,
+      focusCourseName: focusCourse?.name ?? null,
+      focusCourseSlug: focusCourse?.slug ?? null,
+      focusCourseMembers,
+    });
 
     if (intent === "recommend_introductions" && requestor) {
       members = rankMembers(requestor, members, rounds, 8).map((entry) => entry.member);
@@ -388,6 +503,47 @@ Deno.serve(async (req) => {
   const scored = intent !== "find_courses" && requestor
     ? rankMembers(requestor, members, rounds, 8)
     : members.map((member) => ({ member, score: 0, signals: [] as string[] }));
+
+  // Deterministic introductions: never let LLM collapse retrieved candidates to insufficient-data.
+  if (intent === "recommend_introductions" && scored.length > 0) {
+    const destination = String(filters.memberFilters.location ?? filters.memberFilters.travel ?? "");
+    const introAnswer = buildIntroductionMembersAnswer({
+      destination,
+      scored,
+    });
+    if (introAnswer) {
+      const introMembers = scored.map((entry) => entry.member);
+      const introResponse: AskEliteTeeResponse = {
+        status: "ok",
+        intent,
+        answer: introAnswer,
+        sources: [...new Set(sources.length > 0 ? sources : ["Member profiles"])],
+        members: introMembers.slice(0, 8),
+        courses: [],
+        reasons: scored.slice(0, 8).map((entry) => ({
+          target_id: entry.member.user_id,
+          target_type: "member" as const,
+          signals: entry.signals,
+        })),
+        query_id: null,
+      };
+
+      const { data: introQueryRow } = await supabase
+        .from("ai_queries")
+        .insert({
+          user_id: user.id,
+          intent,
+          status: "ok",
+          latency_ms: Date.now() - started,
+          model: "deterministic",
+        })
+        .select("id")
+        .maybeSingle();
+
+      introResponse.query_id = introQueryRow?.id ? String(introQueryRow.id) : null;
+      return jsonResponse(introResponse);
+    }
+  }
 
   const sanitizedBundle = {
     intent,
@@ -411,6 +567,13 @@ Deno.serve(async (req) => {
       current_request: sanitizeUntrustedText(member.current_request, 160),
       score,
       signals,
+      // Structured play evidence only — never free-text round notes.
+      course_play: (coursePlayEvidence[member.user_id] ?? []).map((entry) => ({
+        course_name: sanitizeUntrustedText(entry.course_name, 120),
+        course_slug: entry.course_slug,
+        round_count: entry.round_count,
+        avg_rating: entry.avg_rating,
+      })),
     })),
     courses: courses.slice(0, 8).map((course) => ({
       id: course.id,
@@ -443,9 +606,11 @@ Deno.serve(async (req) => {
         "Use ONLY the JSON retrieval bundle provided.",
         "Never invent members, courses, ratings, or facts.",
         "Never mention email, private messages, invite tokens, or admin data.",
+        "When members include course_play evidence, cite those courses, round counts, and ratings only.",
+        "If members have course_play for a queried course, name those members — do not claim insufficient data.",
         "Return JSON with keys: answer (string), member_user_ids (string[]), course_ids (string[]).",
         "Choose IDs only from the provided members/courses arrays.",
-        "If data is thin, say you do not have enough EliteTee data yet.",
+        "If data is thin and no course_play evidence is present, say you do not have enough EliteTee data yet.",
       ].join(" "),
       userPayload: sanitizedBundle,
       maxOutputTokens: getEnvInt("AI_MAX_OUTPUT_TOKENS", 700),
@@ -469,6 +634,25 @@ Deno.serve(async (req) => {
     if (validated.answer) answer = validated.answer;
     if (validated.memberIds.length > 0) selectedMemberIds = validated.memberIds;
     if (validated.courseIds.length > 0) selectedCourseIds = validated.courseIds;
+
+    // Safety net: never keep generic insufficient-data text when retrieval produced members.
+    if (
+      scored.length > 0 &&
+      isGenericInsufficientDataAnswer(answer)
+    ) {
+      if (intent === "recommend_introductions") {
+        const destination = String(filters.memberFilters.location ?? filters.memberFilters.travel ?? "");
+        const fallback = buildIntroductionMembersAnswer({ destination, scored });
+        if (fallback) {
+          answer = fallback;
+          selectedMemberIds = scored.slice(0, 6).map((entry) => entry.member.user_id);
+          model = "deterministic";
+        }
+      } else {
+        answer = "Here are the closest matches from EliteTee directory data.";
+        selectedMemberIds = scored.slice(0, 6).map((entry) => entry.member.user_id);
+      }
+    }
   } catch (error) {
     errorCode = error instanceof Error ? error.message.slice(0, 120) : "AI_PROVIDER_ERROR";
     if (errorCode.includes("OPENAI_NOT_CONFIGURED")) {
