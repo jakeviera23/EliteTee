@@ -2,6 +2,16 @@
 -- sender_id and receiver_id reference public.users.id.
 -- Safe to run if the table already exists with sender_id, receiver_id, and status.
 
+-- Fresh installs: public.users is created in 009; bootstrap here so FKs below can apply.
+-- Policies remain in 009_public_users.sql.
+create table if not exists public.users (
+  id uuid primary key,
+  email text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.users enable row level security;
+
 create table if not exists public.introduction_requests (
   id uuid primary key default gen_random_uuid(),
   sender_id uuid not null references public.users(id) on delete cascade,

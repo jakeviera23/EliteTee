@@ -448,11 +448,29 @@ async function main() {
   );
 
   // --- Message mutation ---
-  const { error: bUpdateErr } = await clientB
+  const { data: bodyBeforeRow } = await clientA
+    .from("private_messages")
+    .select("body")
+    .eq("id", primaryMessageId)
+    .maybeSingle();
+  const bodyBefore = bodyBeforeRow?.body ?? "";
+
+  await clientB
     .from("private_messages")
     .update({ body: "hacked by B" })
     .eq("id", primaryMessageId);
-  assertOk(Boolean(bUpdateErr), "Message mutation", "B cannot modify A's message body");
+
+  const { data: bodyAfterRow, error: bodyReadErr } = await clientA
+    .from("private_messages")
+    .select("body")
+    .eq("id", primaryMessageId)
+    .maybeSingle();
+  assertOk(
+    !bodyReadErr && bodyAfterRow?.body === bodyBefore,
+    "Message mutation",
+    "B cannot modify A's message body",
+    bodyReadErr?.message ?? (bodyAfterRow?.body !== bodyBefore ? `body changed to ${JSON.stringify(bodyAfterRow?.body)}` : ""),
+  );
 
   const unread = await sendDirectMessage(clientA, {
     senderId: userA.userId,

@@ -22,6 +22,8 @@ alter table public.member_course_rounds
   add constraint member_course_rounds_course_rating_check
   check (course_rating between 1 and 10);
 
+drop function if exists public.golf_course_activity_stats(uuid);
+
 create or replace function public.golf_course_activity_stats(p_course_id uuid)
 returns table (
   round_count bigint,
