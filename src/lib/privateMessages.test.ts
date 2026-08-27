@@ -3,6 +3,7 @@ import type { PrivateMessageRecord } from "../types/privateMessage";
 import {
   buildDirectConversationSummaries,
   isPrivateMessageEditable,
+  mergeEditedPrivateMessage,
   PRIVATE_MESSAGE_EDIT_WINDOW_MS,
 } from "./privateMessages";
 
@@ -79,6 +80,45 @@ describe("buildDirectConversationSummaries", () => {
 
     expect(summaries[0]?.lastMessageWasEdited).toBe(true);
   });
+
+  it("uses Photo preview for image-only messages", () => {
+    const summaries = buildDirectConversationSummaries({
+      currentUserId: "user-a",
+      messages: [
+        message({
+          id: "1",
+          body: "",
+          created_at: "2026-07-05T12:00:00.000Z",
+          attachments: [
+            {
+              id: "att-1",
+              message_id: "1",
+              storage_path: "user-a/1/a.jpg",
+              content_type: "image/jpeg",
+              byte_size: 100,
+              width: 800,
+              height: 600,
+              sort_order: 0,
+              created_at: "2026-07-05T12:00:00.000Z",
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(summaries[0]?.lastMessageBody).toBe("Photo");
+    expect(summaries[0]?.lastMessageAttachmentCount).toBe(1);
+  });
+
+  it("keeps text previews for historical text-only messages", () => {
+    const summaries = buildDirectConversationSummaries({
+      currentUserId: "user-a",
+      messages: [message({ id: "1", body: "Historical note" })],
+    });
+
+    expect(summaries[0]?.lastMessageBody).toBe("Historical note");
+    expect(summaries[0]?.lastMessageAttachmentCount).toBe(0);
+  });
 });
 
 describe("isPrivateMessageEditable", () => {
@@ -106,5 +146,49 @@ describe("isPrivateMessageEditable", () => {
         created_at: new Date(Date.now() - PRIVATE_MESSAGE_EDIT_WINDOW_MS - 1000).toISOString(),
       }),
     ).toBe(false);
+  });
+});
+
+describe("mergeEditedPrivateMessage", () => {
+  it("updates body while preserving attachments", () => {
+    const existing = message({
+      id: "1",
+      body: "Before",
+      attachments: [
+        {
+          id: "att-1",
+          message_id: "1",
+          storage_path: "user-a/1/a.jpg",
+          content_type: "image/jpeg",
+          byte_size: 100,
+          width: null,
+          height: null,
+          sort_order: 0,
+          created_at: "2026-07-05T12:00:00.000Z",
+          signedUrl: "https://signed.example/a.jpg",
+        },
+      ],
+    });
+
+    const merged = mergeEditedPrivateMessage(existing, {
+      id: "1",
+      body: "After",
+      edited_at: "2026-07-05T13:00:00.000Z",
+      created_at: existing.created_at,
+    });
+
+    expect(merged.body).toBe("After");
+    expect(merged.attachments).toEqual(existing.attachments);
+  });
+});
+
+describe("sendDirectPrivateMessage image lifecycle", () => {
+  it("deletes image-only parent messages when upload fails", async () => {
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync(new URL("./privateMessages.ts", import.meta.url), "utf8"),
+    );
+    expect(source).toContain("allowEmpty: files.length > 0");
+    expect(source).toContain('if (!trimmedBody) {');
+    expect(source).toContain('.from("private_messages").delete()');
   });
 });

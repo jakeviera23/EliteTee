@@ -1,3 +1,16 @@
+export type PrivateMessageAttachment = {
+  id: string;
+  message_id: string;
+  storage_path: string;
+  content_type: string;
+  byte_size: number;
+  width: number | null;
+  height: number | null;
+  sort_order: number;
+  created_at: string;
+  signedUrl?: string | null;
+};
+
 export type PrivateMessageRecord = {
   id: string;
   introduction_request_id: string | null;
@@ -7,6 +20,7 @@ export type PrivateMessageRecord = {
   created_at: string;
   read_at?: string | null;
   edited_at?: string | null;
+  attachments?: PrivateMessageAttachment[];
 };
 
 export type DirectConversationSummary = {
@@ -19,8 +33,10 @@ export type DirectConversationSummary = {
   lastMessageBody: string;
   lastMessageAt: string;
   lastMessageWasEdited?: boolean;
+  lastMessageAttachmentCount?: number;
   unreadCount: number;
 };
+
 
 export type ConversationParticipantIdentity = {
   full_name: string;

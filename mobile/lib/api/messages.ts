@@ -1,10 +1,23 @@
 import { getCurrentUserId } from "./members";
 import { getMemberDisplayName } from "../memberInitials";
+import { formatMobileMessagePreviewBody } from "../messagePreview";
 import { requireSupabase } from "../supabase";
-import type { MobileConversationSummary, MobilePrivateMessage } from "@/types/messages";
+import type {
+  MobileConversationSummary,
+  MobilePrivateMessage,
+  MobilePrivateMessageAttachment,
+} from "@/types/messages";
 
 const DIRECT_MESSAGE_SELECT =
   "id, introduction_request_id, sender_id, receiver_id, body, created_at, read_at, edited_at";
+
+const ATTACHMENT_SELECT =
+  "id, message_id, storage_path, content_type, byte_size, width, height, sort_order, created_at";
+
+const PRIVATE_MESSAGE_MEDIA_BUCKET = "private-message-media";
+const SIGNED_URL_TTL_SECONDS = 3600;
+
+export { formatMobileMessagePreviewBody };
 
 type ParticipantIdentity = {
   full_name: string;
@@ -13,6 +26,57 @@ type ParticipantIdentity = {
   primary_club: string;
   based_in: string;
 };
+
+async function signAttachmentPaths(
+  attachments: MobilePrivateMessageAttachment[],
+): Promise<MobilePrivateMessageAttachment[]> {
+  if (attachments.length === 0) return [];
+  const client = requireSupabase();
+  return Promise.all(
+    attachments.map(async (attachment) => {
+      const { data } = await client.storage
+        .from(PRIVATE_MESSAGE_MEDIA_BUCKET)
+        .createSignedUrl(attachment.storage_path, SIGNED_URL_TTL_SECONDS);
+      return {
+        ...attachment,
+        signedUrl: data?.signedUrl ?? null,
+      };
+    }),
+  );
+}
+
+async function hydrateMessagesWithAttachments(
+  messages: MobilePrivateMessage[],
+): Promise<MobilePrivateMessage[]> {
+  if (messages.length === 0) return messages;
+  const client = requireSupabase();
+  const ids = messages.map((message) => message.id);
+  const { data, error } = await client
+    .from("private_message_attachments")
+    .select(ATTACHMENT_SELECT)
+    .in("message_id", ids)
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.warn("[messages] attachment fetch failed", error.message);
+    return messages.map((message) => ({ ...message, attachments: [] }));
+  }
+
+  const rows = (data ?? []) as MobilePrivateMessageAttachment[];
+  const byMessageId = new Map<string, MobilePrivateMessageAttachment[]>();
+  for (const row of rows) {
+    const list = byMessageId.get(row.message_id) ?? [];
+    list.push(row);
+    byMessageId.set(row.message_id, list);
+  }
+
+  return Promise.all(
+    messages.map(async (message) => {
+      const attachments = await signAttachmentPaths(byMessageId.get(message.id) ?? []);
+      return { ...message, attachments };
+    }),
+  );
+}
 
 function buildConversationSummaries({
   messages,
@@ -31,6 +95,10 @@ function buildConversationSummaries({
     const identity = identitiesByUserId[otherUserId];
     const otherUserName = getMemberDisplayName(identity?.full_name) || "Member";
     const existing = summaries.get(otherUserId);
+    const preview = formatMobileMessagePreviewBody(
+      message.body,
+      message.attachments?.length ?? 0,
+    );
 
     if (!existing) {
       summaries.set(otherUserId, {
@@ -39,7 +107,7 @@ function buildConversationSummaries({
         otherUserPhotoUrl: identity?.club_logo_url ?? null,
         otherUserPrimaryClub: identity?.primary_club ?? "",
         otherUserBasedIn: identity?.based_in ?? "",
-        lastMessageBody: message.body,
+        lastMessageBody: preview,
         lastMessageAt: message.created_at,
         unreadCount:
           message.receiver_id === currentUserId && !message.read_at ? 1 : 0,
@@ -47,7 +115,7 @@ function buildConversationSummaries({
       continue;
     }
 
-    existing.lastMessageBody = message.body;
+    existing.lastMessageBody = preview;
     existing.lastMessageAt = message.created_at;
     if (message.receiver_id === currentUserId && !message.read_at) {
       existing.unreadCount += 1;
@@ -81,7 +149,7 @@ export async function fetchConversations(): Promise<{
     return { data: [], error };
   }
 
-  const records = (messages ?? []) as MobilePrivateMessage[];
+  const records = await hydrateMessagesWithAttachments((messages ?? []) as MobilePrivateMessage[]);
   const participantIds = [
     ...new Set(
       records
@@ -104,7 +172,6 @@ export async function fetchConversations(): Promise<{
       .map((profile) => ({
         userId: String(profile.user_id),
         full_name: getMemberDisplayName(String(profile.full_name ?? "")) || "Member",
-        // Keep storage paths — MemberAvatar re-signs; do not cache signed URLs.
         club_logo_url: profile.club_logo_url ? String(profile.club_logo_url) : null,
         founding_member_number: profile.founding_member_number
           ? String(profile.founding_member_number)
@@ -156,7 +223,12 @@ export async function fetchConversationThread(otherUserId: string): Promise<{
     )
     .order("created_at", { ascending: true });
 
-  return { data: (data ?? []) as MobilePrivateMessage[], error };
+  if (error) {
+    return { data: [], error };
+  }
+
+  const hydrated = await hydrateMessagesWithAttachments((data ?? []) as MobilePrivateMessage[]);
+  return { data: hydrated, error: null };
 }
 
 export const PRIVATE_MESSAGE_MAX_LENGTH = 2000;
@@ -229,13 +301,9 @@ export async function markDirectMessagesAsRead(otherUserId: string): Promise<{ e
   }
 
   const client = requireSupabase();
-  const { error } = await client
-    .from("private_messages")
-    .update({ read_at: new Date().toISOString() })
-    .is("introduction_request_id", null)
-    .eq("sender_id", otherUserId)
-    .eq("receiver_id", userId)
-    .is("read_at", null);
+  const { error } = await client.rpc("mark_direct_private_messages_read", {
+    p_other_user_id: otherUserId,
+  });
 
   return { error };
 }

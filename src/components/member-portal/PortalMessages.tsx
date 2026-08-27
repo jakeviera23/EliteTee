@@ -12,6 +12,11 @@ import {
   markDirectMessagesAsRead,
   sendDirectPrivateMessage,
 } from "../../lib/privateMessages";
+import {
+  PRIVATE_MESSAGE_IMAGE_MAX_COUNT,
+  validatePrivateMessageImageFile,
+  validatePrivateMessageImageFiles,
+} from "../../lib/privateMessageMedia";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { DirectConversationSummary, PrivateMessageRecord } from "../../types/privateMessage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
@@ -34,6 +39,12 @@ type PortalMessagesProps = {
 type ActiveConversation = {
   otherUserId: string;
   otherUserName: string;
+};
+
+type PendingImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
 };
 
 function formatMessageTime(value: string) {
@@ -68,6 +79,7 @@ export function PortalMessages({
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(null);
   const [threadMessages, setThreadMessages] = useState<PrivateMessageRecord[]>([]);
   const [composeText, setComposeText] = useState("");
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [isLoadingInbox, setIsLoadingInbox] = useState(true);
   const [isLoadingThread, setIsLoadingThread] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -75,7 +87,18 @@ export function PortalMessages({
   const [threadError, setThreadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const composeInputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const threadEndRef = useRef<HTMLLIElement>(null);
+
+  const canSend = Boolean(composeText.trim() || pendingImages.length > 0);
+
+  useEffect(() => {
+    return () => {
+      for (const image of pendingImages) {
+        URL.revokeObjectURL(image.previewUrl);
+      }
+    };
+  }, [pendingImages]);
 
   const loadInbox = useCallback(async () => {
     setIsLoadingInbox(true);
@@ -255,7 +278,14 @@ export function PortalMessages({
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!activeConversation || !composeText.trim() || isSending) return;
+    if (!activeConversation || isSending || !canSend) return;
+
+    const files = pendingImages.map((image) => image.file);
+    const validationError = validatePrivateMessageImageFiles(files);
+    if (validationError) {
+      setSendError(validationError);
+      return;
+    }
 
     setIsSending(true);
     setSendError(null);
@@ -263,6 +293,7 @@ export function PortalMessages({
     const { error } = await sendDirectPrivateMessage({
       receiverUserId: activeConversation.otherUserId,
       body: composeText,
+      imageFiles: files,
     });
 
     setIsSending(false);
@@ -274,6 +305,11 @@ export function PortalMessages({
     }
 
     setComposeText("");
+    setPendingImages((current) => {
+      for (const image of current) URL.revokeObjectURL(image.previewUrl);
+      return [];
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
     await loadThread(activeConversation.otherUserId);
   }
 
@@ -282,6 +318,56 @@ export function PortalMessages({
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
     }
+  }
+
+  function handlePickImages(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected = [...(event.target.files ?? [])];
+    if (selected.length === 0) return;
+
+    setSendError(null);
+    setPendingImages((current) => {
+      const remainingSlots = PRIVATE_MESSAGE_IMAGE_MAX_COUNT - current.length;
+      if (remainingSlots <= 0) {
+        setSendError("You can attach up to 3 images.");
+        return current;
+      }
+
+      const accepted: PendingImage[] = [];
+      for (const file of selected.slice(0, remainingSlots)) {
+        const error = validatePrivateMessageImageFile(file);
+        if (error) {
+          setSendError(error);
+          continue;
+        }
+        accepted.push({
+          id: crypto.randomUUID(),
+          file,
+          previewUrl: URL.createObjectURL(file),
+        });
+      }
+
+      if (selected.length > remainingSlots) {
+        setSendError("You can attach up to 3 images.");
+      }
+
+      return [...current, ...accepted];
+    });
+
+    event.target.value = "";
+  }
+
+  function removePendingImage(id: string) {
+    setPendingImages((current) => {
+      const next: PendingImage[] = [];
+      for (const image of current) {
+        if (image.id === id) {
+          URL.revokeObjectURL(image.previewUrl);
+        } else {
+          next.push(image);
+        }
+      }
+      return next;
+    });
   }
 
   return (
@@ -497,29 +583,71 @@ export function PortalMessages({
               </div>
 
               <form className="et-messages-compose" onSubmit={handleSendMessage}>
-                <label className="visually-hidden" htmlFor="messages-compose-input">
-                  {messagesCopy.composeLabel}
-                </label>
-                <textarea
-                  id="messages-compose-input"
-                  ref={composeInputRef}
-                  className="et-messages-compose-input"
-                  rows={1}
-                  value={composeText}
-                  onChange={(event) => setComposeText(event.target.value)}
-                  onKeyDown={handleComposeKeyDown}
-                  placeholder={messagesCopy.composePlaceholder(activeConversation.otherUserName)}
-                  disabled={isSending || isLoadingThread}
-                  aria-label={messagesCopy.composeLabel}
-                />
-                <button
-                  type="submit"
-                  className="et-btn et-btn--forest et-messages-send"
-                  disabled={isSending || !composeText.trim() || isLoadingThread}
-                  aria-label={messagesCopy.send}
-                >
-                  {isSending ? messagesCopy.sending : messagesCopy.send}
-                </button>
+                {pendingImages.length > 0 ? (
+                  <div className="et-messages-compose-previews" aria-label="Selected images">
+                    {pendingImages.map((image) => (
+                      <div key={image.id} className="et-messages-compose-preview">
+                        <img src={image.previewUrl} alt="" />
+                        <button
+                          type="button"
+                          className="et-messages-compose-preview-remove"
+                          onClick={() => removePendingImage(image.id)}
+                          aria-label="Remove image"
+                          disabled={isSending}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="et-messages-compose-row">
+                  <label className="visually-hidden" htmlFor="messages-compose-input">
+                    {messagesCopy.composeLabel}
+                  </label>
+                  <button
+                    type="button"
+                    className="et-messages-attach"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={
+                      isSending ||
+                      isLoadingThread ||
+                      pendingImages.length >= PRIVATE_MESSAGE_IMAGE_MAX_COUNT
+                    }
+                    aria-label="Attach photos"
+                    title="Attach photos"
+                  >
+                    ＋
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    hidden
+                    onChange={handlePickImages}
+                  />
+                  <textarea
+                    id="messages-compose-input"
+                    ref={composeInputRef}
+                    className="et-messages-compose-input"
+                    rows={1}
+                    value={composeText}
+                    onChange={(event) => setComposeText(event.target.value)}
+                    onKeyDown={handleComposeKeyDown}
+                    placeholder={messagesCopy.composePlaceholder(activeConversation.otherUserName)}
+                    disabled={isSending || isLoadingThread}
+                    aria-label={messagesCopy.composeLabel}
+                  />
+                  <button
+                    type="submit"
+                    className="et-btn et-btn--forest et-messages-send"
+                    disabled={isSending || !canSend || isLoadingThread}
+                    aria-label={messagesCopy.send}
+                  >
+                    {isSending ? messagesCopy.sending : messagesCopy.send}
+                  </button>
+                </div>
                 {sendError ? (
                   <p className="et-messages-send-error" role="alert">
                     {sendError}
