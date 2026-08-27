@@ -13,8 +13,13 @@ import {
 } from "./memberProfiles";
 import {
   buildFeedLikeSeenKey,
+  buildMessageNotificationSeenKey,
   getSeenFeedLikeKeys,
   getSeenIntroductionRequestIds,
+  getSeenMessageNotificationKeys,
+  markFeedLikesSeen,
+  markIntroductionRequestsSeen,
+  markMessageNotificationsSeen,
 } from "./portalNotifications";
 import { supabase } from "./supabase";
 import { filterPersistedFeedPostIds } from "./feedPostEngagement";
@@ -58,6 +63,7 @@ export type PortalNotificationItem = {
   };
   acknowledgeIntroductionRequestId?: string;
   acknowledgeFeedLikeKey?: string;
+  acknowledgeMessageNotificationKey?: string;
 };
 
 const TYPE_LABELS: Record<PortalNotificationKind, string> = {
@@ -99,26 +105,35 @@ function sortNotifications(items: PortalNotificationItem[]) {
 
 function buildUnreadMessageNotifications(
   conversations: DirectConversationSummary[],
+  seenMessageNotificationKeys: Set<string>,
 ): PortalNotificationItem[] {
   return conversations
     .filter((conversation) => conversation.unreadCount > 0)
-    .map((conversation) => ({
-      id: `message:${conversation.otherUserId}`,
-      kind: "unread_message" as const,
-      typeLabel: TYPE_LABELS.unread_message,
-      memberName: conversation.otherUserName,
-      description:
-        conversation.unreadCount === 1
-          ? "You have an unread message."
-          : `You have ${conversation.unreadCount} unread messages.`,
-      timestampLabel: formatNotificationTimestamp(conversation.lastMessageAt),
-      sortTimestamp: new Date(conversation.lastMessageAt).getTime() || 0,
-      countsTowardBadge: true,
-      messageTarget: {
-        otherUserId: conversation.otherUserId,
-        otherUserName: conversation.otherUserName,
-      },
-    }));
+    .map((conversation) => {
+      const acknowledgeMessageNotificationKey = buildMessageNotificationSeenKey(
+        conversation.otherUserId,
+        conversation.lastMessageAt,
+      );
+
+      return {
+        id: `message:${conversation.otherUserId}`,
+        kind: "unread_message" as const,
+        typeLabel: TYPE_LABELS.unread_message,
+        memberName: conversation.otherUserName,
+        description:
+          conversation.unreadCount === 1
+            ? "You have an unread message."
+            : `You have ${conversation.unreadCount} unread messages.`,
+        timestampLabel: formatNotificationTimestamp(conversation.lastMessageAt),
+        sortTimestamp: new Date(conversation.lastMessageAt).getTime() || 0,
+        countsTowardBadge: !seenMessageNotificationKeys.has(acknowledgeMessageNotificationKey),
+        messageTarget: {
+          otherUserId: conversation.otherUserId,
+          otherUserName: conversation.otherUserName,
+        },
+        acknowledgeMessageNotificationKey,
+      };
+    });
 }
 
 function buildIntroductionNotifications({
@@ -137,6 +152,7 @@ function buildIntroductionNotifications({
     const counterpart = getIntroductionCounterpart(request, currentUserId);
 
     if (status === "pending" && request.receiver_id === currentUserId) {
+      const isSeen = seenIntroductionRequestIds.has(request.id);
       items.push({
         id: `introduction:pending:${request.id}`,
         kind: "introduction_pending",
@@ -145,8 +161,9 @@ function buildIntroductionNotifications({
         description: `${counterpart.name} requested an introduction.`,
         timestampLabel: formatNotificationTimestamp(request.created_at),
         sortTimestamp: new Date(request.created_at).getTime() || 0,
-        countsTowardBadge: true,
+        countsTowardBadge: !isSeen,
         introductionTarget: { tab: "incoming", requestId: request.id },
+        acknowledgeIntroductionRequestId: request.id,
       });
       continue;
     }
@@ -226,6 +243,7 @@ export function buildPortalNotifications({
   seenIntroductionRequestIds,
   feedLikes = [],
   seenFeedLikeKeys = new Set<string>(),
+  seenMessageNotificationKeys = new Set<string>(),
   likerProfilesByUserId = {},
 }: {
   conversations: DirectConversationSummary[];
@@ -234,11 +252,15 @@ export function buildPortalNotifications({
   seenIntroductionRequestIds: Set<string>;
   feedLikes?: FeedPostLikeRow[];
   seenFeedLikeKeys?: Set<string>;
+  seenMessageNotificationKeys?: Set<string>;
   likerProfilesByUserId?: Record<string, { full_name: string }>;
 }): PortalNotificationItem[] {
   if (!currentUserId) return [];
 
-  const messageItems = buildUnreadMessageNotifications(conversations);
+  const messageItems = buildUnreadMessageNotifications(
+    conversations,
+    seenMessageNotificationKeys,
+  );
   const introductionItems = buildIntroductionNotifications({
     requests: introductionRequests,
     currentUserId,
@@ -290,6 +312,81 @@ export function countUnseenFeedLikeNotifications({
   ).length;
 }
 
+export function countUnseenMessageNotifications({
+  conversations,
+  seenMessageNotificationKeys,
+}: {
+  conversations: DirectConversationSummary[];
+  seenMessageNotificationKeys: Set<string>;
+}) {
+  return conversations.reduce((total, conversation) => {
+    if (conversation.unreadCount <= 0) return total;
+
+    const seenKey = buildMessageNotificationSeenKey(
+      conversation.otherUserId,
+      conversation.lastMessageAt,
+    );
+    if (seenMessageNotificationKeys.has(seenKey)) return total;
+
+    return total + conversation.unreadCount;
+  }, 0);
+}
+
+export function collectPortalNotificationAcknowledgments(
+  notifications: PortalNotificationItem[],
+) {
+  return {
+    introductionRequestIds: [
+      ...new Set(
+        notifications
+          .map((item) => item.acknowledgeIntroductionRequestId)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ],
+    feedLikeKeys: [
+      ...new Set(
+        notifications
+          .map((item) => item.acknowledgeFeedLikeKey)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ],
+    messageNotificationKeys: [
+      ...new Set(
+        notifications
+          .map((item) => item.acknowledgeMessageNotificationKey)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ],
+  };
+}
+
+export function acknowledgePortalNotificationPanel(
+  userId: string,
+  notifications: PortalNotificationItem[],
+) {
+  const acknowledgments = collectPortalNotificationAcknowledgments(notifications);
+
+  markIntroductionRequestsSeen(userId, acknowledgments.introductionRequestIds);
+  markFeedLikesSeen(userId, acknowledgments.feedLikeKeys);
+  markMessageNotificationsSeen(userId, acknowledgments.messageNotificationKeys);
+
+  return {
+    seenIntroductionRequestIds: getSeenIntroductionRequestIds(userId),
+    seenFeedLikeKeys: getSeenFeedLikeKeys(userId),
+    seenMessageNotificationKeys: getSeenMessageNotificationKeys(userId),
+  };
+}
+
+export function clearPortalNotificationBadgeFlags(
+  notifications: PortalNotificationItem[],
+): PortalNotificationItem[] {
+  return notifications.map((notification) =>
+    notification.countsTowardBadge
+      ? { ...notification, countsTowardBadge: false }
+      : notification,
+  );
+}
+
 export function computePortalNotificationBadgeCount(items: PortalNotificationItem[]): number {
   return items.reduce((total, item) => {
     if (!item.countsTowardBadge) return total;
@@ -312,6 +409,7 @@ export function computePortalNotificationBadgeCountFromSources({
   conversations,
   feedLikes = [],
   seenFeedLikeKeys = new Set<string>(),
+  seenMessageNotificationKeys = new Set<string>(),
 }: {
   unreadMessageCount: number;
   introductionRequests: IntroductionRequestRecord[];
@@ -320,8 +418,9 @@ export function computePortalNotificationBadgeCountFromSources({
   conversations?: DirectConversationSummary[];
   feedLikes?: FeedPostLikeRow[];
   seenFeedLikeKeys?: Set<string>;
+  seenMessageNotificationKeys?: Set<string>;
 }): number {
-  if (conversations && conversations.length > 0) {
+  if (conversations) {
     return computePortalNotificationBadgeCount(
       buildPortalNotifications({
         conversations,
@@ -330,6 +429,7 @@ export function computePortalNotificationBadgeCountFromSources({
         seenIntroductionRequestIds,
         feedLikes,
         seenFeedLikeKeys,
+        seenMessageNotificationKeys,
       }),
     );
   }
@@ -341,7 +441,11 @@ export function computePortalNotificationBadgeCountFromSources({
   for (const request of introductionRequests) {
     const status = request.status.toLowerCase();
 
-    if (status === "pending" && request.receiver_id === currentUserId) {
+    if (
+      status === "pending" &&
+      request.receiver_id === currentUserId &&
+      !seenIntroductionRequestIds.has(request.id)
+    ) {
       count += 1;
       continue;
     }
@@ -547,6 +651,7 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
   });
   const seenIntroductionRequestIds = getSeenIntroductionRequestIds(userId);
   const seenFeedLikeKeys = getSeenFeedLikeKeys(userId);
+  const seenMessageNotificationKeys = getSeenMessageNotificationKeys(userId);
   const likerProfilesByUserId = Object.fromEntries(
     likerUserIds.map((likerUserId) => [
       likerUserId,
@@ -560,6 +665,7 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
     seenIntroductionRequestIds,
     feedLikes,
     seenFeedLikeKeys,
+    seenMessageNotificationKeys,
     likerProfilesByUserId,
   });
 
@@ -568,6 +674,62 @@ export async function fetchPortalNotificationFeed(): Promise<PortalNotificationF
     introductionRequests,
     conversations,
     feedLikes,
+    error: null,
+  };
+}
+
+export type PortalNotificationBadgeSourcesResult = {
+  conversations: DirectConversationSummary[];
+  introductionRequests: IntroductionRequestRecord[];
+  feedLikes: FeedPostLikeRow[];
+  error: null;
+} | {
+  conversations: DirectConversationSummary[];
+  introductionRequests: IntroductionRequestRecord[];
+  feedLikes: FeedPostLikeRow[];
+  error: unknown;
+};
+
+export async function fetchPortalNotificationBadgeSources(): Promise<PortalNotificationBadgeSourcesResult> {
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+
+  if (sessionError || !userId) {
+    return {
+      conversations: [],
+      introductionRequests: [],
+      feedLikes: [],
+      error: sessionError ?? null,
+    };
+  }
+
+  const [messagesResult, introductionResult, feedLikesResult] = await Promise.all([
+    fetchDirectPrivateMessages(),
+    fetchIntroductionRequests(),
+    fetchFeedLikesOnOwnPosts(userId),
+  ]);
+
+  if (messagesResult.error || introductionResult.error || feedLikesResult.error) {
+    return {
+      conversations: [],
+      introductionRequests: introductionResult.data ?? [],
+      feedLikes: [],
+      error: messagesResult.error ?? introductionResult.error ?? feedLikesResult.error,
+    };
+  }
+
+  const messages = messagesResult.data ?? [];
+  const participantIds = extractDirectMessageParticipantUserIds(messages, userId);
+  const { data: profiles } = await fetchApprovedMemberProfilesByUserIds(participantIds);
+  const conversations = buildDirectConversationSummaries({
+    messages,
+    currentUserId: userId,
+    memberIdentitiesByUserId: buildApprovedMemberIdentityMap(profiles ?? []),
+  });
+
+  return {
+    conversations,
+    introductionRequests: introductionResult.data ?? [],
+    feedLikes: feedLikesResult.data ?? [],
     error: null,
   };
 }

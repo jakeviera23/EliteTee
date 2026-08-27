@@ -3,18 +3,23 @@ import type { IntroductionRequestRecord } from "../types/introductionRequest";
 import type { DirectConversationSummary } from "../types/privateMessage";
 import {
   PORTAL_NOTIFICATIONS_EMPTY_MESSAGE,
+  acknowledgePortalNotificationPanel,
   buildFeedLikeNotifications,
   buildPortalNotifications,
+  clearPortalNotificationBadgeFlags,
   computePortalNotificationBadgeCount,
   computePortalNotificationBadgeCountFromSources,
+  countUnseenMessageNotifications,
   excludeSelfFeedLikes,
   groupPortalNotifications,
   resolvePortalNotificationDestination,
 } from "./portalNotificationCenter";
 import {
   buildFeedLikeSeenKey,
+  buildMessageNotificationSeenKey,
   getNotificationBadgeDisplay,
   getSeenFeedLikeKeys,
+  getSeenMessageNotificationKeys,
   markFeedLikesSeen,
   PORTAL_NOTIFICATION_PANEL_WIDTH,
 } from "./portalNotifications";
@@ -65,12 +70,14 @@ describe("buildPortalNotifications", () => {
     const notifications = buildPortalNotifications({
       currentUserId: "member-1",
       seenIntroductionRequestIds: new Set(),
+      seenMessageNotificationKeys: new Set(),
       introductionRequests: [],
       conversations: [
         conversation({
           otherUserId: "member-2",
           otherUserName: "Alex Kim",
           unreadCount: 2,
+          lastMessageAt: "2026-07-02T12:00:00.000Z",
         }),
       ],
     });
@@ -80,6 +87,9 @@ describe("buildPortalNotifications", () => {
       otherUserId: "member-2",
       otherUserName: "Alex Kim",
     });
+    expect(notifications[0]?.acknowledgeMessageNotificationKey).toBe(
+      buildMessageNotificationSeenKey("member-2", "2026-07-02T12:00:00.000Z"),
+    );
     expect(notifications[0]?.introductionTarget).toBeUndefined();
   });
 
@@ -269,6 +279,154 @@ describe("feed like seen keys", () => {
     markFeedLikesSeen("member-1", [seenKey]);
 
     expect(getSeenFeedLikeKeys("member-1").has(seenKey)).toBe(true);
+  });
+});
+
+describe("acknowledgePortalNotificationPanel", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("marks all visible notification types as seen for badge purposes", () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        storage.set(key, value);
+      },
+    });
+
+    const notifications = buildPortalNotifications({
+      currentUserId: "member-1",
+      seenIntroductionRequestIds: new Set(),
+      seenFeedLikeKeys: new Set(),
+      seenMessageNotificationKeys: new Set(),
+      conversations: [
+        conversation({
+          otherUserId: "member-2",
+          unreadCount: 1,
+          lastMessageAt: "2026-07-02T12:00:00.000Z",
+        }),
+      ],
+      introductionRequests: [
+        introductionRequest({
+          id: "intro-pending",
+          sender_id: "member-3",
+          receiver_id: "member-1",
+          status: "pending",
+        }),
+      ],
+      feedLikes: [
+        {
+          post_id: POST_ID,
+          user_id: "member-4",
+          created_at: "2026-07-04T12:00:00.000Z",
+        },
+      ],
+      likerProfilesByUserId: {
+        "member-4": { full_name: "Taylor Reed" },
+      },
+    });
+
+    const seenState = acknowledgePortalNotificationPanel("member-1", notifications);
+
+    expect(seenState.seenIntroductionRequestIds.has("intro-pending")).toBe(true);
+    expect(
+      seenState.seenFeedLikeKeys.has(buildFeedLikeSeenKey(POST_ID, "member-4")),
+    ).toBe(true);
+    expect(
+      seenState.seenMessageNotificationKeys.has(
+        buildMessageNotificationSeenKey("member-2", "2026-07-02T12:00:00.000Z"),
+      ),
+    ).toBe(true);
+
+    expect(
+      computePortalNotificationBadgeCountFromSources({
+        unreadMessageCount: 1,
+        currentUserId: "member-1",
+        seenIntroductionRequestIds: seenState.seenIntroductionRequestIds,
+        seenFeedLikeKeys: seenState.seenFeedLikeKeys,
+        seenMessageNotificationKeys: seenState.seenMessageNotificationKeys,
+        introductionRequests: [
+          introductionRequest({
+            id: "intro-pending",
+            sender_id: "member-3",
+            receiver_id: "member-1",
+            status: "pending",
+          }),
+        ],
+        conversations: [
+          conversation({
+            otherUserId: "member-2",
+            unreadCount: 1,
+            lastMessageAt: "2026-07-02T12:00:00.000Z",
+          }),
+        ],
+        feedLikes: [
+          {
+            post_id: POST_ID,
+            user_id: "member-4",
+            created_at: "2026-07-04T12:00:00.000Z",
+          },
+        ],
+      }),
+    ).toBe(0);
+  });
+
+  it("keeps notification items visible while clearing badge flags", () => {
+    const notifications = buildPortalNotifications({
+      currentUserId: "member-1",
+      seenIntroductionRequestIds: new Set(),
+      seenMessageNotificationKeys: new Set(),
+      conversations: [
+        conversation({
+          otherUserId: "member-2",
+          unreadCount: 1,
+          lastMessageAt: "2026-07-02T12:00:00.000Z",
+        }),
+      ],
+      introductionRequests: [],
+    });
+
+    const cleared = clearPortalNotificationBadgeFlags(notifications);
+
+    expect(cleared).toHaveLength(1);
+    expect(cleared[0]?.countsTowardBadge).toBe(false);
+    expect(cleared[0]?.messageTarget).toEqual(notifications[0]?.messageTarget);
+  });
+});
+
+describe("countUnseenMessageNotifications", () => {
+  it("shows a badge again when a newer unread message arrives", () => {
+    const seenKey = buildMessageNotificationSeenKey("member-2", "2026-07-02T12:00:00.000Z");
+    const seenKeys = new Set([seenKey]);
+
+    expect(
+      countUnseenMessageNotifications({
+        conversations: [
+          conversation({
+            otherUserId: "member-2",
+            unreadCount: 1,
+            lastMessageAt: "2026-07-02T12:00:00.000Z",
+          }),
+        ],
+        seenMessageNotificationKeys: seenKeys,
+      }),
+    ).toBe(0);
+
+    expect(
+      countUnseenMessageNotifications({
+        conversations: [
+          conversation({
+            otherUserId: "member-2",
+            unreadCount: 1,
+            lastMessageAt: "2026-07-03T12:00:00.000Z",
+          }),
+        ],
+        seenMessageNotificationKeys: seenKeys,
+      }),
+    ).toBe(1);
   });
 });
 

@@ -13,12 +13,13 @@ import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvid
 import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { getCurrentAuthUserId } from "../lib/authUserLinking";
-import { fetchIntroductionRequests } from "../lib/introductionRequests";
 import type { IntroductionTab } from "../lib/introductionBoard";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import {
+  acknowledgePortalNotificationPanel,
+  clearPortalNotificationBadgeFlags,
   computePortalNotificationBadgeCountFromSources,
-  fetchFeedLikesOnOwnPosts,
+  fetchPortalNotificationBadgeSources,
   fetchPortalNotificationFeed,
   resolvePortalNotificationDestination,
   type FeedPostLikeRow,
@@ -29,9 +30,12 @@ import {
   getNotificationBadgeDisplay,
   getSeenFeedLikeKeys,
   getSeenIntroductionRequestIds,
+  getSeenMessageNotificationKeys,
   markFeedLikesSeen,
   markIntroductionRequestsSeen,
+  markMessageNotificationsSeen,
 } from "../lib/portalNotifications";
+import type { DirectConversationSummary } from "../types/privateMessage";
 import {
   PORTAL_DESKTOP_PRIMARY_TABS,
   PORTAL_MOBILE_BOTTOM_TABS,
@@ -145,7 +149,13 @@ function MemberPortalContent() {
     () => new Set(),
   );
   const [seenFeedLikeKeys, setSeenFeedLikeKeys] = useState<Set<string>>(() => new Set());
+  const [seenMessageNotificationKeys, setSeenMessageNotificationKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [feedLikeRows, setFeedLikeRows] = useState<FeedPostLikeRow[]>([]);
+  const [notificationConversations, setNotificationConversations] = useState<
+    DirectConversationSummary[]
+  >([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
@@ -169,15 +179,19 @@ function MemberPortalContent() {
         introductionRequests,
         currentUserId,
         seenIntroductionRequestIds,
+        conversations: notificationConversations,
         feedLikes: feedLikeRows,
         seenFeedLikeKeys,
+        seenMessageNotificationKeys,
       }),
     [
       currentUserId,
       feedLikeRows,
       introductionRequests,
+      notificationConversations,
       seenFeedLikeKeys,
       seenIntroductionRequestIds,
+      seenMessageNotificationKeys,
       unreadMessageCount,
     ],
   );
@@ -195,40 +209,22 @@ function MemberPortalContent() {
     };
   }, []);
 
-  const refreshUnreadMessageCount = useCallback(async () => {
-    const { count } = await fetchUnreadMessageCount();
-    setUnreadMessageCount(count);
-  }, []);
-
-  const refreshIntroductionRequests = useCallback(async () => {
-    const [{ userId }, { data, error }] = await Promise.all([
-      getCurrentAuthUserId(),
-      fetchIntroductionRequests(),
+  const refreshNotificationCounts = useCallback(async () => {
+    const [{ count }, badgeSources] = await Promise.all([
+      fetchUnreadMessageCount(),
+      fetchPortalNotificationBadgeSources(),
     ]);
 
-    if (userId) {
-      setCurrentUserId(userId);
-    }
+    setUnreadMessageCount(count);
 
-    if (error) {
+    if (badgeSources.error) {
       return;
     }
 
-    const nextRequests = data ?? [];
-    setIntroductionRequests(nextRequests);
+    setNotificationConversations(badgeSources.conversations);
+    setIntroductionRequests(badgeSources.introductionRequests);
+    setFeedLikeRows(badgeSources.feedLikes);
   }, []);
-
-  const refreshNotificationCounts = useCallback(async () => {
-    const { userId } = await getCurrentAuthUserId();
-    const [_, feedLikesResult] = await Promise.all([
-      Promise.all([refreshUnreadMessageCount(), refreshIntroductionRequests()]),
-      userId ? fetchFeedLikesOnOwnPosts(userId) : Promise.resolve({ data: [], error: null }),
-    ]);
-
-    if (!feedLikesResult.error) {
-      setFeedLikeRows(feedLikesResult.data ?? []);
-    }
-  }, [refreshIntroductionRequests, refreshUnreadMessageCount]);
 
   const loadNotificationPanel = useCallback(async () => {
     setNotificationsLoading(true);
@@ -244,8 +240,25 @@ function MemberPortalContent() {
     }
 
     setIntroductionRequests(result.introductionRequests);
-    setNotificationItems(result.notifications);
+    setNotificationConversations(result.conversations);
     setFeedLikeRows(result.feedLikes);
+
+    if (currentUserId) {
+      const seenState = acknowledgePortalNotificationPanel(currentUserId, result.notifications);
+      setSeenIntroductionRequestIds(seenState.seenIntroductionRequestIds);
+      setSeenFeedLikeKeys(seenState.seenFeedLikeKeys);
+      setSeenMessageNotificationKeys(seenState.seenMessageNotificationKeys);
+    } else {
+      const { userId } = await getCurrentAuthUserId();
+      if (userId) {
+        const seenState = acknowledgePortalNotificationPanel(userId, result.notifications);
+        setSeenIntroductionRequestIds(seenState.seenIntroductionRequestIds);
+        setSeenFeedLikeKeys(seenState.seenFeedLikeKeys);
+        setSeenMessageNotificationKeys(seenState.seenMessageNotificationKeys);
+      }
+    }
+
+    setNotificationItems(clearPortalNotificationBadgeFlags(result.notifications));
 
     const unreadFromConversations = result.conversations.reduce(
       (total, conversation) => total + conversation.unreadCount,
@@ -253,7 +266,7 @@ function MemberPortalContent() {
     );
     setUnreadMessageCount(unreadFromConversations);
     setNotificationsLoading(false);
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     void refreshNotificationCounts();
@@ -267,11 +280,13 @@ function MemberPortalContent() {
     if (!currentUserId) {
       setSeenIntroductionRequestIds(new Set());
       setSeenFeedLikeKeys(new Set());
+      setSeenMessageNotificationKeys(new Set());
       return;
     }
 
     setSeenIntroductionRequestIds(getSeenIntroductionRequestIds(currentUserId));
     setSeenFeedLikeKeys(getSeenFeedLikeKeys(currentUserId));
+    setSeenMessageNotificationKeys(getSeenMessageNotificationKeys(currentUserId));
   }, [currentUserId]);
 
   useEffect(() => {
@@ -478,6 +493,13 @@ function MemberPortalContent() {
     if (notification.acknowledgeFeedLikeKey && currentUserId) {
       markFeedLikesSeen(currentUserId, [notification.acknowledgeFeedLikeKey]);
       setSeenFeedLikeKeys(getSeenFeedLikeKeys(currentUserId));
+    }
+
+    if (notification.acknowledgeMessageNotificationKey && currentUserId) {
+      markMessageNotificationsSeen(currentUserId, [
+        notification.acknowledgeMessageNotificationKey,
+      ]);
+      setSeenMessageNotificationKeys(getSeenMessageNotificationKeys(currentUserId));
     }
 
     const destination = resolvePortalNotificationDestination(notification);
