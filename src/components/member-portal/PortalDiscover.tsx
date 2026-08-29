@@ -19,6 +19,10 @@ import {
   formatDiscoverMemberLoadError,
   logDiscoverMemberLoadError,
 } from "../../lib/portalDiscoverErrors";
+import {
+  fetchMemberRelationshipContext,
+  type MemberRelationshipContext,
+} from "../../lib/memberRelationships";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { DiscoverDirectoryCard } from "./discover/DiscoverDirectoryCard";
@@ -33,6 +37,10 @@ type PortalDiscoverProps = {
   onNavigate?: (tab: "profile" | "messages" | "introductions") => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onMessageMember?: (userId: string, memberName: string) => void;
+  onRequestIntroduction?: (member: MemberProfileRecord) => void;
+  onRespondToIntroduction?: (requestId: string) => void;
+  relationshipContext?: MemberRelationshipContext | null;
+  onRelationshipContextChange?: (context: MemberRelationshipContext | null) => void;
 };
 
 export function PortalDiscover({
@@ -40,6 +48,10 @@ export function PortalDiscover({
   onNavigate: _onNavigate,
   onViewMemberProfile,
   onMessageMember,
+  onRequestIntroduction,
+  onRespondToIntroduction,
+  relationshipContext = null,
+  onRelationshipContextChange,
 }: PortalDiscoverProps) {
   const [filters, setFilters] = useState<DiscoverFilters>(DEFAULT_DISCOVER_FILTERS);
   const debouncedFilters = useDebouncedValue(filters, 250);
@@ -74,6 +86,12 @@ export function PortalDiscover({
   useEffect(() => {
     void loadMembers();
   }, [loadMembers]);
+
+  useEffect(() => {
+    void fetchMemberRelationshipContext().then(({ context }) => {
+      onRelationshipContextChange?.(context);
+    });
+  }, [onRelationshipContextChange, members.length]);
 
   const filterOptions = useMemo(() => extractDiscoverFilterOptions(members), [members]);
   const geoGroups = useMemo(() => buildDiscoverGeoGroups(members), [members]);
@@ -186,7 +204,10 @@ export function PortalDiscover({
               <DiscoverFeaturedSections
                 sections={featuredSections}
                 viewer={viewer}
+                relationshipContext={relationshipContext}
                 onViewProfile={handleViewProfile}
+                onRequestIntroduction={onRequestIntroduction}
+                onRespondToIntroduction={onRespondToIntroduction}
                 onMessageMember={onMessageMember ? handleMessageMember : undefined}
                 onViewAllMembers={handleViewAllMembers}
               />
@@ -225,7 +246,10 @@ export function PortalDiscover({
                     <DiscoverDirectoryCard
                       member={member}
                       viewer={viewer}
+                      relationshipContext={relationshipContext}
                       onViewProfile={handleViewProfile}
+                      onRequestIntroduction={onRequestIntroduction}
+                      onRespondToIntroduction={onRespondToIntroduction}
                       onMessageMember={onMessageMember ? handleMessageMember : undefined}
                     />
                   </li>

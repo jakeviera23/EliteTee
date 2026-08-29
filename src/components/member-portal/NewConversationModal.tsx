@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { earlyStageCopy, messagesCopy } from "../../data/portalSocial";
+import {
+  canDirectMessageMember,
+  fetchMemberRelationshipContext,
+} from "../../lib/memberRelationships";
 import { fetchMessageablePortalMembers } from "../../lib/memberProfiles";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { MemberClubAvatar } from "./MemberClubAvatar";
@@ -32,7 +36,10 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
     setIsLoading(true);
     setLoadError(null);
 
-    const { data, error } = await fetchMessageablePortalMembers();
+    const [{ data, error }, { context }] = await Promise.all([
+      fetchMessageablePortalMembers(),
+      fetchMemberRelationshipContext(),
+    ]);
 
     if (error) {
       console.error("[NewConversationModal] failed to load members", {
@@ -42,7 +49,17 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
       setLoadError("Member profiles could not be loaded right now.");
       setMembers([]);
     } else {
-      setMembers(data);
+      const nextMembers = (data ?? []).filter((member) => {
+        const memberUserId = member.user_id?.trim();
+        if (!memberUserId || !context) return false;
+        return canDirectMessageMember(
+          context.currentUserId,
+          memberUserId,
+          context.introductionRequests,
+          context.directThreadUserIds,
+        );
+      });
+      setMembers(nextMembers);
     }
 
     setIsLoading(false);
@@ -79,6 +96,8 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
             ×
           </button>
         </header>
+
+        <p className="et-messages-modal-lead">{earlyStageCopy.messagesNewEmpty}</p>
 
         <label className="et-messages-modal-search">
           <span className="visually-hidden">Search members</span>

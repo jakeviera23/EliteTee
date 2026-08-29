@@ -9,9 +9,11 @@ import { PortalFeed } from "../components/member-portal/PortalFeed";
 import { PortalIntroductionRequests } from "../components/member-portal/PortalIntroductionRequests";
 import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { PortalNotificationsPanel } from "../components/member-portal/PortalNotificationsPanel";
+import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
-import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
+import { PortalToastProvider, usePortalToast } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
+import { introductionsCopy } from "../data/portalSocial";
 import { getCurrentAuthUserId } from "../lib/authUserLinking";
 import type { IntroductionTab } from "../lib/introductionBoard";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
@@ -44,6 +46,11 @@ import {
 import { supabase } from "../lib/supabase";
 import type { IntroductionRequestRecord } from "../types/introductionRequest";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
+import type { MemberProfileRecord } from "../types/memberProfileRecord";
+import {
+  fetchMemberRelationshipContext,
+  type MemberRelationshipContext,
+} from "../lib/memberRelationships";
 import "../inside-elitetee.css";
 import "../member-portal.css";
 import "../member-portal-theme.css";
@@ -80,6 +87,8 @@ function bottomNavIcon(tab: PortalTab) {
       return "✦";
     case "courses":
       return "⛳";
+    case "introductions":
+      return "↔";
     case "profile":
       return "◉";
     default:
@@ -136,6 +145,7 @@ function PortalTopBarEnvelopeIcon() {
 function MemberPortalContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = usePortalToast();
   const isCoursesRoute = location.pathname === "/courses";
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -167,6 +177,13 @@ function MemberPortalContent() {
   const [pendingIntroductionTab, setPendingIntroductionTab] = useState<IntroductionTab | null>(
     null,
   );
+  const [pendingIntroductionRequestId, setPendingIntroductionRequestId] = useState<string | null>(
+    null,
+  );
+  const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
+    null,
+  );
+  const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
   const [pendingFeedPostId, setPendingFeedPostId] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
@@ -272,6 +289,21 @@ function MemberPortalContent() {
     void refreshNotificationCounts();
   }, [refreshNotificationCounts]);
 
+  const refreshRelationshipContext = useCallback(async () => {
+    const { context } = await fetchMemberRelationshipContext();
+    setRelationshipContext(context);
+  }, []);
+
+  useEffect(() => {
+    void refreshRelationshipContext();
+  }, [refreshRelationshipContext]);
+
+  useEffect(() => {
+    setRelationshipContext((current) =>
+      current ? { ...current, introductionRequests } : current,
+    );
+  }, [introductionRequests]);
+
   useEffect(() => {
     void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
   }, []);
@@ -306,6 +338,7 @@ function MemberPortalContent() {
           openAskWith?: { question: string };
           openFeedPostWith?: { postId: string };
           restorePortalTab?: PortalTab;
+          focusIntroductionRequestId?: string;
         }
       | null
       | undefined;
@@ -336,6 +369,9 @@ function MemberPortalContent() {
 
     if (state?.restorePortalTab) {
       setActiveView(state.restorePortalTab);
+      if (state.focusIntroductionRequestId) {
+        setPendingIntroductionRequestId(state.focusIntroductionRequestId);
+      }
       navigate("/member-portal", { replace: true, state: null });
     }
   }, [location.state, navigate]);
@@ -412,6 +448,25 @@ function MemberPortalContent() {
   function handleMessageMember(userId: string, memberName: string) {
     setPendingConversation({ otherUserId: userId, otherUserName: memberName });
     transitionTo("messages");
+  }
+
+  function handleRequestIntroduction(member: MemberProfileRecord) {
+    setIntroRequestMember(member);
+  }
+
+  function handleRespondToIntroduction(requestId: string) {
+    setPendingIntroductionTab("incoming");
+    setPendingIntroductionRequestId(requestId);
+    transitionTo("introductions");
+  }
+
+  function handleIntroductionSubmitted() {
+    showToast(introductionsCopy.submitSuccess);
+    setIntroRequestMember(null);
+    void refreshRelationshipContext();
+    void refreshNotificationCounts();
+    setPendingIntroductionTab("sent");
+    transitionTo("introductions");
   }
 
   function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
@@ -525,6 +580,7 @@ function MemberPortalContent() {
 
     if (destination?.view === "introductions") {
       setPendingIntroductionTab(destination.introductionTarget.tab);
+      setPendingIntroductionRequestId(destination.introductionTarget.requestId);
       transitionTo("introductions");
       return;
     }
@@ -664,6 +720,10 @@ function MemberPortalContent() {
               onNavigate={(tab) => transitionTo(tab)}
               onViewMemberProfile={handleViewMemberProfile}
               onMessageMember={handleMessageMember}
+              onRequestIntroduction={handleRequestIntroduction}
+              onRespondToIntroduction={handleRespondToIntroduction}
+              relationshipContext={relationshipContext}
+              onRelationshipContextChange={setRelationshipContext}
             />
           ) : null}
           {resolvedView === "ask" ? (
@@ -683,6 +743,8 @@ function MemberPortalContent() {
               isActive={resolvedView === "introductions"}
               initialTab={pendingIntroductionTab}
               onInitialTabConsumed={() => setPendingIntroductionTab(null)}
+              focusRequestId={pendingIntroductionRequestId}
+              onFocusRequestConsumed={() => setPendingIntroductionRequestId(null)}
               onMessageMember={handleMessageMember}
               onViewMemberProfile={handleViewMemberProfile}
               onRequestsChange={handleIntroductionRequestsChange}
@@ -699,8 +761,12 @@ function MemberPortalContent() {
           {resolvedView === "profile" ? (
             <GolferProfilePage
               isActive={resolvedView === "profile"}
+              relationshipContext={relationshipContext}
               onViewMemberProfile={handleViewMemberProfile}
               onOpenFeedPost={handleOpenFeedPost}
+              onRequestIntroduction={handleRequestIntroduction}
+              onRespondToIntroduction={handleRespondToIntroduction}
+              onMessageMember={handleMessageMember}
             />
           ) : null}
 
@@ -728,6 +794,14 @@ function MemberPortalContent() {
           </button>
         ))}
       </nav>
+
+      {introRequestMember ? (
+        <IntroductionRequestModal
+          member={introRequestMember}
+          onClose={() => setIntroRequestMember(null)}
+          onSubmitted={handleIntroductionSubmitted}
+        />
+      ) : null}
     </div>
   );
 }

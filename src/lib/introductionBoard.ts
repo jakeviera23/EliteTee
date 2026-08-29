@@ -99,6 +99,24 @@ export function pickDefaultIntroductionTab(
   return "incoming";
 }
 
+export function resolveIntroductionTabForRequest(
+  request: IntroductionRequestRecord,
+  currentUserId: string | null,
+): IntroductionTab {
+  const status = request.status.toLowerCase();
+
+  if (status === "accepted") return "accepted";
+  if (status === "declined") return "declined";
+  if (status === "pending" && currentUserId && request.receiver_id === currentUserId) {
+    return "incoming";
+  }
+  if (status === "pending" && currentUserId && request.sender_id === currentUserId) {
+    return "sent";
+  }
+
+  return pickDefaultIntroductionTab(categorizeIntroductionRequests([request], currentUserId));
+}
+
 export function buildIntroductionTimeline(request: IntroductionRequestRecord): string[] {
   const steps = [`Requested`];
   const status = request.status.toLowerCase();

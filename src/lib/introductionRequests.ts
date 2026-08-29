@@ -1,6 +1,10 @@
 import type { IntroductionRequestType, IntroductionRequestRecord } from "../types/introductionRequest";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import { getCurrentAuthUserId } from "./authUserLinking";
+import {
+  membersAreConnected,
+  validateIntroductionRequestMessage,
+} from "./memberRelationships";
 import { supabase } from "./supabase";
 
 type IntroductionRequestRow = {
@@ -16,7 +20,7 @@ type IntroductionRequestRow = {
 const UNLINKED_MEMBER_ERROR = "This member is not linked to a user account yet.";
 
 const INTRODUCTION_REQUEST_UPDATE_DENIED_ERROR =
-  "Unable to accept or decline this request. Only the receiving member can respond to a pending request. If you are the receiver and this keeps happening, database permissions may need to be updated in Supabase.";
+  "Unable to accept or decline this request. Only the receiving member can respond to a pending request.";
 
 const INTRODUCTION_REQUEST_CANCEL_DENIED_ERROR =
   "Unable to cancel this request. Only the sender can withdraw a pending request they sent.";
@@ -51,6 +55,34 @@ export async function createIntroductionRequest({
 
   if (senderId === receiverId) {
     return { data: null, error: new Error("You cannot request an introduction to yourself.") };
+  }
+
+  const messageValidationError = validateIntroductionRequestMessage(message);
+  if (messageValidationError) {
+    return { data: null, error: new Error(messageValidationError) };
+  }
+
+  const { data: existingRequests, error: pairError } = await supabase
+    .from("introduction_requests")
+    .select("id, sender_id, receiver_id, status")
+    .or(
+      `and(sender_id.eq.${senderId},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${senderId})`,
+    );
+
+  if (pairError) {
+    return { data: null, error: pairError };
+  }
+
+  const pairRecords = (existingRequests ?? []) as Pick<
+    IntroductionRequestRecord,
+    "id" | "sender_id" | "receiver_id" | "status"
+  >[];
+
+  if (membersAreConnected(senderId, receiverId, pairRecords as IntroductionRequestRecord[])) {
+    return {
+      data: null,
+      error: new Error("You are already connected with this member. Open Messages to continue the conversation."),
+    };
   }
 
   const { data: existingPending, error: existingError } = await supabase

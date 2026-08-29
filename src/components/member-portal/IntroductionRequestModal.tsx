@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { introductionsCopy } from "../../data/portalSocial";
 import { createIntroductionRequest } from "../../lib/introductionRequests";
+import { validateIntroductionRequestMessage } from "../../lib/memberRelationships";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { IntroductionRequestType } from "../../types/introductionRequest";
@@ -30,6 +31,13 @@ export function IntroductionRequestModal({
   }) {
     setIsSubmitting(true);
     setErrorMessage(null);
+
+    const validationError = validateIntroductionRequestMessage(message);
+    if (validationError) {
+      setIsSubmitting(false);
+      setErrorMessage(validationError);
+      return;
+    }
 
     const { error } = await createIntroductionRequest({
       receiverMember: member,

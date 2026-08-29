@@ -1,5 +1,6 @@
 import type { DirectConversationSummary, ConversationParticipantIdentity, PrivateMessageRecord } from "../types/privateMessage";
 import { getCurrentAuthUserId } from "./authUserLinking";
+import { assertCanSendDirectMessage } from "./memberRelationships";
 import {
   fetchAttachmentsForMessageIds,
   formatMessagePreviewBody,
@@ -17,7 +18,7 @@ type PrivateMessageInsertPayload = {
 };
 
 const PRIVATE_MESSAGE_RLS_ERROR =
-  "Message could not be sent because database permissions blocked the insert.";
+  "Your message could not be sent. Request and accept an introduction before messaging this member for the first time.";
 
 export const PRIVATE_MESSAGE_MAX_LENGTH = 2000;
 export const PRIVATE_MESSAGE_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -315,6 +316,11 @@ export async function sendDirectPrivateMessage({
 
   if (receiverUserId === userId) {
     return { data: null, error: new Error("You cannot message yourself.") };
+  }
+
+  const permissionError = await assertCanSendDirectMessage(userId, receiverUserId);
+  if (permissionError) {
+    return { data: null, error: permissionError };
   }
 
   const insertPayload: PrivateMessageInsertPayload = {

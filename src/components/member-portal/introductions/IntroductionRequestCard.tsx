@@ -13,6 +13,7 @@ type IntroductionRequestCardProps = {
   currentUserId: string | null;
   profile?: ApprovedMemberDirectoryProfile;
   updatingRequestId: string | null;
+  isFocused?: boolean;
   onAccept: (requestId: string) => void;
   onDecline: (requestId: string) => void;
   onCancel: (requestId: string) => void;
@@ -50,6 +51,7 @@ export function IntroductionRequestCard({
   currentUserId,
   profile,
   updatingRequestId,
+  isFocused = false,
   onAccept,
   onDecline,
   onCancel,
@@ -71,7 +73,10 @@ export function IntroductionRequestCard({
   const clubLocation = [profile?.primary_club, profile?.based_in].filter(Boolean).join(" · ");
 
   return (
-    <article className="et-introductions-card">
+    <article
+      id={`introduction-request-${request.id}`}
+      className={`et-introductions-card${isFocused ? " is-focused" : ""}`}
+    >
       <header className="et-introductions-card-head">
         <MemberClubAvatar
           member={{ club_logo_url: profile?.club_logo_url ?? null }}
@@ -159,7 +164,7 @@ export function IntroductionRequestCard({
             className="et-btn et-btn--forest et-btn--sm"
             onClick={() => onMessageMember(request)}
           >
-            {introductionsCopy.messageMember}
+            {introductionsCopy.openConversation}
           </button>
         ) : null}
       </div>

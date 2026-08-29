@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { experienceCopy } from "../data/portalSocial";
+import { experienceCopy, introductionsCopy } from "../data/portalSocial";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CourseDetailGallery } from "../components/member-portal/course-detail/CourseDetailGallery";
 import { CourseDetailMembersPlayed } from "../components/member-portal/course-detail/CourseDetailMembersPlayed";
@@ -40,6 +40,11 @@ import {
   type ApprovedMemberDirectoryProfile,
 } from "../lib/memberProfiles";
 import { ensureBucketListHydrated, getBucketListCourseIds } from "../lib/portalCourseState";
+import { getCurrentAuthUserId } from "../lib/authUserLinking";
+import {
+  fetchMemberRelationshipContext,
+  type MemberRelationshipContext,
+} from "../lib/memberRelationships";
 import type { GolfCourseRecord, GolfCourseSearchResult } from "../types/golfCourse";
 import { isMemberSubmittedCourse } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
@@ -72,9 +77,18 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
   const [showEditCourseModal, setShowEditCourseModal] = useState(false);
   const [canEditSubmittedCourse, setCanEditSubmittedCourse] = useState(false);
   const [introMember, setIntroMember] = useState<MemberProfileRecord | null>(null);
+  const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
+    null,
+  );
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [bucketListCourseIds, setBucketListCourseIds] = useState<string[]>(() =>
     getBucketListCourseIds(),
   );
+
+  useEffect(() => {
+    void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
+    void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
+  }, [slug]);
 
   const loadCourse = useCallback(async () => {
     if (!slug.trim()) {
@@ -482,8 +496,30 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
                   <CourseDetailMembersPlayed
                     summaries={memberSummaries}
                     profilesByUserId={profilesByUserId}
+                    relationshipContext={relationshipContext}
+                    currentUserId={currentUserId}
                     onViewMemberProfile={onViewMemberProfile}
                     onRequestIntroduction={setIntroMember}
+                    onRespondToIntroduction={(requestId) =>
+                      navigate("/member-portal", {
+                        state: {
+                          restorePortalTab: "introductions",
+                          focusIntroductionRequestId: requestId,
+                        },
+                      })
+                    }
+                    onMessageMember={(member) => {
+                      const memberUserId = member.user_id?.trim();
+                      if (!memberUserId) return;
+                      navigate("/member-portal", {
+                        state: {
+                          openMessagesWith: {
+                            userId: memberUserId,
+                            memberName: member.full_name,
+                          },
+                        },
+                      });
+                    }}
                     onAddPlayed={hasMemberActivity ? undefined : () => setShowAddModal(true)}
                   />
                 </section>
@@ -617,7 +653,14 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
         <IntroductionRequestModal
           member={introMember}
           onClose={() => setIntroMember(null)}
-          onSubmitted={() => setIntroMember(null)}
+          onSubmitted={() => {
+            showToast(introductionsCopy.submitSuccess);
+            setIntroMember(null);
+            void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
+            navigate("/member-portal", {
+              state: { restorePortalTab: "introductions" },
+            });
+          }}
         />
       ) : null}
     </div>

@@ -4,18 +4,24 @@ import {
   formatCourseRatingValue,
   formatCourseRatingDisplay,
 } from "../../../lib/courseRating";
+import type { MemberRelationshipContext } from "../../../lib/memberRelationships";
 import { isMeaningfulProfileText } from "../../../lib/portalProfileDisplay";
 import { formatPlayedOnDate } from "../../../lib/memberCourseRounds";
 import type { CourseMemberPlaySummary } from "../../../lib/courseDetail";
 import type { MemberProfileRecord } from "../../../types/memberProfileRecord";
 import type { ViewMemberProfileHandler } from "../../../types/memberProfileNavigation";
 import { MemberIdentity } from "../MemberClubAvatar";
+import { MemberRelationshipActions } from "../MemberRelationshipActions";
 
 type CourseDetailMembersPlayedProps = {
   summaries: CourseMemberPlaySummary[];
   profilesByUserId: Record<string, ApprovedMemberDirectoryProfile>;
+  relationshipContext?: MemberRelationshipContext | null;
+  currentUserId?: string | null;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onRequestIntroduction?: (member: MemberProfileRecord) => void;
+  onRespondToIntroduction?: (requestId: string) => void;
+  onMessageMember?: (member: MemberProfileRecord) => void;
   onAddPlayed?: () => void;
 };
 
@@ -40,8 +46,12 @@ function formatMemberField(value: string | null | undefined): string | null {
 export function CourseDetailMembersPlayed({
   summaries,
   profilesByUserId,
+  relationshipContext = null,
+  currentUserId = null,
   onViewMemberProfile,
   onRequestIntroduction,
+  onRespondToIntroduction,
+  onMessageMember,
   onAddPlayed,
 }: CourseDetailMembersPlayedProps) {
   if (summaries.length === 0) {
@@ -94,6 +104,11 @@ export function CourseDetailMembersPlayed({
           summary.rating !== null ? formatCourseRatingDisplay(summary.rating) : null;
         const homeClub = formatMemberField(profile?.primary_club);
         const memberLocation = formatMemberField(profile?.based_in);
+        const showRelationshipActions =
+          Boolean(profile) &&
+          Boolean(currentUserId) &&
+          summary.memberUserId !== currentUserId &&
+          Boolean(onRequestIntroduction || onRespondToIntroduction || onMessageMember);
 
         return (
           <li key={summary.memberUserId}>
@@ -154,14 +169,15 @@ export function CourseDetailMembersPlayed({
                     View Profile
                   </button>
                 ) : null}
-                {onRequestIntroduction && profile ? (
-                  <button
-                    type="button"
-                    className="et-btn et-btn--forest"
-                    onClick={() => onRequestIntroduction(toIntroMember(profile))}
-                  >
-                    Request Introduction
-                  </button>
+                {showRelationshipActions ? (
+                  <MemberRelationshipActions
+                    otherUserId={summary.memberUserId}
+                    context={relationshipContext}
+                    compactLabels
+                    onRequestIntroduction={() => onRequestIntroduction?.(toIntroMember(profile!))}
+                    onRespondToRequest={onRespondToIntroduction}
+                    onMessage={() => onMessageMember?.(toIntroMember(profile!))}
+                  />
                 ) : null}
               </div>
             </article>

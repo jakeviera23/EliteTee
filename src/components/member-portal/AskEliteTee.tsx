@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { askCopy } from "../../data/portalSocial";
+import { askCopy, introductionsCopy } from "../../data/portalSocial";
 import {
   ASK_ELITETEE_EXAMPLE_PROMPTS,
   askEliteTee,
@@ -14,6 +14,10 @@ import {
   memberFacingAskError,
 } from "../../lib/askEliteTeeDisplay";
 import { coerceProfileStringList } from "../../lib/memberProfiles";
+import {
+  fetchMemberRelationshipContext,
+  type MemberRelationshipContext,
+} from "../../lib/memberRelationships";
 import type { AskEliteTeeMemberResult, AskEliteTeeResponse } from "../../types/askEliteTee";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import type { GolfCourseSearchResult } from "../../types/golfCourse";
@@ -90,6 +94,9 @@ export function AskEliteTee({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [introMember, setIntroMember] = useState<MemberProfileRecord | null>(null);
+  const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
+    null,
+  );
   const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
 
   const { memberMap, courseMap } = useMemo(
@@ -103,11 +110,9 @@ export function AskEliteTee({
   );
 
   useEffect(() => {
-    const trimmed = initialQuestion?.trim();
-    if (!trimmed) return;
-    setQuestion(trimmed);
-    onInitialQuestionConsumed?.();
-  }, [initialQuestion, onInitialQuestionConsumed]);
+    if (!isActive) return;
+    void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
+  }, [isActive, response?.query_id]);
 
   async function submitQuestion(trimmed: string) {
     setIsLoading(true);
@@ -162,6 +167,61 @@ export function AskEliteTee({
     }
     showToast("Thanks for the feedback");
   }
+
+  useEffect(() => {
+    const trimmed = initialQuestion?.trim();
+    if (!trimmed) return;
+    setQuestion(trimmed);
+    onInitialQuestionConsumed?.();
+  }, [initialQuestion, onInitialQuestionConsumed]);
+
+  function handleMessageMember(member: MemberProfileRecord) {
+    const memberUserId = member.user_id?.trim();
+    if (!memberUserId) return;
+    navigate("/member-portal", {
+      state: {
+        openMessagesWith: { userId: memberUserId, memberName: member.full_name },
+      },
+    });
+  }
+
+  function handleRespondToIntroduction(requestId: string) {
+    navigate("/member-portal", {
+      state: {
+        restorePortalTab: "introductions",
+        focusIntroductionRequestId: requestId,
+      },
+    });
+  }
+
+  const viewer = useMemo<MemberProfileRecord | null>(() => {
+    if (!relationshipContext?.currentUserId) return null;
+    return {
+      id: relationshipContext.currentUserId,
+      user_id: relationshipContext.currentUserId,
+      full_name: "You",
+      email: "",
+      primary_club: "",
+      additional_clubs: [],
+      based_in: "",
+      regions: [],
+      industry: "",
+      golf_interests: [],
+      business_interests: [],
+      current_request: "",
+      traveling_to: "",
+      handicap: "",
+      bucket_list_course_ids: [],
+      club_logo_url: null,
+      cover_photo_url: null,
+      membership_status: "",
+      is_verified: false,
+      founding_member_number: null,
+      portal_access_enabled: true,
+      created_at: "",
+      updated_at: "",
+    };
+  }, [relationshipContext?.currentUserId]);
 
   function handleViewProfile(member: MemberProfileRecord) {
     if (onViewMemberProfile && member.user_id) {
@@ -310,11 +370,13 @@ export function AskEliteTee({
                     <DiscoverDirectoryCard
                       key={member.user_id}
                       member={profile}
-                      viewer={null}
+                      viewer={viewer}
+                      relationshipContext={relationshipContext}
                       matchReasonsOverride={memberMap.get(member.user_id) ?? []}
-                      showRequestIntroduction
                       onViewProfile={handleViewProfile}
                       onRequestIntroduction={setIntroMember}
+                      onRespondToIntroduction={handleRespondToIntroduction}
+                      onMessageMember={handleMessageMember}
                     />
                   );
                 })}
@@ -417,8 +479,12 @@ export function AskEliteTee({
           member={introMember}
           onClose={() => setIntroMember(null)}
           onSubmitted={() => {
-            showToast("Introduction request submitted");
+            showToast(introductionsCopy.submitSuccess);
             setIntroMember(null);
+            void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
+            navigate("/member-portal", {
+              state: { restorePortalTab: "introductions" },
+            });
           }}
         />
       ) : null}

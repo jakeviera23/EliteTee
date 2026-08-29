@@ -1,11 +1,16 @@
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
 import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
 import { PortalToastProvider, usePortalToast } from "../components/member-portal/PortalToastProvider";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
+import { introductionsCopy } from "../data/portalSocial";
+import {
+  fetchMemberRelationshipContext,
+  type MemberRelationshipContext,
+} from "../lib/memberRelationships";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
-import { useState } from "react";
 import "../inside-elitetee.css";
 import "../member-portal.css";
 import "../member-portal-theme.css";
@@ -22,6 +27,13 @@ function MemberPublicProfileContent() {
   const location = useLocation();
   const { showToast } = usePortalToast();
   const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
+  const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
+    null,
+  );
+
+  useEffect(() => {
+    void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
+  }, [userId]);
 
   const state = (location.state as MemberProfileLocationState | null) ?? null;
   const returnTo = state?.returnTo ?? {
@@ -53,6 +65,15 @@ function MemberPublicProfileContent() {
     setIntroRequestMember(member);
   }
 
+  function handleRespondToIntroduction(requestId: string) {
+    navigate("/member-portal", {
+      state: {
+        restorePortalTab: "introductions",
+        focusIntroductionRequestId: requestId,
+      },
+    });
+  }
+
   function handleOpenFeedPost(postId: string) {
     navigate("/member-portal", {
       state: {
@@ -70,8 +91,10 @@ function MemberPublicProfileContent() {
             viewUserId={userId}
             onBack={handleBack}
             backLabel={returnTo.label}
+            relationshipContext={relationshipContext}
             onMessageMember={handleMessageMember}
             onRequestIntroduction={handleRequestIntroduction}
+            onRespondToIntroduction={handleRespondToIntroduction}
             onViewMemberProfile={(nextUserId, memberName) => {
               navigate(`/members/${nextUserId}`, {
                 state: {
@@ -90,9 +113,12 @@ function MemberPublicProfileContent() {
           member={introRequestMember}
           onClose={() => setIntroRequestMember(null)}
           onSubmitted={() => {
-            showToast("Introduction request submitted");
+            showToast(introductionsCopy.submitSuccess);
             setIntroRequestMember(null);
-            navigate("/member-portal", { state: { restorePortalTab: "introductions" } });
+            void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
+            navigate("/member-portal", {
+              state: { restorePortalTab: "introductions" },
+            });
           }}
         />
       ) : null}

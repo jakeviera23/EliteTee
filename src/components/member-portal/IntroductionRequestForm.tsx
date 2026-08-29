@@ -1,6 +1,10 @@
 import { FormEvent, useState } from "react";
 import { introductionsCopy } from "../../data/portalSocial";
 import {
+  INTRODUCTION_MESSAGE_MIN_LENGTH,
+  validateIntroductionRequestMessage,
+} from "../../lib/memberRelationships";
+import {
   INTRODUCTION_REQUEST_TYPES,
   INTRODUCTION_REQUEST_TYPE_HINTS,
   type IntroductionRequestType,
@@ -27,15 +31,26 @@ export function IntroductionRequestForm({
     INTRODUCTION_REQUEST_TYPES[0],
   );
   const [message, setMessage] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const nextValidationError = validateIntroductionRequestMessage(message);
+    if (nextValidationError) {
+      setValidationError(nextValidationError);
+      return;
+    }
+
+    setValidationError(null);
     onSubmit({ requestType, message });
   }
 
   const memberMeta = [member.primary_club, member.based_in, member.founding_member_number]
     .filter(Boolean)
     .join(" · ");
+  const trimmedLength = message.trim().length;
+  const displayError = validationError ?? errorMessage;
 
   return (
     <form className="et-introductions-form" onSubmit={handleSubmit}>
@@ -49,9 +64,9 @@ export function IntroductionRequestForm({
 
       <p className="et-introductions-form-lead">{introductionsCopy.modalLead}</p>
 
-      {errorMessage ? (
+      {displayError ? (
         <p className="et-introductions-alert et-introductions-alert--error" role="alert">
-          {errorMessage}
+          {displayError}
         </p>
       ) : null}
 
@@ -83,14 +98,31 @@ export function IntroductionRequestForm({
       </fieldset>
 
       <label className="portal-profile-field portal-profile-field--full">
-        <span>{introductionsCopy.messageLabel}</span>
+        <span>
+          {introductionsCopy.messageLabel}
+          <span aria-hidden="true"> *</span>
+        </span>
         <textarea
           rows={5}
           value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder={`${introductionsCopy.messagePrompt} ${introductionsCopy.messageHint}`}
+          required
+          minLength={INTRODUCTION_MESSAGE_MIN_LENGTH}
+          aria-required="true"
+          aria-invalid={Boolean(displayError)}
+          aria-describedby="introduction-message-hint"
+          onChange={(event) => {
+            setMessage(event.target.value);
+            if (validationError) {
+              setValidationError(null);
+            }
+          }}
+          placeholder={introductionsCopy.messagePlaceholder}
         />
       </label>
+      <p id="introduction-message-hint" className="et-introductions-message-hint">
+        {introductionsCopy.messageHint} {trimmedLength}/{INTRODUCTION_MESSAGE_MIN_LENGTH} minimum
+        characters
+      </p>
 
       <div className="et-introductions-form-actions">
         <button type="submit" className="et-btn et-btn--forest" disabled={isSubmitting}>

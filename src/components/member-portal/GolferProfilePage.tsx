@@ -28,6 +28,10 @@ import {
 } from "../../lib/profilePageDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { migrateLegacyPortalProfileExtrasIfNeeded } from "../../lib/portalProfileExtras";
+import {
+  resolveProfileConnectionCount,
+  type MemberRelationshipContext,
+} from "../../lib/memberRelationships";
 import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
@@ -42,6 +46,7 @@ import { ProfileProsePreview } from "./profile/ProfileProsePreview";
 import { ProfileTagOrTextList } from "./profile/ProfileTagOrTextList";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { InviteGolfer } from "./InviteGolfer";
+import { MemberRelationshipActions } from "./MemberRelationshipActions";
 
 function ProfileEmptyState({ title, hint }: { title: string; hint: string }) {
   return (
@@ -90,6 +95,8 @@ type GolferProfilePageProps = {
   backLabel?: string;
   onMessageMember?: (userId: string, memberName: string) => void;
   onRequestIntroduction?: (member: MemberProfileRecord) => void;
+  onRespondToIntroduction?: (requestId: string) => void;
+  relationshipContext?: MemberRelationshipContext | null;
   onViewMemberProfile?: (userId: string, memberName: string) => void;
   onOpenFeedPost?: (postId: string) => void;
 };
@@ -101,6 +108,8 @@ export function GolferProfilePage({
   backLabel = "Back",
   onMessageMember,
   onRequestIntroduction,
+  onRespondToIntroduction,
+  relationshipContext = null,
   onViewMemberProfile: _onViewMemberProfile,
   onOpenFeedPost,
 }: GolferProfilePageProps) {
@@ -114,6 +123,7 @@ export function GolferProfilePage({
   const [isBucketListLoading, setIsBucketListLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [connectionCount, setConnectionCount] = useState(0);
 
   const resolvedViewUserId = viewUserId?.trim() || null;
   const isViewingOther = Boolean(resolvedViewUserId && resolvedViewUserId !== currentUserId);
@@ -196,8 +206,12 @@ export function GolferProfilePage({
     setMemberProfile(nextProfile);
     setFeedPosts(posts ?? []);
     setCourseRounds(rounds ?? []);
+    const introRequests =
+      relationshipContext?.introductionRequests ??
+      (viewingOther ? [] : []);
+    void resolveProfileConnectionCount(targetUserId, introRequests).then(setConnectionCount);
     setIsLoading(false);
-  }, [resolvedViewUserId]);
+  }, [relationshipContext?.introductionRequests, resolvedViewUserId]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -260,16 +274,18 @@ export function GolferProfilePage({
 
   const uniqueCourses = useMemo(() => buildUniqueCoursesPlayed(courseRounds), [courseRounds]);
   const experienceStats = useMemo(
-    () => buildProfileExperienceStats(courseRounds, feedPosts.length),
-    [courseRounds, feedPosts.length],
+    () => buildProfileExperienceStats(courseRounds, feedPosts.length, connectionCount),
+    [connectionCount, courseRounds, feedPosts.length],
   );
   const recentExperiences = useMemo(() => courseRounds, [courseRounds]);
   const bucketListCount = bucketListCourses.length;
 
   const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
-  const canMessage = isViewingOther && Boolean(onMessageMember && memberProfile?.user_id);
-  const canRequestIntroduction =
-    isViewingOther && Boolean(onRequestIntroduction && memberProfile?.user_id);
+  const profileUserId = memberProfile?.user_id?.trim() ?? "";
+  const showRelationshipActions =
+    isViewingOther &&
+    Boolean(profileUserId) &&
+    Boolean(onRequestIntroduction || onRespondToIntroduction || onMessageMember);
   const businessInterests = (memberProfile?.business_interests ?? []).filter(isMeaningfulProfileText);
   const headlineLabel = isMeaningfulProfileText(display.title) ? display.title.trim() : "";
   const homeClubLabel = isMeaningfulProfileText(display.homeCourse) ? display.homeCourse.trim() : "";
@@ -388,33 +404,20 @@ export function GolferProfilePage({
                     >
                       Edit Profile
                     </button>
-                  ) : (
-                    <>
-                      {canRequestIntroduction ? (
-                        <button
-                          type="button"
-                          className="et-btn et-btn--secondary"
-                          onClick={() => onRequestIntroduction?.(memberProfile)}
-                        >
-                          Request Introduction
-                        </button>
-                      ) : null}
-                      {canMessage && memberProfile.user_id ? (
-                        <button
-                          type="button"
-                          className="et-btn et-btn--forest"
-                          onClick={() =>
-                            onMessageMember?.(
-                              memberProfile.user_id as string,
-                              memberProfile.full_name,
-                            )
-                          }
-                        >
-                          Message
-                        </button>
-                      ) : null}
-                    </>
-                  )}
+                  ) : showRelationshipActions ? (
+                    <MemberRelationshipActions
+                      otherUserId={profileUserId}
+                      context={relationshipContext}
+                      layout="hero"
+                      onRequestIntroduction={() =>
+                        memberProfile && onRequestIntroduction?.(memberProfile)
+                      }
+                      onRespondToRequest={onRespondToIntroduction}
+                      onMessage={() =>
+                        onMessageMember?.(profileUserId, memberProfile?.full_name ?? "Member")
+                      }
+                    />
+                  ) : null}
                 </div>
               </ProfileCover>
             </div>

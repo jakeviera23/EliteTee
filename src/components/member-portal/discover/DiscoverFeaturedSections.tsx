@@ -1,11 +1,15 @@
 import type { DiscoverFeaturedSection } from "../../../lib/discoverDirectory";
+import type { MemberRelationshipContext } from "../../../lib/memberRelationships";
 import type { MemberProfileRecord } from "../../../types/memberProfileRecord";
 import { DiscoverDirectoryCard } from "./DiscoverDirectoryCard";
 
 type DiscoverFeaturedSectionsProps = {
   sections: DiscoverFeaturedSection[];
   viewer: MemberProfileRecord | null;
+  relationshipContext?: MemberRelationshipContext | null;
   onViewProfile: (member: MemberProfileRecord) => void;
+  onRequestIntroduction?: (member: MemberProfileRecord) => void;
+  onRespondToIntroduction?: (requestId: string) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
   onViewAllMembers?: () => void;
 };
@@ -13,7 +17,10 @@ type DiscoverFeaturedSectionsProps = {
 export function DiscoverFeaturedSections({
   sections,
   viewer,
+  relationshipContext = null,
   onViewProfile,
+  onRequestIntroduction,
+  onRespondToIntroduction,
   onMessageMember,
   onViewAllMembers,
 }: DiscoverFeaturedSectionsProps) {
@@ -52,7 +59,10 @@ export function DiscoverFeaturedSections({
                 <DiscoverDirectoryCard
                   member={member}
                   viewer={viewer}
+                  relationshipContext={relationshipContext}
                   onViewProfile={onViewProfile}
+                  onRequestIntroduction={onRequestIntroduction}
+                  onRespondToIntroduction={onRespondToIntroduction}
                   onMessageMember={onMessageMember}
                 />
               </li>

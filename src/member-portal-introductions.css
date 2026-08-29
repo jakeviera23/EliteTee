@@ -509,6 +509,27 @@
   border-color: var(--intro-forest);
 }
 
+.et-introductions-card.is-focused {
+  outline: 2px solid var(--intro-forest);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgb(31 79 58 / 12%);
+}
+
+.et-introductions-accept-success {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.et-introductions-accept-success-title {
+  font-weight: 600;
+}
+
+.et-introductions-message-hint {
+  margin-top: 0.35rem;
+  color: rgb(31 41 55 / 72%);
+  font-size: 0.875rem;
+}
+
 @media (max-width: 767px) {
   .et-introductions-tabs {
     width: 100%;

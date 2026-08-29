@@ -2,28 +2,31 @@ import {
   formatMemberActivitySummary,
   selectInterestChips,
 } from "../../../lib/discoverDirectory";
+import type { MemberRelationshipContext } from "../../../lib/memberRelationships";
 import type { MemberProfileRecord } from "../../../types/memberProfileRecord";
+import { MemberRelationshipActions } from "../MemberRelationshipActions";
 import { DiscoverMemberAvatar } from "./DiscoverMemberAvatar";
 
 type DiscoverDirectoryCardProps = {
   member: MemberProfileRecord;
   viewer: MemberProfileRecord | null;
+  relationshipContext?: MemberRelationshipContext | null;
   /** Optional match reasons for Ask EliteTee / special contexts. Discover omits these. */
   matchReasonsOverride?: string[];
-  /** Discover cards omit this; Ask EliteTee can enable it. */
-  showRequestIntroduction?: boolean;
   onViewProfile: (member: MemberProfileRecord) => void;
   onRequestIntroduction?: (member: MemberProfileRecord) => void;
+  onRespondToIntroduction?: (requestId: string) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
 };
 
 export function DiscoverDirectoryCard({
   member,
   viewer,
+  relationshipContext = null,
   matchReasonsOverride,
-  showRequestIntroduction = false,
   onViewProfile,
   onRequestIntroduction,
+  onRespondToIntroduction,
   onMessageMember,
 }: DiscoverDirectoryCardProps) {
   const interestChips = selectInterestChips(member, 2);
@@ -32,9 +35,15 @@ export function DiscoverDirectoryCard({
   const location = member.based_in.trim();
   const club = member.primary_club.trim();
   const travel = member.traveling_to.trim();
-  const canMessage = Boolean(onMessageMember && member.user_id && member.user_id !== viewer?.user_id);
+  const memberUserId = member.user_id?.trim() ?? "";
+  const showRelationshipActions =
+    Boolean(memberUserId) &&
+    Boolean(viewer?.user_id) &&
+    memberUserId !== viewer?.user_id &&
+    Boolean(
+      onRequestIntroduction || onRespondToIntroduction || onMessageMember,
+    );
   const matchReasons = (matchReasonsOverride ?? []).slice(0, 2);
-  const canRequestIntroduction = Boolean(showRequestIntroduction && onRequestIntroduction);
 
   return (
     <article className="et-discover-card">
@@ -113,19 +122,14 @@ export function DiscoverDirectoryCard({
         <button type="button" className="et-btn et-btn--secondary" onClick={() => onViewProfile(member)}>
           View Profile
         </button>
-        {canMessage ? (
-          <button type="button" className="et-btn et-btn--forest" onClick={() => onMessageMember?.(member)}>
-            Message
-          </button>
-        ) : null}
-        {canRequestIntroduction ? (
-          <button
-            type="button"
-            className="et-btn et-btn--ghost"
-            onClick={() => onRequestIntroduction?.(member)}
-          >
-            Request Introduction
-          </button>
+        {showRelationshipActions ? (
+          <MemberRelationshipActions
+            otherUserId={memberUserId}
+            context={relationshipContext}
+            onRequestIntroduction={() => onRequestIntroduction?.(member)}
+            onRespondToRequest={onRespondToIntroduction}
+            onMessage={() => onMessageMember?.(member)}
+          />
         ) : null}
       </div>
     </article>

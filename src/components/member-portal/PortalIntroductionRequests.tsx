@@ -10,6 +10,7 @@ import {
   countIntroductionTabs,
   pickDefaultIntroductionTab,
   resolveDirectMessageTarget,
+  resolveIntroductionTabForRequest,
   type IntroductionTab,
 } from "../../lib/introductionBoard";
 import {
@@ -27,6 +28,8 @@ type PortalIntroductionRequestsProps = {
   isActive: boolean;
   initialTab?: IntroductionTab | null;
   onInitialTabConsumed?: () => void;
+  focusRequestId?: string | null;
+  onFocusRequestConsumed?: () => void;
   onMessageMember: (userId: string, memberName: string) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onRequestsChange?: (requests: IntroductionRequestRecord[]) => void;
@@ -62,6 +65,8 @@ export function PortalIntroductionRequests({
   isActive,
   initialTab,
   onInitialTabConsumed,
+  focusRequestId,
+  onFocusRequestConsumed,
   onMessageMember,
   onViewMemberProfile,
   onRequestsChange,
@@ -77,6 +82,11 @@ export function PortalIntroductionRequests({
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [acceptSuccess, setAcceptSuccess] = useState<{
+    memberName: string;
+    otherUserId: string;
+  } | null>(null);
+  const [highlightRequestId, setHighlightRequestId] = useState<string | null>(null);
   const onRequestsChangeRef = useRef(onRequestsChange);
 
   useEffect(() => {
@@ -150,6 +160,30 @@ export function PortalIntroductionRequests({
     onInitialTabConsumed?.();
   }, [initialTab, isActive, onInitialTabConsumed]);
 
+  useEffect(() => {
+    if (!isActive || !focusRequestId || isLoading) return;
+
+    const request = requests.find((entry) => entry.id === focusRequestId);
+    if (request) {
+      setActiveTab(resolveIntroductionTabForRequest(request, currentUserId));
+      setHighlightRequestId(focusRequestId);
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById(`introduction-request-${focusRequestId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
+    onFocusRequestConsumed?.();
+  }, [currentUserId, focusRequestId, isActive, isLoading, onFocusRequestConsumed, requests]);
+
+  useEffect(() => {
+    if (!highlightRequestId) return;
+
+    const timer = window.setTimeout(() => setHighlightRequestId(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [highlightRequestId]);
+
   const categorized = useMemo(
     () => categorizeIntroductionRequests(requests, currentUserId),
     [currentUserId, requests],
@@ -169,9 +203,11 @@ export function PortalIntroductionRequests({
   const hasAnyRequests = requests.length > 0;
 
   async function handleAccept(requestId: string) {
+    const acceptedRequest = requests.find((request) => request.id === requestId);
     setUpdatingRequestId(requestId);
     setActionError(null);
     setActionNotice(null);
+    setAcceptSuccess(null);
 
     const { error } = await updateIntroductionRequestStatus(requestId, "accepted");
 
@@ -182,7 +218,16 @@ export function PortalIntroductionRequests({
       return;
     }
 
-    setActionNotice(introductionsCopy.acceptSuccess);
+    if (acceptedRequest && currentUserId) {
+      const target = resolveDirectMessageTarget(acceptedRequest, currentUserId);
+      setAcceptSuccess({
+        memberName: target.memberName,
+        otherUserId: target.userId,
+      });
+    } else {
+      setActionNotice(introductionsCopy.acceptSuccess);
+    }
+
     setActiveTab("accepted");
     await loadRequests();
   }
@@ -260,6 +305,22 @@ export function PortalIntroductionRequests({
         <p className="et-introductions-alert et-introductions-alert--success" role="status">
           {actionNotice}
         </p>
+      ) : null}
+
+      {acceptSuccess ? (
+        <div className="et-introductions-alert et-introductions-alert--success et-introductions-accept-success">
+          <p className="et-introductions-accept-success-title">
+            {introductionsCopy.acceptSuccessTitle}
+          </p>
+          <p>{introductionsCopy.acceptSuccessCopy(acceptSuccess.memberName)}</p>
+          <button
+            type="button"
+            className="et-btn et-btn--forest"
+            onClick={() => onMessageMember(acceptSuccess.otherUserId, acceptSuccess.memberName)}
+          >
+            {introductionsCopy.openConversation}
+          </button>
+        </div>
       ) : null}
 
       {isLoading ? (
@@ -341,6 +402,7 @@ export function PortalIntroductionRequests({
                         currentUserId={currentUserId}
                         profile={profilesByUserId[counterpartUserId]}
                         updatingRequestId={updatingRequestId}
+                        isFocused={highlightRequestId === request.id}
                         onAccept={handleAccept}
                         onDecline={handleDecline}
                         onCancel={handleCancel}
