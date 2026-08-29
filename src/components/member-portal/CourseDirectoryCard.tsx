@@ -1,9 +1,13 @@
 import {
   COMMUNITY_ADDED_COURSE_LABEL,
-  formatGolfCourseLocation,
   shouldShowCommunityAddedBadge,
   type GolfCourseSearchResult,
 } from "../../types/golfCourse";
+import {
+  buildCourseCardActivitySummary,
+  buildCourseClassificationPills,
+  formatCourseDisplayLocation,
+} from "../../lib/courseDisplay";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { CourseImage } from "./CourseImage";
 
@@ -13,17 +17,9 @@ type CourseDirectoryCardProps = {
   isOnBucketList?: boolean;
 };
 
-function formatRecommendLabel(value: number | null | undefined, roundCount: number) {
-  if (roundCount === 0 || value === null || value === undefined) {
-    return "No recommend data yet";
-  }
-  return `${Math.round(value)}% would play again`;
-}
-
 export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: CourseDirectoryCardProps) {
-  const location = formatGolfCourseLocation(course);
+  const location = formatCourseDisplayLocation(course);
   const roundCount = course.round_count ?? 0;
-  const memberCount = course.member_count ?? 0;
   const ratingDisplay =
     course.avg_rating !== null &&
     course.avg_rating !== undefined &&
@@ -31,6 +27,13 @@ export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: 
       ? formatCourseRatingDisplay(course.avg_rating)
       : null;
   const showCommunityBadge = shouldShowCommunityAddedBadge(course);
+  const classificationPills = buildCourseClassificationPills(course);
+  const activitySummary = buildCourseCardActivitySummary({
+    avgRating: course.avg_rating,
+    roundCount,
+    memberCount: course.member_count ?? 0,
+    recommendPct: course.recommend_pct,
+  });
 
   return (
     <article className="et-course-card">
@@ -62,42 +65,26 @@ export function CourseDirectoryCard({ course, onOpen, isOnBucketList = false }: 
         <div className="et-course-card-head">
           <div className="et-course-card-copy">
             <h3 className="et-course-card-title">{course.name}</h3>
-            {location ? (
-              <p className="et-course-card-location">{location}</p>
-            ) : (
-              <p className="et-course-card-location et-course-card-location--empty">
-                Location details not available
-              </p>
-            )}
+            {location ? <p className="et-course-card-location">{location}</p> : null}
           </div>
         </div>
 
-        <div className="et-course-card-meta">
-          {showCommunityBadge ? (
-            <span className="et-course-card-pill et-course-card-pill--member">{COMMUNITY_ADDED_COURSE_LABEL}</span>
-          ) : null}
-          {course.course_type ? (
-            <span className="et-course-card-pill">{course.course_type}</span>
-          ) : null}
-          {course.access_type ? (
-            <span className="et-course-card-pill">{course.access_type}</span>
-          ) : null}
-        </div>
+        {(showCommunityBadge || classificationPills.length > 0) ? (
+          <div className="et-course-card-meta">
+            {showCommunityBadge ? (
+              <span className="et-course-card-pill et-course-card-pill--member">{COMMUNITY_ADDED_COURSE_LABEL}</span>
+            ) : null}
+            {classificationPills.map((pill) => (
+              <span key={pill} className="et-course-card-pill">
+                {pill}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
-        <dl className="et-course-card-stats">
-          <div>
-            <dt>Members played</dt>
-            <dd>{memberCount > 0 ? memberCount : "None yet"}</dd>
-          </div>
-          <div>
-            <dt>Rounds shared</dt>
-            <dd>{roundCount > 0 ? roundCount : "No rounds shared yet"}</dd>
-          </div>
-          <div className="et-course-card-stats-wide">
-            <dt>Recommend</dt>
-            <dd>{formatRecommendLabel(course.recommend_pct ?? null, roundCount)}</dd>
-          </div>
-        </dl>
+        {activitySummary.length > 0 ? (
+          <p className="et-course-card-activity">{activitySummary.join(" · ")}</p>
+        ) : null}
 
         <button
           type="button"

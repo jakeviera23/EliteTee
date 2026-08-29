@@ -6,6 +6,7 @@ import {
   UNSPECIFIED_REGION,
   type CourseGeoCountRow,
 } from "./courseDirectory";
+import { isMeaningfulBrowseCountry, isMeaningfulBrowseRegion } from "./courseDisplay";
 import { getUsStateSearchToken, normalizeRegionLabel } from "./courseLocationNormalization";
 import type { GolfCourseSearchResult } from "../types/golfCourse";
 
@@ -88,6 +89,7 @@ export function buildLocationBrowseCountries(
   }
 
   return [...totals.entries()]
+    .filter(([country]) => isMeaningfulBrowseCountry(country))
     .sort(([countryA], [countryB]) => compareLocationLabels(countryA, countryB))
     .map(([country, courseCount]) => ({ country, courseCount }));
 }
@@ -112,6 +114,7 @@ export function buildLocationBrowseRegions(
   }
 
   return [...regionTotals.entries()]
+    .filter(([region]) => isMeaningfulBrowseRegion(region))
     .sort(([regionA], [regionB]) => compareLocationLabels(regionA, regionB))
     .map(([region, courseCount]) => ({ region, courseCount }));
 }

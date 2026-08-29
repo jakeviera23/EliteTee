@@ -380,6 +380,12 @@ export function PortalCourses() {
     !hasClientFilters &&
     locationStep === "countries" &&
     locationBrowseCountries.length === 0;
+  const showLibraryClosing =
+    showLocationBrowse &&
+    locationStep === "countries" &&
+    !isSearchMode &&
+    !hasClientFilters &&
+    locationBrowseCountries.length > 0;
 
   return (
     <section className="et-courses" aria-labelledby="courses-heading">
@@ -391,7 +397,7 @@ export function PortalCourses() {
               Courses
             </h2>
             <p className="et-body et-courses-lead">
-              Browse private clubs, destinations, and member-played courses across EliteTee.
+              Discover courses through the golfers who have actually played them.
             </p>
           </div>
           <button
@@ -442,6 +448,14 @@ export function PortalCourses() {
           </div>
         ) : null}
 
+        {showFeatured && featuredDiscovery ? (
+          <CourseFeaturedSections
+            categories={featuredDiscovery}
+            onOpen={openCourse}
+            bucketListCourseIdSet={bucketListCourseIdSet}
+          />
+        ) : null}
+
         {showLocationBrowse ? (
           <CourseLocationBrowse
             step={locationStep}
@@ -461,13 +475,33 @@ export function PortalCourses() {
               })
             }
             onNavigateBreadcrumb={updateLocationState}
-            onViewAllCourses={() =>
-              updateLocationState({ country: "", region: "", viewAll: true })
-            }
             onClearLocation={() =>
               updateLocationState({ country: "", region: "", viewAll: false })
             }
           />
+        ) : null}
+
+        {showLibraryClosing ? (
+          <section
+            className="et-courses-library-closing"
+            aria-labelledby="courses-library-closing-heading"
+          >
+            <h3 id="courses-library-closing-heading" className="et-courses-library-closing-title">
+              Explore the full course library
+            </h3>
+            <p className="et-body-sm et-courses-library-closing-copy">
+              Browse the complete EliteTee course directory or search for a course above.
+            </p>
+            <button
+              type="button"
+              className="et-btn et-btn--secondary et-courses-library-closing-cta"
+              onClick={() =>
+                updateLocationState({ country: "", region: "", viewAll: true })
+              }
+            >
+              Browse all courses
+            </button>
+          </section>
         ) : null}
 
         {showFlatResults ? (
@@ -530,14 +564,6 @@ export function PortalCourses() {
           >
             {isPaging ? "Loading more courses…" : "Load more courses"}
           </button>
-        ) : null}
-
-        {showFeatured && featuredDiscovery ? (
-          <CourseFeaturedSections
-            categories={featuredDiscovery}
-            onOpen={openCourse}
-            bucketListCourseIdSet={bucketListCourseIdSet}
-          />
         ) : null}
       </div>
 

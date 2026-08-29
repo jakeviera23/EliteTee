@@ -4,6 +4,7 @@ import {
   formatCourseRatingValue,
   formatCourseRatingDisplay,
 } from "../../../lib/courseRating";
+import { isMeaningfulProfileText } from "../../../lib/portalProfileDisplay";
 import { formatPlayedOnDate } from "../../../lib/memberCourseRounds";
 import type { CourseMemberPlaySummary } from "../../../lib/courseDetail";
 import type { MemberProfileRecord } from "../../../types/memberProfileRecord";
@@ -28,6 +29,14 @@ function toIntroMember(profile: ApprovedMemberDirectoryProfile): MemberProfileRe
   };
 }
 
+function formatMemberField(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || !isMeaningfulProfileText(trimmed)) {
+    return null;
+  }
+  return trimmed;
+}
+
 export function CourseDetailMembersPlayed({
   summaries,
   profilesByUserId,
@@ -37,10 +46,9 @@ export function CourseDetailMembersPlayed({
 }: CourseDetailMembersPlayedProps) {
   if (summaries.length === 0) {
     return (
-      <div className="et-course-detail-empty">
-        <p className="et-course-detail-empty-title">No members have logged this course yet</p>
-        <p className="et-course-detail-empty-copy">
-          Member rounds will appear here once someone shares a played round.
+      <div className="et-course-detail-empty et-course-detail-empty--quiet">
+        <p className="et-course-detail-empty-title">
+          No EliteTee members have logged this course yet.
         </p>
         {onAddPlayed ? (
           <button type="button" className="et-btn et-btn--forest" onClick={onAddPlayed}>
@@ -84,6 +92,8 @@ export function CourseDetailMembersPlayed({
             };
         const ratingDisplay =
           summary.rating !== null ? formatCourseRatingDisplay(summary.rating) : null;
+        const homeClub = formatMemberField(profile?.primary_club);
+        const memberLocation = formatMemberField(profile?.based_in);
 
         return (
           <li key={summary.memberUserId}>
@@ -108,14 +118,18 @@ export function CourseDetailMembersPlayed({
               </div>
 
               <dl className="et-course-detail-member-meta">
-                <div>
-                  <dt>Home club</dt>
-                  <dd>{profile?.primary_club?.trim() || "Not shared"}</dd>
-                </div>
-                <div>
-                  <dt>Location</dt>
-                  <dd>{profile?.based_in?.trim() || "Not shared"}</dd>
-                </div>
+                {homeClub ? (
+                  <div>
+                    <dt>Home club</dt>
+                    <dd>{homeClub}</dd>
+                  </div>
+                ) : null}
+                {memberLocation ? (
+                  <div>
+                    <dt>Location</dt>
+                    <dd>{memberLocation}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt>Last played</dt>
                   <dd>{formatPlayedOnDate(summary.latestPlayedOn)}</dd>

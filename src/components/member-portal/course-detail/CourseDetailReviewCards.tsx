@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { experienceCopy } from "../../../data/portalSocial";
 import {
   formatCourseRatingStars,
   formatCourseRatingValue,
 } from "../../../lib/courseRating";
+import { formatPlayedRoundReviewMeta } from "../../../lib/courseDisplay";
 import {
   formatPlayedOnDate,
   getMemberInitials,
@@ -17,7 +17,6 @@ import { getCurrentAuthUserId } from "../../../lib/authUserLinking";
 type CourseDetailReviewCardsProps = {
   rounds: MemberCourseRoundRecord[];
   profilesByUserId: Record<string, ApprovedMemberDirectoryProfile>;
-  emptyOnAdd?: () => void;
   onRoundsChanged?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
 };
@@ -25,7 +24,6 @@ type CourseDetailReviewCardsProps = {
 export function CourseDetailReviewCards({
   rounds,
   profilesByUserId,
-  emptyOnAdd,
   onRoundsChanged,
   onViewMemberProfile,
 }: CourseDetailReviewCardsProps) {
@@ -37,16 +35,8 @@ export function CourseDetailReviewCards({
 
   if (rounds.length === 0) {
     return (
-      <div className="et-course-detail-empty">
-        <p className="et-course-detail-empty-title">No member reviews yet</p>
-        <p className="et-course-detail-empty-copy">
-          Be the first EliteTee member to share a round and note from this course.
-        </p>
-        {emptyOnAdd ? (
-          <button type="button" className="et-btn et-btn--forest" onClick={emptyOnAdd}>
-            {experienceCopy.shareTitle}
-          </button>
-        ) : null}
+      <div className="et-course-detail-empty et-course-detail-empty--quiet">
+        <p className="et-course-detail-empty-title">No member reviews yet.</p>
       </div>
     );
   }
@@ -107,8 +97,7 @@ export function CourseDetailReviewCards({
               </header>
 
               <p className="et-course-detail-review-meta">
-                Played {formatPlayedOnDate(round.played_on)}
-                {round.location.trim() ? ` · ${round.location}` : ""}
+                {formatPlayedRoundReviewMeta(formatPlayedOnDate(round.played_on), round.location)}
               </p>
 
               {round.note.trim() ? (

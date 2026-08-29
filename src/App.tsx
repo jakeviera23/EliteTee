@@ -27,11 +27,6 @@ function CourseDetailRoute() {
   return (
     <PortalToastProvider>
       <CourseDetailPage
-        onMessageMember={(userId, memberName) => {
-          navigate("/member-portal", {
-            state: { openMessagesWith: { userId, memberName } },
-          });
-        }}
         onViewMemberProfile={(userId, memberName) => {
           const returnTo: ProfileReturnContext = {
             type: "route",

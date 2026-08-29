@@ -19,6 +19,14 @@ import {
 } from "../lib/courseDetail";
 import { buildCourseDetailFacts, formatArchitectYearLine } from "../lib/courseDetailFacts";
 import {
+  buildCourseClassificationPills,
+  buildCourseLocationClassificationFacts,
+  formatCourseCountLabel,
+  formatCourseDisplayLocation,
+  formatCourseRecommendLabel,
+  hasCourseMemberActivity,
+} from "../lib/courseDisplay";
+import {
   formatCourseRatingDisplay,
   formatMemberRatingSummary,
 } from "../lib/courseRating";
@@ -33,7 +41,7 @@ import {
 } from "../lib/memberProfiles";
 import { ensureBucketListHydrated, getBucketListCourseIds } from "../lib/portalCourseState";
 import type { GolfCourseRecord, GolfCourseSearchResult } from "../types/golfCourse";
-import { formatGolfCourseLocation, isMemberSubmittedCourse } from "../types/golfCourse";
+import { isMemberSubmittedCourse } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import type { ViewMemberProfileHandler } from "../types/memberProfileNavigation";
@@ -44,23 +52,10 @@ import "../member-portal-courses.css";
 import "../member-portal-course-detail.css";
 
 type CourseDetailPageProps = {
-  onMessageMember?: (userId: string, memberName: string) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
 };
 
-function formatRecommendLabel(value: number | null | undefined, roundCount: number) {
-  if (roundCount === 0 || value === null || value === undefined) {
-    return "No recommend data yet";
-  }
-  return `${Math.round(value)}% would play again`;
-}
-
-function formatCountLabel(value: number, singular: string, plural: string, emptyLabel: string) {
-  if (value <= 0) return emptyLabel;
-  return `${value} ${value === 1 ? singular : plural}`;
-}
-
-export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: CourseDetailPageProps) {
+export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps) {
   const navigate = useNavigate();
   const { slug = "" } = useParams();
   const membersSectionRef = useRef<HTMLElement | null>(null);
@@ -256,12 +251,16 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
     );
   }
 
-  const location = formatGolfCourseLocation(course);
+  const location = formatCourseDisplayLocation(course) ?? "";
   const roundCount = course.round_count ?? 0;
   const memberCount = course.member_count ?? 0;
+  const hasMemberActivity = hasCourseMemberActivity(roundCount, memberCount);
   const isMemberSubmitted = isMemberSubmittedCourse(course);
   const architectYear = formatArchitectYearLine(course.architect, course.year_opened);
   const courseDetailFacts = buildCourseDetailFacts(course);
+  const classificationPills = buildCourseClassificationPills(course);
+  const locationClassificationFacts = buildCourseLocationClassificationFacts(course);
+  const courseDescription = course.description?.trim() ?? "";
   const memberRating =
     course.avg_rating !== null && course.avg_rating !== undefined && roundCount > 0
       ? formatMemberRatingSummary(course.avg_rating, roundCount)
@@ -271,6 +270,13 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
       ? formatCourseRatingDisplay(course.avg_rating)
       : null;
   const latestActivity = formatLatestActivityAt(course.latest_activity_at);
+  const membersPlayedLabel =
+    memberSummaries.length === 1
+      ? "1 EliteTee member has played here"
+      : `${memberSummaries.length} EliteTee members have played here`;
+  const membersPlayedCountLabel = formatCourseCountLabel(memberCount, "member", "members");
+  const roundsSharedLabel = formatCourseCountLabel(roundCount, "round", "rounds");
+  const recommendLabel = formatCourseRecommendLabel(course.recommend_pct ?? null, roundCount);
 
   return (
     <div className="inside-page portal-page portal-page--social et-theme-portal">
@@ -309,9 +315,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                 </h1>
                 {location ? (
                   <p className="et-course-detail-location">{location}</p>
-                ) : (
-                  <p className="et-course-detail-location">Location details not available</p>
-                )}
+                ) : null}
                 {architectYear ? (
                   <p className="et-course-detail-architect-year">{architectYear}</p>
                 ) : null}
@@ -322,138 +326,130 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                       Member submitted
                     </span>
                   ) : null}
-                  {course.course_type ? (
-                    <span className="et-course-detail-pill">{course.course_type}</span>
-                  ) : null}
-                  {course.access_type ? (
-                    <span className="et-course-detail-pill">{course.access_type}</span>
-                  ) : null}
+                  {classificationPills.map((pill) => (
+                    <span key={pill} className="et-course-detail-pill">
+                      {pill}
+                    </span>
+                  ))}
                 </div>
 
-                <dl className="et-course-detail-hero-stats">
-                  <div className="et-course-detail-hero-stat et-course-detail-hero-stat--rating">
-                    <dt>Average rating</dt>
-                    <dd>{ratingDisplay ?? "No rating yet"}</dd>
-                  </div>
-                  <div className="et-course-detail-hero-stat">
-                    <dt>Members played</dt>
-                    <dd>{formatCountLabel(memberCount, "member", "members", "None yet")}</dd>
-                  </div>
-                  <div className="et-course-detail-hero-stat">
-                    <dt>Rounds shared</dt>
-                    <dd>{formatCountLabel(roundCount, "round", "rounds", "None yet")}</dd>
-                  </div>
-                  <div className="et-course-detail-hero-stat">
-                    <dt>Would play again</dt>
-                    <dd>{formatRecommendLabel(course.recommend_pct ?? null, roundCount)}</dd>
-                  </div>
-                </dl>
+                {hasMemberActivity ? (
+                  <dl className="et-course-detail-hero-stats">
+                    {ratingDisplay ? (
+                      <div className="et-course-detail-hero-stat et-course-detail-hero-stat--rating">
+                        <dt>Average rating</dt>
+                        <dd>{ratingDisplay}</dd>
+                      </div>
+                    ) : null}
+                    {membersPlayedCountLabel ? (
+                      <div className="et-course-detail-hero-stat">
+                        <dt>Members played</dt>
+                        <dd>{membersPlayedCountLabel}</dd>
+                      </div>
+                    ) : null}
+                    {roundsSharedLabel ? (
+                      <div className="et-course-detail-hero-stat">
+                        <dt>Rounds shared</dt>
+                        <dd>{roundsSharedLabel}</dd>
+                      </div>
+                    ) : null}
+                    {recommendLabel ? (
+                      <div className="et-course-detail-hero-stat">
+                        <dt>Would play again</dt>
+                        <dd>{recommendLabel}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                ) : (
+                  <section
+                    className="et-course-detail-network-status"
+                    aria-labelledby="course-network-status-heading"
+                  >
+                    <h2 id="course-network-status-heading" className="et-course-detail-network-status-title">
+                      EliteTee activity
+                    </h2>
+                    <p className="et-course-detail-network-status-copy">
+                      No member experiences yet. Be the first member to share a round at {course.name}.
+                    </p>
+                  </section>
+                )}
               </div>
             </header>
 
             <div className="et-course-detail-actions">
-              <button
-                type="button"
-                className="et-btn et-btn--forest"
-                onClick={() => setShowAddModal(true)}
-              >
-                {experienceCopy.shareTitle}
-              </button>
-              <BucketListToggleButton courseId={course.id} variant="et-secondary" />
+              <div className="et-course-detail-actions-primary">
+                <button
+                  type="button"
+                  className="et-btn et-btn--forest"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  {experienceCopy.shareTitle}
+                </button>
+                <BucketListToggleButton courseId={course.id} variant="et-secondary" />
+              </div>
+              <div className="et-course-detail-actions-secondary">
+                {memberSummaries.length > 0 ? (
+                  <button type="button" className="et-btn et-btn--secondary" onClick={scrollToMembers}>
+                    {membersPlayedLabel}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="et-btn et-btn--secondary"
+                  onClick={() => handleAskAboutCourse(askPrompts[0] ?? `Who has played ${course.name}?`)}
+                >
+                  Ask EliteTee About This Course
+                </button>
+              </div>
               {canEditSubmittedCourse ? (
                 <button
                   type="button"
-                  className="et-btn et-btn--ghost"
+                  className="et-course-detail-actions-edit"
                   onClick={() => setShowEditCourseModal(true)}
                 >
                   Edit course
-                </button>
-              ) : null}
-              {memberSummaries.length > 0 ? (
-                <button type="button" className="et-btn et-btn--secondary" onClick={scrollToMembers}>
-                  View Members Who Played
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="et-btn et-btn--secondary"
-                onClick={() => handleAskAboutCourse(askPrompts[0] ?? `Who has played ${course.name}?`)}
-              >
-                Ask EliteTee About This Course
-              </button>
-              {onMessageMember && memberSummaries.length === 1 ? (
-                <button
-                  type="button"
-                  className="et-btn et-btn--ghost"
-                  onClick={() =>
-                    onMessageMember(
-                      memberSummaries[0]!.memberUserId,
-                      memberSummaries[0]!.memberName,
-                    )
-                  }
-                >
-                  Message Member
                 </button>
               ) : null}
             </div>
 
             <div className="et-course-detail-layout">
               <div className="et-course-detail-main">
-                <section className="et-course-detail-section" aria-labelledby="course-summary-heading">
-                  <h2 id="course-summary-heading" className="et-course-detail-section-title">
-                    About this course
-                  </h2>
-                  {course.description?.trim() ? (
-                    <p className="et-course-detail-summary">{course.description}</p>
-                  ) : (
-                    <div className="et-course-detail-empty">
-                      <p className="et-course-detail-empty-title">No course description on file</p>
-                      <p className="et-course-detail-empty-copy">
-                        EliteTee shows stored library descriptions only — nothing is invented here.
-                      </p>
-                    </div>
-                  )}
-                  {course.image_attribution ? (
-                    <p className="et-course-detail-attribution">Photo: {course.image_attribution}</p>
-                  ) : null}
-                </section>
-
-                <section className="et-course-detail-section" aria-labelledby="course-stats-heading">
-                  <h2 id="course-stats-heading" className="et-course-detail-section-title">
-                    Member intelligence
-                  </h2>
-                  <p className="et-course-detail-section-lead">
-                    Aggregated from EliteTee member rounds and reviews.
-                  </p>
-                  <dl className="et-course-detail-stats-grid">
-                    <div className="et-course-detail-stat-card et-course-detail-stat-card--rating">
-                      <dt>Average rating</dt>
-                      <dd>{memberRating?.score ?? "No rating yet"}</dd>
-                    </div>
-                    <div className="et-course-detail-stat-card">
-                      <dt>Members played</dt>
-                      <dd>{memberCount > 0 ? memberCount : "None yet"}</dd>
-                    </div>
-                    <div className="et-course-detail-stat-card">
-                      <dt>Rounds shared</dt>
-                      <dd>{roundCount > 0 ? roundCount : "None yet"}</dd>
-                    </div>
-                    <div className="et-course-detail-stat-card">
-                      <dt>Recommend</dt>
-                      <dd>{formatRecommendLabel(course.recommend_pct ?? null, roundCount)}</dd>
-                    </div>
-                    <div className="et-course-detail-stat-card">
-                      <dt>Latest activity</dt>
-                      <dd>{latestActivity ?? "No activity yet"}</dd>
-                    </div>
-                    {memberRating?.detail ? (
-                      <div className="et-course-detail-stat-card">
-                        <dt>Rating basis</dt>
-                        <dd>{memberRating.detail}</dd>
-                      </div>
+                {courseDescription ? (
+                  <section className="et-course-detail-section" aria-labelledby="course-summary-heading">
+                    <h2 id="course-summary-heading" className="et-course-detail-section-title">
+                      About this course
+                    </h2>
+                    <p className="et-course-detail-summary">{courseDescription}</p>
+                    {course.image_attribution ? (
+                      <p className="et-course-detail-attribution">Photo: {course.image_attribution}</p>
                     ) : null}
-                  </dl>
-                </section>
+                  </section>
+                ) : null}
+
+                {hasMemberActivity && (latestActivity || memberRating?.detail) ? (
+                  <section className="et-course-detail-section" aria-labelledby="course-stats-heading">
+                    <h2 id="course-stats-heading" className="et-course-detail-section-title">
+                      Member intelligence
+                    </h2>
+                    <p className="et-course-detail-section-lead">
+                      Additional network context from EliteTee member rounds and reviews.
+                    </p>
+                    <dl className="et-course-detail-stats-grid et-course-detail-stats-grid--compact">
+                      {latestActivity ? (
+                        <div className="et-course-detail-stat-card">
+                          <dt>Latest activity</dt>
+                          <dd>{latestActivity}</dd>
+                        </div>
+                      ) : null}
+                      {memberRating?.detail ? (
+                        <div className="et-course-detail-stat-card">
+                          <dt>Rating basis</dt>
+                          <dd>{memberRating.detail}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </section>
+                ) : null}
 
                 <section className="et-course-detail-section" aria-labelledby="course-gallery-heading">
                   <h2 id="course-gallery-heading" className="et-course-detail-section-title">
@@ -469,7 +465,6 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                   <CourseDetailReviewCards
                     rounds={rounds}
                     profilesByUserId={profilesByUserId}
-                    emptyOnAdd={() => setShowAddModal(true)}
                     onRoundsChanged={() => void loadCourse()}
                     onViewMemberProfile={onViewMemberProfile}
                   />
@@ -489,7 +484,7 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                     profilesByUserId={profilesByUserId}
                     onViewMemberProfile={onViewMemberProfile}
                     onRequestIntroduction={setIntroMember}
-                    onAddPlayed={() => setShowAddModal(true)}
+                    onAddPlayed={hasMemberActivity ? undefined : () => setShowAddModal(true)}
                   />
                 </section>
 
@@ -544,40 +539,28 @@ export function CourseDetailPage({ onMessageMember, onViewMemberProfile }: Cours
                   </section>
                 ) : null}
 
-                <section className="et-course-detail-section" aria-labelledby="course-location-heading">
-                  <h2 id="course-location-heading" className="et-course-detail-section-title">
-                    Location & classification
-                  </h2>
-                  <dl className="et-course-detail-facts">
-                    <div>
-                      <dt>City</dt>
-                      <dd>{course.city?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Region</dt>
-                      <dd>{course.region?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Country</dt>
-                      <dd>{course.country?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Course type</dt>
-                      <dd>{course.course_type?.trim() || "Not specified"}</dd>
-                    </div>
-                    <div>
-                      <dt>Access</dt>
-                      <dd>{course.access_type?.trim() || "Not specified"}</dd>
-                    </div>
-                  </dl>
-                </section>
+                {locationClassificationFacts.length > 0 ? (
+                  <section className="et-course-detail-section" aria-labelledby="course-location-heading">
+                    <h2 id="course-location-heading" className="et-course-detail-section-title">
+                      Location & classification
+                    </h2>
+                    <dl className="et-course-detail-facts">
+                      {locationClassificationFacts.map((fact) => (
+                        <div key={fact.label}>
+                          <dt>{fact.label}</dt>
+                          <dd>{fact.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ) : null}
 
                 <section className="et-course-detail-section" aria-labelledby="course-ask-heading">
                   <h2 id="course-ask-heading" className="et-course-detail-section-title">
                     Ask EliteTee
                   </h2>
                   <p className="et-course-detail-section-lead">
-                    Private concierge answers from EliteTee directory data only.
+                    Ask about member experiences, connections, and course activity.
                   </p>
                   <div className="et-course-detail-ask-prompts" role="group" aria-label="Suggested questions">
                     {askPrompts.map((prompt) => (

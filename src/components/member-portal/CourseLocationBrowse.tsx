@@ -1,3 +1,8 @@
+import { useState } from "react";
+import {
+  CURATED_DESTINATION_PREVIEW_COUNT,
+  splitDestinationsForPreview,
+} from "../../lib/courseDisplay";
 import type {
   LocationBrowseCountry,
   LocationBrowseRegion,
@@ -14,7 +19,6 @@ type CourseLocationBrowseProps = {
   onSelectCountry: (country: string) => void;
   onSelectRegion: (region: string) => void;
   onNavigateBreadcrumb: (state: { country: string; region: string; viewAll: boolean }) => void;
-  onViewAllCourses: () => void;
   onClearLocation: () => void;
 };
 
@@ -32,30 +36,30 @@ export function CourseLocationBrowse({
   onSelectCountry,
   onSelectRegion,
   onNavigateBreadcrumb,
-  onViewAllCourses,
   onClearLocation,
 }: CourseLocationBrowseProps) {
+  const [showAllDestinations, setShowAllDestinations] = useState(false);
   const hasLocationSelection = Boolean(selectedCountry || selectedRegion || step === "all");
+
+  const destinationPreview = splitDestinationsForPreview(
+    countries,
+    CURATED_DESTINATION_PREVIEW_COUNT,
+  );
+  const visibleCountries =
+    step === "countries" && !showAllDestinations ? destinationPreview.preview : countries;
 
   return (
     <section className="et-courses-location" aria-labelledby="course-location-heading">
       <div className="et-courses-location-head">
         <div>
           <h3 id="course-location-heading" className="et-h3">
-            Browse by location
+            Explore by destination
           </h3>
           <p className="et-body-sm et-courses-directory-copy">
             Start with a destination, then drill into regions and courses.
           </p>
         </div>
         <div className="et-courses-location-actions">
-          <button
-            type="button"
-            className="et-courses-location-action"
-            onClick={onViewAllCourses}
-          >
-            View all courses
-          </button>
           {hasLocationSelection ? (
             <button
               type="button"
@@ -118,20 +122,31 @@ export function CourseLocationBrowse({
       </nav>
 
       {step === "countries" ? (
-        <ul className="et-courses-location-grid">
-          {countries.map((entry) => (
-            <li key={entry.country}>
-              <button
-                type="button"
-                className="et-courses-location-card"
-                onClick={() => onSelectCountry(entry.country)}
-              >
-                <span className="et-courses-location-card-name">{entry.country}</span>
-                <span className="et-courses-location-card-count">{formatCount(entry.courseCount)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="et-courses-location-grid">
+            {visibleCountries.map((entry) => (
+              <li key={entry.country}>
+                <button
+                  type="button"
+                  className="et-courses-location-card"
+                  onClick={() => onSelectCountry(entry.country)}
+                >
+                  <span className="et-courses-location-card-name">{entry.country}</span>
+                  <span className="et-courses-location-card-count">{formatCount(entry.courseCount)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {destinationPreview.hasMore && !showAllDestinations ? (
+            <button
+              type="button"
+              className="et-courses-location-action et-courses-location-expand"
+              onClick={() => setShowAllDestinations(true)}
+            >
+              View all destinations
+            </button>
+          ) : null}
+        </>
       ) : null}
 
       {step === "regions" ? (

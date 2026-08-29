@@ -16,10 +16,10 @@ export function CourseDetailGallery({ photos }: CourseDetailGalleryProps) {
 
   if (visiblePhotos.length === 0) {
     return (
-      <div className="et-course-detail-empty">
-        <p className="et-course-detail-empty-title">No course photos yet</p>
+      <div className="et-course-detail-empty et-course-detail-empty--quiet">
+        <p className="et-course-detail-empty-title">No member photos yet.</p>
         <p className="et-course-detail-empty-copy">
-          Official imagery and member round photos will appear here once shared.
+          Photos shared with EliteTee experiences will appear here.
         </p>
       </div>
     );

@@ -12,12 +12,6 @@ const FEATURED_CATEGORY_LABELS: Record<FeaturedDiscoveryCategory, string> = {
   "recently-reviewed": "Recently Reviewed",
 };
 
-const FEATURED_CATEGORY_COPY: Record<FeaturedDiscoveryCategory, string> = {
-  popular: "Courses with the most member rounds and activity.",
-  "highest-rated": "Top-rated destinations based on member reviews.",
-  "recently-reviewed": "Courses with the latest member round activity.",
-};
-
 const FEATURED_CATEGORY_ORDER: FeaturedDiscoveryCategory[] = [
   "recently-reviewed",
   "popular",
@@ -58,15 +52,17 @@ export function CourseFeaturedSections({
     >
       <div className="et-courses-featured-head">
         <h3 id="featured-discovery-heading" className="et-courses-featured-title">
-          Featured in EliteTee
+          From the EliteTee Network
         </h3>
-        <p className="et-courses-featured-copy">{FEATURED_CATEGORY_COPY[resolvedCategory]}</p>
+        <p className="et-courses-featured-copy">
+          Courses recently played and reviewed by members.
+        </p>
       </div>
 
       <div
         className="et-courses-featured-tabs"
         role="tablist"
-        aria-label="Featured course categories"
+        aria-label="Network course categories"
       >
         {FEATURED_CATEGORY_ORDER.map((category) => {
           const courseCount = categories[category].length;
