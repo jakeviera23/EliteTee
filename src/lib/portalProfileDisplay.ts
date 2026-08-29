@@ -1,8 +1,51 @@
 import { earlyStageCopy, emptyGolferDefaults, type PortalGolfer } from "../data/portalSocial";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 
+const PROFILE_PLACEHOLDER_VALUES = new Set([
+  "not specified",
+  "not shared",
+  "n/a",
+  "na",
+  "none",
+  "location not set",
+  "location not available",
+  "location not shared",
+  "club not shared",
+]);
+
+export const PROFILE_TAG_MAX_LENGTH = 48;
+
+export function isMeaningfulProfileText(value: unknown) {
+  if (value === null || value === undefined) return false;
+
+  const text = String(value).trim();
+  if (!text) return false;
+
+  return !PROFILE_PLACEHOLDER_VALUES.has(text.toLowerCase());
+}
+
+export function partitionProfileDisplayItems(items: string[], maxTagLength = PROFILE_TAG_MAX_LENGTH) {
+  const tags: string[] = [];
+  const textItems: string[] = [];
+
+  for (const item of items) {
+    const trimmed = item.trim();
+    if (!trimmed || !isMeaningfulProfileText(trimmed)) continue;
+
+    if (trimmed.length <= maxTagLength && !trimmed.includes("\n")) {
+      tags.push(trimmed);
+      continue;
+    }
+
+    textItems.push(trimmed);
+  }
+
+  return { tags, textItems };
+}
+
 export type GolferProfileDisplay = {
   name: string;
+  /** Personal headline stored in member.industry (edit form: Headline). */
   title: string;
   location: string;
   homeCourse: string;

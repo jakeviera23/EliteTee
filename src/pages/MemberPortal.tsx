@@ -304,6 +304,7 @@ function MemberPortalContent() {
       | {
           openMessagesWith?: { userId: string; memberName: string };
           openAskWith?: { question: string };
+          openFeedPostWith?: { postId: string };
           restorePortalTab?: PortalTab;
         }
       | null
@@ -322,6 +323,13 @@ function MemberPortalContent() {
         otherUserName: state.openMessagesWith.memberName,
       });
       setActiveView("messages");
+      navigate("/member-portal", { replace: true, state: null });
+      return;
+    }
+
+    if (state?.openFeedPostWith?.postId?.trim()) {
+      setPendingFeedPostId(state.openFeedPostWith.postId.trim());
+      setActiveView("feed");
       navigate("/member-portal", { replace: true, state: null });
       return;
     }
@@ -350,6 +358,11 @@ function MemberPortalContent() {
       await supabase.auth.signOut();
     }
     navigate("/login", { replace: true });
+  }
+
+  function handleOpenFeedPost(postId: string) {
+    setPendingFeedPostId(postId);
+    transitionTo("feed");
   }
 
   function getProfileReturnContext(): ProfileReturnContext {
@@ -687,6 +700,7 @@ function MemberPortalContent() {
             <GolferProfilePage
               isActive={resolvedView === "profile"}
               onViewMemberProfile={handleViewMemberProfile}
+              onOpenFeedPost={handleOpenFeedPost}
             />
           ) : null}
 

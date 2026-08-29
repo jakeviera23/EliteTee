@@ -26,6 +26,7 @@ import {
   resolveCourseExperienceLocation,
   type CourseRoundPostEditInput,
 } from "./feedPostEditing";
+import { isMeaningfulProfileText } from "./portalProfileDisplay";
 import { supabase } from "./supabase";
 import { attachFeedPostEngagement } from "./feedPostEngagement";
 import { buildEditCourseRoundFeedPostRpcParams } from "./editCourseRoundFeedPostRpc";
@@ -175,7 +176,7 @@ function profileToPortalGolfer(profile: MemberFeedPostAuthorProfile | null, user
     location: profile?.based_in ?? "",
     homeCourse: profile?.primary_club ?? "",
     bio: "",
-    title: profile?.industry || undefined,
+    title: isMeaningfulProfileText(profile?.industry) ? profile!.industry.trim() : undefined,
     isVerified: Boolean(profile?.is_verified),
     avatarImage: profile?.club_logo_url?.trim() || undefined,
     followers: 0,

@@ -1,19 +1,24 @@
 import { describe, expect, it } from "vitest";
 import type { FeedPost } from "../data/portalSocial";
-import { normalizeFeedExperienceBadge, resolveFeedCardBadgeLabel } from "./feedPostDisplay";
+import {
+  buildProfileFeedActivityPreview,
+  isMeaningfulFeedLocation,
+  resolveFeedAuthorRole,
+} from "./feedPostDisplay";
 
-function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
+function feedPost(overrides: Partial<FeedPost> = {}): FeedPost {
   return {
     id: "post-1",
     postType: "course-review",
     author: {
       id: "user-1",
-      name: "Member",
-      handle: "member",
-      location: "",
-      homeCourse: "",
+      name: "Jordan Lee",
+      handle: "jordanlee",
+      location: "Southampton, NY",
+      homeCourse: "National Golf Links",
       bio: "",
-      isVerified: false,
+      title: "Not specified",
+      isVerified: true,
       followers: 0,
       following: 0,
       coursesPlayed: 0,
@@ -21,44 +26,48 @@ function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
       countriesPlayed: 0,
       favoriteCourses: [],
     },
-    courseName: "National Golf Links",
-    courseLocation: "Southampton, NY",
-    images: [],
-    imageAlt: "",
-    caption: "Great round.",
+    courseName: "Cypress Point",
+    courseLocation: "Location not set",
+    images: ["/photo.jpg"],
+    imageAlt: "Cypress Point",
+    caption: "A long day on the cliffs with perfect conditions and great company.",
     likes: 0,
     comments: 0,
-    timestamp: "2d ago",
+    timestamp: "2h ago",
+    createdAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
 
-describe("normalizeFeedExperienceBadge", () => {
-  it("maps legacy Course Played to Experience", () => {
-    expect(normalizeFeedExperienceBadge("Course Played")).toBe("Experience");
+describe("resolveFeedAuthorRole", () => {
+  it("skips placeholder author titles and falls back to home club", () => {
+    const role = resolveFeedAuthorRole(feedPost().author);
+    expect(role).toBe("National Golf Links");
   });
 
-  it("maps Round Review to Experience", () => {
-    expect(normalizeFeedExperienceBadge("Round Review")).toBe("Experience");
-  });
-
-  it("preserves custom member-facing labels", () => {
-    expect(normalizeFeedExperienceBadge("Traveling")).toBe("Traveling");
+  it("returns a meaningful professional headline when present", () => {
+    const role = resolveFeedAuthorRole({
+      ...feedPost().author,
+      title: "Private equity",
+    });
+    expect(role).toBe("Private equity");
   });
 });
 
-describe("resolveFeedCardBadgeLabel", () => {
-  it("uses normalized requestLabel for legacy course posts", () => {
-    expect(
-      resolveFeedCardBadgeLabel(makePost({ requestLabel: "Course Played" })),
-    ).toBe("Experience");
+describe("isMeaningfulFeedLocation", () => {
+  it("treats Location not set as empty", () => {
+    expect(isMeaningfulFeedLocation("Location not set")).toBe(false);
+    expect(isMeaningfulFeedLocation("Pebble Beach, CA")).toBe(true);
   });
+});
 
-  it("defaults linked course rounds to Experience", () => {
-    expect(
-      resolveFeedCardBadgeLabel(
-        makePost({ postType: "photo", requestLabel: undefined, memberCourseRoundId: "round-1" }),
-      ),
-    ).toBe("Experience");
+describe("buildProfileFeedActivityPreview", () => {
+  it("builds compact profile activity metadata without placeholder location", () => {
+    const preview = buildProfileFeedActivityPreview(feedPost());
+
+    expect(preview.title).toBe("Cypress Point");
+    expect(preview.locationLabel).toBeNull();
+    expect(preview.thumbnailUrl).toBe("/photo.jpg");
+    expect(preview.excerpt.endsWith("…")).toBe(false);
   });
 });

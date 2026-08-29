@@ -3,6 +3,7 @@ import { buildCourseLocationSnapshot } from "./courseLocationParse";
 import { validateStructuredCourseLocationInput } from "./memberSubmittedCourseLocation";
 import { isCourseRoundPost } from "./feedCardMeta";
 import type { FeedPost } from "../data/portalSocial";
+import { isMeaningfulProfileText } from "./portalProfileDisplay";
 
 export const FOUNDER_WELCOME_POST_ID = "founder-welcome";
 
@@ -119,13 +120,13 @@ export function resolveCourseExperienceLocation(input: {
   details?: Array<{ label: string; value: string }> | null;
 }): string {
   const fromRound = input.roundLocation?.trim() ?? "";
-  if (fromRound) return fromRound;
+  if (isMeaningfulProfileText(fromRound)) return fromRound;
 
   const fromDetails =
     input.details
       ?.find((detail) => detail.label.trim().toLowerCase() === "location")
       ?.value?.trim() ?? "";
-  if (fromDetails) return fromDetails;
+  if (isMeaningfulProfileText(fromDetails)) return fromDetails;
 
   // Never fall back to member profile based_in — that is not the experience location.
   return "";

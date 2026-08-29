@@ -7,6 +7,7 @@ import {
 } from "./golfCourses";
 import { submitMemberCourseRound } from "./memberCourseRounds";
 import { logSupabaseOperation } from "./supabaseOperationLog";
+import { isMeaningfulProfileText } from "./portalProfileDisplay";
 import { supabase } from "./supabase";
 
 export type EnsureExperienceRoundResult = {
@@ -88,7 +89,8 @@ export function parseExperienceFeedPostContent(content: unknown): ParsedExperien
     ? (parsed.details as Array<{ label?: string; value?: string }>)
     : undefined;
   const courseName = String(parsed.headline ?? "").trim() || "Experience";
-  const location = detailValue(details, ["Location"]) || "Location not set";
+  const location = detailValue(details, ["Location"]);
+  const resolvedLocation = location && isMeaningfulProfileText(location) ? location : "";
   const playedOn = parsePlayedOn(detailValue(details, ["Played", "Date played", "Played on"]));
   const courseRating = parseRating(
     detailValue(details, ["Course Rating", "Rating"]),
@@ -102,7 +104,7 @@ export function parseExperienceFeedPostContent(content: unknown): ParsedExperien
 
   return {
     courseName,
-    location,
+    location: resolvedLocation,
     playedOn,
     courseRating,
     wouldPlayAgain,

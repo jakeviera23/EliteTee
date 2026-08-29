@@ -23,7 +23,7 @@ export function ProfileCover({ src, alt, children, className = "" }: ProfileCove
         />
       ) : (
         <div
-          className="portal-profile-cover-placeholder portal-golfer-cover-fallback"
+          className="portal-profile-cover-placeholder portal-golfer-cover-fallback portal-profile-cover-placeholder--neutral"
           role="img"
           aria-label={alt}
         >

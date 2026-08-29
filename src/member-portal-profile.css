@@ -348,10 +348,32 @@
   line-height: 1.55;
 }
 
+.et-profile-hero-cover .portal-profile-cover-placeholder--neutral {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--profile-gold-soft) 55%, var(--et-bg-surface) 45%) 0%,
+      color-mix(in srgb, var(--profile-forest-soft) 70%, var(--et-bg-inset) 30%) 52%,
+      color-mix(in srgb, var(--profile-gold-soft) 35%, var(--et-bg-surface) 65%) 100%
+    ),
+    radial-gradient(
+      circle at 72% 28%,
+      color-mix(in srgb, var(--profile-gold) 18%, transparent) 0%,
+      transparent 58%
+    );
+}
+
+.et-profile-hero-cover .portal-profile-cover-crest {
+  border-color: color-mix(in srgb, var(--profile-gold) 45%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--profile-gold) 12%, transparent),
+    0 0 28px color-mix(in srgb, var(--profile-gold) 10%, transparent);
+}
+
 .et-profile-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.55rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -365,16 +387,16 @@
 
 .et-profile-stat {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.85rem;
-  border-radius: 0.85rem;
+  gap: 0.1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--et-border-hairline);
   background: var(--et-bg-inset);
 }
 
 .et-profile-stat dt {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--et-text-tertiary);
@@ -382,7 +404,7 @@
 
 .et-profile-stat dd {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--et-text-primary);
 }
@@ -391,11 +413,344 @@
   color: var(--profile-gold);
 }
 
+.et-profile .courses-activity-list--profile {
+  gap: 0.4rem;
+}
+
+.et-profile .courses-activity-item--profile {
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--et-border-hairline);
+  background: var(--et-bg-inset);
+}
+
+.et-profile .courses-activity-profile-row {
+  display: grid;
+  grid-template-columns: 3.75rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.et-profile .courses-activity-profile-body {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.et-profile .courses-activity-profile-thumb-fallback {
+  width: 3.75rem;
+  height: 2.75rem;
+  border-radius: 0.45rem;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--profile-forest-soft) 70%, var(--et-bg-surface) 30%) 0%,
+      color-mix(in srgb, var(--profile-gold-soft) 35%, var(--et-bg-inset) 65%) 100%
+    );
+  border: 1px solid var(--et-border-hairline);
+}
+
+.et-profile .courses-activity-head--profile {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.et-profile .courses-activity-name {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--et-text-primary);
+}
+
+.et-profile .courses-activity-name--link {
+  color: var(--profile-forest);
+  text-decoration: none;
+}
+
+.et-profile .courses-activity-name--link:hover,
+.et-profile .courses-activity-name--link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.et-profile .courses-activity-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.45rem;
+  margin: 0;
+}
+
+.et-profile .courses-activity-meta {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--et-text-tertiary);
+}
+
+.et-profile .courses-activity-profile-rating {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--profile-gold);
+  white-space: nowrap;
+}
+
+.et-profile .courses-activity-rating--inline {
+  margin: 0;
+}
+
+.et-profile .courses-activity-rating-label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--et-text-tertiary);
+}
+
+.et-profile .courses-activity-rating-stars {
+  color: var(--profile-gold);
+}
+
+.et-profile .courses-activity-rating-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--et-text-secondary);
+}
+
+.et-profile .courses-activity-note-block {
+  margin-top: 0.25rem;
+}
+
+.et-profile .courses-activity-note {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--et-text-secondary);
+}
+
+.et-profile .courses-activity-note--clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.et-profile .courses-activity-gallery--profile {
+  margin-top: 0;
+}
+
+.et-profile .courses-activity-gallery--profile.round-photo-gallery--compact {
+  grid-template-columns: 3.75rem;
+}
+
+.et-profile .courses-activity-gallery--profile .round-photo-gallery-tile {
+  width: 3.75rem;
+  height: 2.75rem;
+  border-radius: 0.45rem;
+}
+
+.et-profile .courses-activity-note-toggle {
+  margin-top: 0.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--profile-forest);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.et-profile .courses-activity-note-toggle:hover,
+.et-profile .courses-activity-note-toggle:focus-visible {
+  color: color-mix(in srgb, var(--profile-forest) 82%, black 18%);
+  outline: none;
+}
+
+.et-profile .courses-activity-profile-more {
+  margin: 0.45rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--et-text-tertiary);
+}
+
 .et-profile-about {
   margin: 0;
   color: var(--et-text-secondary);
   line-height: 1.65;
   white-space: pre-wrap;
+}
+
+.et-profile-connection-prose {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.et-profile-prose-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.et-profile-prose-item {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.et-profile-prose-copy {
+  margin: 0;
+  color: var(--et-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.et-profile-prose-copy--clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.et-profile-prose-toggle {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--profile-forest);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.et-profile-feed-activity {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.et-profile-feed-activity-card {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: 0.8rem;
+  background: var(--et-bg-inset);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.et-profile-feed-activity-card:hover,
+.et-profile-feed-activity-card:focus-visible {
+  border-color: color-mix(in srgb, var(--profile-forest) 35%, transparent);
+  box-shadow: var(--et-shadow-xs);
+  outline: none;
+}
+
+.et-profile-feed-activity-media {
+  width: 4.75rem;
+  height: 3.5rem;
+  border-radius: 0.55rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--profile-forest-soft) 55%, var(--et-bg-surface) 45%);
+}
+
+.et-profile-feed-activity-media img,
+.et-profile-feed-activity-course-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.et-profile-feed-activity-media-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--profile-gold-soft) 45%, var(--et-bg-surface) 55%) 0%,
+      color-mix(in srgb, var(--profile-forest-soft) 60%, var(--et-bg-inset) 40%) 100%
+    );
+}
+
+.et-profile-feed-activity-copy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.et-profile-feed-activity-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.65rem;
+}
+
+.et-profile-feed-activity-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--profile-forest-soft);
+  color: var(--profile-forest);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.et-profile-feed-activity-time {
+  font-size: 0.75rem;
+  color: var(--et-text-tertiary);
+}
+
+.et-profile-feed-activity-title {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: 0.95rem;
+  line-height: 1.25;
+  color: var(--et-text-primary);
+}
+
+.et-profile-feed-activity-meta,
+.et-profile-feed-activity-excerpt {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--et-text-secondary);
+}
+
+.et-profile-feed-activity-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.et-profile-feed-activity-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--profile-forest);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .et-profile-chips {
@@ -417,6 +772,39 @@
   background: var(--et-bg-inset);
   color: var(--et-text-secondary);
   font-size: 0.8125rem;
+  line-height: 1.35;
+  max-width: 100%;
+}
+
+.et-profile-tag-text-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.et-profile-text-items {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.et-profile-text-item {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--et-border-hairline);
+  background: var(--et-bg-inset);
+  color: var(--et-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.et-profile-aside-note {
+  margin: 0;
+  color: var(--et-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.55;
 }
 
 .et-profile-travel {
@@ -588,13 +976,13 @@
   box-shadow: 0 0 0 2px var(--profile-forest-soft);
 }
 
-.et-btn--forest {
+.et-profile .et-btn--forest {
   color: white;
   background: var(--profile-forest);
   border-color: var(--profile-forest);
 }
 
-.et-btn--secondary {
+.et-profile .et-btn--secondary {
   color: var(--profile-forest);
   background: var(--et-bg-surface);
   border-color: color-mix(in srgb, var(--profile-forest) 35%, transparent);

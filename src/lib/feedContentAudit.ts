@@ -2,7 +2,7 @@ import type { FeedPost } from "../data/portalSocial";
 
 /**
  * Heuristic flags for feed posts that may need manual editorial cleanup.
- * Does not modify post content — surfaces notes in the v2 feed UI only.
+ * For admin/moderation tooling only — never render these in member FeedCards.
  */
 export function getFeedContentFlags(post: FeedPost): string[] {
   if (post.id === "founder-welcome") return [];

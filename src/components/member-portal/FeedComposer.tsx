@@ -208,7 +208,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       const courseName = primaryValue || "Experience";
       const { data: roundData, error: roundError } = await submitMemberCourseRound({
         course_name: courseName,
-        location: "Location not set",
+        location: values.location?.trim() || "",
         played_on: new Date().toISOString().slice(0, 10),
         note: message,
         would_play_again: true,
@@ -230,7 +230,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       const { data, error } = await createCourseRoundFeedPost({
         roundId: roundData.id,
         courseName,
-        location: "Location not set",
+        location: values.location?.trim() || "",
         note: message,
         wouldPlayAgain: true,
         playedOn: new Date().toISOString().slice(0, 10),

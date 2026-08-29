@@ -3,6 +3,9 @@ import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
 import {
   buildProfileExperienceStats,
   buildUniqueCoursesPlayed,
+  shouldTruncateProfileExperienceNote,
+  truncateProfileExperienceNote,
+  truncateProfileFeedExcerpt,
 } from "./profilePageDisplay";
 
 function round(
@@ -43,6 +46,40 @@ describe("buildUniqueCoursesPlayed", () => {
     expect(summaries[0]?.roundCount).toBe(2);
     expect(summaries[0]?.courseSlug).toBe("test-course");
     expect(summaries[0]?.avgRating).toBe(8.5);
+  });
+});
+
+describe("truncateProfileFeedExcerpt", () => {
+  it("shortens long feed captions for profile summaries", () => {
+    const excerpt = truncateProfileFeedExcerpt("A".repeat(180), 40);
+    expect(excerpt.endsWith("…")).toBe(true);
+  });
+});
+
+describe("shouldTruncateProfileExperienceNote", () => {
+  it("flags multi-line and long review notes", () => {
+    expect(shouldTruncateProfileExperienceNote("Short review.")).toBe(false);
+    expect(shouldTruncateProfileExperienceNote("Line one\nLine two\nLine three\nLine four")).toBe(
+      true,
+    );
+  });
+});
+
+describe("truncateProfileExperienceNote", () => {
+  it("returns the full note when it fits the preview length", () => {
+    expect(truncateProfileExperienceNote("Great routing and fast greens.")).toEqual({
+      preview: "Great routing and fast greens.",
+      isTruncated: false,
+    });
+  });
+
+  it("truncates long reviews with an ellipsis", () => {
+    const note = "A".repeat(200);
+    const result = truncateProfileExperienceNote(note, 40);
+
+    expect(result.isTruncated).toBe(true);
+    expect(result.preview.endsWith("…")).toBe(true);
+    expect(result.preview.length).toBeLessThan(note.length);
   });
 });
 

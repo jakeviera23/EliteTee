@@ -53,6 +53,14 @@ function MemberPublicProfileContent() {
     setIntroRequestMember(member);
   }
 
+  function handleOpenFeedPost(postId: string) {
+    navigate("/member-portal", {
+      state: {
+        openFeedPostWith: { postId },
+      },
+    });
+  }
+
   return (
     <div className="inside-page portal-page portal-page--social et-theme-portal" data-et-theme="portal">
       <main className="portal-main portal-main--social">
@@ -72,6 +80,7 @@ function MemberPublicProfileContent() {
                 },
               });
             }}
+            onOpenFeedPost={handleOpenFeedPost}
           />
         </div>
       </main>

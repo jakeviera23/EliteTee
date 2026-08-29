@@ -71,6 +71,58 @@ export function buildProfileExperienceStats(
   };
 }
 
+export const PROFILE_EXPERIENCE_NOTE_PREVIEW_LENGTH = 180;
+export const PROFILE_EXPERIENCE_NOTE_MAX_LINES = 3;
+export const PROFILE_RECENT_EXPERIENCE_LIMIT = 4;
+export const PROFILE_FEED_ACTIVITY_LIMIT = 4;
+export const PROFILE_FEED_EXCERPT_LENGTH = 140;
+
+export function shouldTruncateProfileExperienceNote(
+  note: string,
+  maxLength = PROFILE_EXPERIENCE_NOTE_PREVIEW_LENGTH,
+  maxLines = PROFILE_EXPERIENCE_NOTE_MAX_LINES,
+) {
+  const trimmed = note.trim();
+  if (!trimmed) return false;
+  return trimmed.length > maxLength || trimmed.split("\n").length > maxLines;
+}
+
+export function truncateProfileExperienceNote(
+  note: string,
+  maxLength = PROFILE_EXPERIENCE_NOTE_PREVIEW_LENGTH,
+) {
+  const trimmed = note.trim();
+  if (!trimmed) {
+    return { preview: "", isTruncated: false };
+  }
+
+  const isTruncated = shouldTruncateProfileExperienceNote(trimmed, maxLength);
+  if (!isTruncated) {
+    return { preview: trimmed, isTruncated: false };
+  }
+
+  return {
+    preview: `${trimmed.slice(0, maxLength).trimEnd()}…`,
+    isTruncated: true,
+  };
+}
+
+export function truncateProfileFeedExcerpt(
+  text: string,
+  maxLength = PROFILE_FEED_EXCERPT_LENGTH,
+) {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, maxLength).trimEnd()}…`;
+}
+
 export function formatProfileCoursePlayedMeta(summary: ProfileCoursePlayedSummary): string {
   const parts = [`Played ${formatPlayedOnDate(summary.latestPlayedOn)}`];
   if (summary.roundCount > 1) {

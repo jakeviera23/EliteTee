@@ -1,5 +1,6 @@
 import type { FeedPost } from "../data/portalSocial";
 import { formatCourseRatingDisplay } from "./courseRating";
+import { isMeaningfulProfileText } from "./portalProfileDisplay";
 
 export type FeedMetaChipTone =
   | "location"
@@ -58,7 +59,7 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
 
   for (const detail of post.details ?? []) {
     const value = detail.value?.trim();
-    if (!value) continue;
+    if (!value || !isMeaningfulProfileText(value)) continue;
 
     const labelLower = detail.label.toLowerCase().trim();
     if (labelLower === "course rating" && post.rating != null) continue;
@@ -83,7 +84,7 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
     }
   }
 
-  if (post.playedWith?.trim()) {
+  if (post.playedWith?.trim() && isMeaningfulProfileText(post.playedWith)) {
     chips.push({
       key: `played-with-${post.playedWith}`,
       label: "With",

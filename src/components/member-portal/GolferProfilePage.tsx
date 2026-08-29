@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { earlyStageCopy, type FeedPost } from "../../data/portalSocial";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
-import { isAdminEmail } from "../../lib/admin";
-import { mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import {
   loadBucketListCourseSummaries,
   type BucketListCourseSummary,
@@ -17,25 +15,31 @@ import {
   fetchOwnMemberProfile,
 } from "../../lib/memberProfiles";
 import { hydrateBucketListCourseIds } from "../../lib/portalCourseState";
-import { buildGolferProfileDisplay } from "../../lib/portalProfileDisplay";
+import {
+  buildGolferProfileDisplay,
+  isMeaningfulProfileText,
+  partitionProfileDisplayItems,
+} from "../../lib/portalProfileDisplay";
 import {
   buildProfileExperienceStats,
   buildUniqueCoursesPlayed,
+  PROFILE_FEED_ACTIVITY_LIMIT,
+  PROFILE_RECENT_EXPERIENCE_LIMIT,
 } from "../../lib/profilePageDisplay";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { migrateLegacyPortalProfileExtrasIfNeeded } from "../../lib/portalProfileExtras";
 import { useResolvedMemberProfileMedia } from "../../lib/useResolvedMemberProfileMedia";
-import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 import type { MemberCourseRoundRecord } from "../../types/memberCourseRound";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
-import { FeedCard } from "./FeedCard";
-import { FEED_CARD_SCOPE_CLASS } from "../../lib/feedCardScope";
 import { MemberActivityList } from "./MemberActivityList";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileDossier } from "./ProfileDossier";
 import { ProfileBucketList } from "./profile/ProfileBucketList";
 import { ProfileCoursesPlayed } from "./profile/ProfileCoursesPlayed";
+import { ProfileFeedActivityList } from "./profile/ProfileFeedActivityList";
 import { ProfileMemberAvatar } from "./profile/ProfileMemberAvatar";
+import { ProfileProsePreview } from "./profile/ProfileProsePreview";
+import { ProfileTagOrTextList } from "./profile/ProfileTagOrTextList";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { InviteGolfer } from "./InviteGolfer";
 
@@ -87,6 +91,7 @@ type GolferProfilePageProps = {
   onMessageMember?: (userId: string, memberName: string) => void;
   onRequestIntroduction?: (member: MemberProfileRecord) => void;
   onViewMemberProfile?: (userId: string, memberName: string) => void;
+  onOpenFeedPost?: (postId: string) => void;
 };
 
 export function GolferProfilePage({
@@ -96,12 +101,12 @@ export function GolferProfilePage({
   backLabel = "Back",
   onMessageMember,
   onRequestIntroduction,
-  onViewMemberProfile,
+  onViewMemberProfile: _onViewMemberProfile,
+  onOpenFeedPost,
 }: GolferProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
   const [memberProfile, setMemberProfile] = useState<MemberProfileRecord | null>(null);
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [courseRounds, setCourseRounds] = useState<MemberCourseRoundRecord[]>([]);
@@ -117,13 +122,6 @@ export function GolferProfilePage({
   useEffect(() => {
     if (!isActive) return;
     void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
-    if (!isSupabaseConfigured || !supabase) {
-      setViewerIsAdmin(false);
-      return;
-    }
-    void supabase.auth.getSession().then(({ data }) => {
-      setViewerIsAdmin(isAdminEmail(data.session?.user.email));
-    });
   }, [isActive]);
 
   const loadProfile = useCallback(async () => {
@@ -272,8 +270,35 @@ export function GolferProfilePage({
   const canMessage = isViewingOther && Boolean(onMessageMember && memberProfile?.user_id);
   const canRequestIntroduction =
     isViewingOther && Boolean(onRequestIntroduction && memberProfile?.user_id);
-  const businessInterests = memberProfile?.business_interests ?? [];
-  const industryLabel = display.title.trim();
+  const businessInterests = (memberProfile?.business_interests ?? []).filter(isMeaningfulProfileText);
+  const headlineLabel = isMeaningfulProfileText(display.title) ? display.title.trim() : "";
+  const homeClubLabel = isMeaningfulProfileText(display.homeCourse) ? display.homeCourse.trim() : "";
+  const locationLabel = isMeaningfulProfileText(display.location) ? display.location.trim() : "";
+  const travelLabel = isMeaningfulProfileText(display.upcomingTravel)
+    ? display.upcomingTravel.trim()
+    : "";
+  const favoriteCourses = display.favoriteCourses.filter(isMeaningfulProfileText);
+  const meaningfulConnectionInterests = useMemo(
+    () => display.connectionInterests.filter(isMeaningfulProfileText),
+    [display.connectionInterests],
+  );
+  const { tags: connectionInterestTags, textItems: connectionInterestProse } = useMemo(
+    () => partitionProfileDisplayItems(meaningfulConnectionInterests),
+    [meaningfulConnectionInterests],
+  );
+  const profileFeedPosts = useMemo(
+    () => feedPosts.slice(0, PROFILE_FEED_ACTIVITY_LIMIT),
+    [feedPosts],
+  );
+  const hasGolfActivity = courseRounds.length > 0;
+  const showBusinessSection = businessInterests.length > 0;
+  const showConnectionInterestTags = connectionInterestTags.length > 0;
+  const showConnectionInterestProse = connectionInterestProse.length > 0;
+  const showHandicap = !isViewingOther;
+  const showGolfSection =
+    homeClubLabel.length > 0 ||
+    favoriteCourses.length > 0 ||
+    showHandicap;
 
   if (isEditing && !isViewingOther) {
     return (
@@ -405,16 +430,23 @@ export function GolferProfilePage({
                   </h1>
                   {display.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
                 </div>
-                {industryLabel ? (
-                  <p className="et-profile-headline">{industryLabel}</p>
+                {headlineLabel ? (
+                  <p className="et-profile-headline">{headlineLabel}</p>
                 ) : null}
-                <p className="et-profile-location">
-                  {display.location ||
-                    (isViewingOther ? "Location not shared" : "Add your location in Edit Profile")}
-                </p>
-                <p className="et-profile-club">
-                  Home club · <strong>{display.homeCourse || "Not shared"}</strong>
-                </p>
+                {locationLabel ? (
+                  <p className="et-profile-location">{locationLabel}</p>
+                ) : !isViewingOther ? (
+                  <p className="et-profile-location">Add your location in Edit Profile</p>
+                ) : null}
+                {homeClubLabel ? (
+                  <p className="et-profile-club">
+                    Home club · <strong>{homeClubLabel}</strong>
+                  </p>
+                ) : !isViewingOther ? (
+                  <p className="et-profile-club">
+                    Home club · <strong>Add in Edit Profile</strong>
+                  </p>
+                ) : null}
                 <div className="et-profile-badges">
                   <span className="et-profile-badge et-profile-badge--gold">
                     {memberProfile.founding_member_number ?? earlyStageCopy.foundingMember}
@@ -442,6 +474,12 @@ export function GolferProfilePage({
                   <p className="et-profile-section-lead">{earlyStageCopy.profileOnboarding}</p>
                 ) : null}
                 <p className="et-profile-about">{display.bio}</p>
+                {showConnectionInterestProse ? (
+                  <div className="et-profile-connection-prose">
+                    <p className="et-profile-section-lead">Connection interests</p>
+                    <ProfileProsePreview items={connectionInterestProse} />
+                  </div>
+                ) : null}
               </ProfileSection>
 
               <ProfileSection
@@ -471,22 +509,38 @@ export function GolferProfilePage({
                 ) : null}
               </ProfileSection>
 
-              <ProfileSection
-                title="Recent experiences"
-                description={
-                  isViewingOther
-                    ? "The latest rounds this member has shared."
-                    : "Your most recent rounds and reviews."
-                }
-              >
-                {recentExperiences.length > 0 ? (
-                  <MemberActivityList
-                    rounds={recentExperiences}
-                    showMemberIdentity={false}
-                    allowPhotoDelete={!isViewingOther}
-                    onRoundsChanged={() => void loadProfile()}
-                  />
-                ) : (
+              {hasGolfActivity ? (
+                <>
+                  <ProfileSection
+                    title="Recent experiences"
+                    description={
+                      isViewingOther
+                        ? "The latest rounds this member has shared."
+                        : "Your most recent rounds and reviews."
+                    }
+                  >
+                    <MemberActivityList
+                      rounds={recentExperiences}
+                      variant="profile"
+                      maxItems={PROFILE_RECENT_EXPERIENCE_LIMIT}
+                      showMemberIdentity={false}
+                      allowPhotoDelete={!isViewingOther}
+                      onRoundsChanged={() => void loadProfile()}
+                    />
+                  </ProfileSection>
+
+                  <ProfileSection
+                    title="Courses played"
+                    description="Distinct courses represented in shared experiences."
+                  >
+                    <ProfileCoursesPlayed courses={uniqueCourses} isViewingOther={isViewingOther} />
+                  </ProfileSection>
+                </>
+              ) : (
+                <ProfileSection
+                  title="Golf activity"
+                  description="Shared rounds and course history on EliteTee."
+                >
                   <ProfileEmptyState
                     title={earlyStageCopy.roundsEmpty}
                     hint={
@@ -495,15 +549,8 @@ export function GolferProfilePage({
                         : "Add a course round from Courses to build your golf history."
                     }
                   />
-                )}
-              </ProfileSection>
-
-              <ProfileSection
-                title="Courses played"
-                description="Distinct courses represented in shared experiences."
-              >
-                <ProfileCoursesPlayed courses={uniqueCourses} isViewingOther={isViewingOther} />
-              </ProfileSection>
+                </ProfileSection>
+              )}
 
               {feedPosts.length > 0 ? (
                 <ProfileSection
@@ -514,27 +561,10 @@ export function GolferProfilePage({
                       : "Posts you've shared in the member feed."
                   }
                 >
-                  <div className={`et-profile-feed-grid ${FEED_CARD_SCOPE_CLASS}`}>
-                    {feedPosts.map((post, index) => (
-                      <FeedCard
-                        key={post.id}
-                        post={post}
-                        index={index}
-                        currentUserId={currentUserId}
-                        viewerIsAdmin={viewerIsAdmin}
-                        onViewAuthor={onViewMemberProfile}
-                        onPostUpdated={(updatedPost) => {
-                          setFeedPosts((current) =>
-                            current.map((entry) =>
-                              entry.id === updatedPost.id
-                                ? mergeFeedPostAfterEdit(entry, updatedPost)
-                                : entry,
-                            ),
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
+                  <ProfileFeedActivityList
+                    posts={profileFeedPosts}
+                    onOpenPost={onOpenFeedPost}
+                  />
                 </ProfileSection>
               ) : null}
             </div>
@@ -542,13 +572,16 @@ export function GolferProfilePage({
             <aside className="et-profile-aside">
               {!isViewingOther ? <InviteGolfer variant="full" /> : null}
 
+              {showGolfSection ? (
               <ProfileSection title="Golf" description="Where they play and what they love.">
                 <dl className="et-profile-aside-block">
-                  <div>
-                    <dt>Home club</dt>
-                    <dd>{display.homeCourse || "Not shared"}</dd>
-                  </div>
-                  {!isViewingOther ? (
+                  {homeClubLabel ? (
+                    <div>
+                      <dt>Home club</dt>
+                      <dd>{homeClubLabel}</dd>
+                    </div>
+                  ) : null}
+                  {showHandicap ? (
                     <div>
                       <dt>Handicap</dt>
                       <dd>
@@ -559,89 +592,41 @@ export function GolferProfilePage({
                     </div>
                   ) : null}
                 </dl>
-                <div>
-                  <p className="et-profile-section-lead">Favorite courses</p>
-                  {display.favoriteCourses.length > 0 ? (
+                {favoriteCourses.length > 0 ? (
+                  <div>
+                    <p className="et-profile-section-lead">Favorite courses</p>
                     <ul className="et-profile-chips">
-                      {display.favoriteCourses.map((course) => (
+                      {favoriteCourses.map((course) => (
                         <li key={course}>
                           <span className="et-profile-chip">{course}</span>
                         </li>
                       ))}
                     </ul>
-                  ) : (
-                    <ProfileEmptyState
-                      title={earlyStageCopy.favoriteCoursesEmpty}
-                      hint={
-                        isViewingOther
-                          ? "This member has not shared favorite courses yet."
-                          : "List the courses that define your game in Edit Profile."
-                      }
-                    />
-                  )}
-                </div>
+                  </div>
+                ) : null}
               </ProfileSection>
+              ) : null}
 
-              {(industryLabel || businessInterests.length > 0) && (
+              {showBusinessSection ? (
                 <ProfileSection title="Business" description="Professional context and interests.">
-                  {industryLabel ? (
-                    <dl className="et-profile-aside-block">
-                      <div>
-                        <dt>Industry</dt>
-                        <dd>{industryLabel}</dd>
-                      </div>
-                    </dl>
-                  ) : null}
-                  {businessInterests.length > 0 ? (
-                    <ul className="et-profile-chips">
-                      {businessInterests.map((interest) => (
-                        <li key={interest}>
-                          <span className="et-profile-chip">{interest}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
+                  <ProfileTagOrTextList items={businessInterests} />
                 </ProfileSection>
-              )}
+              ) : null}
 
-              <ProfileSection title="Travel" description="Upcoming golf travel and destinations.">
-                {display.upcomingTravel ? (
-                  <p className="et-profile-travel">{display.upcomingTravel}</p>
-                ) : (
-                  <ProfileEmptyState
-                    title={earlyStageCopy.tripsEmpty}
-                    hint={
-                      isViewingOther
-                        ? "This member has not shared upcoming travel yet."
-                        : "Share upcoming golf travel in Edit Profile to connect with members nearby."
-                    }
-                  />
-                )}
-              </ProfileSection>
+              {travelLabel ? (
+                <ProfileSection title="Travel" description="Upcoming golf travel and destinations.">
+                  <p className="et-profile-travel">{travelLabel}</p>
+                </ProfileSection>
+              ) : null}
 
-              <ProfileSection
-                title="Interests"
-                description="Connection goals and golf interests."
-              >
-                {display.connectionInterests.length > 0 ? (
-                  <ul className="et-profile-chips">
-                    {display.connectionInterests.map((interest) => (
-                      <li key={interest}>
-                        <span className="et-profile-chip">{interest}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <ProfileEmptyState
-                    title={earlyStageCopy.connectionInterestsTitle}
-                    hint={
-                      isViewingOther
-                        ? "This member has not shared connection interests yet."
-                        : earlyStageCopy.connectionInterestsEmpty
-                    }
-                  />
-                )}
-              </ProfileSection>
+              {showConnectionInterestTags ? (
+                <ProfileSection
+                  title="Interests"
+                  description="Connection goals and golf interests."
+                >
+                  <ProfileTagOrTextList items={connectionInterestTags} />
+                </ProfileSection>
+              ) : null}
 
               {!isViewingOther ? (
                 <ProfileSection

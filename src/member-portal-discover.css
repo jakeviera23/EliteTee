@@ -161,10 +161,26 @@
   box-shadow: 0 0 0 2px var(--discover-forest-soft);
 }
 
-.et-btn--forest {
-  color: white;
-  background: var(--discover-forest);
-  border-color: var(--discover-forest);
+.et-discover .et-btn--forest {
+  color: #ffffff;
+  background: var(--discover-forest, var(--et-forest));
+  border-color: var(--discover-forest, var(--et-forest));
+}
+
+.et-discover .et-btn--forest:hover:not(:disabled),
+.et-discover .et-btn--forest:focus-visible:not(:disabled) {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
+  border-color: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
+}
+
+.et-discover .et-btn--forest:disabled,
+.et-discover .et-btn--forest[aria-disabled="true"] {
+  color: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 42%, var(--et-bg-surface) 58%);
+  border-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .et-btn--secondary {
@@ -496,6 +512,30 @@
   padding: 0.45rem 0.75rem;
   font-size: 0.8125rem;
   box-sizing: border-box;
+}
+
+/* Beat later global .et-btn--forest rules from other portal tabs. */
+.et-discover .et-discover-card-actions .et-btn--forest {
+  color: #ffffff;
+  background: var(--discover-forest, var(--et-forest));
+  border-color: var(--discover-forest, var(--et-forest));
+  box-shadow: var(--et-shadow-xs);
+}
+
+.et-discover .et-discover-card-actions .et-btn--forest:hover:not(:disabled),
+.et-discover .et-discover-card-actions .et-btn--forest:focus-visible:not(:disabled) {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
+  border-color: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
+}
+
+.et-discover .et-discover-card-actions .et-btn--forest:disabled,
+.et-discover .et-discover-card-actions .et-btn--forest[aria-disabled="true"] {
+  color: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 42%, var(--et-bg-surface) 58%);
+  border-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .et-discover-geo-chip {

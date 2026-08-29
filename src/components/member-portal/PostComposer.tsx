@@ -50,7 +50,7 @@ export function PostComposer({ author, onPost, id }: PostComposerProps) {
       postType: roundType === "Bucket List" ? "bucket-list" : "played-today",
       author,
       courseName: courseName.trim(),
-      courseLocation: location.trim() || "Location not set",
+      courseLocation: location.trim() || "",
       images: [photoPreview ?? photos.swingHorizon],
       imageAlt: `Golf post at ${courseName.trim()}`,
       caption: caption.trim(),

@@ -4,12 +4,15 @@ import type { FeedPostLiker } from "../../lib/feedPostEngagement";
 import { MAX_RATING, postTypeLabels } from "../../data/portalSocial";
 import { formatCourseRatingDisplay } from "../../lib/courseRating";
 import { FEED_CARD_ICON_CLASSES } from "../../lib/feedCardScope";
-import { resolveFeedCardBadgeLabel } from "../../lib/feedPostDisplay";
+import {
+  isMeaningfulFeedLocation,
+  resolveFeedAuthorRole,
+  resolveFeedCardBadgeLabel,
+} from "../../lib/feedPostDisplay";
 import { canShowFeedPostEditMenu, isFeedPostEdited, mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { signedUrlsToPhotoRecords } from "../../lib/memberCourseRoundPhotos";
 import { deleteOwnFeedPost } from "../../lib/memberFeedPosts";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
-import { getFeedContentFlags } from "../../lib/feedContentAudit";
 import {
   applyLikeToggle,
   applySaveToggle,
@@ -147,6 +150,7 @@ function AuthorIdentity({
   onViewAuthor?: () => void;
   showEditedLabel?: boolean;
 }) {
+  const authorRole = resolveFeedAuthorRole(post.author);
   const inner = (
     <>
       <FeedAvatar name={post.author.name} src={post.author.avatarImage} size="md" />
@@ -156,14 +160,10 @@ function AuthorIdentity({
           {post.author.isVerified ? <VerifiedBadge label="Verified golfer" /> : null}
         </p>
         <p className="feed-card-meta">
-          {post.author.title ? (
-            <span className="feed-card-role">{post.author.title}</span>
-          ) : post.author.homeCourse ? (
-            <span className="feed-card-role">{post.author.homeCourse}</span>
-          ) : null}
+          {authorRole ? <span className="feed-card-role">{authorRole}</span> : null}
           {post.timestamp ? (
             <>
-              {post.author.title || post.author.homeCourse ? (
+              {authorRole ? (
                 <span className="feed-card-dot" aria-hidden="true">
                   ·
                 </span>
@@ -303,7 +303,6 @@ export function FeedCard({
 
   const authorUserId = post.author.id?.trim();
   const canViewAuthor = Boolean(onViewAuthor && authorUserId);
-  const contentFlags = isFounder ? [] : getFeedContentFlags(post);
 
   const cardKind = isFounder ? "founder" : isCourseRound ? "round" : "social";
 
@@ -462,8 +461,16 @@ export function FeedCard({
   const ratingDisplay = formatCourseRatingDisplay(post.rating);
 
   const showCourseBlock =
-    isCourseRound && (roundLabel || post.courseName || post.courseLocation || ratingDisplay);
-  const showSocialHeadline = !isCourseRound && !isFounder && (roundLabel || post.courseName);
+    isCourseRound &&
+    (roundLabel ||
+      post.courseName ||
+      isMeaningfulFeedLocation(post.courseLocation) ||
+      ratingDisplay);
+  const showSocialHeadline =
+    !isCourseRound && !isFounder && (roundLabel || post.courseName);
+  const meaningfulCourseLocation = isMeaningfulFeedLocation(post.courseLocation)
+    ? post.courseLocation.trim()
+    : "";
 
   return (
     <article
@@ -531,8 +538,8 @@ export function FeedCard({
           {post.courseName ? (
             <h3 className="feed-card-course-title">{post.courseName}</h3>
           ) : null}
-          {post.courseLocation ? (
-            <p className="feed-card-course-location">{post.courseLocation}</p>
+          {meaningfulCourseLocation ? (
+            <p className="feed-card-course-location">{meaningfulCourseLocation}</p>
           ) : null}
           {ratingDisplay && !hasMedia ? (
             <div
@@ -550,19 +557,13 @@ export function FeedCard({
         <div className="feed-card-social-head">
           {roundLabel ? <span className={badgeToneClass(badgeTone)}>{roundLabel}</span> : null}
           {post.courseName ? <p className="feed-card-social-title">{post.courseName}</p> : null}
-          {post.courseLocation ? (
-            <p className="feed-card-social-location">{post.courseLocation}</p>
+          {meaningfulCourseLocation ? (
+            <p className="feed-card-social-location">{meaningfulCourseLocation}</p>
           ) : null}
         </div>
       ) : null}
 
       <div className="feed-card-body">
-        {contentFlags.length > 0 ? (
-          <div className="et-feed-content-flag" role="note">
-            <p className="et-caption">Review suggested: {contentFlags.join(" · ")}</p>
-          </div>
-        ) : null}
-
         {post.caption ? (
           <p className={`feed-card-caption${isFounder ? " feed-card-caption--founder" : ""}`}>
             {post.caption}

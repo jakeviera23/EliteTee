@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
-import { buildGolferProfileDisplay } from "./portalProfileDisplay";
+import {
+  buildGolferProfileDisplay,
+  isMeaningfulProfileText,
+  partitionProfileDisplayItems,
+  PROFILE_TAG_MAX_LENGTH,
+} from "./portalProfileDisplay";
 
 function profile(overrides: Partial<MemberProfileRecord> = {}): MemberProfileRecord {
   return {
@@ -30,6 +35,54 @@ function profile(overrides: Partial<MemberProfileRecord> = {}): MemberProfileRec
     ...overrides,
   };
 }
+
+describe("isMeaningfulProfileText", () => {
+  it("rejects empty and placeholder profile values", () => {
+    expect(isMeaningfulProfileText("")).toBe(false);
+    expect(isMeaningfulProfileText("   ")).toBe(false);
+    expect(isMeaningfulProfileText("Not specified")).toBe(false);
+    expect(isMeaningfulProfileText("not shared")).toBe(false);
+    expect(isMeaningfulProfileText("N/A")).toBe(false);
+    expect(isMeaningfulProfileText("Location not set")).toBe(false);
+  });
+
+  it("accepts real profile text", () => {
+    expect(isMeaningfulProfileText("Private equity")).toBe(true);
+    expect(isMeaningfulProfileText("Scotland — September")).toBe(true);
+  });
+});
+
+describe("partitionProfileDisplayItems", () => {
+  it("splits short tags from long readable text blocks", () => {
+    const longInterest =
+      "Looking for thoughtful golf partners who enjoy walking courses and post-round conversation.";
+    const { tags, textItems } = partitionProfileDisplayItems([
+      "Weekend games",
+      longInterest,
+      "Not specified",
+      "Travel partners",
+    ]);
+
+    expect(tags).toEqual(["Weekend games", "Travel partners"]);
+    expect(textItems).toEqual([longInterest]);
+  });
+
+  it("treats multiline values as text cards even when short", () => {
+    const { tags, textItems } = partitionProfileDisplayItems(["Line one\nLine two"]);
+
+    expect(tags).toEqual([]);
+    expect(textItems).toEqual(["Line one\nLine two"]);
+  });
+
+  it("respects the tag length threshold", () => {
+    const borderline = "x".repeat(PROFILE_TAG_MAX_LENGTH);
+    const tooLong = "x".repeat(PROFILE_TAG_MAX_LENGTH + 1);
+    const { tags, textItems } = partitionProfileDisplayItems([borderline, tooLong]);
+
+    expect(tags).toEqual([borderline]);
+    expect(textItems).toEqual([tooLong]);
+  });
+});
 
 describe("buildGolferProfileDisplay", () => {
   it("reads persisted member profile fields from Supabase", () => {
