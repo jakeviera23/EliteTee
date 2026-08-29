@@ -326,12 +326,6 @@
   line-height: 1.5;
 }
 
-.et-experience-form .et-btn--forest {
-  color: white;
-  background: var(--et-forest);
-  border-color: var(--et-forest);
-}
-
 @keyframes et-experience-fade-up {
   from {
     opacity: 0;

@@ -302,39 +302,29 @@
     color 0.2s ease;
 }
 
-.et-btn:focus-visible {
+.et-course-detail .et-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--cd-forest-soft);
 }
 
-.et-btn--forest {
-  color: white;
-  background: var(--cd-forest);
-  border-color: var(--cd-forest);
-}
-
-.et-btn--forest:hover {
-  background: color-mix(in srgb, var(--cd-forest) 88%, black 12%);
-}
-
-.et-btn--secondary {
+.et-course-detail .et-btn--secondary {
   color: var(--cd-forest);
   background: var(--et-bg-surface);
   border-color: color-mix(in srgb, var(--cd-forest) 35%, transparent);
 }
 
-.et-btn--secondary:hover {
+.et-course-detail .et-btn--secondary:hover {
   background: var(--cd-forest-soft);
 }
 
-.et-btn--secondary.is-active,
-.et-btn--secondary[aria-pressed="true"] {
+.et-course-detail .et-btn--secondary.is-active,
+.et-course-detail .et-btn--secondary[aria-pressed="true"] {
   border-color: var(--cd-gold);
   color: var(--cd-forest);
   background: color-mix(in srgb, var(--cd-gold-soft) 55%, white 45%);
 }
 
-.et-btn--ghost {
+.et-course-detail .et-btn--ghost {
   color: var(--cd-slate);
   background: transparent;
   border-color: var(--et-border-hairline);

@@ -138,7 +138,7 @@ export function IntroductionRequestCard({
             </button>
             <button
               type="button"
-              className="et-btn et-btn--secondary et-btn--sm"
+              className="et-btn et-btn--destructive et-btn--sm"
               onClick={() => onDecline(request.id)}
               disabled={isUpdating}
             >

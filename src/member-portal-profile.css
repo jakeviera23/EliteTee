@@ -976,12 +976,6 @@
   box-shadow: 0 0 0 2px var(--profile-forest-soft);
 }
 
-.et-profile .et-btn--forest {
-  color: white;
-  background: var(--profile-forest);
-  border-color: var(--profile-forest);
-}
-
 .et-profile .et-btn--secondary {
   color: var(--profile-forest);
   background: var(--et-bg-surface);
@@ -1116,8 +1110,7 @@
 }
 
 .et-profile-form-actions .portal-btn--gold,
-.et-profile-hero-actions .portal-btn--gold,
-.et-profile-hero-actions .et-btn--forest {
+.et-profile-hero-actions .portal-btn--gold {
   background: var(--profile-forest);
   border-color: var(--profile-forest);
 }

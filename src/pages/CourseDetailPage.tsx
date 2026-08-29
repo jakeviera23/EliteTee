@@ -55,6 +55,7 @@ import "../member-portal.css";
 import "../member-portal-theme.css";
 import "../member-portal-courses.css";
 import "../member-portal-course-detail.css";
+import "../member-portal-buttons.css";
 
 type CourseDetailPageProps = {
   onViewMemberProfile?: ViewMemberProfileHandler;

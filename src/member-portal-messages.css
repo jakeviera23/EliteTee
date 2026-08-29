@@ -767,41 +767,6 @@
   padding-top: var(--et-space-2);
 }
 
-/*
- * Forest filled buttons (Send / Save).
- * Must beat .et-btn:hover surface styles — otherwise white label on light hover
- * becomes nearly invisible on the compose bar.
- */
-.et-messages .et-btn--forest {
-  color: #ffffff;
-  background: var(--msg-forest);
-  border-color: var(--msg-forest);
-  box-shadow: var(--et-shadow-xs);
-}
-
-.et-messages .et-btn--forest:hover:not(:disabled),
-.et-messages .et-btn--forest:focus-visible:not(:disabled) {
-  color: #ffffff;
-  background: color-mix(in srgb, var(--msg-forest) 86%, black 14%);
-  border-color: color-mix(in srgb, var(--msg-forest) 86%, black 14%);
-}
-
-.et-messages .et-btn--forest:active:not(:disabled) {
-  color: #ffffff;
-  background: color-mix(in srgb, var(--msg-forest) 78%, black 22%);
-  border-color: color-mix(in srgb, var(--msg-forest) 78%, black 22%);
-}
-
-.et-messages .et-btn--forest:disabled,
-.et-messages .et-btn--forest[aria-disabled="true"] {
-  color: rgba(255, 255, 255, 0.88);
-  background: color-mix(in srgb, var(--msg-forest) 42%, var(--et-bg-surface) 58%);
-  border-color: transparent;
-  box-shadow: none;
-  opacity: 1;
-  cursor: not-allowed;
-}
-
 .et-messages-send {
   min-width: 5.5rem;
 }

@@ -1607,15 +1607,6 @@
   padding-top: 0.25rem;
 }
 
-.feed-edit-actions .et-btn--primary {
-  background: var(--feed-forest);
-  border-color: var(--feed-forest);
-}
-
-.feed-edit-actions .et-btn--primary:focus-visible {
-  box-shadow: 0 0 0 2px var(--feed-forest-soft);
-}
-
 .et-feed-card-scope .feed-card-photo-placeholder--compact {
   min-height: 3.5rem;
   padding: 0.75rem 1rem;

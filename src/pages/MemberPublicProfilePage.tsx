@@ -15,6 +15,7 @@ import "../inside-elitetee.css";
 import "../member-portal.css";
 import "../member-portal-theme.css";
 import "../member-portal-profile.css";
+import "../member-portal-buttons.css";
 
 type MemberProfileLocationState = {
   returnTo?: ProfileReturnContext;

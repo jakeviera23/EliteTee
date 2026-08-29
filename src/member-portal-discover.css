@@ -161,40 +161,6 @@
   box-shadow: 0 0 0 2px var(--discover-forest-soft);
 }
 
-.et-discover .et-btn--forest {
-  color: #ffffff;
-  background: var(--discover-forest, var(--et-forest));
-  border-color: var(--discover-forest, var(--et-forest));
-}
-
-.et-discover .et-btn--forest:hover:not(:disabled),
-.et-discover .et-btn--forest:focus-visible:not(:disabled) {
-  color: #ffffff;
-  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
-  border-color: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
-}
-
-.et-discover .et-btn--forest:disabled,
-.et-discover .et-btn--forest[aria-disabled="true"] {
-  color: rgba(255, 255, 255, 0.88);
-  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 42%, var(--et-bg-surface) 58%);
-  border-color: transparent;
-  cursor: not-allowed;
-  opacity: 0.72;
-}
-
-.et-btn--secondary {
-  color: var(--discover-forest);
-  background: var(--et-bg-surface);
-  border-color: color-mix(in srgb, var(--discover-forest) 35%, transparent);
-}
-
-.et-btn--ghost {
-  color: var(--discover-slate);
-  background: transparent;
-  border-color: var(--et-border-hairline);
-}
-
 .et-discover-featured-stack,
 .et-discover-results {
   display: grid;
@@ -278,6 +244,8 @@
 }
 
 .et-discover-card {
+  container-type: inline-size;
+  container-name: discover-card;
   display: grid;
   gap: var(--et-space-2);
   align-content: start;
@@ -494,8 +462,8 @@
 }
 
 .et-discover-card-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
   margin-top: auto;
   padding-top: 0.25rem;
@@ -505,37 +473,26 @@
 }
 
 .et-discover-card-actions .et-btn {
-  flex: 1 1 calc(50% - 0.25rem);
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   min-height: 2.35rem;
-  padding: 0.45rem 0.75rem;
+  padding: 0.5rem 0.625rem;
   font-size: 0.8125rem;
+  line-height: 1.2;
+  white-space: normal;
+  text-wrap: balance;
+  text-align: center;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
   box-sizing: border-box;
 }
 
-/* Beat later global .et-btn--forest rules from other portal tabs. */
-.et-discover .et-discover-card-actions .et-btn--forest {
-  color: #ffffff;
-  background: var(--discover-forest, var(--et-forest));
-  border-color: var(--discover-forest, var(--et-forest));
-  box-shadow: var(--et-shadow-xs);
-}
-
-.et-discover .et-discover-card-actions .et-btn--forest:hover:not(:disabled),
-.et-discover .et-discover-card-actions .et-btn--forest:focus-visible:not(:disabled) {
-  color: #ffffff;
-  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
-  border-color: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 86%, black 14%);
-}
-
-.et-discover .et-discover-card-actions .et-btn--forest:disabled,
-.et-discover .et-discover-card-actions .et-btn--forest[aria-disabled="true"] {
-  color: rgba(255, 255, 255, 0.88);
-  background: color-mix(in srgb, var(--discover-forest, var(--et-forest)) 42%, var(--et-bg-surface) 58%);
-  border-color: transparent;
-  cursor: not-allowed;
-  opacity: 0.72;
+@container discover-card (max-width: 18.5rem) {
+  .et-discover-card-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .et-discover-geo-chip {

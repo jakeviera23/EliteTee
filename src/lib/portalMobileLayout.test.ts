@@ -13,14 +13,15 @@ import {
 } from "./portalMobileLayout";
 
 describe("portal mobile layout structure", () => {
-  it("uses five equal bottom-nav columns on mobile", () => {
-    expect(PORTAL_MOBILE_BOTTOM_NAV_COLUMN_COUNT).toBe(5);
+  it("uses six equal bottom-nav columns on mobile", () => {
+    expect(PORTAL_MOBILE_BOTTOM_NAV_COLUMN_COUNT).toBe(6);
   });
 
   it("exposes full mobile bottom-nav labels without truncation", () => {
     expect(PORTAL_MOBILE_BOTTOM_NAV_LABELS).toEqual([
       "Feed",
       "Discover",
+      "Intros",
       "Ask",
       "Courses",
       "Profile",

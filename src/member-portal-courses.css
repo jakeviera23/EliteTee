@@ -664,8 +664,6 @@
 
 .et-courses-drawer-foot .et-btn--primary {
   flex: 1;
-  background: var(--courses-forest);
-  border-color: var(--courses-forest);
 }
 
 @media (prefers-reduced-motion: reduce) {

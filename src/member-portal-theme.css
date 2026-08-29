@@ -103,7 +103,7 @@
   .portal-page.et-theme-portal .portal-bottom-nav {
     background: rgba(28, 43, 36, 0.98);
     border-top-color: var(--et-chrome-border);
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .portal-page.et-theme-portal .portal-bottom-nav-btn {
@@ -554,19 +554,4 @@
   border-radius: 0.65rem;
   background: var(--et-bg-inset);
   color: var(--et-text-primary);
-}
-
-.portal-page.et-theme-portal .portal-main .portal-btn--gold,
-.portal-page.et-theme-portal .portal-modal .portal-btn--gold,
-.portal-page.et-theme-portal .feed-composer .portal-btn--gold {
-  color: var(--et-bg-surface);
-  background: var(--et-forest);
-  border-color: var(--et-forest);
-}
-
-.portal-page.et-theme-portal .portal-main .portal-btn--gold:hover:not(:disabled),
-.portal-page.et-theme-portal .portal-modal .portal-btn--gold:hover:not(:disabled),
-.portal-page.et-theme-portal .feed-composer .portal-btn--gold:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--et-forest) 88%, black 12%);
-  border-color: color-mix(in srgb, var(--et-forest) 88%, black 12%);
 }

@@ -1,7 +1,7 @@
 import { PORTAL_MOBILE_BOTTOM_TABS } from "./portalNavigation";
 
-/** Mobile bottom navigation uses five equal-width columns (not six). */
-export const PORTAL_MOBILE_BOTTOM_NAV_COLUMN_COUNT = 5;
+/** Mobile bottom navigation uses six equal-width columns. */
+export const PORTAL_MOBILE_BOTTOM_NAV_COLUMN_COUNT = 6;
 
 /** Full labels shown without ellipsis truncation on mobile bottom nav. */
 export const PORTAL_MOBILE_BOTTOM_NAV_LABELS = PORTAL_MOBILE_BOTTOM_TABS.map((tab) => tab.label);

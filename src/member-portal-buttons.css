@@ -1,0 +1,204 @@
+/**
+ * Member Portal — shared CTA hierarchy
+ * Scoped to authenticated portal content surfaces (not top chrome).
+ *
+ * 1. Primary (et-btn--forest / et-btn--primary / portal-btn--gold|primary) — forest green
+ * 2. Secondary (et-btn--secondary / portal-btn--outline) — outlined / light
+ * 3. Destructive (et-btn--destructive) — burgundy outline, never green
+ * 4. Ghost (et-btn--ghost) — tertiary text actions
+ *
+ * Beats design-system .et-btn:hover surface styles that wash out filled CTAs.
+ */
+
+.portal-page.et-theme-portal :is(
+    .portal-main,
+    .portal-modal,
+    .portal-modal-card,
+    .feed-edit-modal,
+    .feed-composer
+  )
+  :is(
+    .et-btn--forest,
+    .et-btn--primary,
+    .portal-btn--gold,
+    .portal-btn--primary
+  ) {
+  color: #ffffff;
+  background: var(--et-forest);
+  border-color: var(--et-forest);
+  box-shadow: var(--et-shadow-xs);
+}
+
+.portal-page.et-theme-portal :is(
+    .portal-main,
+    .portal-modal,
+    .portal-modal-card,
+    .feed-edit-modal,
+    .feed-composer
+  )
+  :is(
+    .et-btn--forest,
+    .et-btn--primary,
+    .portal-btn--gold,
+    .portal-btn--primary
+  ):hover:not(:disabled),
+.portal-page.et-theme-portal :is(
+    .portal-main,
+    .portal-modal,
+    .portal-modal-card,
+    .feed-edit-modal,
+    .feed-composer
+  )
+  :is(
+    .et-btn--forest,
+    .et-btn--primary,
+    .portal-btn--gold,
+    .portal-btn--primary
+  ):focus-visible:not(:disabled) {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--et-forest) 86%, black 14%);
+  border-color: color-mix(in srgb, var(--et-forest) 86%, black 14%);
+}
+
+.portal-page.et-theme-portal :is(
+    .portal-main,
+    .portal-modal,
+    .portal-modal-card,
+    .feed-edit-modal,
+    .feed-composer
+  )
+  :is(
+    .et-btn--forest,
+    .et-btn--primary,
+    .portal-btn--gold,
+    .portal-btn--primary
+  ):active:not(:disabled) {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--et-forest) 78%, black 22%);
+  border-color: color-mix(in srgb, var(--et-forest) 78%, black 22%);
+}
+
+.portal-page.et-theme-portal :is(
+    .portal-main,
+    .portal-modal,
+    .portal-modal-card,
+    .feed-edit-modal,
+    .feed-composer
+  )
+  :is(
+    .et-btn--forest,
+    .et-btn--primary,
+    .portal-btn--gold,
+    .portal-btn--primary
+  ):disabled,
+.portal-page.et-theme-portal :is(
+    .portal-main,
+    .portal-modal,
+    .portal-modal-card,
+    .feed-edit-modal,
+    .feed-composer
+  )
+  :is(
+    .et-btn--forest,
+    .et-btn--primary,
+    .portal-btn--gold,
+    .portal-btn--primary
+  )[aria-disabled="true"] {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--et-forest) 42%, var(--et-bg-surface) 58%);
+  border-color: transparent;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--secondary,
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .portal-btn--outline {
+  color: var(--et-forest);
+  background: var(--et-bg-surface);
+  border-color: var(--et-forest-border);
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--secondary:hover:not(:disabled),
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--secondary:focus-visible:not(:disabled),
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .portal-btn--outline:hover:not(:disabled),
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .portal-btn--outline:focus-visible:not(:disabled) {
+  color: var(--et-forest);
+  background: var(--et-forest-soft);
+  border-color: color-mix(in srgb, var(--et-forest) 35%, transparent);
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--secondary:disabled,
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--secondary[aria-disabled="true"],
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .portal-btn--outline:disabled,
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .portal-btn--outline[aria-disabled="true"] {
+  opacity: 0.55;
+  color: var(--et-text-tertiary);
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+  cursor: not-allowed;
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--destructive {
+  color: var(--et-burgundy);
+  background: var(--et-bg-surface);
+  border-color: color-mix(in srgb, var(--et-burgundy) 34%, transparent);
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--destructive:hover:not(:disabled),
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--destructive:focus-visible:not(:disabled) {
+  color: var(--et-burgundy);
+  background: var(--et-burgundy-soft);
+  border-color: color-mix(in srgb, var(--et-burgundy) 45%, transparent);
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--destructive:disabled,
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--destructive[aria-disabled="true"] {
+  opacity: 0.55;
+  color: color-mix(in srgb, var(--et-burgundy) 55%, var(--et-text-tertiary));
+  background: var(--et-bg-inset);
+  border-color: var(--et-border-hairline);
+  cursor: not-allowed;
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--ghost {
+  color: var(--et-text-secondary);
+  background: transparent;
+  border-color: var(--et-border-hairline);
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--ghost:hover:not(:disabled),
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--ghost:focus-visible:not(:disabled) {
+  color: var(--et-forest);
+  background: var(--et-forest-soft);
+  border-color: color-mix(in srgb, var(--et-forest) 24%, transparent);
+}
+
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--ghost:disabled,
+.portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
+  .et-btn--ghost[aria-disabled="true"] {
+  opacity: 0.55;
+  color: var(--et-text-tertiary);
+  background: transparent;
+  border-color: var(--et-border-hairline);
+  cursor: not-allowed;
+}

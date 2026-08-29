@@ -193,26 +193,6 @@
   min-width: 10rem;
 }
 
-.et-ask .et-btn--forest {
-  color: var(--et-text-inverse);
-  background: var(--ask-forest);
-  border-color: var(--ask-forest);
-}
-
-.et-ask .et-btn--forest:hover:not(:disabled) {
-  color: var(--et-text-inverse);
-  background: #2d5a48;
-  border-color: #2d5a48;
-}
-
-.et-ask .et-btn--forest:disabled {
-  opacity: 1;
-  color: color-mix(in srgb, var(--et-text-inverse) 88%, var(--ask-forest) 12%);
-  background: color-mix(in srgb, var(--ask-forest) 72%, var(--et-bg-surface) 28%);
-  border-color: color-mix(in srgb, var(--ask-forest) 72%, var(--et-bg-surface) 28%);
-  cursor: not-allowed;
-}
-
 /* —— Loading —— */
 .et-ask-loading {
   display: grid;
