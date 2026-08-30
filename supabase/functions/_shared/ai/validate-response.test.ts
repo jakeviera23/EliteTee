@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   containsPromptInjectionAttempt,
+  sanitizeAnswerProse,
+  stripMarkdownFormatting,
+  validateConciergeStructuredResponse,
   validateModelResponseIds,
 } from "./validate-response.ts";
 
@@ -58,5 +61,38 @@ describe("privacy safeguards", () => {
     });
 
     expect(invented.memberIds).toHaveLength(0);
+  });
+});
+
+describe("sanitizeAnswerProse", () => {
+  it("strips raw markdown formatting from synthesized answers", () => {
+    expect(stripMarkdownFormatting("**Sebonack Golf Club** has a 9.4 average.")).toBe(
+      "Sebonack Golf Club has a 9.4 average.",
+    );
+    expect(sanitizeAnswerProse("**Pebble Beach** and *Cypress Point* are top picks.")).toBe(
+      "Pebble Beach and Cypress Point are top picks.",
+    );
+  });
+
+  it("rejects raw JSON and profile dumps in answers", () => {
+    const sanitized = sanitizeAnswerProse('[{"user_id":"123","full_name":"Test Member"}]');
+    expect(sanitized).not.toContain("user_id");
+    expect(sanitized).toContain("EliteTee");
+  });
+
+  it("sanitizes markdown through structured response validation", () => {
+    const validated = validateConciergeStructuredResponse({
+      response: {
+        status: "ok",
+        answer: "Top picks: **Sebonack Golf Club** (9.4), **Pebble Beach** (9.8).",
+        memberIds: [],
+        courseIds: ["course-a"],
+      },
+      allowedMemberIds: new Set(),
+      allowedCourseIds: new Set(["course-a"]),
+    });
+
+    expect(validated.answer).not.toContain("**");
+    expect(validated.answer).toContain("Sebonack Golf Club");
   });
 });

@@ -78,6 +78,54 @@ function formatMemberCount(count: number): string {
   return count === 1 ? "1 EliteTee member" : `${count} EliteTee members`;
 }
 
+function statsFromCourse(course: RetrievedCourse): CourseMemberStats {
+  return {
+    course_id: course.id,
+    course_name: course.name,
+    avg_rating: course.avg_rating,
+    recommend_pct: course.recommend_pct,
+    round_count: Number(course.round_count ?? 0),
+    member_count: Number(course.member_count ?? 0),
+    latest_activity_at: course.latest_activity_at,
+  };
+}
+
+function resolveCourseContext(
+  toolTrace: ConciergeToolTraceEntry[],
+  courses: RetrievedCourse[],
+  courseStats: CourseMemberStats[],
+): { courseName: string; course: RetrievedCourse | null; stats: CourseMemberStats | null } {
+  const courseName = extractCourseName(toolTrace, courses);
+  const course = courses.find((entry) => entry.name === courseName) ?? courses[0] ?? null;
+  const stats = courseStats.find((entry) => entry.course_id === course?.id) ??
+    (course ? statsFromCourse(course) : null);
+  return { courseName, course, stats };
+}
+
+function hasMemberExperienceData(stats: CourseMemberStats | null, course: RetrievedCourse | null): boolean {
+  if (stats) {
+    return (stats.avg_rating ?? 0) > 0 ||
+      stats.round_count > 0 ||
+      stats.member_count > 0;
+  }
+  if (course) {
+    return (course.avg_rating ?? 0) > 0 ||
+      (course.round_count ?? 0) > 0 ||
+      (course.member_count ?? 0) > 0;
+  }
+  return false;
+}
+
+function buildNoLoggedRoundsWithExperienceAnswer(courseName: string, stats: CourseMemberStats): string {
+  const rating = stats.avg_rating != null ? stats.avg_rating.toFixed(1) : "n/a";
+  const experienceCount = Math.max(stats.member_count, stats.round_count);
+  const countLabel = experienceCount === 1 ? "1 member experience" : `${experienceCount} member experiences`;
+  const recommend = stats.recommend_pct != null
+    ? `, with ${Math.round(stats.recommend_pct)}% saying they would play it again`
+    : "";
+  return `No EliteTee members currently have a logged round at ${courseName}, but member experience data shows a ${rating} average from ${countLabel}${recommend}.`;
+}
+
 function buildMemberLocationAnswer(members: RetrievedMember[], regionLabel: string): string {
   const countLabel = formatMemberCount(members.length);
   return `I found ${countLabel} with ${regionLabel} relevance. Their profiles show local or travel ties to the area.`;
@@ -93,18 +141,29 @@ function buildPlayedCourseAnswer(members: RetrievedMember[], courseName: string)
 
 function buildCourseOpinionAnswer(stats: CourseMemberStats): string {
   const rating = stats.avg_rating != null ? stats.avg_rating.toFixed(1) : "n/a";
-  const reviewLabel = stats.round_count === 1 ? "1 member review" : `${stats.round_count} member reviews`;
+  const experienceCount = Math.max(stats.member_count, stats.round_count);
+  const countLabel = experienceCount === 1 ? "1 member experience" : `${experienceCount} member experiences`;
   const recommend = stats.recommend_pct != null
     ? `, with ${Math.round(stats.recommend_pct)}% saying they would play it again`
     : "";
-  return `${stats.course_name} has a ${rating} average from ${reviewLabel}${recommend}.`;
+  return `${stats.course_name} has a ${rating} average from ${countLabel}${recommend}.`;
 }
 
-function buildTopRatedAnswer(regionLabel: string | null): string {
-  if (regionLabel) {
-    return `These are the highest-rated courses in ${regionLabel} from EliteTee's current member data.`;
+function buildTopRatedAnswer(courses: RetrievedCourse[], regionLabel: string | null): string {
+  const ranked = courses.slice(0, 5);
+  const labels = ranked.map((course) => {
+    const rating = course.avg_rating != null ? course.avg_rating.toFixed(1) : null;
+    return rating ? `${course.name} (${rating})` : course.name;
+  });
+  if (labels.length === 0) {
+    return regionLabel
+      ? `These are the highest-rated courses in ${regionLabel} from EliteTee's current member data.`
+      : "These are the highest-rated courses in EliteTee's current member data.";
   }
-  return "These are the highest-rated courses in EliteTee's current member data.";
+  const prefix = regionLabel
+    ? `Top member-rated courses in ${regionLabel}: `
+    : "Top member-rated courses: ";
+  return `${prefix}${labels.join(", ")}.`;
 }
 
 function buildCompoundPartialAnswer(regionLabel: string, hasDirectoryCourses: boolean): string {
@@ -174,7 +233,7 @@ export function buildDeterministicConciergeResponse(
     if (input.members.length === 0 && rated.length > 0) {
       return {
         status: "ok",
-        answer: buildTopRatedAnswer(regionLabel),
+        answer: buildTopRatedAnswer(rated, regionLabel),
         memberIds: [],
         courseIds: rated.slice(0, 5).map((course) => course.id),
         reasons: [],
@@ -206,10 +265,23 @@ export function buildDeterministicConciergeResponse(
   }
 
   if (input.courseStats.length > 0 && input.members.length === 0) {
+    const playedCourseCall = input.toolTrace.find((entry) => entry.tool === "get_members_who_played_course");
     const stats = input.courseStats[0];
+    if (playedCourseCall && stats) {
+      const courseName = extractCourseName(input.toolTrace, input.courses);
+      return {
+        status: "ok",
+        answer: buildNoLoggedRoundsWithExperienceAnswer(courseName, stats),
+        memberIds: [],
+        courseIds: input.courses.slice(0, 5).map((course) => course.id),
+        reasons: [],
+        followUps: [],
+      };
+    }
+
     return {
       status: "ok",
-      answer: stats ? buildCourseOpinionAnswer(stats) : "Here is the available course review data.",
+      answer: stats ? buildCourseOpinionAnswer(stats) : "Here is the available member experience data.",
       memberIds: [],
       courseIds: input.courses.slice(0, 5).map((course) => course.id),
       reasons: [],
@@ -218,12 +290,42 @@ export function buildDeterministicConciergeResponse(
   }
 
   const playedCourseCall = input.toolTrace.find((entry) => entry.tool === "get_members_who_played_course");
-  if (playedCourseCall && input.members.length > 0) {
-    const courseName = extractCourseName(input.toolTrace, input.courses);
+  if (playedCourseCall) {
+    const { courseName, course, stats } = resolveCourseContext(
+      input.toolTrace,
+      input.courses,
+      input.courseStats,
+    );
+
+    if (input.members.length > 0) {
+      return {
+        status: "ok",
+        answer: buildPlayedCourseAnswer(input.members, courseName),
+        memberIds: input.members.slice(0, 5).map((member) => member.user_id),
+        courseIds: [],
+        reasons: [],
+        followUps: [],
+      };
+    }
+
+    if (hasMemberExperienceData(stats, course)) {
+      return {
+        status: "ok",
+        answer: buildNoLoggedRoundsWithExperienceAnswer(
+          courseName,
+          stats ?? statsFromCourse(course!),
+        ),
+        memberIds: [],
+        courseIds: course ? [course.id] : [],
+        reasons: [],
+        followUps: [],
+      };
+    }
+
     return {
-      status: "ok",
-      answer: buildPlayedCourseAnswer(input.members, courseName),
-      memberIds: input.members.slice(0, 5).map((member) => member.user_id),
+      status: "insufficient_data",
+      answer: `No EliteTee members currently have a logged round at ${courseName}, and there isn't member experience data for it yet.`,
+      memberIds: [],
       courseIds: [],
       reasons: [],
       followUps: [],
@@ -237,7 +339,7 @@ export function buildDeterministicConciergeResponse(
       : null;
     return {
       status: "ok",
-      answer: buildTopRatedAnswer(region),
+      answer: buildTopRatedAnswer(rated, region),
       memberIds: [],
       courseIds: rated.slice(0, 5).map((course) => course.id),
       reasons: [],

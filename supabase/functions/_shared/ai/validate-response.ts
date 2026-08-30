@@ -110,7 +110,7 @@ function normalizeConciergeStatus(
 }
 
 export function sanitizeAnswerProse(answer: string, status?: AskEliteTeeResponse["status"]): string {
-  let sanitized = answer.trim();
+  let sanitized = stripMarkdownFormatting(answer.trim());
 
   if (!sanitized) {
     if (status === "needs_clarification") {
@@ -135,6 +135,19 @@ export function sanitizeAnswerProse(answer: string, status?: AskEliteTeeResponse
   }
 
   return sanitized;
+}
+
+export function stripMarkdownFormatting(answer: string): string {
+  return answer
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/_(.+?)_/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 export type InsufficientDataReason = "no_data" | "need_more_detail";

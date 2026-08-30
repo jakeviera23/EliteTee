@@ -114,24 +114,73 @@ describe("buildDeterministicConciergeResponse", () => {
     });
 
     expect(response.answer).toContain("9.4 average");
+    expect(response.answer).toContain("member experience");
     expect(response.answer).toContain("100%");
   });
 
-  it("writes top-rated course copy", () => {
+  it("does not claim nobody played when logged rounds are empty but experiences exist", () => {
+    const stats: CourseMemberStats = {
+      course_id: RATED_COURSE.id,
+      course_name: RATED_COURSE.name,
+      avg_rating: 8.7,
+      recommend_pct: 90,
+      round_count: 2,
+      member_count: 2,
+      latest_activity_at: "2026-01-01T00:00:00Z",
+    };
+
+    const response = buildDeterministicConciergeResponse({
+      question: "Who has played Cypress Point?",
+      toolTrace: trace({
+        tool: "get_members_who_played_course",
+        args: { course_name: "Cypress Point", limit: 8 },
+        result: {
+          ok: true,
+          tool: "get_members_who_played_course",
+          summary: "No logged member rounds found for Cypress Point yet.",
+        },
+      }),
+      members: [],
+      courses: [{ ...RATED_COURSE, name: "Cypress Point Golf Club" }],
+      courseStats: [stats],
+    });
+
+    expect(response.status).toBe("ok");
+    expect(response.answer.toLowerCase()).toContain("no elitetee members currently have a logged round");
+    expect(response.answer.toLowerCase()).toContain("member experience data");
+    expect(response.answer.toLowerCase()).not.toContain("nobody has played");
+    expect(response.answer.toLowerCase()).not.toContain("no one has played");
+    expect(response.courseIds).toHaveLength(1);
+  });
+
+  it("writes top-rated course copy with ordered names and ratings", () => {
+    const pebble = {
+      ...RATED_COURSE,
+      id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      name: "Pebble Beach Golf Links",
+      avg_rating: 9.8,
+    };
+    const sebonack = {
+      ...RATED_COURSE,
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      name: "Sebonack Golf Club",
+      avg_rating: 9.4,
+    };
+
     const response = buildDeterministicConciergeResponse({
       question: "Which courses have EliteTee members rated highest?",
       toolTrace: trace({
         tool: "get_top_rated_courses",
         args: { limit: 8 },
-        result: { ok: true, tool: "get_top_rated_courses", summary: "3 courses" },
+        result: { ok: true, tool: "get_top_rated_courses", summary: "2 courses" },
       }),
       members: [],
-      courses: [RATED_COURSE],
+      courses: [pebble, sebonack],
       courseStats: [],
     });
 
-    expect(response.answer).toContain("highest-rated courses");
-    expect(response.courseIds).toEqual([RATED_COURSE.id]);
+    expect(response.answer).toBe("Top member-rated courses: Pebble Beach Golf Links (9.8), Sebonack Golf Club (9.4).");
+    expect(response.courseIds).toEqual([pebble.id, sebonack.id]);
   });
 
   it("handles compound questions when both halves have data", () => {
@@ -232,7 +281,7 @@ describe("buildDeterministicConciergeResponse", () => {
       courseStats: [],
     });
 
-    expect(response.answer).toContain("highest-rated");
+    expect(response.answer).toContain("Top member-rated courses in Scotland");
     expect(response.memberIds).toHaveLength(0);
     expect(response.courseIds).toHaveLength(1);
   });
