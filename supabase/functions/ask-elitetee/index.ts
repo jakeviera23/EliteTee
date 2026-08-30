@@ -1,28 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { classifyIntent, buildRetrievalFilters, extractCourseNameFromQuestion, isSelfIdentityQuestion } from "../_shared/ai/intent.ts";
 import {
-  buildCourseDirectoryAnswer,
-  buildNoCourseDirectoryResultsAnswer,
-  filterCoursesByDirectoryFilters,
-} from "../_shared/ai/course-directory-answer.ts";
-import { getProviderForTask } from "../_shared/ai/provider-registry.ts";
-import { rankMembers, sanitizeUntrustedText } from "../_shared/ai/scoring.ts";
+  mapOrchestratorLogStatus,
+  runConciergeOrchestrator,
+} from "../_shared/ai/concierge-orchestrator.ts";
 import {
-  buildInsufficientDataResponse,
-  containsPromptInjectionAttempt,
-  mapCoursesById,
-  mapMembersById,
-  validateModelResponseIds,
-} from "../_shared/ai/validate-response.ts";
+  buildUnsupportedSafetyResponse,
+  classifyConciergeSafetyQuestion,
+} from "../_shared/ai/concierge-safety.ts";
+import { classifyIntent } from "../_shared/ai/intent.ts";
 import type {
   AiIntent,
-  AiQueryStatus,
   AskEliteTeeRequest,
   AskEliteTeeResponse,
-  RetrievedCourse,
   RetrievedMember,
-  RoundSummary,
 } from "../_shared/ai/types.ts";
 
 const corsHeaders = {
@@ -124,17 +115,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Question is required and must be under 500 characters." }, 400);
   }
 
-  if (containsPromptInjectionAttempt(question)) {
-    return jsonResponse({
-      status: "unsupported",
-      intent: "unsupported",
-      answer: "I can only help with EliteTee member and course discovery using approved directory data.",
-      sources: [],
-      members: [],
-      courses: [],
-      reasons: [],
-      query_id: null,
-    } satisfies AskEliteTeeResponse);
+  const safety = classifyConciergeSafetyQuestion(question);
+  if (safety.blocked) {
+    return jsonResponse(buildUnsupportedSafetyResponse(safety));
   }
 
   const intent = classifyIntent(question, body.intent);
@@ -153,11 +136,12 @@ Deno.serve(async (req) => {
     const disabledResponse: AskEliteTeeResponse = {
       status: "disabled",
       intent,
-      answer: "Ask EliteTee is temporarily unavailable for this type of request.",
+      answer: "Ask EliteTee is temporarily unavailable. Please try again later.",
       sources: [],
       members: [],
       courses: [],
       reasons: [],
+      followUps: [],
       query_id: null,
     };
     return jsonResponse(disabledResponse, 503);
@@ -170,11 +154,12 @@ Deno.serve(async (req) => {
     const limited: AskEliteTeeResponse = {
       status: "rate_limited",
       intent,
-      answer: "You have reached today's Ask EliteTee limit. Please try again tomorrow.",
+      answer: "Ask EliteTee has reached today's usage limit. Try again later.",
       sources: [],
       members: [],
       courses: [],
       reasons: [],
+      followUps: [],
       query_id: null,
     };
     await supabase.from("ai_queries").insert({
@@ -187,12 +172,6 @@ Deno.serve(async (req) => {
     return jsonResponse(limited, 429);
   }
 
-  const filters = buildRetrievalFilters(question, intent);
-  let members: RetrievedMember[] = [];
-  let courses: RetrievedCourse[] = [];
-  let rounds: RoundSummary[] = [];
-  const sources: AskEliteTeeResponse["sources"] = [];
-
   const { data: requestorProfile } = await supabase
     .from("member_profiles")
     .select(
@@ -204,315 +183,39 @@ Deno.serve(async (req) => {
   const requestor = requestorProfile as RetrievedMember | null;
   const pendingIntroIds = await getPendingIntroUserIds(supabase, user.id);
 
-  if (isSelfIdentityQuestion(question)) {
-    if (!requestor) {
-      const insufficient = buildInsufficientDataResponse("find_members");
-      await supabase.from("ai_queries").insert({
-        user_id: user.id,
-        intent: "find_members",
-        status: "insufficient_data",
-        latency_ms: Date.now() - started,
-        error_code: "NO_REQUESTOR_PROFILE",
-      });
-      return jsonResponse(insufficient);
-    }
-
-    const selfAnswer = [
-      `You are ${requestor.full_name || "an EliteTee member"}.`,
-      requestor.primary_club ? `Primary club: ${requestor.primary_club}.` : "",
-      requestor.based_in ? `Based in: ${requestor.based_in}.` : "",
-      requestor.traveling_to ? `Traveling to: ${requestor.traveling_to}.` : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const selfResponse: AskEliteTeeResponse = {
-      status: "ok",
-      intent: "find_members",
-      answer: selfAnswer,
-      sources: ["Member profiles"],
-      members: [],
-      courses: [],
-      reasons: [],
-      query_id: null,
-    };
-
-    const { data: queryRow } = await supabase
-      .from("ai_queries")
-      .insert({
-        user_id: user.id,
-        intent: "find_members",
-        status: "ok",
-        latency_ms: Date.now() - started,
-        model: "deterministic",
-      })
-      .select("id")
-      .maybeSingle();
-
-    selfResponse.query_id = queryRow?.id ? String(queryRow.id) : null;
-    return jsonResponse(selfResponse);
-  }
-
-  if (intent === "find_courses") {
-    const { data: courseRows, error: courseError } = await supabase.rpc("ai_search_golf_courses", {
-      p_query: filters.courseQuery,
-      p_limit: 12,
-    });
-    if (courseError) {
-      console.error("ai_search_golf_courses failed:", courseError.message);
-    }
-    const retrieved = (courseRows ?? []) as RetrievedCourse[];
-    courses = filterCoursesByDirectoryFilters(retrieved, filters.courseDirectoryFilters);
-    sources.push("Course directory");
-    if (courses.some((course) => (course.avg_rating ?? 0) > 0 || (course.round_count ?? 0) > 0)) {
-      sources.push("Member reviews");
-    }
-
-    if (courses.length === 0) {
-      const noResultsAnswer = buildNoCourseDirectoryResultsAnswer(filters.courseDirectoryFilters.locationQuery);
-      const noResultsResponse: AskEliteTeeResponse = {
-        status: "ok",
-        intent: "find_courses",
-        answer: noResultsAnswer,
-        sources: ["Course directory"],
-        members: [],
-        courses: [],
-        reasons: [],
-        query_id: null,
-      };
-
-      const { data: queryRow } = await supabase
-        .from("ai_queries")
-        .insert({
-          user_id: user.id,
-          intent: "find_courses",
-          status: "ok",
-          latency_ms: Date.now() - started,
-          model: "deterministic",
-          error_code: retrieved.length > 0 ? "FILTERED_NO_MATCHES" : "NO_DIRECTORY_MATCHES",
-        })
-        .select("id")
-        .maybeSingle();
-
-      noResultsResponse.query_id = queryRow?.id ? String(queryRow.id) : null;
-      return jsonResponse(noResultsResponse);
-    }
-
-    const directoryAnswer = buildCourseDirectoryAnswer(courses, filters.courseDirectoryFilters);
-    const directoryResponse: AskEliteTeeResponse = {
-      status: "ok",
-      intent: "find_courses",
-      answer: directoryAnswer,
-      sources: [...new Set(sources)],
-      members: [],
-      courses: courses.slice(0, 8),
-      reasons: [],
-      query_id: null,
-    };
-
-    const { data: directoryQueryRow } = await supabase
-      .from("ai_queries")
-      .insert({
-        user_id: user.id,
-        intent: "find_courses",
-        status: "ok",
-        latency_ms: Date.now() - started,
-        model: "deterministic",
-      })
-      .select("id")
-      .maybeSingle();
-
-    directoryResponse.query_id = directoryQueryRow?.id ? String(directoryQueryRow.id) : null;
-    return jsonResponse(directoryResponse);
-  } else {
-    const { data: memberRows, error: memberError } = await supabase.rpc("ai_search_portal_members", {
-      p_filters: filters.memberFilters,
-      p_limit: 30,
-    });
-    if (memberError) {
-      console.error("ai_search_portal_members failed:", memberError.message, filters.memberFilters);
-    }
-
-    members = ((memberRows ?? []) as RetrievedMember[]).filter(
-      (member) => !pendingIntroIds.has(member.user_id),
-    );
-    sources.push("Member profiles");
-
-    const courseName = extractCourseNameFromQuestion(question);
-    if (courseName) {
-      const { data: courseMatches } = await supabase.rpc("ai_search_golf_courses", {
-        p_query: courseName,
-        p_limit: 1,
-      });
-      const matchedCourse = (courseMatches ?? [])[0] as RetrievedCourse | undefined;
-      if (matchedCourse?.id) {
-        const { data: courseMembers } = await supabase.rpc("ai_members_by_course", {
-          p_course_id: matchedCourse.id,
-        });
-        const byCourse = (courseMembers ?? []) as RetrievedMember[];
-        const merged = new Map(members.map((member) => [member.user_id, member]));
-        for (const member of byCourse) {
-          if (!pendingIntroIds.has(member.user_id)) merged.set(member.user_id, member);
-        }
-        members = [...merged.values()];
-        sources.push("Member reviews");
-      }
-    }
-
-    const memberIds = members.map((member) => member.user_id);
-    if (memberIds.length > 0) {
-      const { data: roundRows } = await supabase.rpc("ai_member_round_summary", {
-        p_user_ids: memberIds,
-      });
-      rounds = (roundRows ?? []) as RoundSummary[];
-      if (rounds.length > 0) sources.push("Member reviews");
-    }
-
-    if (intent === "recommend_introductions" && requestor) {
-      members = rankMembers(requestor, members, rounds, 8).map((entry) => entry.member);
-    }
-  }
-
-  if (members.length === 0 && courses.length === 0) {
-    const insufficient = buildInsufficientDataResponse(intent);
-    await supabase.from("ai_queries").insert({
-      user_id: user.id,
-      intent,
-      status: "insufficient_data",
-      latency_ms: Date.now() - started,
-      error_code: "NO_DATA",
-    });
-    return jsonResponse(insufficient);
-  }
-
-  const scored = intent !== "find_courses" && requestor
-    ? rankMembers(requestor, members, rounds, 8)
-    : members.map((member) => ({ member, score: 0, signals: [] as string[] }));
-
-  const sanitizedBundle = {
-    intent,
-    question: sanitizeUntrustedText(question, 500),
-    requestor: requestor
-      ? {
-          user_id: requestor.user_id,
-          full_name: sanitizeUntrustedText(requestor.full_name, 80),
-          based_in: sanitizeUntrustedText(requestor.based_in, 80),
-          traveling_to: sanitizeUntrustedText(requestor.traveling_to, 120),
-          golf_interests: sanitizeUntrustedText(requestor.golf_interests, 160),
-        }
-      : null,
-    members: scored.map(({ member, score, signals }) => ({
-      user_id: member.user_id,
-      full_name: sanitizeUntrustedText(member.full_name, 80),
-      primary_club: sanitizeUntrustedText(member.primary_club, 80),
-      based_in: sanitizeUntrustedText(member.based_in, 80),
-      traveling_to: sanitizeUntrustedText(member.traveling_to, 120),
-      golf_interests: sanitizeUntrustedText(member.golf_interests, 160),
-      current_request: sanitizeUntrustedText(member.current_request, 160),
-      score,
-      signals,
-    })),
-    courses: courses.slice(0, 8).map((course) => ({
-      id: course.id,
-      name: sanitizeUntrustedText(course.name, 120),
-      slug: course.slug,
-      city: course.city,
-      region: course.region,
-      country: course.country,
-      avg_rating: course.avg_rating,
-      recommend_pct: course.recommend_pct,
-      round_count: course.round_count,
-    })),
-  };
-
-  let status: AiQueryStatus = "ok";
-  let answer = "Here are the closest matches from EliteTee directory data.";
-  let model = "deterministic";
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let selectedMemberIds = scored.slice(0, 6).map((entry) => entry.member.user_id);
-  let selectedCourseIds = courses.slice(0, 6).map((course) => course.id);
-  let errorCode: string | null = null;
-
-  try {
-    const provider = getProviderForTask("concierge");
-    const completion = await provider.complete({
-      task: "concierge",
-      system: [
-        "You are Ask EliteTee, a private member concierge.",
-        "Use ONLY the JSON retrieval bundle provided.",
-        "Never invent members, courses, ratings, or facts.",
-        "Never mention email, private messages, invite tokens, or admin data.",
-        "Return JSON with keys: answer (string), member_user_ids (string[]), course_ids (string[]).",
-        "Choose IDs only from the provided members/courses arrays.",
-        "If data is thin, say you do not have enough EliteTee data yet.",
-      ].join(" "),
-      userPayload: sanitizedBundle,
-      maxOutputTokens: getEnvInt("AI_MAX_OUTPUT_TOKENS", 700),
-      timeoutMs: getEnvInt("AI_REQUEST_TIMEOUT_MS", 15000),
-    });
-
-    model = completion.model;
-    inputTokens = completion.inputTokens;
-    outputTokens = completion.outputTokens;
-
-    const validated = validateModelResponseIds({
-      response: completion.output as {
-        answer?: string;
-        member_user_ids?: string[];
-        course_ids?: string[];
-      },
-      allowedMemberIds: new Set(members.map((member) => member.user_id)),
-      allowedCourseIds: new Set(courses.map((course) => course.id)),
-    });
-
-    if (validated.answer) answer = validated.answer;
-    if (validated.memberIds.length > 0) selectedMemberIds = validated.memberIds;
-    if (validated.courseIds.length > 0) selectedCourseIds = validated.courseIds;
-  } catch (error) {
-    errorCode = error instanceof Error ? error.message.slice(0, 120) : "AI_PROVIDER_ERROR";
-    if (errorCode.includes("OPENAI_NOT_CONFIGURED")) {
-      status = "error";
-      answer = "Ask EliteTee is not fully configured yet. Showing directory matches only.";
-    }
-  }
-
-  const responseMembers = mapMembersById(members, selectedMemberIds);
-  const responseCourses = mapCoursesById(courses, selectedCourseIds);
-  const reasons = scored
-    .filter((entry) => selectedMemberIds.includes(entry.member.user_id))
-    .map((entry) => ({
-      target_id: entry.member.user_id,
-      target_type: "member" as const,
-      signals: entry.signals,
-    }));
+  const orchestrated = await runConciergeOrchestrator({
+    supabase,
+    viewerId: user.id,
+    question,
+    explicitIntent: body.intent,
+    requestor,
+    pendingIntroUserIds: pendingIntroIds,
+  });
 
   const { data: queryRow } = await supabase
     .from("ai_queries")
     .insert({
       user_id: user.id,
-      intent,
-      status,
+      intent: orchestrated.intent,
+      status: mapOrchestratorLogStatus(orchestrated.logStatus),
       latency_ms: Date.now() - started,
-      model,
-      input_tokens: inputTokens,
-      output_tokens: outputTokens,
-      error_code: errorCode,
+      model: orchestrated.model,
+      input_tokens: orchestrated.inputTokens,
+      output_tokens: orchestrated.outputTokens,
+      error_code: orchestrated.errorCode,
     })
     .select("id")
     .single();
 
-  if (queryRow?.id && intent !== "find_courses") {
-    const suggestions = scored
-      .filter((entry) => selectedMemberIds.includes(entry.member.user_id))
-      .slice(0, 8)
-      .map((entry) => ({
-        requestor_user_id: user.id,
-        suggested_user_id: entry.member.user_id,
-        ai_query_id: queryRow.id,
-        score: entry.score,
-        signals: entry.signals,
-      }));
+  if (queryRow?.id && orchestrated.members.length > 0) {
+    const suggestions = orchestrated.members.slice(0, 5).map((member) => ({
+      requestor_user_id: user.id,
+      suggested_user_id: member.user_id,
+      ai_query_id: queryRow.id,
+      score: 0,
+      signals: orchestrated.reasons.find((reason) => reason.target_id === member.user_id)?.signals ??
+        [],
+    }));
 
     if (suggestions.length > 0) {
       await supabase.from("member_match_suggestions").insert(suggestions);
@@ -520,13 +223,14 @@ Deno.serve(async (req) => {
   }
 
   const response: AskEliteTeeResponse = {
-    status,
-    intent,
-    answer,
-    sources: [...new Set(sources)],
-    members: responseMembers,
-    courses: responseCourses,
-    reasons,
+    status: orchestrated.status,
+    intent: orchestrated.intent,
+    answer: orchestrated.answer,
+    sources: orchestrated.sources,
+    members: orchestrated.members,
+    courses: orchestrated.courses,
+    reasons: orchestrated.reasons,
+    followUps: orchestrated.followUps,
     query_id: queryRow?.id ?? null,
   };
 

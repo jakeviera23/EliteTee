@@ -10,6 +10,7 @@ import {
   buildAskReasonMaps,
   collectUniqueMatchSignals,
   getAskAnswerText,
+  getAskStatusGuidance,
   getAskStatusLabel,
   memberFacingAskError,
 } from "../../lib/askEliteTeeDisplay";
@@ -233,6 +234,7 @@ export function AskEliteTee({
 
   const responseStatusLabel = response ? getAskStatusLabel(response.status) : null;
   const answerText = response ? getAskAnswerText(response.status, response.answer) : "";
+  const statusGuidance = response ? getAskStatusGuidance(response.status) : null;
 
   return (
     <section className="et-ask" aria-labelledby="ask-elitetee-heading">
@@ -322,7 +324,9 @@ export function AskEliteTee({
           <article
             className={`et-ask-answer${
               response.status === "insufficient_data" ? " et-ask-answer--limited" : ""
-            }${response.status === "ok" ? " et-ask-answer--success" : ""}`}
+            }${response.status === "needs_clarification" ? " et-ask-answer--limited" : ""}${
+              response.status === "ok" ? " et-ask-answer--success" : ""
+            }`}
           >
             <div className="et-ask-answer-head">
               {responseStatusLabel ? (
@@ -330,7 +334,8 @@ export function AskEliteTee({
                   className={`et-ask-status${
                     response.status === "ok"
                       ? " et-ask-status--ok"
-                      : response.status === "insufficient_data"
+                      : response.status === "insufficient_data" ||
+                          response.status === "needs_clarification"
                         ? " et-ask-status--muted"
                         : " et-ask-status--error"
                   }`}
@@ -342,15 +347,35 @@ export function AskEliteTee({
               )}
             </div>
             <p className="et-ask-answer-text">{answerText}</p>
-            {response.status === "insufficient_data" ? (
+            {statusGuidance ? (
               <div className="et-ask-next-steps">
                 <p className="et-ask-next-steps-label">Helpful next steps</p>
                 <ul className="et-ask-next-steps-list">
-                  {askCopy.insufficientNextSteps.map((step) => (
+                  {statusGuidance.map((step) => (
                     <li key={step}>{step}</li>
                   ))}
                 </ul>
-                <p className="et-ask-note">{askCopy.insufficientNote}</p>
+                {response.status === "insufficient_data" ? (
+                  <p className="et-ask-note">{askCopy.insufficientNote}</p>
+                ) : null}
+              </div>
+            ) : null}
+            {response.followUps.length > 0 ? (
+              <div className="et-ask-next-steps">
+                <p className="et-ask-next-steps-label">Try asking</p>
+                <ul className="et-ask-next-steps-list">
+                  {response.followUps.map((followUp) => (
+                    <li key={followUp}>
+                      <button
+                        type="button"
+                        className="et-ask-prompt"
+                        onClick={() => setQuestion(followUp)}
+                      >
+                        {followUp}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ) : null}
           </article>

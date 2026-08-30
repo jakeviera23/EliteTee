@@ -139,8 +139,9 @@ export function rankMembers(
     .slice(0, limit);
 }
 
-export function sanitizeUntrustedText(value: string, maxLength = 280): string {
-  return value
+export function sanitizeUntrustedText(value: unknown, maxLength = 280): string {
+  const text = typeof value === "string" ? value : value == null ? "" : String(value);
+  return text
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim()

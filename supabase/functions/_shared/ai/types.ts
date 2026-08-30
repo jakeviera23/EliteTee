@@ -2,6 +2,7 @@ export type AiIntent = "find_members" | "find_courses" | "recommend_introduction
 
 export type AiQueryStatus =
   | "ok"
+  | "needs_clarification"
   | "insufficient_data"
   | "unsupported"
   | "rate_limited"
@@ -72,6 +73,12 @@ export type AskEliteTeeReason = {
   signals: string[];
 };
 
+export type AskEliteTeeStructuredReason = {
+  entityType: "member" | "course";
+  entityId: string;
+  reason: string;
+};
+
 export type AskEliteTeeResponse = {
   status: AiQueryStatus;
   intent: AiIntent;
@@ -80,6 +87,7 @@ export type AskEliteTeeResponse = {
   members: RetrievedMember[];
   courses: RetrievedCourse[];
   reasons: AskEliteTeeReason[];
+  followUps: string[];
   query_id: string | null;
 };
 

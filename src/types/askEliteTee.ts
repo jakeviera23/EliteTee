@@ -2,6 +2,7 @@ export type AiIntent = "find_members" | "find_courses" | "recommend_introduction
 
 export type AiQueryStatus =
   | "ok"
+  | "needs_clarification"
   | "insufficient_data"
   | "unsupported"
   | "rate_limited"
@@ -58,6 +59,7 @@ export type AskEliteTeeResponse = {
   members: AskEliteTeeMemberResult[];
   courses: AskEliteTeeCourseResult[];
   reasons: AskEliteTeeReason[];
+  followUps: string[];
   query_id: string | null;
 };
 

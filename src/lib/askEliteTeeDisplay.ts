@@ -2,6 +2,8 @@ import type { AiQueryStatus, AskEliteTeeReason } from "../types/askEliteTee";
 
 export function getAskStatusLabel(status: AiQueryStatus): string | null {
   switch (status) {
+    case "needs_clarification":
+      return "Need a bit more detail";
     case "insufficient_data":
       return "Limited directory data";
     case "rate_limited":
@@ -18,18 +20,72 @@ export function getAskStatusLabel(status: AiQueryStatus): string | null {
 }
 
 export function getAskAnswerText(status: AiQueryStatus, answer: string): string {
+  const trimmed = answer.trim();
+
   if (status === "insufficient_data") {
-    return "I don't have enough EliteTee information yet to answer that confidently.";
+    return (
+      trimmed ||
+      "I don't have enough EliteTee information yet to answer that confidently."
+    );
+  }
+
+  if (status === "needs_clarification") {
+    return (
+      trimmed ||
+      "Which city, region, destination, course, or club should I focus on?"
+    );
+  }
+
+  if (status === "rate_limited") {
+    return trimmed || "Ask EliteTee has reached today's usage limit. Try again later.";
+  }
+
+  if (status === "disabled") {
+    return trimmed || "Ask EliteTee is temporarily unavailable. Please try again later.";
+  }
+
+  if (status === "error") {
+    return trimmed || "Ask EliteTee could not complete your request. Please try again.";
+  }
+
+  if (status === "unsupported") {
+    return trimmed || "I can only help with EliteTee member and course discovery using approved directory data.";
   }
 
   return answer;
+}
+
+export function getAskStatusGuidance(status: AiQueryStatus): string[] | null {
+  switch (status) {
+    case "needs_clarification":
+      return [
+        "Name a specific city, region, destination, course, or club.",
+        "Try one of the suggested follow-up questions below.",
+      ];
+    case "insufficient_data":
+      return [
+        "Name a city, region, destination, course, or club.",
+        "Complete your profile with location, clubs, and interests.",
+        "Explore members and courses manually while the directory grows.",
+      ];
+    case "rate_limited":
+      return ["Try again later today or tomorrow."];
+    case "disabled":
+      return ["Try again later or explore Discover and Courses in the meantime."];
+    case "error":
+      return ["Try again in a moment or refine your question with a clearer location or course."];
+    case "unsupported":
+      return ["Ask about members, introductions, courses, or travel using EliteTee directory data."];
+    default:
+      return null;
+  }
 }
 
 export function memberFacingAskError(message: string): string {
   const normalized = message.trim().toLowerCase();
 
   if (normalized.includes("rate") || normalized.includes("limit")) {
-    return "You've reached today's Ask EliteTee limit. Please try again tomorrow.";
+    return "Ask EliteTee has reached today's usage limit. Try again later.";
   }
 
   if (normalized.includes("signed in") || normalized.includes("auth")) {

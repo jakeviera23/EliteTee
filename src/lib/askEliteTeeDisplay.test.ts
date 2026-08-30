@@ -3,12 +3,14 @@ import {
   buildAskReasonMaps,
   collectUniqueMatchSignals,
   getAskAnswerText,
+  getAskStatusGuidance,
   getAskStatusLabel,
   memberFacingAskError,
 } from "./askEliteTeeDisplay";
 
 describe("getAskStatusLabel", () => {
   it("returns labels for non-ok statuses", () => {
+    expect(getAskStatusLabel("needs_clarification")).toBe("Need a bit more detail");
     expect(getAskStatusLabel("insufficient_data")).toBe("Limited directory data");
     expect(getAskStatusLabel("rate_limited")).toBe("Daily limit reached");
     expect(getAskStatusLabel("ok")).toBeNull();
@@ -16,9 +18,26 @@ describe("getAskStatusLabel", () => {
 });
 
 describe("getAskAnswerText", () => {
-  it("uses the honest insufficient-data copy", () => {
-    expect(getAskAnswerText("insufficient_data", "Backend fallback")).toBe(
+  it("preserves backend insufficient-data copy when provided", () => {
+    expect(
+      getAskAnswerText(
+        "insufficient_data",
+        "I need a little more detail to search the network. Try naming a city, destination, course, or club.",
+      ),
+    ).toBe(
+      "I need a little more detail to search the network. Try naming a city, destination, course, or club.",
+    );
+  });
+
+  it("falls back to honest insufficient-data copy", () => {
+    expect(getAskAnswerText("insufficient_data", "")).toBe(
       "I don't have enough EliteTee information yet to answer that confidently.",
+    );
+  });
+
+  it("uses premium rate-limit copy without jargon", () => {
+    expect(getAskAnswerText("rate_limited", "")).toBe(
+      "Ask EliteTee has reached today's usage limit. Try again later.",
     );
   });
 
@@ -27,11 +46,28 @@ describe("getAskAnswerText", () => {
       "Two members match your criteria.",
     );
   });
+
+  it("uses clarification copy for needs_clarification responses", () => {
+    expect(getAskAnswerText("needs_clarification", "Which course do you have in mind?")).toBe(
+      "Which course do you have in mind?",
+    );
+  });
+});
+
+describe("getAskStatusGuidance", () => {
+  it("returns concise guidance for non-ok statuses", () => {
+    expect(getAskStatusGuidance("needs_clarification")?.[0]).toContain("specific");
+    expect(getAskStatusGuidance("rate_limited")).toEqual(["Try again later today or tomorrow."]);
+    expect(getAskStatusGuidance("disabled")).toEqual([
+      "Try again later or explore Discover and Courses in the meantime.",
+    ]);
+    expect(getAskStatusGuidance("ok")).toBeNull();
+  });
 });
 
 describe("memberFacingAskError", () => {
   it("maps rate limit errors without exposing raw text", () => {
-    expect(memberFacingAskError("Daily rate limit exceeded for user")).toContain("limit");
+    expect(memberFacingAskError("Daily rate limit exceeded for user")).toContain("usage limit");
   });
 
   it("falls back to a generic member-safe message", () => {

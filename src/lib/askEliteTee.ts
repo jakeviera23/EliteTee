@@ -17,6 +17,7 @@ function normalizeAskResponse(data: unknown): AskEliteTeeResponse {
     members: Array.isArray(row.members) ? row.members : [],
     courses: Array.isArray(row.courses) ? row.courses : [],
     reasons: Array.isArray(row.reasons) ? row.reasons : [],
+    followUps: Array.isArray(row.followUps) ? row.followUps : [],
     query_id: row.query_id ? String(row.query_id) : null,
   };
 }
