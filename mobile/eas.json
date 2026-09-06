@@ -10,6 +10,16 @@
         "EXPO_NO_DOTENV": "1"
       }
     },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "preview",
+      "ios": {
+        "simulator": false
+      },
+      "channel": "development"
+    },
     "preview": {
       "extends": "base",
       "environment": "preview",

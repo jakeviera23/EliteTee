@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -20,6 +22,7 @@ import { colors, layout, radii, spacing, typography } from "@/constants/theme";
 import {
   fetchConversations,
   fetchConversationThread,
+  formatMobileMessagePreviewBody,
   markDirectMessagesAsRead,
   PRIVATE_MESSAGE_MAX_LENGTH,
   sendDirectPrivateMessage,
@@ -66,6 +69,7 @@ export default function ConversationDetailScreen() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [memberClub, setMemberClub] = useState("");
   const [memberBasedIn, setMemberBasedIn] = useState("");
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const listRef = useRef<FlatList<MobilePrivateMessage>>(null);
   const prefillApplied = useRef(false);
 
@@ -147,7 +151,7 @@ export default function ConversationDetailScreen() {
     }
   }, [messages.length]);
 
-  function syncInboxPreview(body: string, createdAt: string) {
+  function syncInboxPreview(body: string, createdAt: string, attachmentCount = 0) {
     if (!userId) return;
     upsertConversationPreviewInCache({
       otherUserId: userId,
@@ -155,7 +159,7 @@ export default function ConversationDetailScreen() {
       otherUserPhotoUrl: avatarUrl,
       otherUserPrimaryClub: memberClub,
       otherUserBasedIn: memberBasedIn,
-      lastMessageBody: body,
+      lastMessageBody: formatMobileMessagePreviewBody(body, attachmentCount),
       lastMessageAt: createdAt,
     });
   }
@@ -184,6 +188,7 @@ export default function ConversationDetailScreen() {
       body: trimmed,
       created_at: sentAt,
       read_at: null,
+      attachments: [],
     };
 
     setMessages((current) => [...current, optimisticMessage]);
@@ -216,7 +221,7 @@ export default function ConversationDetailScreen() {
       setMessages(refreshed);
       const latest = refreshed[refreshed.length - 1];
       if (latest) {
-        syncInboxPreview(latest.body, latest.created_at);
+        syncInboxPreview(latest.body, latest.created_at, latest.attachments?.length ?? 0);
       }
     } else {
       setMessages((current) =>
@@ -296,9 +301,38 @@ export default function ConversationDetailScreen() {
             }
             renderItem={({ item }) => {
               const isOwn = item.sender_id === user?.id;
+              const attachments = item.attachments ?? [];
+              const hasBody = Boolean(item.body.trim());
               return (
                 <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-                  <Text style={[styles.body, isOwn ? styles.bodyOwn : null]}>{item.body}</Text>
+                  {attachments.length > 0 ? (
+                    <View style={styles.attachments}>
+                      {attachments.map((attachment) =>
+                        attachment.signedUrl ? (
+                          <Pressable
+                            key={attachment.id}
+                            onPress={() => setLightboxUrl(attachment.signedUrl ?? null)}
+                          >
+                            <Image
+                              source={{ uri: attachment.signedUrl }}
+                              style={styles.attachmentImage}
+                              resizeMode="cover"
+                            />
+                          </Pressable>
+                        ) : (
+                          <Text
+                            key={attachment.id}
+                            style={[styles.body, isOwn ? styles.bodyOwn : null]}
+                          >
+                            Photo
+                          </Text>
+                        ),
+                      )}
+                    </View>
+                  ) : null}
+                  {hasBody ? (
+                    <Text style={[styles.body, isOwn ? styles.bodyOwn : null]}>{item.body}</Text>
+                  ) : null}
                   <Text style={[styles.meta, isOwn ? styles.metaOwn : null]}>
                     {formatMessageBubbleTimestamp(item.created_at)}
                   </Text>
@@ -307,6 +341,19 @@ export default function ConversationDetailScreen() {
             }}
           />
         ) : null}
+
+        <Modal
+          visible={Boolean(lightboxUrl)}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLightboxUrl(null)}
+        >
+          <Pressable style={styles.lightbox} onPress={() => setLightboxUrl(null)}>
+            {lightboxUrl ? (
+              <Image source={{ uri: lightboxUrl }} style={styles.lightboxImage} resizeMode="contain" />
+            ) : null}
+          </Pressable>
+        </Modal>
 
         {!error || messages.length > 0 ? (
           <View style={styles.composer}>
@@ -422,6 +469,27 @@ const styles = StyleSheet.create({
   },
   bodyOwn: {
     color: colors.ivory,
+  },
+  attachments: {
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  attachmentImage: {
+    width: 220,
+    height: 160,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bgInset,
+  },
+  lightbox: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.md,
+  },
+  lightboxImage: {
+    width: "100%",
+    height: "80%",
   },
   meta: {
     fontFamily: typography.sans,
