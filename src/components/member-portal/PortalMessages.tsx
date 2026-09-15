@@ -18,6 +18,10 @@ import {
   validatePrivateMessageImageFiles,
 } from "../../lib/privateMessageMedia";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
+import {
+  isMessageThreadNearBottom,
+  scrollMessageThreadToBottom,
+} from "../../lib/messageThreadScroll";
 import type { DirectConversationSummary, PrivateMessageRecord } from "../../types/privateMessage";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
@@ -88,7 +92,9 @@ export function PortalMessages({
   const [sendError, setSendError] = useState<string | null>(null);
   const composeInputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const threadEndRef = useRef<HTMLLIElement>(null);
+  const threadScrollRef = useRef<HTMLDivElement>(null);
+  /** When true, thread updates should keep the newest messages in view. */
+  const shouldStickToBottomRef = useRef(true);
 
   const canSend = Boolean(composeText.trim() || pendingImages.length > 0);
 
@@ -179,6 +185,7 @@ export function PortalMessages({
     if (!initialConversation) return;
     setSendError(null);
     setComposeText("");
+    shouldStickToBottomRef.current = true;
     setActiveConversation({
       otherUserId: initialConversation.otherUserId,
       otherUserName: initialConversation.otherUserName,
@@ -193,9 +200,11 @@ export function PortalMessages({
 
   useEffect(() => {
     if (!activeConversation || isLoadingThread || threadError) return;
+    if (!shouldStickToBottomRef.current) return;
 
     const frameId = window.requestAnimationFrame(() => {
-      threadEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+      const scroller = threadScrollRef.current;
+      if (scroller) scrollMessageThreadToBottom(scroller);
     });
 
     return () => window.cancelAnimationFrame(frameId);
@@ -234,6 +243,7 @@ export function PortalMessages({
   function openConversation(otherUserId: string, otherUserName: string) {
     setSendError(null);
     setComposeText("");
+    shouldStickToBottomRef.current = true;
     setActiveConversation({ otherUserId, otherUserName });
   }
 
@@ -245,6 +255,17 @@ export function PortalMessages({
     setSendError(null);
     setComposeText("");
     setActiveConversation(null);
+  }
+
+  function handleThreadScroll() {
+    const scroller = threadScrollRef.current;
+    if (!scroller) return;
+    shouldStickToBottomRef.current = isMessageThreadNearBottom(scroller);
+  }
+
+  function handleViewActiveProfile() {
+    if (!activeConversation || !onViewMemberProfile) return;
+    onViewMemberProfile(activeConversation.otherUserId, activeConversation.otherUserName);
   }
 
   function handleStartConversation(receiverUserId: string, memberName: string) {
@@ -310,6 +331,7 @@ export function PortalMessages({
       return [];
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
+    shouldStickToBottomRef.current = true;
     await loadThread(activeConversation.otherUserId);
   }
 
@@ -492,36 +514,58 @@ export function PortalMessages({
                 >
                   ‹
                 </button>
-                <div className="et-messages-thread-identity">
-                  <MemberClubAvatar
-                    member={{
-                      club_logo_url: activeSummary?.otherUserPhotoUrl ?? null,
-                    }}
-                    name={activeConversation.otherUserName}
-                    size="sm"
-                  />
-                  <div className="et-messages-thread-identity-copy">
-                    <h3 className="et-messages-thread-name">{activeConversation.otherUserName}</h3>
-                    {threadMemberMeta ? (
-                      <p className="et-messages-thread-meta">{threadMemberMeta}</p>
-                    ) : activeSummary?.otherUserFoundingNumber ? (
-                      <p className="et-messages-thread-meta">
-                        {activeSummary.otherUserFoundingNumber}
-                      </p>
-                    ) : null}
+                {onViewMemberProfile ? (
+                  <button
+                    type="button"
+                    className="et-messages-thread-identity"
+                    onClick={handleViewActiveProfile}
+                    aria-label={`View ${activeConversation.otherUserName}'s profile`}
+                  >
+                    <MemberClubAvatar
+                      member={{
+                        club_logo_url: activeSummary?.otherUserPhotoUrl ?? null,
+                      }}
+                      name={activeConversation.otherUserName}
+                      size="sm"
+                    />
+                    <div className="et-messages-thread-identity-copy">
+                      <span className="et-messages-thread-name">{activeConversation.otherUserName}</span>
+                      {threadMemberMeta ? (
+                        <span className="et-messages-thread-meta">{threadMemberMeta}</span>
+                      ) : activeSummary?.otherUserFoundingNumber ? (
+                        <span className="et-messages-thread-meta">
+                          {activeSummary.otherUserFoundingNumber}
+                        </span>
+                      ) : null}
+                    </div>
+                  </button>
+                ) : (
+                  <div className="et-messages-thread-identity">
+                    <MemberClubAvatar
+                      member={{
+                        club_logo_url: activeSummary?.otherUserPhotoUrl ?? null,
+                      }}
+                      name={activeConversation.otherUserName}
+                      size="sm"
+                    />
+                    <div className="et-messages-thread-identity-copy">
+                      <h3 className="et-messages-thread-name">{activeConversation.otherUserName}</h3>
+                      {threadMemberMeta ? (
+                        <p className="et-messages-thread-meta">{threadMemberMeta}</p>
+                      ) : activeSummary?.otherUserFoundingNumber ? (
+                        <p className="et-messages-thread-meta">
+                          {activeSummary.otherUserFoundingNumber}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                )}
                 {onViewMemberProfile ? (
                   <div className="et-messages-thread-actions">
                     <button
                       type="button"
                       className="et-btn et-btn--secondary et-btn--sm"
-                      onClick={() =>
-                        onViewMemberProfile(
-                          activeConversation.otherUserId,
-                          activeConversation.otherUserName,
-                        )
-                      }
+                      onClick={handleViewActiveProfile}
                     >
                       {messagesCopy.viewProfile}
                     </button>
@@ -529,7 +573,11 @@ export function PortalMessages({
                 ) : null}
               </header>
 
-              <div className="et-messages-thread-scroll">
+              <div
+                className="et-messages-thread-scroll"
+                ref={threadScrollRef}
+                onScroll={handleThreadScroll}
+              >
                 {isLoadingThread ? (
                   <p className="et-messages-loading">{messagesCopy.loadingThread}</p>
                 ) : null}
@@ -578,7 +626,6 @@ export function PortalMessages({
                       </li>
                     );
                   })}
-                  <li ref={threadEndRef} className="et-messages-thread-end" aria-hidden="true" />
                 </ul>
               </div>
 

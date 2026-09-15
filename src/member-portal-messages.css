@@ -75,7 +75,10 @@
   display: grid;
   grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
   gap: 0;
-  min-height: min(70vh, 42rem);
+  /* Definite height so grid 1fr constrains .et-messages-thread-scroll (P0). */
+  height: min(70vh, 42rem);
+  max-height: calc(100dvh - 11rem);
+  min-height: 0;
   border: 1px solid var(--et-border-hairline);
   border-radius: 1.15rem;
   background: var(--et-bg-surface);
@@ -247,8 +250,8 @@
 }
 
 .et-messages-thread-head {
-  position: sticky;
-  top: 0;
+  /* Pinned by panel grid row — not page sticky. */
+  position: relative;
   z-index: 2;
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -288,6 +291,23 @@
   min-width: 0;
 }
 
+button.et-messages-thread-identity {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 0.5rem;
+}
+
+button.et-messages-thread-identity:focus-visible {
+  outline: 2px solid var(--msg-forest);
+  outline-offset: 2px;
+}
+
 .et-messages-thread-identity-copy {
   display: grid;
   gap: 0.15rem;
@@ -296,8 +316,10 @@
 
 .et-messages-thread-name {
   margin: 0;
+  display: block;
   font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
   font-size: 1.05rem;
+  font-weight: 600;
   color: var(--et-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -306,6 +328,7 @@
 
 .et-messages-thread-meta {
   margin: 0;
+  display: block;
   font-size: 0.8125rem;
   color: var(--msg-slate);
   overflow: hidden;
@@ -329,11 +352,13 @@
 
 .et-messages-thread-scroll {
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--et-space-4);
   display: flex;
   flex-direction: column;
   gap: var(--et-space-3);
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .et-messages-thread {
@@ -483,8 +508,8 @@
 }
 
 .et-messages-compose {
-  position: sticky;
-  bottom: 0;
+  /* Pinned by panel grid row — not page sticky. */
+  position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -686,11 +711,6 @@
   padding: var(--et-space-3) var(--et-space-4);
 }
 
-.et-messages-thread-end {
-  height: 0;
-  overflow: hidden;
-}
-
 /* —— New conversation modal —— */
 
 .et-messages-modal.portal-modal {
@@ -776,7 +796,8 @@
 @media (max-width: 899px) {
   .et-messages-layout {
     grid-template-columns: 1fr;
-    min-height: min(65vh, 36rem);
+    height: min(65vh, 36rem);
+    max-height: calc(100dvh - 11rem);
   }
 
   .et-messages-sidebar.is-hidden-mobile {
@@ -797,8 +818,11 @@
 }
 
 @media (max-width: 767px) {
+  /* Inbox list can size naturally; open thread uses the fixed panel below. */
   .et-messages-layout {
-    min-height: calc(100dvh - 12rem);
+    height: auto;
+    max-height: none;
+    min-height: 0;
     border-radius: 1rem;
   }
 
@@ -831,6 +855,7 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
 
