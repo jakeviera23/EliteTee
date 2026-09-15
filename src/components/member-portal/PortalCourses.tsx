@@ -50,7 +50,15 @@ import { CourseLocationBrowse } from "./CourseLocationBrowse";
 
 const FEATURED_COURSE_LIMIT = 6;
 
-export function PortalCourses() {
+type PortalCoursesProps = {
+  openShareExperience?: boolean;
+  onOpenShareExperienceConsumed?: () => void;
+};
+
+export function PortalCourses({
+  openShareExperience = false,
+  onOpenShareExperienceConsumed,
+}: PortalCoursesProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const loadMoreButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -76,6 +84,12 @@ export function PortalCourses() {
   const [geoCountsLoading, setGeoCountsLoading] = useState(true);
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [directoryRefreshKey, setDirectoryRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (!openShareExperience) return;
+    setShowAddCourseModal(true);
+    onOpenShareExperienceConsumed?.();
+  }, [openShareExperience, onOpenShareExperienceConsumed]);
   const [filters, setFilters] = useState<CourseDirectoryFilters>(DEFAULT_COURSE_FILTERS);
   const [sortBy, setSortBy] = useState<CourseSortOption>("most-played");
   const [filtersOpen, setFiltersOpen] = useState(false);

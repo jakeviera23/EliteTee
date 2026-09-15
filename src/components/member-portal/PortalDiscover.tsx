@@ -41,6 +41,8 @@ type PortalDiscoverProps = {
   onRespondToIntroduction?: (requestId: string) => void;
   relationshipContext?: MemberRelationshipContext | null;
   onRelationshipContextChange?: (context: MemberRelationshipContext | null) => void;
+  expandInvite?: boolean;
+  onExpandInviteConsumed?: () => void;
 };
 
 export function PortalDiscover({
@@ -52,6 +54,8 @@ export function PortalDiscover({
   onRespondToIntroduction,
   relationshipContext = null,
   onRelationshipContextChange,
+  expandInvite = false,
+  onExpandInviteConsumed,
 }: PortalDiscoverProps) {
   const [filters, setFilters] = useState<DiscoverFilters>(DEFAULT_DISCOVER_FILTERS);
   const debouncedFilters = useDebouncedValue(filters, 250);
@@ -160,7 +164,11 @@ export function PortalDiscover({
         ) : null}
       </header>
 
-      <InviteGolfer variant="compact" />
+      <InviteGolfer
+        variant="compact"
+        forceExpanded={expandInvite}
+        onForceExpandedConsumed={onExpandInviteConsumed}
+      />
 
       <DiscoverFiltersBar
         filters={filters}

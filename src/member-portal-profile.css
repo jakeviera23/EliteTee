@@ -294,6 +294,41 @@
   line-height: 1.55;
 }
 
+.et-profile-incomplete-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--et-space-3);
+  margin: 0 0 var(--et-space-4);
+  padding: var(--et-space-3) var(--et-space-4);
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--et-forest) 28%, var(--et-border-hairline));
+  background: color-mix(in srgb, var(--et-forest-soft) 55%, white 45%);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--et-forest) 12%, transparent);
+}
+
+.et-profile-incomplete-banner-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: min(100%, 16rem);
+  flex: 1 1 14rem;
+}
+
+.et-profile-incomplete-banner-title {
+  margin: 0;
+  font-family: var(--et-font-serif, Georgia, "Times New Roman", serif);
+  font-size: 1.05rem;
+  color: var(--et-text-primary);
+}
+
+.et-profile-incomplete-banner-body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--et-text-secondary);
+}
+
 .et-profile-layout {
   display: grid;
   gap: var(--et-space-5);

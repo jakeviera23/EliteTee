@@ -323,6 +323,10 @@
   max-width: 32rem;
 }
 
+.et-introductions-empty--global .et-btn {
+  margin-top: var(--et-space-2);
+}
+
 .et-introductions-empty-eyebrow {
   margin: 0;
   width: 2.5rem;

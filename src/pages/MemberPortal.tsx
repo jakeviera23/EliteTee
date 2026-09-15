@@ -14,7 +14,12 @@ import { PortalToastProvider, usePortalToast } from "../components/member-portal
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { introductionsCopy } from "../data/portalSocial";
 import { getCurrentAuthUserId } from "../lib/authUserLinking";
+import {
+  isProfileClearlyIncomplete,
+  type FirstSessionActionId,
+} from "../lib/firstSessionActivation";
 import type { IntroductionTab } from "../lib/introductionBoard";
+import { fetchOwnMemberProfile } from "../lib/memberProfiles";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import {
   acknowledgePortalNotificationPanel,
@@ -186,6 +191,9 @@ function MemberPortalContent() {
   const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
   const [pendingFeedPostId, setPendingFeedPostId] = useState<string | null>(null);
+  const [pendingProfileEdit, setPendingProfileEdit] = useState(false);
+  const [pendingOpenShareExperience, setPendingOpenShareExperience] = useState(false);
+  const [pendingExpandInvite, setPendingExpandInvite] = useState(false);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
   const resolvedView: PortalTab = isCoursesRoute ? "courses" : activeView;
 
@@ -534,6 +542,32 @@ function MemberPortalContent() {
     }
   }
 
+  async function handleFirstSessionAction(actionId: FirstSessionActionId) {
+    if (actionId === "complete-profile") {
+      const { data } = await fetchOwnMemberProfile();
+      setPendingProfileEdit(isProfileClearlyIncomplete(data));
+      transitionTo("profile");
+      return;
+    }
+
+    if (actionId === "discover" || actionId === "request-introduction") {
+      setPendingExpandInvite(false);
+      transitionTo("discover");
+      return;
+    }
+
+    if (actionId === "invite-golfer") {
+      setPendingExpandInvite(true);
+      transitionTo("discover");
+      return;
+    }
+
+    if (actionId === "share-experience") {
+      setPendingOpenShareExperience(true);
+      transitionTo("courses");
+    }
+  }
+
   const handleIntroductionRequestsChange = useCallback((requests: IntroductionRequestRecord[]) => {
     setIntroductionRequests(requests);
   }, []);
@@ -714,6 +748,7 @@ function MemberPortalContent() {
               focusPostId={pendingFeedPostId}
               onFocusPostConsumed={() => setPendingFeedPostId(null)}
               onViewMemberProfile={handleViewMemberProfile}
+              onFirstSessionAction={handleFirstSessionAction}
             />
           </div>
           {resolvedView === "discover" ? (
@@ -726,6 +761,8 @@ function MemberPortalContent() {
               onRespondToIntroduction={handleRespondToIntroduction}
               relationshipContext={relationshipContext}
               onRelationshipContextChange={setRelationshipContext}
+              expandInvite={pendingExpandInvite}
+              onExpandInviteConsumed={() => setPendingExpandInvite(false)}
             />
           ) : null}
           {resolvedView === "ask" ? (
@@ -739,7 +776,12 @@ function MemberPortalContent() {
           {resolvedView === "compose" ? (
             <PortalCompose onPosted={() => transitionTo("feed")} />
           ) : null}
-          {resolvedView === "courses" ? <PortalCourses /> : null}
+          {resolvedView === "courses" ? (
+            <PortalCourses
+              openShareExperience={pendingOpenShareExperience}
+              onOpenShareExperienceConsumed={() => setPendingOpenShareExperience(false)}
+            />
+          ) : null}
           {resolvedView === "introductions" ? (
             <PortalIntroductionRequests
               isActive={resolvedView === "introductions"}
@@ -750,6 +792,7 @@ function MemberPortalContent() {
               onMessageMember={handleMessageMember}
               onViewMemberProfile={handleViewMemberProfile}
               onRequestsChange={handleIntroductionRequestsChange}
+              onDiscoverMembers={() => transitionTo("discover")}
             />
           ) : null}
           {resolvedView === "messages" ? (
@@ -758,6 +801,7 @@ function MemberPortalContent() {
               initialConversation={pendingConversation}
               onInitialConversationOpened={() => setPendingConversation(null)}
               onViewMemberProfile={handleViewMemberProfile}
+              onDiscoverMembers={() => transitionTo("discover")}
             />
           ) : null}
           {resolvedView === "profile" ? (
@@ -769,6 +813,8 @@ function MemberPortalContent() {
               onRequestIntroduction={handleRequestIntroduction}
               onRespondToIntroduction={handleRespondToIntroduction}
               onMessageMember={handleMessageMember}
+              startInEditMode={pendingProfileEdit}
+              onStartInEditModeConsumed={() => setPendingProfileEdit(false)}
             />
           ) : null}
 

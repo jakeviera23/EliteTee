@@ -38,6 +38,7 @@ type PortalMessagesProps = {
   } | null;
   onInitialConversationOpened?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
+  onDiscoverMembers?: () => void;
 };
 
 type ActiveConversation = {
@@ -76,6 +77,7 @@ export function PortalMessages({
   initialConversation = null,
   onInitialConversationOpened,
   onViewMemberProfile,
+  onDiscoverMembers,
 }: PortalMessagesProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -431,6 +433,15 @@ export function PortalMessages({
               <p className="et-messages-empty-title">{earlyStageCopy.messagesEmptyTitle}</p>
               <p className="et-messages-empty-copy">{earlyStageCopy.messagesEmptyBody}</p>
               <p className="et-messages-empty-copy">{earlyStageCopy.messagesEmptyNote}</p>
+              {onDiscoverMembers ? (
+                <button
+                  type="button"
+                  className="et-btn et-btn--forest et-btn--sm"
+                  onClick={onDiscoverMembers}
+                >
+                  {earlyStageCopy.discoverMembersCta}
+                </button>
+              ) : null}
             </div>
           ) : null}
 

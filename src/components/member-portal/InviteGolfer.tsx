@@ -6,9 +6,16 @@ import { usePortalToast } from "./PortalToastProvider";
 type InviteGolferProps = {
   /** Compact layout for Discover; full layout for Profile. */
   variant?: "compact" | "full";
+  /** When true (compact only), expand immediately — e.g. Getting Started invite action. */
+  forceExpanded?: boolean;
+  onForceExpandedConsumed?: () => void;
 };
 
-export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
+export function InviteGolfer({
+  variant = "full",
+  forceExpanded = false,
+  onForceExpandedConsumed,
+}: InviteGolferProps) {
   const { showToast } = usePortalToast();
   const [referralUrl, setReferralUrl] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
@@ -18,6 +25,12 @@ export function InviteGolfer({ variant = "full" }: InviteGolferProps) {
   const [sharing, setSharing] = useState(false);
   const [expanded, setExpanded] = useState(variant === "full");
   const [hasLoaded, setHasLoaded] = useState(false);
+
+  useEffect(() => {
+    if (variant !== "compact" || !forceExpanded) return;
+    setExpanded(true);
+    onForceExpandedConsumed?.();
+  }, [forceExpanded, onForceExpandedConsumed, variant]);
 
   const loadReferral = useCallback(async () => {
     setLoading(true);

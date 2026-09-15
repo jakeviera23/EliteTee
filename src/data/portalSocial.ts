@@ -27,8 +27,14 @@ export const earlyStageCopy = {
   coursesGrowNote:
     "Members add rounds, recommendations, and travel notes as they share experiences.",
   feedEmptyTitle: "No member posts yet",
-  feedEmptyHint: "Share a round, travel plan, or introduction request to begin the conversation.",
-  feedEmptyCta: "",
+  feedEmptyHint: "Share a round or discover members to begin the conversation.",
+  feedEmptyCta: "Discover members",
+  feedEmptySecondaryCta: "Share an experience",
+  discoverMembersCta: "Discover members",
+  profileIncompleteBannerTitle: "Finish your profile",
+  profileIncompleteBannerBody:
+    "Add where you play and a short note about yourself so members know who they’re meeting.",
+  profileIncompleteBannerCta: "Edit Profile",
   discoverFoundingTitle: "Members",
   discoverFoundingBody: "Approved member profiles appear here as the directory grows.",
   discoverFoundingNote: "Search by location, home club, travel plans, and interests.",

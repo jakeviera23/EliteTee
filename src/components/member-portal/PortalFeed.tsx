@@ -18,7 +18,9 @@ import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { FeedCard } from "./FeedCard";
 import { FeedComposer } from "./FeedComposer";
+import { FeedGettingStarted } from "./FeedGettingStarted";
 import { usePortalToast } from "./PortalToastProvider";
+import type { FirstSessionActionId } from "../../lib/firstSessionActivation";
 
 type PortalFeedProps = {
   showComposer?: boolean;
@@ -27,6 +29,7 @@ type PortalFeedProps = {
   focusPostId?: string | null;
   onFocusPostConsumed?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
+  onFirstSessionAction?: (actionId: FirstSessionActionId) => void;
 };
 
 export function PortalFeed({
@@ -36,6 +39,7 @@ export function PortalFeed({
   focusPostId = null,
   onFocusPostConsumed,
   onViewMemberProfile,
+  onFirstSessionAction,
 }: PortalFeedProps) {
   const { showToast } = usePortalToast();
   const [composerAuthor, setComposerAuthor] = useState(() => buildComposerAuthor(null));
@@ -187,6 +191,12 @@ export function PortalFeed({
         </h2>
       </header>
 
+      {onFirstSessionAction ? (
+        <div className="et-animate-fade-up et-animate-delay-1">
+          <FeedGettingStarted onAction={onFirstSessionAction} />
+        </div>
+      ) : null}
+
       {showComposer ? (
         <div className="et-feed-composer-wrap et-animate-fade-up et-animate-delay-1">
           <FeedComposer id={composerId} author={composerAuthor} onPosted={handlePosted} />
@@ -250,6 +260,24 @@ export function PortalFeed({
           <div className="et-feed-empty">
             <p className="et-feed-empty-title">{earlyStageCopy.feedEmptyTitle}</p>
             <p className="et-feed-empty-lead">{earlyStageCopy.feedEmptyHint}</p>
+            {onFirstSessionAction ? (
+              <div className="et-feed-empty-actions">
+                <button
+                  type="button"
+                  className="et-btn et-btn--forest et-btn--sm"
+                  onClick={() => onFirstSessionAction("discover")}
+                >
+                  {earlyStageCopy.feedEmptyCta}
+                </button>
+                <button
+                  type="button"
+                  className="et-btn et-btn--secondary et-btn--sm"
+                  onClick={() => onFirstSessionAction("share-experience")}
+                >
+                  {earlyStageCopy.feedEmptySecondaryCta}
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

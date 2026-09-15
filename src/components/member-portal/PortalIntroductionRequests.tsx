@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { introductionsCopy } from "../../data/portalSocial";
+import { earlyStageCopy, introductionsCopy } from "../../data/portalSocial";
 import {
   cancelIntroductionRequest,
   fetchIntroductionRequests,
@@ -33,6 +33,7 @@ type PortalIntroductionRequestsProps = {
   onMessageMember: (userId: string, memberName: string) => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onRequestsChange?: (requests: IntroductionRequestRecord[]) => void;
+  onDiscoverMembers?: () => void;
 };
 
 const TAB_LABELS: Record<IntroductionTab, string> = {
@@ -70,6 +71,7 @@ export function PortalIntroductionRequests({
   onMessageMember,
   onViewMemberProfile,
   onRequestsChange,
+  onDiscoverMembers,
 }: PortalIntroductionRequestsProps) {
   const [requests, setRequests] = useState<IntroductionRequestRecord[]>([]);
   const [profilesByUserId, setProfilesByUserId] = useState<
@@ -350,6 +352,15 @@ export function PortalIntroductionRequests({
           </p>
           <p className="et-introductions-empty-title">{introductionsCopy.emptyAllTitle}</p>
           <p className="et-introductions-empty-copy">{introductionsCopy.emptyAllCopy}</p>
+          {onDiscoverMembers ? (
+            <button
+              type="button"
+              className="et-btn et-btn--forest et-btn--sm"
+              onClick={onDiscoverMembers}
+            >
+              {earlyStageCopy.discoverMembersCta}
+            </button>
+          ) : null}
         </div>
       ) : null}
 

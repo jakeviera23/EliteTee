@@ -705,6 +705,11 @@ button.et-messages-thread-identity:focus-visible {
   font-size: 0.9375rem;
 }
 
+.et-messages-empty .et-btn {
+  margin-top: 0.35rem;
+  justify-self: start;
+}
+
 .et-messages-thread-error {
   display: grid;
   gap: 0.65rem;

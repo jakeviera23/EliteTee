@@ -20,6 +20,7 @@ import {
   isMeaningfulProfileText,
   partitionProfileDisplayItems,
 } from "../../lib/portalProfileDisplay";
+import { isProfileClearlyIncomplete } from "../../lib/firstSessionActivation";
 import {
   buildProfileExperienceStats,
   buildUniqueCoursesPlayed,
@@ -99,6 +100,8 @@ type GolferProfilePageProps = {
   relationshipContext?: MemberRelationshipContext | null;
   onViewMemberProfile?: (userId: string, memberName: string) => void;
   onOpenFeedPost?: (postId: string) => void;
+  startInEditMode?: boolean;
+  onStartInEditModeConsumed?: () => void;
 };
 
 export function GolferProfilePage({
@@ -112,6 +115,8 @@ export function GolferProfilePage({
   relationshipContext = null,
   onViewMemberProfile: _onViewMemberProfile,
   onOpenFeedPost,
+  startInEditMode = false,
+  onStartInEditModeConsumed,
 }: GolferProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
@@ -133,6 +138,12 @@ export function GolferProfilePage({
     if (!isActive) return;
     void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
   }, [isActive]);
+
+  useEffect(() => {
+    if (!isActive || !startInEditMode || isViewingOther) return;
+    setIsEditing(true);
+    onStartInEditModeConsumed?.();
+  }, [isActive, isViewingOther, onStartInEditModeConsumed, startInEditMode]);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
@@ -469,6 +480,26 @@ export function GolferProfilePage({
                 <p className="et-profile-note">{earlyStageCopy.foundingMemberNote}</p>
             </div>
           </header>
+
+          {!isViewingOther && !isEditing && isProfileClearlyIncomplete(memberProfile) ? (
+            <div className="et-profile-incomplete-banner" role="status">
+              <div className="et-profile-incomplete-banner-copy">
+                <p className="et-profile-incomplete-banner-title">
+                  {earlyStageCopy.profileIncompleteBannerTitle}
+                </p>
+                <p className="et-profile-incomplete-banner-body">
+                  {earlyStageCopy.profileIncompleteBannerBody}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="et-btn et-btn--forest et-btn--sm"
+                onClick={() => setIsEditing(true)}
+              >
+                {earlyStageCopy.profileIncompleteBannerCta}
+              </button>
+            </div>
+          ) : null}
 
           <div className="et-profile-layout">
             <div className="et-profile-main">
