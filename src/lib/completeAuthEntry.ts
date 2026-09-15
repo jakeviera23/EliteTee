@@ -26,6 +26,13 @@ export type AuthEntryClient = {
     data: { session: Session | null };
     error: { message?: string } | null;
   }>;
+  setSession: (params: {
+    access_token: string;
+    refresh_token: string;
+  }) => Promise<{
+    data: { session: Session | null };
+    error: { message?: string } | null;
+  }>;
   getSession: () => Promise<{
     data: { session: Session | null };
     error: { message?: string } | null;
@@ -114,19 +121,43 @@ async function runCompleteAuthEntry(
     }
   }
 
-  const { data, error } = await auth.getSession();
-  if (error) {
-    return {
-      kind: "login_error",
-      message: callbackError ?? AUTH_CALLBACK_EXPIRED_MESSAGE,
-    };
+  // Implicit-flow recovery/confirm links put tokens in the hash. Establish the
+  // session from the captured snapshot before any routing decision so we never
+  // navigate to bare /login while access/refresh tokens are still unconsumed.
+  let session: Session | null = null;
+
+  if (snapshot.accessToken && snapshot.refreshToken) {
+    const { data, error } = await auth.setSession({
+      access_token: snapshot.accessToken,
+      refresh_token: snapshot.refreshToken,
+    });
+
+    if (error) {
+      return {
+        kind: "login_error",
+        message: callbackError ?? AUTH_CALLBACK_EXPIRED_MESSAGE,
+      };
+    }
+
+    session = data.session;
   }
 
-  if (isPasswordRecoveryCallback(snapshot) && data.session) {
+  if (!session) {
+    const { data, error } = await auth.getSession();
+    if (error) {
+      return {
+        kind: "login_error",
+        message: callbackError ?? AUTH_CALLBACK_EXPIRED_MESSAGE,
+      };
+    }
+    session = data.session;
+  }
+
+  if (isPasswordRecoveryCallback(snapshot) && session) {
     return { kind: "recovery" };
   }
 
-  if (data.session) {
+  if (session) {
     const result = await activation.finishInviteActivationAfterAuth();
     if (result.ok) {
       return { kind: "portal" };

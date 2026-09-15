@@ -40,6 +40,10 @@ function createAuth(): AuthEntryClient {
       data: { session: mockSession },
       error: null,
     })),
+    setSession: vi.fn(async () => ({
+      data: { session: mockSession },
+      error: null,
+    })),
     getSession: vi.fn(async () => ({
       data: { session: mockSession },
       error: null,
@@ -90,7 +94,7 @@ afterEach(() => {
 describe("password recovery lifecycle", () => {
   it("does not reopen set-password after recovery is consumed and user navigates", async () => {
     captureAuthCallbackFromLocation(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=recovery",
     );
     const auth = createAuth();
 
@@ -102,6 +106,10 @@ describe("password recovery lifecycle", () => {
     expect(first.navigations).toEqual([
       { path: "/login", state: { recoveryVerified: true } },
     ]);
+    expect(auth.setSession).toHaveBeenCalledWith({
+      access_token: "abc",
+      refresh_token: "def",
+    });
     expect(capturedAuthCallbackHasWork()).toBe(false);
 
     // Simulated pathname change after password reset / portal navigation.
@@ -121,7 +129,7 @@ describe("password recovery lifecycle", () => {
 
   it("keeps activated-member portal navigation stable after password update consume", async () => {
     captureAuthCallbackFromLocation(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=recovery",
     );
     const auth = createAuth();
 
@@ -158,7 +166,7 @@ describe("password recovery lifecycle", () => {
 
   it("Craig-class incomplete onboarding does not re-enter set-password on navigation alone", async () => {
     captureAuthCallbackFromLocation(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=recovery",
     );
     const auth = createAuth();
 
@@ -190,7 +198,7 @@ describe("password recovery lifecycle", () => {
 
   it("preserves signup callback routing into portal after consume", async () => {
     captureAuthCallbackFromLocation(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=signup",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=signup",
     );
     const auth = createAuth();
 
@@ -204,6 +212,10 @@ describe("password recovery lifecycle", () => {
 
     expect(first.result).toEqual({ kind: "portal" });
     expect(first.navigations).toEqual([{ path: "/member-portal" }]);
+    expect(auth.setSession).toHaveBeenCalledWith({
+      access_token: "abc",
+      refresh_token: "def",
+    });
 
     const second = await handleAuthEntryOnce(auth, {
       finishInviteActivationAfterAuth: vi.fn(async () => ({
@@ -219,7 +231,7 @@ describe("password recovery lifecycle", () => {
 
   it("preserves invite confirmation login_error when activation fails", async () => {
     captureAuthCallbackFromLocation(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=invite",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=invite",
     );
     const auth = createAuth();
 

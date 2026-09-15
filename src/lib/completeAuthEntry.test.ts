@@ -44,6 +44,12 @@ function createAuth(handlers: Partial<AuthEntryClient> = {}): AuthEntryClient {
         data: { session: mockSession },
         error: null,
       })),
+    setSession:
+      handlers.setSession ??
+      vi.fn(async () => ({
+        data: { session: mockSession },
+        error: null,
+      })),
     getSession:
       handlers.getSession ??
       vi.fn(async () => ({
@@ -60,9 +66,13 @@ afterEach(() => {
 
 describe("completeAuthEntryFromCallback", () => {
   it("sends activated sessions into the member portal", async () => {
-    const auth = createAuth();
+    const setSession = vi.fn(async () => ({
+      data: { session: mockSession },
+      error: null,
+    }));
+    const auth = createAuth({ setSession });
     const snapshot = parseAuthCallbackParams(
-      "https://www.elitetee.club/#access_token=abc&type=signup",
+      "https://www.elitetee.club/#access_token=abc&refresh_token=def&type=signup",
     );
 
     await expect(
@@ -76,12 +86,25 @@ describe("completeAuthEntryFromCallback", () => {
     ).resolves.toEqual({
       kind: "portal",
     });
+
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: "abc",
+      refresh_token: "def",
+    });
   });
 
   it("keeps recovery sessions on the password-reset path", async () => {
-    const auth = createAuth();
+    const setSession = vi.fn(async () => ({
+      data: { session: mockSession },
+      error: null,
+    }));
+    const getSession = vi.fn(async () => ({
+      data: { session: null },
+      error: null,
+    }));
+    const auth = createAuth({ setSession, getSession });
     const snapshot = parseAuthCallbackParams(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=recovery",
     );
 
     await expect(
@@ -91,6 +114,41 @@ describe("completeAuthEntryFromCallback", () => {
     ).resolves.toEqual({
       kind: "recovery",
     });
+
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: "abc",
+      refresh_token: "def",
+    });
+    // Session established via setSession; getSession must not be required.
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it("establishes session from hash tokens before routing when getSession is empty", async () => {
+    const setSession = vi.fn(async () => ({
+      data: { session: mockSession },
+      error: null,
+    }));
+    const getSession = vi.fn(async () => ({
+      data: { session: null },
+      error: null,
+    }));
+    const finishInvite = vi.fn();
+    const auth = createAuth({ setSession, getSession });
+    const snapshot = parseAuthCallbackParams(
+      "https://www.elitetee.club/auth/callback#access_token=rec-at&refresh_token=rec-rt&type=recovery",
+    );
+
+    const result = await completeAuthEntryFromCallback(auth, snapshot, {
+      finishInviteActivationAfterAuth: finishInvite,
+    });
+
+    expect(result).toEqual({ kind: "recovery" });
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: "rec-at",
+      refresh_token: "rec-rt",
+    });
+    expect(getSession).not.toHaveBeenCalled();
+    expect(finishInvite).not.toHaveBeenCalled();
   });
 
   it("verifies token_hash links before reading the session", async () => {
@@ -137,7 +195,7 @@ describe("completeAuthEntryFromCallback", () => {
   it("does not route unactivated confirmed users into the portal", async () => {
     const auth = createAuth();
     const snapshot = parseAuthCallbackParams(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=signup",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=signup",
     );
 
     await expect(
@@ -158,10 +216,10 @@ describe("completeAuthEntryFromCallback", () => {
   it("handles a recovery callback once only after consume", async () => {
     const auth = createAuth();
     const snapshot = parseAuthCallbackParams(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=recovery",
     );
     captureAuthCallbackFromLocation(
-      "https://www.elitetee.club/auth/callback#access_token=abc&type=recovery",
+      "https://www.elitetee.club/auth/callback#access_token=abc&refresh_token=def&type=recovery",
     );
 
     const first = await completeAuthEntryFromCallback(auth, snapshot, {
