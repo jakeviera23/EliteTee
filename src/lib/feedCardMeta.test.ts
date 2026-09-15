@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FeedPost } from "../data/portalSocial";
 import {
   badgeToneForPost,
+  buildFeedExperienceMetaLine,
   buildFeedMetaChips,
   isCourseRoundPost,
 } from "./feedCardMeta";
@@ -44,54 +45,65 @@ function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
   };
 }
 
+describe("buildFeedExperienceMetaLine", () => {
+  it("builds a compact Location · Rating · Date line without repeating course", () => {
+    expect(buildFeedExperienceMetaLine(makePost())).toBe("Southampton, NY · 9.0 · Jun 12, 2026");
+  });
+
+  it("omits Would play again Yes from the compact line", () => {
+    expect(buildFeedExperienceMetaLine(makePost())?.includes("Would play")).toBe(false);
+  });
+
+  it("includes Would play again when the answer is No", () => {
+    expect(
+      buildFeedExperienceMetaLine(
+        makePost({
+          details: [
+            { label: "Location", value: "Southampton, NY" },
+            { label: "Would play again", value: "No" },
+          ],
+        }),
+      ),
+    ).toContain("Would play again: No");
+  });
+});
+
 describe("buildFeedMetaChips", () => {
-  it("uses formatted post.rating instead of duplicate course rating detail", () => {
+  it("does not emit experience core chips for round posts", () => {
     const chips = buildFeedMetaChips(makePost());
-    const ratingChips = chips.filter((chip) => chip.label === "Rating");
-    expect(ratingChips).toHaveLength(1);
-    expect(ratingChips[0]?.value).toBe("9.0/10.0");
-    expect(chips.some((chip) => chip.label === "Played")).toBe(true);
+    expect(chips.some((chip) => chip.label === "Location")).toBe(false);
+    expect(chips.some((chip) => chip.label === "Rating")).toBe(false);
+    expect(chips.some((chip) => chip.label === "Played")).toBe(false);
+    expect(chips.some((chip) => chip.label === "Would play again")).toBe(false);
   });
 
-  it("adds a formatted rating chip when post.rating is decimal", () => {
-    const chips = buildFeedMetaChips(makePost({ rating: 9.4 }));
-    expect(chips.some((chip) => chip.label === "Rating" && chip.value === "9.4/10.0")).toBe(
-      true,
-    );
-  });
-
-  it("does not add an empty rating chip when post.rating is null", () => {
+  it("keeps non-core details on social posts and skips Would play again Yes", () => {
     const chips = buildFeedMetaChips(
       makePost({
+        postType: "played-today",
+        memberCourseRoundId: undefined,
+        requestLabel: "Discussion",
         rating: undefined,
         details: [
-          { label: "Location", value: "Southampton, NY" },
-          { label: "Played", value: "Jun 12, 2026" },
+          { label: "Dates", value: "Next week" },
           { label: "Would play again", value: "Yes" },
         ],
       }),
     );
-    expect(chips.some((chip) => chip.label === "Rating")).toBe(false);
+    expect(chips.map((chip) => chip.label)).toEqual(["Dates"]);
   });
 
-  it("does not add a rating chip for invalid values", () => {
-    const chips = buildFeedMetaChips(makePost({ rating: 10.1 }));
-    expect(chips.some((chip) => chip.label === "Rating")).toBe(false);
-  });
-
-  it("maps would play again yes to positive tone", () => {
-    const chips = buildFeedMetaChips(makePost());
-    const again = chips.find((chip) => chip.label === "Would play again");
-    expect(again?.tone).toBe("positive");
-  });
-
-  it("maps would play again no to emphasis tone", () => {
+  it("adds a formatted rating chip on non-round posts when rating exists", () => {
     const chips = buildFeedMetaChips(
       makePost({
-        details: [{ label: "Would play again", value: "No" }],
+        postType: "played-today",
+        memberCourseRoundId: undefined,
+        requestLabel: "Discussion",
+        details: [],
+        rating: 9.4,
       }),
     );
-    expect(chips[0]?.tone).toBe("emphasis");
+    expect(chips.some((chip) => chip.label === "Rating" && chip.value === "9.4/10.0")).toBe(true);
   });
 });
 

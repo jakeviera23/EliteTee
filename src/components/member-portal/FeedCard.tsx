@@ -28,6 +28,7 @@ import {
 } from "../../lib/feedPostEngagement";
 import {
   badgeToneForPost,
+  buildFeedExperienceMetaLine,
   buildFeedMetaChips,
   isCourseRoundPost,
   type FeedMetaChipTone,
@@ -286,20 +287,9 @@ export function FeedCard({
     [post.mediaItems, post.images, post.memberCourseRoundId],
   );
   const metaChips = buildFeedMetaChips(post);
+  const experienceMetaLine = isCourseRound ? buildFeedExperienceMetaLine(post) : null;
   const badgeTone = badgeToneForPost(post);
   const entranceStyle = { animationDelay: `${Math.min(index, 9) * 55}ms` };
-
-  const previewComment = comments[0] ?? (post.commentPreview
-    ? {
-        id: "preview",
-        postId: post.id,
-        userId: "",
-        authorName: post.commentPreview.author,
-        body: post.commentPreview.text,
-        createdAt: "",
-        displayTimestamp: "",
-      }
-    : undefined);
 
   const authorUserId = post.author.id?.trim();
   const canViewAuthor = Boolean(onViewAuthor && authorUserId);
@@ -462,10 +452,7 @@ export function FeedCard({
 
   const showCourseBlock =
     isCourseRound &&
-    (roundLabel ||
-      post.courseName ||
-      isMeaningfulFeedLocation(post.courseLocation) ||
-      ratingDisplay);
+    (roundLabel || post.courseName || Boolean(experienceMetaLine));
   const showSocialHeadline =
     !isCourseRound && !isFounder && (roundLabel || post.courseName);
   const meaningfulCourseLocation = isMeaningfulFeedLocation(post.courseLocation)
@@ -524,10 +511,6 @@ export function FeedCard({
             className="feed-card-course-fallback-image"
           />
         </div>
-      ) : isCourseRound ? (
-        <div className="feed-card-photo-placeholder feed-card-photo-placeholder--compact" role="img" aria-label="No photos yet">
-          <span className="feed-card-photo-placeholder-label">No photos yet</span>
-        </div>
       ) : null}
 
       {showCourseBlock ? (
@@ -538,17 +521,8 @@ export function FeedCard({
           {post.courseName ? (
             <h3 className="feed-card-course-title">{post.courseName}</h3>
           ) : null}
-          {meaningfulCourseLocation ? (
-            <p className="feed-card-course-location">{meaningfulCourseLocation}</p>
-          ) : null}
-          {ratingDisplay && !hasMedia ? (
-            <div
-              className="feed-card-rating feed-card-rating--inline"
-              title={`Rated ${ratingDisplay} out of ${MAX_RATING.toFixed(1)}`}
-            >
-              <span className="feed-card-rating-value">{ratingDisplay}</span>
-              <span className="feed-card-rating-label">Member rating</span>
-            </div>
+          {experienceMetaLine ? (
+            <p className="feed-card-experience-meta">{experienceMetaLine}</p>
           ) : null}
         </div>
       ) : null}
@@ -614,12 +588,16 @@ export function FeedCard({
             disabled={!engagementEnabled}
           >
             <CommentIcon />
-            <span className="feed-card-action-count">{commentCount}</span>
-            <span className="visually-hidden">comments</span>
+            {commentCount > 0 ? (
+              <span className="feed-card-action-count">{commentCount}</span>
+            ) : null}
+            <span className="visually-hidden">
+              {commentCount > 0 ? `comments, ${commentCount}` : "Comment"}
+            </span>
           </button>
           <button
             type="button"
-            className={`feed-card-action${saved ? " is-active is-saved" : ""}`}
+            className={`feed-card-action feed-card-action--secondary${saved ? " is-active is-saved" : ""}`}
             onClick={() => void toggleSave()}
             aria-pressed={saved}
             disabled={!engagementEnabled || isTogglingSave}
@@ -629,28 +607,13 @@ export function FeedCard({
           </button>
           <button
             type="button"
-            className="feed-card-action feed-card-action--share"
+            className="feed-card-action feed-card-action--secondary feed-card-action--share"
             onClick={handleShare}
           >
             <ShareIcon />
             <span className="feed-card-action-label">Share</span>
           </button>
         </div>
-
-        {previewComment && !showComments ? (
-          <div className="feed-card-comment-preview">
-            <p className="feed-card-comment-preview-text">
-              <strong>{previewComment.authorName}</strong> {previewComment.body}
-            </p>
-            <button
-              type="button"
-              className="feed-card-comment-link"
-              onClick={handleToggleComments}
-            >
-              {commentCount > 1 ? `View all ${commentCount} comments` : "View comment"}
-            </button>
-          </div>
-        ) : null}
 
         {showComments ? (
           <div className="feed-card-comments-panel">

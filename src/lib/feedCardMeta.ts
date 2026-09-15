@@ -53,16 +53,80 @@ function toneForDetail(label: string, value: string): FeedMetaChipTone {
   return "neutral";
 }
 
-/** Compact metadata chips for feed cards — display only, no data mutation. */
+function detailValue(post: FeedPost, labelMatch: (label: string) => boolean): string {
+  for (const detail of post.details ?? []) {
+    const label = detail.label?.toLowerCase().trim() ?? "";
+    const value = detail.value?.trim() ?? "";
+    if (!value || !isMeaningfulProfileText(value)) continue;
+    if (labelMatch(label)) return value;
+  }
+  return "";
+}
+
+function isExperienceCoreDetailLabel(label: string): boolean {
+  const lower = label.toLowerCase().trim();
+  return (
+    lower === "location" ||
+    lower === "played" ||
+    lower === "course rating" ||
+    lower === "rating" ||
+    lower.includes("would play")
+  );
+}
+
+/**
+ * One compact experience meta line (Location · Rating · Date · With).
+ * Course title stays in the card header — not repeated here.
+ */
+export function buildFeedExperienceMetaLine(post: FeedPost): string | null {
+  if (!isCourseRoundPost(post)) return null;
+
+  const parts: string[] = [];
+
+  const location =
+    (isMeaningfulProfileText(post.courseLocation) ? post.courseLocation.trim() : "") ||
+    detailValue(post, (label) => label === "location");
+  if (location) parts.push(location);
+
+  if (post.rating != null) {
+    const ratingDisplay = formatCourseRatingDisplay(post.rating);
+    if (ratingDisplay) parts.push(ratingDisplay);
+  }
+
+  const played = detailValue(post, (label) => label === "played");
+  if (played) parts.push(played);
+
+  if (post.playedWith?.trim() && isMeaningfulProfileText(post.playedWith)) {
+    parts.push(`With ${post.playedWith.trim()}`);
+  }
+
+  const wouldPlay = detailValue(post, (label) => label.includes("would play"));
+  if (wouldPlay && wouldPlay.toLowerCase() !== "yes") {
+    parts.push(`Would play again: ${wouldPlay}`);
+  }
+
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/**
+ * Compact metadata chips for feed cards — display only, no data mutation.
+ * Experience/round posts omit Location / Rating / Played / Would play again chips
+ * (those belong on the compact meta line). Default "Would play again: Yes" is never shown.
+ */
 export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
   const chips: FeedMetaChip[] = [];
+  const isRound = isCourseRoundPost(post);
 
   for (const detail of post.details ?? []) {
     const value = detail.value?.trim();
     if (!value || !isMeaningfulProfileText(value)) continue;
 
     const labelLower = detail.label.toLowerCase().trim();
-    if (labelLower === "course rating" && post.rating != null) continue;
+    if (isRound && isExperienceCoreDetailLabel(labelLower)) continue;
+    if (labelLower.includes("would play") && value.toLowerCase() === "yes") continue;
+    if ((labelLower === "course rating" || labelLower === "rating") && post.rating != null) {
+      continue;
+    }
 
     chips.push({
       key: `${detail.label}-${value}`,
@@ -72,7 +136,7 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
     });
   }
 
-  if (post.rating != null) {
+  if (!isRound && post.rating != null) {
     const ratingDisplay = formatCourseRatingDisplay(post.rating);
     if (ratingDisplay) {
       chips.push({
@@ -84,7 +148,7 @@ export function buildFeedMetaChips(post: FeedPost): FeedMetaChip[] {
     }
   }
 
-  if (post.playedWith?.trim() && isMeaningfulProfileText(post.playedWith)) {
+  if (!isRound && post.playedWith?.trim() && isMeaningfulProfileText(post.playedWith)) {
     chips.push({
       key: `played-with-${post.playedWith}`,
       label: "With",

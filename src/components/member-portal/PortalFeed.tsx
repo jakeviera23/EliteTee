@@ -7,6 +7,7 @@ import {
   fetchMemberFeedPage,
   type MemberFeedCursor,
 } from "../../lib/memberFeedPosts";
+import { shouldSuppressFeedPostFromMemberStream } from "../../lib/feedContentAudit";
 import { mergeFeedPostAfterEdit } from "../../lib/feedPostEditing";
 import { fetchOwnMemberProfile } from "../../lib/memberProfiles";
 import { getCurrentAuthUserId } from "../../lib/authUserLinking";
@@ -172,18 +173,18 @@ export function PortalFeed({
   }
 
   const founderWelcome = useMemo(() => getFounderWelcomePost(), []);
-  const hasMemberPosts = memberPosts.length > 0;
+  const visibleMemberPosts = useMemo(
+    () => memberPosts.filter((post) => !shouldSuppressFeedPostFromMemberStream(post)),
+    [memberPosts],
+  );
+  const hasMemberPosts = visibleMemberPosts.length > 0;
 
   return (
     <section className="et-feed et-feed-card-scope" aria-labelledby="feed-heading">
-      <header className="et-feed-hero et-animate-fade-up">
-        <p className="et-eyebrow et-eyebrow--line et-eyebrow--accent">Member Society</p>
+      <header className="et-feed-hero et-feed-hero--compact et-animate-fade-up">
         <h2 id="feed-heading" className="et-h2 et-feed-title">
           Feed
         </h2>
-        <p className="et-body et-feed-lead">
-          Rounds, introductions, and member updates within EliteTee.
-        </p>
       </header>
 
       {showComposer ? (
@@ -192,15 +193,8 @@ export function PortalFeed({
         </div>
       ) : null}
 
-      <section className="et-feed-stream" aria-labelledby="latest-activity-heading">
-        <div className="et-feed-stream-head">
-          <h3 id="latest-activity-heading" className="et-h3">
-            Latest
-          </h3>
-        </div>
-
+      <section className="et-feed-stream" aria-label="Member posts">
         <div className="et-feed-list et-feed-list--founder">
-          <p className="et-label et-feed-founder-label">From the founder</p>
           <FeedCard
             post={founderWelcome}
             index={0}
@@ -236,7 +230,7 @@ export function PortalFeed({
 
         {!isLoadingPosts && hasMemberPosts ? (
           <div className="et-feed-list">
-            {memberPosts.map((post, index) => (
+            {visibleMemberPosts.map((post, index) => (
               <FeedCard
                 key={post.id}
                 post={post}

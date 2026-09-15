@@ -222,22 +222,22 @@ export type ComposerPostType =
 
 /** Composer button / section labels. */
 export const composerPostTypeLabels: Record<ComposerPostType, string> = {
-  "round-review": "Round Review",
+  "round-review": "Experience",
   "looking-for-game": "Looking for a Game",
   traveling: "Traveling",
-  introduction: "Introduction Request",
+  introduction: "Looking to connect",
   "business-golf": "Business Golf",
-  general: "General Discussion",
+  general: "Update",
 };
 
 /** Short badge shown on the post card (rendered uppercase in CSS). */
 export const composerPostTypeBadges: Record<ComposerPostType, string> = {
-  "round-review": "Round Review",
+  "round-review": "Experience",
   "looking-for-game": "Looking for Game",
   traveling: "Traveling",
-  introduction: "Introduction",
+  introduction: "Looking to connect",
   "business-golf": "Business Golf",
-  general: "Discussion",
+  general: "Update",
 };
 
 /** Per-type placeholder for the main message field. */
@@ -247,16 +247,27 @@ export const composerPostTypePlaceholders: Record<ComposerPostType, string> = {
   traveling: "I'll be in Scotland August 3–10 and would love to connect…",
   introduction: "Looking for an introduction to a member at Fishers Island…",
   "business-golf": "In NYC next week and open to meeting founders or investors over a round…",
-  general: "Start a thoughtful golf conversation…",
+  general: "Share a thoughtful update with members…",
 };
 
-export const composerPostTypeOrder: ComposerPostType[] = [
+/** Primary composer types shown at equal weight. */
+export const composerPostTypePrimaryOrder: ComposerPostType[] = [
   "round-review",
+  "introduction",
+  "general",
+];
+
+/** Secondary types tucked under More. */
+export const composerPostTypeMoreOrder: ComposerPostType[] = [
   "looking-for-game",
   "traveling",
-  "introduction",
   "business-golf",
-  "general",
+];
+
+/** @deprecated Prefer primary + more orders for the Feed composer. */
+export const composerPostTypeOrder: ComposerPostType[] = [
+  ...composerPostTypePrimaryOrder,
+  ...composerPostTypeMoreOrder,
 ];
 
 export type PortalGolfer = {

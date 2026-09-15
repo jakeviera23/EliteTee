@@ -563,17 +563,22 @@ export async function createCourseRoundFeedPost({
   wouldPlayAgain,
   playedOn,
   courseRating,
+  playedWith,
 }: {
   roundId: string;
   courseName: string;
   location: string;
   note: string;
-  wouldPlayAgain: boolean;
+  /** When omitted, Would play again is not written into feed details. */
+  wouldPlayAgain?: boolean;
   playedOn: string;
   courseRating: number;
+  playedWith?: string;
 }) {
   const message = note.trim() || `Played ${courseName.trim()}`;
   const ratingDisplay = formatCourseRatingDisplay(courseRating);
+  const locationValue = location.trim();
+  const playedWithValue = playedWith?.trim() ?? "";
 
   return createMemberFeedPost(
     {
@@ -582,15 +587,18 @@ export async function createCourseRoundFeedPost({
       headline: courseName.trim(),
       badge: experienceCopy.feedBadge,
       details: [
-        { label: "Location", value: location.trim() },
+        ...(locationValue ? [{ label: "Location", value: locationValue }] : []),
         { label: "Played", value: formatPlayedOnDate(playedOn) },
         ...(ratingDisplay
           ? [{ label: "Course Rating", value: `${ratingDisplay}/10.0` }]
           : []),
-        { label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" },
+        ...(typeof wouldPlayAgain === "boolean"
+          ? [{ label: "Would play again", value: wouldPlayAgain ? "Yes" : "No" }]
+          : []),
       ],
       internalPostType: "course-review",
       rating: courseRating,
+      playedWith: playedWithValue || undefined,
     },
     roundId,
   );

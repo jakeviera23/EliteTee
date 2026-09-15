@@ -1,8 +1,15 @@
 import type { FeedPost } from "../data/portalSocial";
 
+const SEVERE_MEMBER_STREAM_FLAGS = new Set([
+  "Empty message body",
+  "Message may be unparsed JSON",
+  "Raw structured content visible",
+  "Placeholder or test copy",
+]);
+
 /**
  * Heuristic flags for feed posts that may need manual editorial cleanup.
- * For admin/moderation tooling only — never render these in member FeedCards.
+ * Prefer shouldSuppressFeedPostFromMemberStream() for member-facing filtering.
  */
 export function getFeedContentFlags(post: FeedPost): string[] {
   if (post.id === "founder-welcome") return [];
@@ -53,4 +60,9 @@ export function getFeedContentFlags(post: FeedPost): string[] {
   }
 
   return flags;
+}
+
+/** Suppress only severe empty/test/JSON-like posts from the member Feed stream. */
+export function shouldSuppressFeedPostFromMemberStream(post: FeedPost): boolean {
+  return getFeedContentFlags(post).some((flag) => SEVERE_MEMBER_STREAM_FLAGS.has(flag));
 }

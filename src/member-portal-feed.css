@@ -46,6 +46,10 @@
   max-width: 36rem;
 }
 
+.et-feed-hero--compact {
+  margin-bottom: 0;
+}
+
 .et-feed-hero .et-eyebrow {
   margin-bottom: 0;
   color: var(--feed-gold-muted);
@@ -274,6 +278,11 @@
   border-bottom: 1px solid var(--et-border-hairline);
 }
 
+.et-feed .feed-composer-types--more {
+  padding-top: 0;
+  border-bottom: 1px solid var(--et-border-hairline);
+}
+
 .et-feed .feed-composer-type {
   padding: 0.4rem 0.8rem;
   font-size: var(--et-text-caption);
@@ -405,6 +414,15 @@
   display: grid;
   gap: var(--et-space-5);
   width: 100%;
+}
+
+.et-feed-list--founder {
+  gap: var(--et-space-3);
+}
+
+.et-feed-list--founder .feed-card--founder {
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--feed-gold-muted) 35%, var(--et-border-hairline));
 }
 
 .et-feed-founder-label {
@@ -711,6 +729,13 @@
 .et-feed-card-scope .feed-card-social-location {
   margin: 0;
   font-size: var(--et-text-body-sm);
+  color: var(--feed-slate);
+}
+
+.et-feed-card-scope .feed-card-experience-meta {
+  margin: 0.15rem 0 0;
+  font-size: var(--et-text-body-sm);
+  line-height: 1.4;
   color: var(--feed-slate);
 }
 
@@ -1333,6 +1358,22 @@
   .et-feed-card-scope .feed-card-action {
     min-height: 2.75rem;
     padding-inline: 0.75rem;
+  }
+
+  .et-feed-card-scope .feed-card-action--secondary {
+    padding-inline: 0.65rem;
+  }
+
+  .et-feed-card-scope .feed-card-action--secondary .feed-card-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .et-feed-load-more {

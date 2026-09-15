@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getFeedContentFlags } from "./feedContentAudit";
+import { getFeedContentFlags, shouldSuppressFeedPostFromMemberStream } from "./feedContentAudit";
 import type { FeedPost } from "../data/portalSocial";
 
 function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
@@ -50,5 +50,27 @@ describe("getFeedContentFlags", () => {
 
   it("skips founder welcome post", () => {
     expect(getFeedContentFlags(makePost({ id: "founder-welcome", caption: "" }))).toEqual([]);
+  });
+});
+
+describe("shouldSuppressFeedPostFromMemberStream", () => {
+  it("suppresses severe empty/test/JSON posts only", () => {
+    expect(shouldSuppressFeedPostFromMemberStream(makePost({ caption: "" }))).toBe(true);
+    expect(shouldSuppressFeedPostFromMemberStream(makePost({ caption: "test post" }))).toBe(true);
+    expect(
+      shouldSuppressFeedPostFromMemberStream(makePost({ caption: '{"composerPostType":"general"}' })),
+    ).toBe(true);
+  });
+
+  it("does not suppress normal low-detail or long posts", () => {
+    expect(shouldSuppressFeedPostFromMemberStream(makePost())).toBe(false);
+    expect(
+      shouldSuppressFeedPostFromMemberStream(
+        makePost({
+          caption: "x".repeat(650),
+          details: [{ label: "Notes", value: "" }],
+        }),
+      ),
+    ).toBe(false);
   });
 });

@@ -1,10 +1,11 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 import type { FeedPost, PortalGolfer, PostType, ComposerPostType } from "../../data/portalSocial";
 import {
   composerPostTypeLabels,
   composerPostTypeBadges,
   composerPostTypePlaceholders,
-  composerPostTypeOrder,
+  composerPostTypePrimaryOrder,
+  composerPostTypeMoreOrder,
   earlyStageCopy,
 } from "../../data/portalSocial";
 import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
@@ -34,7 +35,6 @@ type ComposerField = {
 type ComposerTypeConfig = {
   internalPostType: PostType;
   primaryKey?: string;
-  hasPhoto?: boolean;
   fields: ComposerField[];
 };
 
@@ -42,9 +42,15 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
   "round-review": {
     internalPostType: "course-review",
     primaryKey: "course",
-    hasPhoto: true,
     fields: [
       { key: "course", label: "Course", type: "text", placeholder: "Course name" },
+      {
+        key: "location",
+        label: "Location",
+        type: "text",
+        placeholder: "City or region (optional)",
+        optional: true,
+      },
       { key: "rating", label: "Rating", type: "rating" },
       { key: "playedWith", label: "Played With", type: "text", placeholder: "Optional", optional: true },
     ],
@@ -86,7 +92,6 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
   },
   general: {
     internalPostType: "played-today",
-    hasPhoto: true,
     fields: [],
   },
 };
@@ -120,40 +125,33 @@ function parseComposerRating(value: string | undefined): number | null {
 
 export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
   const [expanded, setExpanded] = useState(false);
-  const [postType, setPostType] = useState<ComposerPostType>("introduction");
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    defaultValuesFor("introduction"),
-  );
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [postType, setPostType] = useState<ComposerPostType>("general");
+  const [values, setValues] = useState<Record<string, string>>(() => defaultValuesFor("general"));
+  const [showMoreTypes, setShowMoreTypes] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const photoInputId = id ? `${id}-photo` : "feed-composer-photo";
 
   const config = composerConfig[postType];
+  const isMoreTypeSelected = composerPostTypeMoreOrder.includes(postType);
 
   function reset() {
-    setPostType("introduction");
-    setValues(defaultValuesFor("introduction"));
-    setPhotoPreview(null);
+    setPostType("general");
+    setValues(defaultValuesFor("general"));
+    setShowMoreTypes(false);
     setExpanded(false);
     setSubmitError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function selectType(next: ComposerPostType) {
     setPostType(next);
     setValues(defaultValuesFor(next));
-    if (!composerConfig[next].hasPhoto) setPhotoPreview(null);
+    if (composerPostTypePrimaryOrder.includes(next)) {
+      setShowMoreTypes(false);
+    }
   }
 
   function updateValue(key: string, value: string) {
     setValues((current) => ({ ...current, [key]: value }));
-  }
-
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    setPhotoPreview(file ? URL.createObjectURL(file) : null);
   }
 
   const primaryField = config.primaryKey
@@ -192,7 +190,12 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
     }
 
     const details = config.fields
-      .filter((field) => field.key !== "rating" && values[field.key]?.trim())
+      .filter((field) => {
+        if (field.key === "rating") return false;
+        // Experience location is stored on the round / courseLocation, not as a Club/Course detail chip.
+        if (isReview && field.key === "location") return false;
+        return Boolean(values[field.key]?.trim());
+      })
       .map((field) => ({
         label: detailLabels[field.key] ?? field.label,
         value: values[field.key].trim(),
@@ -206,11 +209,13 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
     if (isReview) {
       const courseName = primaryValue || "Experience";
+      const locationValue = values.location?.trim() || "";
       const { data: roundData, error: roundError } = await submitMemberCourseRound({
         course_name: courseName,
-        location: values.location?.trim() || "",
+        location: locationValue,
         played_on: new Date().toISOString().slice(0, 10),
         note: message,
+        // DB column is required; Feed details omit Would play again unless the member sets it elsewhere.
         would_play_again: true,
         course_rating: normalizedRating ?? 10,
         golf_course_id: null,
@@ -230,11 +235,11 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       const { data, error } = await createCourseRoundFeedPost({
         roundId: roundData.id,
         courseName,
-        location: values.location?.trim() || "",
+        location: locationValue,
         note: message,
-        wouldPlayAgain: true,
         playedOn: new Date().toISOString().slice(0, 10),
         courseRating: normalizedRating ?? 10,
+        playedWith: values.playedWith?.trim() || undefined,
       });
 
       setIsSubmitting(false);
@@ -261,7 +266,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       details: details.length ? details : undefined,
       internalPostType: config.internalPostType,
       rating: normalizedRating,
-      playedWith: isReview ? values.playedWith?.trim() || undefined : undefined,
+      playedWith: undefined,
     });
 
     setIsSubmitting(false);
@@ -312,7 +317,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       {expanded ? (
         <div className="feed-composer-expand">
           <div className="feed-composer-types" role="group" aria-label="Choose a post type">
-            {composerPostTypeOrder.map((type) => (
+            {composerPostTypePrimaryOrder.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -323,7 +328,35 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                 {composerPostTypeLabels[type]}
               </button>
             ))}
+            <button
+              type="button"
+              className={`feed-composer-type feed-composer-type--more${showMoreTypes || isMoreTypeSelected ? " is-active" : ""}`}
+              onClick={() => setShowMoreTypes((current) => !current)}
+              aria-expanded={showMoreTypes || isMoreTypeSelected}
+            >
+              More
+            </button>
           </div>
+
+          {showMoreTypes || isMoreTypeSelected ? (
+            <div
+              className="feed-composer-types feed-composer-types--more"
+              role="group"
+              aria-label="More post types"
+            >
+              {composerPostTypeMoreOrder.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  className={`feed-composer-type${postType === type ? " is-active" : ""}`}
+                  onClick={() => selectType(type)}
+                  aria-pressed={postType === type}
+                >
+                  {composerPostTypeLabels[type]}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           {config.fields.length > 0 ? (
             <div className="feed-composer-grid">
@@ -393,30 +426,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
           ) : null}
 
           <div className="feed-composer-footer">
-            {config.hasPhoto ? (
-              <div className="feed-composer-photo">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="visually-hidden"
-                  id={photoInputId}
-                  onChange={handlePhotoChange}
-                />
-                <label htmlFor={photoInputId} className="feed-composer-photo-label">
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Selected photo" />
-                  ) : (
-                    <span>+ Photo</span>
-                  )}
-                </label>
-                <p className="feed-composer-photo-note">
-                  Photos attach when you share a full round experience from Courses.
-                </p>
-              </div>
-            ) : (
-              <span className="feed-composer-footer-note">Shared with approved members only</span>
-            )}
+            <span className="feed-composer-footer-note">Shared with approved members only</span>
             <div className="feed-composer-footer-actions">
               <button type="button" className="feed-composer-cancel" onClick={reset}>
                 Cancel
@@ -427,14 +437,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                 disabled={!canSubmit || isSubmitting}
                 aria-busy={isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
-                    <span className="feed-composer-submit-spinner" aria-hidden="true" />
-                    Posting…
-                  </>
-                ) : (
-                  "Post to Feed"
-                )}
+                {isSubmitting ? "Posting…" : "Post"}
               </button>
             </div>
           </div>
