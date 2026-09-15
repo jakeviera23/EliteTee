@@ -11,6 +11,7 @@ const MEMBER: RetrievedMember = {
   based_in: "Southampton, NY",
   regions: "",
   industry: "",
+  profession: "",
   golf_interests: "",
   business_interests: "",
   current_request: "",

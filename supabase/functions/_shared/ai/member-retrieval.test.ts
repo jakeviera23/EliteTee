@@ -14,6 +14,7 @@ function sampleMember(overrides: Partial<RetrievedMember> & Pick<RetrievedMember
     based_in: "",
     regions: "",
     industry: "",
+    profession: "",
     golf_interests: "",
     business_interests: "",
     current_request: "",

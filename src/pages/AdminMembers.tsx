@@ -314,6 +314,7 @@ export function AdminMembers() {
       based_in: form.based_in.trim(),
       regions: parseListInput(form.regions),
       industry: form.industry.trim(),
+      profession: "",
       golf_interests: parseListInput(form.golf_interests),
       business_interests: parseListInput(form.business_interests),
       current_request: form.current_request.trim(),

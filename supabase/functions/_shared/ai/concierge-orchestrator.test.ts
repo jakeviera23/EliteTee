@@ -17,6 +17,7 @@ const PALM_BEACH_MEMBER: RetrievedMember = {
   based_in: "Palm Beach, FL",
   regions: "",
   industry: "",
+  profession: "",
   golf_interests: "",
   business_interests: "",
   current_request: "",

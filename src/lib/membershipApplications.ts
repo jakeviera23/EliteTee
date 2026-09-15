@@ -310,6 +310,7 @@ export async function approveMembershipApplication(applicationId: string) {
     based_in: application.location,
     regions: application.location ? [application.location] : [],
     industry: "Not specified",
+    profession: "",
     golf_interests: application.golf_love ? [application.golf_love] : [],
     business_interests: [],
     current_request: application.why_join,

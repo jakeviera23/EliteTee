@@ -12,6 +12,7 @@ export type MemberProfileSelfUpdate = {
   primary_club: string;
   based_in: string;
   industry: string;
+  profession: string;
   additional_clubs: string[];
   regions: string[];
   golf_interests: string[];
@@ -104,6 +105,7 @@ export function normalizeMemberProfileRecord(row: Record<string, unknown>): Memb
     based_in: String(row.based_in ?? ""),
     regions: asStringArray(row.regions),
     industry: String(row.industry ?? ""),
+    profession: String(row.profession ?? ""),
     golf_interests: asStringArray(row.golf_interests),
     business_interests: asStringArray(row.business_interests),
     current_request: String(row.current_request ?? ""),
@@ -177,6 +179,7 @@ export function memberProfileToSelfUpdate(profile: MemberProfileRecord): MemberP
     primary_club: profile.primary_club,
     based_in: profile.based_in,
     industry: profile.industry,
+    profession: profile.profession ?? "",
     additional_clubs: profile.additional_clubs,
     regions: profile.regions,
     golf_interests: profile.golf_interests,
@@ -740,6 +743,7 @@ export type ApprovedMemberDirectoryProfile = Pick<
   | "based_in"
   | "regions"
   | "industry"
+  | "profession"
   | "golf_interests"
   | "business_interests"
   | "current_request"

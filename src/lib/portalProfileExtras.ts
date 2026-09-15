@@ -159,6 +159,7 @@ function buildLegacyExtrasMigration(
       useLocal && extras.primary_club.trim() ? extras.primary_club.trim() : profile.primary_club,
     based_in: useLocal && extras.based_in.trim() ? extras.based_in.trim() : profile.based_in,
     industry: useLocal && extras.headline.trim() ? extras.headline.trim() : profile.industry,
+    profession: profile.profession ?? "",
     traveling_to:
       useLocal && extras.traveling_to.trim() ? extras.traveling_to.trim() : profile.traveling_to,
     additional_clubs:

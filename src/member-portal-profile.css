@@ -227,6 +227,14 @@
   color: var(--et-text-secondary);
 }
 
+.et-profile-profession {
+  margin: 0 0 0.65rem;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: var(--et-text-primary);
+  font-weight: 500;
+}
+
 .et-profile-location {
   margin: 0;
   color: var(--profile-slate);

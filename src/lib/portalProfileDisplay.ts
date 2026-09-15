@@ -99,7 +99,7 @@ export function buildGolferProfileDisplay(
 
   return {
     name: member.full_name,
-    title: member.industry || "",
+    title: isMeaningfulProfileText(member.industry) ? member.industry.trim() : "",
     location: member.based_in,
     homeCourse: member.primary_club,
     bio: member.current_request || earlyStageCopy.profileOnboarding,

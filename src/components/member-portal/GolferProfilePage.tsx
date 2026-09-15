@@ -287,6 +287,9 @@ export function GolferProfilePage({
     Boolean(profileUserId) &&
     Boolean(onRequestIntroduction || onRespondToIntroduction || onMessageMember);
   const businessInterests = (memberProfile?.business_interests ?? []).filter(isMeaningfulProfileText);
+  const professionLabel = isMeaningfulProfileText(memberProfile?.profession)
+    ? String(memberProfile?.profession).trim()
+    : "";
   const headlineLabel = isMeaningfulProfileText(display.title) ? display.title.trim() : "";
   const homeClubLabel = isMeaningfulProfileText(display.homeCourse) ? display.homeCourse.trim() : "";
   const locationLabel = isMeaningfulProfileText(display.location) ? display.location.trim() : "";
@@ -307,7 +310,7 @@ export function GolferProfilePage({
     [feedPosts],
   );
   const hasGolfActivity = courseRounds.length > 0;
-  const showBusinessSection = businessInterests.length > 0;
+  const showBusinessSection = professionLabel.length > 0 || businessInterests.length > 0;
   const showConnectionInterestTags = connectionInterestTags.length > 0;
   const showConnectionInterestProse = connectionInterestProse.length > 0;
   const showHandicap = !isViewingOther;
@@ -612,7 +615,12 @@ export function GolferProfilePage({
 
               {showBusinessSection ? (
                 <ProfileSection title="Business" description="Professional context and interests.">
-                  <ProfileTagOrTextList items={businessInterests} />
+                  {professionLabel ? (
+                    <p className="et-profile-profession">{professionLabel}</p>
+                  ) : null}
+                  {businessInterests.length > 0 ? (
+                    <ProfileTagOrTextList items={businessInterests} />
+                  ) : null}
                 </ProfileSection>
               ) : null}
 

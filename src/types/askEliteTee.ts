@@ -18,6 +18,7 @@ export type AskEliteTeeMemberResult = {
   based_in: string;
   regions: string;
   industry: string;
+  profession?: string;
   golf_interests: string;
   business_interests: string;
   current_request: string;

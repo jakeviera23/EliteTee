@@ -85,6 +85,7 @@ export function CourseDetailMembersPlayed({
               based_in: "",
               regions: [],
               industry: "",
+              profession: "",
               golf_interests: [],
               business_interests: [],
               current_request: "",

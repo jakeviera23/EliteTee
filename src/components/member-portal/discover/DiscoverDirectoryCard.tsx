@@ -2,6 +2,7 @@ import {
   formatMemberActivitySummary,
   selectInterestChips,
 } from "../../../lib/discoverDirectory";
+import { isMeaningfulProfileText } from "../../../lib/portalProfileDisplay";
 import type { MemberRelationshipContext } from "../../../lib/memberRelationships";
 import type { MemberProfileRecord } from "../../../types/memberProfileRecord";
 import { MemberRelationshipActions } from "../MemberRelationshipActions";
@@ -35,6 +36,7 @@ export function DiscoverDirectoryCard({
   const location = member.based_in.trim();
   const club = member.primary_club.trim();
   const travel = member.traveling_to.trim();
+  const profession = isMeaningfulProfileText(member.profession) ? member.profession.trim() : "";
   const memberUserId = member.user_id?.trim() ?? "";
   const showRelationshipActions =
     Boolean(memberUserId) &&
@@ -57,6 +59,11 @@ export function DiscoverDirectoryCard({
           <DiscoverMemberAvatar member={member} size="md" />
           <div className="et-discover-card-copy">
             <h3 className="et-discover-card-name">{member.full_name}</h3>
+            {profession ? (
+              <p className="et-discover-card-profession" title={profession}>
+                {profession}
+              </p>
+            ) : null}
             <div className="et-discover-card-badges">
               {member.is_verified ? (
                 <span className="et-discover-badge et-discover-badge--verified">Verified</span>

@@ -18,6 +18,7 @@ function profile(overrides: Partial<MemberProfileRecord> = {}): MemberProfileRec
     based_in: "Southampton, NY",
     regions: ["Northeast"],
     industry: "Private equity",
+    profession: "",
     golf_interests: ["Weekend games", "Travel partners"],
     business_interests: ["Hospitality", "Real estate"],
     current_request: "Looking for thoughtful introductions in Florida.",
@@ -109,5 +110,13 @@ describe("buildGolferProfileDisplay", () => {
     expect(display.name).toBe("Your profile");
     expect(display.favoriteCourses).toEqual([]);
     expect(display.handicap).toBeUndefined();
+  });
+
+  it("hides Not specified industry placeholders from the headline", () => {
+    const display = buildGolferProfileDisplay(
+      profile({ industry: "Not specified", profession: "Real Estate" }),
+    );
+
+    expect(display.title).toBe("");
   });
 });

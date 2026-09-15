@@ -6,6 +6,8 @@ export type MemberProfileInsert = {
   based_in: string;
   regions: string[];
   industry: string;
+  /** Optional free-text business/profession. Empty string means unset. */
+  profession: string;
   golf_interests: string[];
   business_interests: string[];
   current_request: string;

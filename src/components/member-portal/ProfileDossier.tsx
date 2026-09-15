@@ -18,6 +18,7 @@ import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import { hydrateBucketListCourseIds } from "../../lib/portalCourseState";
 import { formatMembershipLabel } from "../../lib/portalDisplay";
 import { earlyStageCopy } from "../../data/portalSocial";
+import { isMeaningfulProfileText } from "../../lib/portalProfileDisplay";
 import { MemberClubAvatar } from "./MemberClubAvatar";
 import { ProfileCover } from "./ProfileCover";
 import { ProfileMediaUploadField } from "./ProfileMediaUploadField";
@@ -27,6 +28,7 @@ import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 type ProfileFormState = {
   full_name: string;
   headline: string;
+  profession: string;
   based_in: string;
   primary_club: string;
   traveling_to: string;
@@ -52,6 +54,7 @@ function profileToFormState(profile: MemberProfileRecord): ProfileFormState {
   return {
     full_name: profile.full_name ?? "",
     headline: profile.industry ?? "",
+    profession: profile.profession ?? "",
     based_in: profile.based_in ?? "",
     primary_club: profile.primary_club ?? "",
     traveling_to: profile.traveling_to ?? "",
@@ -77,6 +80,11 @@ function buildProfileUpdates(
     primary_club: form.primary_club.trim(),
     based_in: form.based_in.trim(),
     industry: form.headline.trim(),
+    profession: buildTextFieldUpdate({
+      formValue: form.profession,
+      initialFormValue: initialForm.profession,
+      existingValue: profile.profession,
+    }),
     traveling_to: buildTextFieldUpdate({
       formValue: form.traveling_to,
       initialFormValue: initialForm.traveling_to,
@@ -429,7 +437,9 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
           </div>
           <div className="portal-profile-edit-preview-identity">
             <h3>{form.full_name || profile.full_name}</h3>
-            {form.headline ? <p className="portal-profile-edit-headline">{form.headline}</p> : null}
+            {isMeaningfulProfileText(form.headline) ? (
+              <p className="portal-profile-edit-headline">{form.headline.trim()}</p>
+            ) : null}
             <span className="portal-golfer-member-badge">
               {formatMembershipLabel(profile.membership_status)}
             </span>
@@ -576,6 +586,15 @@ export function ProfileDossier({ isActive = true, onSaved }: ProfileDossierProps
         <section className="portal-profile-form-card et-profile-form-card">
           <h3 className="portal-profile-form-card-title et-profile-form-card-title">Business</h3>
           <div className="portal-profile-form-grid et-profile-form-grid">
+            <label className="portal-profile-field portal-profile-field--full">
+              <span>Business / Profession</span>
+              <input
+                type="text"
+                value={form.profession}
+                onChange={(event) => updateField("profession", event.target.value)}
+                placeholder="Real Estate, Finance, Technology, Entrepreneur / Founder…"
+              />
+            </label>
             <label className="portal-profile-field portal-profile-field--full">
               <span>Business interests</span>
               <textarea
