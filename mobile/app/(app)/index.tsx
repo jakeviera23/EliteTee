@@ -212,7 +212,7 @@ export default function HomeScreen() {
     <>
       <BrandedHeader
         title="Home"
-        subtitle="From the network"
+        subtitle="Rounds, travel, and conversation from the network."
         right={
           <Pressable onPress={() => router.push("/notifications")} style={styles.iconButton}>
             <Text style={styles.iconButtonLabel}>Alerts</Text>
@@ -220,20 +220,28 @@ export default function HomeScreen() {
         }
       />
 
-      <View style={styles.identityCard}>
-        <View style={styles.identityRow}>
-          <MemberAvatar
-            name={greetingName || "You"}
-            imageUrl={profile?.club_logo_url}
-            size={48}
-          />
-          <View style={styles.identityCopy}>
-            <Text style={styles.identityEyebrow}>Signed in as</Text>
-            {greetingName ? <Text style={styles.identityName}>{greetingName}</Text> : null}
-            <Text style={styles.identityMeta}>{identityMeta}</Text>
+      {greetingName || identityMeta ? (
+        <View style={styles.identityCard}>
+          <View style={styles.identityRow}>
+            <MemberAvatar
+              name={greetingName || "You"}
+              imageUrl={profile?.club_logo_url}
+              size={40}
+            />
+            <View style={styles.identityCopy}>
+              <Text style={styles.identityEyebrow}>Signed in</Text>
+              {greetingName ? (
+                <Text style={styles.identityName} numberOfLines={1}>
+                  {greetingName}
+                </Text>
+              ) : null}
+              <Text style={styles.identityMeta} numberOfLines={1}>
+                {identityMeta}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      ) : null}
 
       {showInitialLoading ? <LoadingState label="Loading member activity…" /> : null}
 
@@ -330,16 +338,12 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   identityCard: {
-    padding: spacing.xl,
-    borderRadius: radii.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.md,
     backgroundColor: colors.bgSurface,
     borderWidth: 1,
     borderColor: colors.borderHairline,
-    shadowColor: colors.shadowSm,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 1,
   },
   identityRow: {
     flexDirection: "row",
@@ -348,24 +352,26 @@ const styles = StyleSheet.create({
   },
   identityCopy: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 2,
+    minWidth: 0,
   },
   identityEyebrow: {
     fontFamily: typography.sansMedium,
-    fontSize: 11,
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 1.1,
     textTransform: "uppercase",
     color: colors.gold,
   },
   identityName: {
-    fontFamily: typography.serif,
-    fontSize: 24,
+    fontFamily: typography.serifSemibold,
+    fontSize: 20,
+    letterSpacing: -0.3,
     color: colors.textPrimary,
   },
   identityMeta: {
     fontFamily: typography.sans,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     color: colors.textSecondary,
   },
   iconButton: {
@@ -378,7 +384,7 @@ const styles = StyleSheet.create({
   iconButtonLabel: {
     fontFamily: typography.sansMedium,
     fontSize: 12,
-    color: colors.gold,
+    color: colors.forest,
     letterSpacing: 0.4,
   },
   errorCard: {

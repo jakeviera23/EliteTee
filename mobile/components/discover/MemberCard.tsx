@@ -98,10 +98,10 @@ export function MemberCard({ member, onPress, matchReason }: MemberCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bgSurface,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.borderHairline,
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   pressed: {
     opacity: 0.92,
@@ -123,8 +123,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   name: {
-    fontFamily: typography.sansSemibold,
-    fontSize: 16,
+    fontFamily: typography.serifSemibold,
+    fontSize: 17,
+    letterSpacing: -0.2,
     color: colors.textPrimary,
     flexShrink: 1,
   },

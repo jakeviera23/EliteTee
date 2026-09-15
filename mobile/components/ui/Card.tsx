@@ -30,26 +30,21 @@ export function SectionTitle({ children }: { children: string }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.borderHairline,
   },
   surface: {
     backgroundColor: colors.bgSurface,
-    shadowColor: colors.shadowSm,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
   },
   elevated: {
     backgroundColor: colors.bgElevated,
   },
   padded: {
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
   sectionTitle: {
-    fontFamily: typography.sansSemibold,
+    fontFamily: typography.serifSemibold,
     fontSize: typography.h3,
     color: colors.textPrimary,
     letterSpacing: -0.2,

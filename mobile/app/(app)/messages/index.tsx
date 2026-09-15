@@ -92,6 +92,7 @@ export default function MessagesScreen() {
       title="Messages"
       subtitle="Private conversations with members."
       branded
+      compactHeader
       refreshing={refreshing}
       onRefresh={() => void loadConversations({ pull: true })}
     >
@@ -170,7 +171,7 @@ export default function MessagesScreen() {
                   ) : null}
                   <Text
                     style={[styles.preview, isUnread ? styles.previewUnread : null]}
-                    numberOfLines={2}
+                    numberOfLines={1}
                   >
                     {conversation.lastMessageBody}
                   </Text>
@@ -193,9 +194,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    backgroundColor: colors.bgElevated,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.md,
+    backgroundColor: colors.bgSurface,
     borderWidth: 1,
     borderColor: colors.borderHairline,
   },
@@ -222,7 +224,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    gap: 2,
+    gap: 1,
     minWidth: 0,
   },
   topLine: {
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.sans,
     fontSize: 13,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   previewUnread: {
     fontFamily: typography.sansMedium,

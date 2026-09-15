@@ -54,5 +54,6 @@ const styles = StyleSheet.create({
     fontSize: typography.bodySm,
     lineHeight: 20,
     color: colors.textSecondary,
+    maxWidth: "95%",
   },
 });

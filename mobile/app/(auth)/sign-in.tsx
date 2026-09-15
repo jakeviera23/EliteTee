@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,8 +15,6 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { Screen } from "@/components/ui/Screen";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { useAuth } from "@/hooks/AuthProvider";
-
-const wordmarkSource = require("../../assets/elitetee-logo.png");
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -58,8 +55,8 @@ export default function SignInScreen() {
         style={styles.fill}
       >
         <View style={styles.hero}>
-          <Image source={wordmarkSource} style={styles.wordmark} resizeMode="contain" />
-          <EliteTeeMark size={56} />
+          <EliteTeeMark size={64} />
+          <Text style={styles.brand}>EliteTee</Text>
           <Text style={styles.tagline}>Private member access for discerning golfers.</Text>
         </View>
 
@@ -148,14 +145,17 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  wordmark: {
-    width: 280,
-    height: 54,
-    tintColor: colors.forest,
+  brand: {
+    marginTop: spacing.xs,
+    fontFamily: typography.serifSemibold,
+    fontSize: 34,
+    letterSpacing: -0.6,
+    color: colors.textPrimary,
   },
   tagline: {
+    maxWidth: 280,
     fontFamily: typography.sans,
     fontSize: 15,
     lineHeight: 22,

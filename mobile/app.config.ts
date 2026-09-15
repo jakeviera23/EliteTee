@@ -73,13 +73,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: "club.elitetee.mobile",
     infoPlist: {
       CFBundleDisplayName: "EliteTee",
+      ITSAppUsesNonExemptEncryption: false,
       NSPhotoLibraryUsageDescription:
         "EliteTee uses your photo library so you can attach round photos to member posts.",
     },
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: "#181715",
+      backgroundColor: "#1c2b24",
       foregroundImage: "./assets/android-icon-foreground.png",
       backgroundImage: "./assets/android-icon-background.png",
       monochromeImage: "./assets/android-icon-monochrome.png",

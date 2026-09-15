@@ -1,5 +1,6 @@
 import { useRef, useState, type RefObject } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -35,6 +36,7 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [failedUrls, setFailedUrls] = useState<Record<string, true>>({});
+  const [loadedUrls, setLoadedUrls] = useState<Record<string, true>>({});
   const heroListRef = useRef<FlatList<string>>(null);
   const lightboxListRef = useRef<FlatList<string>>(null);
 
@@ -136,12 +138,20 @@ export function FeedPhotoGallery({ imageUrls, rating, contentWidth }: FeedPhotoG
           onScrollToIndexFailed={handleScrollToIndexFailed}
           renderItem={({ item, index }) => (
             <Pressable onPress={() => openLightbox(index)}>
-              <Image
-                source={{ uri: item }}
-                style={[styles.hero, { width }]}
-                resizeMode="cover"
-                onError={() => markFailed(item)}
-              />
+              <View style={[styles.heroFrame, { width }]}>
+                {!loadedUrls[item] ? (
+                  <View style={styles.heroPlaceholder} accessibilityLabel="Loading photo">
+                    <ActivityIndicator color={colors.forest} />
+                  </View>
+                ) : null}
+                <Image
+                  source={{ uri: item }}
+                  style={[styles.hero, { width }, !loadedUrls[item] ? styles.heroPending : null]}
+                  resizeMode="cover"
+                  onLoad={() => setLoadedUrls((current) => ({ ...current, [item]: true }))}
+                  onError={() => markFailed(item)}
+                />
+              </View>
             </Pressable>
           )}
         />
@@ -228,10 +238,24 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  hero: {
-    height: 220,
+  heroFrame: {
+    height: 200,
     borderRadius: radii.md,
-    backgroundColor: colors.bgInset,
+    overflow: "hidden",
+    backgroundColor: colors.forestSoft,
+  },
+  heroPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.forestSoft,
+  },
+  hero: {
+    height: 200,
+    borderRadius: radii.md,
+  },
+  heroPending: {
+    opacity: 0,
   },
   ratingBadge: {
     position: "absolute",

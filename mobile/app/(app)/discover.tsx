@@ -451,8 +451,9 @@ export default function DiscoverScreen() {
   return (
     <Screen
       title="Discover"
-      subtitle="Find members and courses worth connecting around."
+      subtitle="Explore members by club, location, interests, and travel."
       branded
+      compactHeader
       scroll={false}
       contentStyle={styles.screen}
     >
