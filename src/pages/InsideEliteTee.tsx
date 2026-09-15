@@ -6,6 +6,12 @@ import {
   consumeAuthEntryCallback,
   shouldEnterSetPasswordMode,
 } from "../lib/completeAuthEntry";
+import {
+  clearPasswordRecoveryPending,
+  hasPasswordRecoveryVerifiedIntent,
+  isPasswordRecoveryPending,
+  shouldAutoRedirectAuthenticatedSessionToPortal,
+} from "../lib/passwordRecoveryIntent";
 import { getEmailRedirectTo } from "../lib/siteUrl";
 import "../inside-elitetee.css";
 
@@ -66,14 +72,14 @@ export function InsideEliteTee() {
     "sign-in" | "request-reset" | "validating-recovery" | "set-password"
   >(
     () =>
-      loginState?.recoveryVerified
+      hasPasswordRecoveryVerifiedIntent(loginState?.recoveryVerified)
         ? "set-password"
         : new URLSearchParams(window.location.search).get("recovery") === "1"
           ? "validating-recovery"
           : "sign-in",
   );
   const [recoverySessionVerified, setRecoverySessionVerified] = useState(
-    () => Boolean(loginState?.recoveryVerified),
+    () => hasPasswordRecoveryVerifiedIntent(loginState?.recoveryVerified),
   );
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -86,7 +92,9 @@ export function InsideEliteTee() {
       return;
     }
 
-    if (shouldEnterSetPasswordMode({ recoveryVerifiedFromRouter: Boolean(loginState?.recoveryVerified) })) {
+    const recoveryVerified = hasPasswordRecoveryVerifiedIntent(loginState?.recoveryVerified);
+
+    if (shouldEnterSetPasswordMode({ recoveryVerifiedFromRouter: recoveryVerified })) {
       setRecoverySessionVerified(true);
       setAccessMode("set-password");
       setLoginError(null);
@@ -99,7 +107,7 @@ export function InsideEliteTee() {
 
     let active = true;
     const expectsRecovery = new URLSearchParams(window.location.search).get("recovery") === "1";
-    let recoveryValidated = Boolean(loginState?.recoveryVerified);
+    let recoveryValidated = recoveryVerified;
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
@@ -112,7 +120,15 @@ export function InsideEliteTee() {
         return;
       }
 
-      if (event === "SIGNED_IN" && session && !expectsRecovery && !loginState?.recoveryVerified) {
+      // Never portal-redirect while recovery is still pending (router state or sessionStorage).
+      if (
+        event === "SIGNED_IN" &&
+        session &&
+        shouldAutoRedirectAuthenticatedSessionToPortal({
+          expectsRecoveryQuery: expectsRecovery,
+          recoveryVerifiedFromRouter: loginState?.recoveryVerified,
+        })
+      ) {
         void (async () => {
           const activation = await finishInviteActivationAfterAuth();
           if (!active) return;
@@ -128,7 +144,12 @@ export function InsideEliteTee() {
     void supabase.auth.getSession().then(async ({ data: sessionData }) => {
       if (!active) return;
 
-      if (expectsRecovery) {
+      if (
+        !shouldAutoRedirectAuthenticatedSessionToPortal({
+          expectsRecoveryQuery: expectsRecovery,
+          recoveryVerifiedFromRouter: loginState?.recoveryVerified,
+        })
+      ) {
         return;
       }
 
@@ -275,6 +296,7 @@ export function InsideEliteTee() {
       }
 
       consumeAuthEntryCallback();
+      clearPasswordRecoveryPending();
       setRecoverySessionVerified(false);
 
       const activation = await finishInviteActivationAfterAuth();
@@ -467,10 +489,19 @@ export function InsideEliteTee() {
                     type="button"
                     className="inside-gate-secondary-link"
                     onClick={() => {
+                      const leavingRecovery =
+                        accessMode === "set-password" || isPasswordRecoveryPending();
+                      if (leavingRecovery) {
+                        clearPasswordRecoveryPending();
+                        setRecoverySessionVerified(false);
+                        void supabase?.auth.signOut();
+                      }
                       setAccessMode("sign-in");
                       setLoginError(null);
                       setAccessMessage(null);
-                      if (location.search) navigate("/login", { replace: true });
+                      setPassword("");
+                      setConfirmPassword("");
+                      navigate("/login", { replace: true });
                     }}
                   >
                     Back to sign in

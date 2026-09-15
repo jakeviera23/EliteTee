@@ -5,6 +5,7 @@ import {
   completeAuthEntryFromCallback,
   consumeAuthEntryCallback,
 } from "../lib/completeAuthEntry";
+import { markPasswordRecoveryPending } from "../lib/passwordRecoveryIntent";
 import { RouteLoading } from "./RouteLoading";
 
 export function AuthEntryHandler({ children }: { children: ReactNode }) {
@@ -34,6 +35,8 @@ export function AuthEntryHandler({ children }: { children: ReactNode }) {
         if (result.kind === "portal") {
           navigateRef.current("/member-portal", { replace: true });
         } else if (result.kind === "recovery") {
+          // Durable flag survives AuthCallback races that can drop router state.
+          markPasswordRecoveryPending();
           navigateRef.current("/login", { replace: true, state: { recoveryVerified: true } });
         } else if (result.kind === "login_error") {
           navigateRef.current("/login", { replace: true, state: { authError: result.message } });

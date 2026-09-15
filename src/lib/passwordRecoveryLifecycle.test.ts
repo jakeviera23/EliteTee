@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@supabase/supabase-js";
 import {
   captureAuthCallbackFromLocation,
@@ -12,6 +12,10 @@ import {
   shouldEnterSetPasswordMode,
   type AuthEntryClient,
 } from "./completeAuthEntry";
+import {
+  clearPasswordRecoveryPending,
+  markPasswordRecoveryPending,
+} from "./passwordRecoveryIntent";
 import { INVITE_ACTIVATION_RECOVERY_MESSAGE } from "./inviteCompletion";
 
 const mockSession = {
@@ -33,6 +37,34 @@ const mockSession = {
 vi.mock("./supabase", () => ({
   supabase: null,
 }));
+
+function installMemorySessionStorage() {
+  const map = new Map<string, string>();
+  Object.defineProperty(globalThis, "sessionStorage", {
+    value: {
+      get length() {
+        return map.size;
+      },
+      clear() {
+        map.clear();
+      },
+      getItem(key: string) {
+        return map.has(key) ? map.get(key)! : null;
+      },
+      key(index: number) {
+        return Array.from(map.keys())[index] ?? null;
+      },
+      removeItem(key: string) {
+        map.delete(key);
+      },
+      setItem(key: string, value: string) {
+        map.set(key, String(value));
+      },
+    } satisfies Storage,
+    configurable: true,
+    writable: true,
+  });
+}
 
 function createAuth(): AuthEntryClient {
   return {
@@ -78,6 +110,7 @@ async function handleAuthEntryOnce(
   if (result.kind === "portal") {
     navigations.push({ path: "/member-portal" });
   } else if (result.kind === "recovery") {
+    markPasswordRecoveryPending();
     navigations.push({ path: "/login", state: { recoveryVerified: true } });
   } else if (result.kind === "login_error") {
     navigations.push({ path: "/login", state: { authError: result.message } });
@@ -86,9 +119,14 @@ async function handleAuthEntryOnce(
   return { navigations, result };
 }
 
+beforeEach(() => {
+  installMemorySessionStorage();
+});
+
 afterEach(() => {
   resetAuthEntryInFlightForTests();
   clearCapturedAuthCallback();
+  clearPasswordRecoveryPending();
 });
 
 describe("password recovery lifecycle", () => {
