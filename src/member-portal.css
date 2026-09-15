@@ -123,6 +123,12 @@
   border-color: var(--inside-border-gold);
 }
 
+/* Soften Ask · Beta vs primary member tabs without removing it. */
+.portal-tab--soft:not(.is-active) {
+  opacity: 0.72;
+  font-weight: 400;
+}
+
 .portal-tab-label {
   position: relative;
   display: inline-flex;
@@ -3605,6 +3611,10 @@
 
   .portal-bottom-nav-btn.is-active {
     color: var(--inside-gold);
+  }
+
+  .portal-bottom-nav-btn--soft:not(.is-active) {
+    opacity: 0.72;
   }
 
   .portal-bottom-nav-btn--post .portal-bottom-nav-icon {

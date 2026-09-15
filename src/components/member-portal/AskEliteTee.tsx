@@ -245,6 +245,7 @@ export function AskEliteTee({
         <h2 id="ask-elitetee-heading" className="et-ask-title">
           {askCopy.title}
         </h2>
+        <p className="et-ask-beta-note">{askCopy.betaNote}</p>
         <p className="et-ask-tagline">{askCopy.tagline}</p>
         <p className="et-ask-lead">{askCopy.lead}</p>
       </header>

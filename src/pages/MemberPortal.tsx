@@ -407,7 +407,7 @@ function MemberPortalContent() {
       case "discover":
         return { type: "portal", tab: "discover", label: "Back to Discover" };
       case "ask":
-        return { type: "portal", tab: "ask", label: "Back to Ask EliteTee" };
+        return { type: "portal", tab: "ask", label: "Back to Ask EliteTee — Beta" };
       case "courses":
         return {
           type: "route",
@@ -692,7 +692,9 @@ function MemberPortalContent() {
               <button
                 key={tab.id}
                 type="button"
-                className={`portal-tab${resolvedView === tab.id ? " is-active" : ""}`}
+                className={`portal-tab${tab.id === "ask" ? " portal-tab--soft" : ""}${
+                  resolvedView === tab.id ? " is-active" : ""
+                }`}
                 onClick={() => transitionTo(tab.id)}
                 aria-current={resolvedView === tab.id ? "page" : undefined}
               >
@@ -784,7 +786,9 @@ function MemberPortalContent() {
           <button
             key={tab.id}
             type="button"
-            className={`portal-bottom-nav-btn${resolvedView === tab.id ? " is-active" : ""}`}
+            className={`portal-bottom-nav-btn${tab.id === "ask" ? " portal-bottom-nav-btn--soft" : ""}${
+              resolvedView === tab.id ? " is-active" : ""
+            }`}
             onClick={() => handleMobileNav(tab.id)}
             aria-current={resolvedView === tab.id ? "page" : undefined}
           >

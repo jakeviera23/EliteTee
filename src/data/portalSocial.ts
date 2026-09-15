@@ -162,7 +162,9 @@ export const introductionsCopy = {
 /** Ask EliteTee — private concierge copy */
 export const askCopy = {
   eyebrow: "Private Concierge",
-  title: "Ask EliteTee",
+  title: "Ask EliteTee — Beta",
+  betaNote:
+    "Ask EliteTee is still being improved and may not always provide complete or accurate answers.",
   lead: "Discover members, courses, and meaningful connections through EliteTee intelligence.",
   tagline: "Your private golf concierge.",
   suggestedLabel: "Suggested questions",

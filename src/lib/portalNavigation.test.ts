@@ -23,6 +23,17 @@ describe("portal navigation", () => {
     });
   });
 
+  it("labels Ask as beta in desktop and mobile navigation", () => {
+    expect(PORTAL_DESKTOP_PRIMARY_TABS.find((tab) => tab.id === "ask")).toEqual({
+      id: "ask",
+      label: "Ask · Beta",
+    });
+    expect(PORTAL_MOBILE_BOTTOM_TABS.find((tab) => tab.id === "ask")).toEqual({
+      id: "ask",
+      label: "Ask · Beta",
+    });
+  });
+
   it("removes messages from desktop primary and mobile bottom navigation", () => {
     expect(portalPrimaryTabIds(PORTAL_DESKTOP_PRIMARY_TABS)).not.toContain("messages");
     expect(portalPrimaryTabIds(PORTAL_MOBILE_BOTTOM_TABS)).not.toContain("messages");

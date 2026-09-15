@@ -11,7 +11,7 @@ export type PortalPrimaryTab =
 export const PORTAL_DESKTOP_PRIMARY_TABS: { id: PortalPrimaryTab; label: string }[] = [
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
-  { id: "ask", label: "Ask EliteTee" },
+  { id: "ask", label: "Ask · Beta" },
   { id: "courses", label: "Courses" },
   { id: "introductions", label: "Introductions" },
   { id: "profile", label: "Profile" },
@@ -21,7 +21,7 @@ export const PORTAL_MOBILE_BOTTOM_TABS: { id: PortalPrimaryTab; label: string }[
   { id: "feed", label: "Feed" },
   { id: "discover", label: "Discover" },
   { id: "introductions", label: "Intros" },
-  { id: "ask", label: "Ask" },
+  { id: "ask", label: "Ask · Beta" },
   { id: "courses", label: "Courses" },
   { id: "profile", label: "Profile" },
 ];
