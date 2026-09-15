@@ -4,7 +4,7 @@ const previewCards = [
     sectionId: "feed-preview",
     title: "Feed",
     description:
-      "Share rounds, request introductions, find games while traveling, and follow where members are playing.",
+      "Share rounds, request introductions, and see where members are playing.",
     src: "/assets/homepage/feed.png",
     alt: "EliteTee Feed — member rounds, introductions, and activity",
     width: 1024,

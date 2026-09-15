@@ -10,7 +10,6 @@ import { PortalIntroductionRequests } from "../components/member-portal/PortalIn
 import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { PortalNotificationsPanel } from "../components/member-portal/PortalNotificationsPanel";
 import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
-import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import { PortalToastProvider, usePortalToast } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { introductionsCopy } from "../data/portalSocial";
@@ -814,9 +813,7 @@ function MemberPortalContent() {
 export function MemberPortal() {
   return (
     <PortalToastProvider>
-      <ComingSoonProvider>
-        <MemberPortalContent />
-      </ComingSoonProvider>
+      <MemberPortalContent />
     </PortalToastProvider>
   );
 }

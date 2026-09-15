@@ -40,7 +40,7 @@ export const platformFeatures: PlatformFeature[] = [
     id: "community",
     title: "Connect With Serious Golfers",
     description:
-      "Follow members, build relationships, and message golfers who share your standards for the game.",
+      "Request introductions, build relationships, and message golfers who share your standards for the game.",
   },
   {
     id: "network",
@@ -83,19 +83,19 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
     step: "04",
     title: "Share & Discover",
     description:
-      "Post your rounds and travel, explore courses through shared experiences, and follow golf journeys as members join.",
+      "Post your rounds and travel, explore courses through shared experiences, and see golf journeys as members join.",
   },
   {
     step: "05",
     title: "Connect Through Golf",
     description:
-      "Build relationships, message members, and find golfers to play with — connection through the game.",
+      "Build relationships through introductions and messages — connection through the game.",
   },
 ];
 
 export const publicEarlyStageCopy = {
   earlyCommunity: "Early community",
-  memberAccessSoon: "Member access opening soon",
+  memberAccessSoon: "Private member portal",
   applicationsReviewed: "Applications reviewed thoughtfully",
   activityGrows:
     "A private golf network built around trusted experience, meaningful connections, and the game.",
@@ -105,7 +105,7 @@ export const featureHeroes: FeatureHero[] = [
   {
     title: "Rounds worth sharing",
     description:
-      "Follow golf experiences from members who take the game seriously — rounds, travel, and course discovery as the community grows.",
+      "See golf experiences from members who take the game seriously — rounds, travel, and course discovery as the community grows.",
     image: photos.clubhouseSunsetLuxury,
     alt: "Golfer overlooking a coastal fairway at sunset",
     objectPosition: "center 50%",
@@ -127,7 +127,7 @@ export const memberStandards: string[] = [
   "Share golf experiences in good faith — rounds, travel, courses, and the culture of the game.",
   "Treat fellow members with the courtesy expected on and off the course.",
   "Optional verification supports trust within a curated community of serious golfers.",
-  "Connect to play together and build relationships through shared golf experiences.",
+  "Connect through introductions and shared golf experiences.",
 ];
 
 export const navLinks = [

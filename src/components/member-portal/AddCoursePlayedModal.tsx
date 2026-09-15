@@ -601,22 +601,6 @@ export function AddCoursePlayedModal({
               />
             </ExperienceSection>
 
-            <ExperienceSection
-              step={4}
-              title={experienceCopy.detailsTitle}
-              description={experienceCopy.detailsLead}
-            >
-              <div className="et-experience-future-grid" aria-hidden="true">
-                {experienceCopy.futureFields.map((field) => (
-                  <div key={field.key} className="et-experience-future-field">
-                    <p className="et-experience-future-label">{field.label}</p>
-                    <p className="et-experience-future-soon">Later</p>
-                  </div>
-                ))}
-              </div>
-              <p className="et-experience-future-note">{experienceCopy.futureFieldsNote}</p>
-            </ExperienceSection>
-
             <div className="et-experience-footer">
               {error ? (
                 <p className="et-experience-error portal-course-played-error" role="alert">

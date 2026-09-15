@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
 import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
 import { PortalToastProvider, usePortalToast } from "../components/member-portal/PortalToastProvider";
-import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
 import { introductionsCopy } from "../data/portalSocial";
 import {
   fetchMemberRelationshipContext,
@@ -130,9 +129,7 @@ function MemberPublicProfileContent() {
 export function MemberPublicProfilePage() {
   return (
     <PortalToastProvider>
-      <ComingSoonProvider>
-        <MemberPublicProfileContent />
-      </ComingSoonProvider>
+      <MemberPublicProfileContent />
     </PortalToastProvider>
   );
 }

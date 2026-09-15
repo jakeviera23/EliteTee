@@ -22,7 +22,7 @@ describe("portal mobile layout structure", () => {
       "Feed",
       "Discover",
       "Intros",
-      "Ask",
+      "Ask · Beta",
       "Courses",
       "Profile",
     ]);
