@@ -77,7 +77,7 @@ export const membershipWorksSteps: MembershipWorksStep[] = [
     step: "03",
     title: "Join the Community",
     description:
-      "Approved members receive access to share rounds, discover courses, and connect with trusted golfers.",
+      "Approved members can access EliteTee on the web and the iPhone app, currently in private beta — then share rounds, discover courses, and connect with trusted golfers.",
   },
   {
     step: "04",
@@ -97,6 +97,9 @@ export const publicEarlyStageCopy = {
   earlyCommunity: "Early community",
   memberAccessSoon: "Member access opening soon",
   applicationsReviewed: "Applications reviewed thoughtfully",
+  iphonePrivateBeta: "Also available on iPhone — private beta",
+  approvedAccessChannels:
+    "Approved members can access EliteTee on the web and the iPhone app, currently in private beta.",
   activityGrows:
     "A private golf network built around trusted experience, meaningful connections, and the game.",
 } as const;

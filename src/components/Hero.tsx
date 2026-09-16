@@ -47,7 +47,7 @@ export function Hero() {
           </div>
           <p className="hero-cinematic-note">
             Not the biggest golf community — the highest-quality one. {publicEarlyStageCopy.earlyCommunity}
-            . {publicEarlyStageCopy.applicationsReviewed}.
+            . {publicEarlyStageCopy.applicationsReviewed}. {publicEarlyStageCopy.iphonePrivateBeta}.
           </p>
         </div>
       </div>

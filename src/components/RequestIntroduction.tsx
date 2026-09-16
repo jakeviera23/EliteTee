@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { publicEarlyStageCopy } from "../data/content";
 import { submitMembershipApplication } from "../lib/membershipApplications";
 
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
@@ -85,6 +86,9 @@ export function RequestIntroduction() {
           <p className="section-lead request-lead">
             EliteTee is a curated golf community for serious golfers to share rounds, discover
             courses, and build trusted relationships through the game.
+          </p>
+          <p className="section-note request-access-note">
+            {publicEarlyStageCopy.approvedAccessChannels}
           </p>
         </header>
 

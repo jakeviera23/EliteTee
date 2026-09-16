@@ -14,6 +14,7 @@ export function HowMembershipWorks() {
             <h2 id="membership-works-heading">Membership</h2>
             <p className="membership-works-lead">{membershipWorksLead}</p>
             <p className="section-note">{publicEarlyStageCopy.applicationsReviewed}</p>
+            <p className="section-note">{publicEarlyStageCopy.iphonePrivateBeta}.</p>
           </header>
         </div>
 

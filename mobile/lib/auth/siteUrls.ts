@@ -20,3 +20,8 @@ export function getLoginUrl(options?: { recovery?: boolean }) {
 export function getInviteUrl(token: string) {
   return `${getPublicSiteUrl()}/invite/${encodeURIComponent(token.trim())}`;
 }
+
+/** Public membership application on the EliteTee website. */
+export function getApplyUrl() {
+  return `${getPublicSiteUrl()}/#apply`;
+}

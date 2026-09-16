@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { Screen } from "@/components/ui/Screen";
 import { colors, radii, spacing, typography } from "@/constants/theme";
+import { getApplyUrl } from "@/lib/auth/siteUrls";
 import { useAuth } from "@/hooks/AuthProvider";
 
 export default function SignInScreen() {
@@ -125,6 +127,17 @@ export default function SignInScreen() {
               loading={submitting}
               disabled={!email.trim() || !password}
             />
+
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => {
+                void Linking.openURL(getApplyUrl());
+              }}
+              hitSlop={8}
+              style={styles.applyWrap}
+            >
+              <Text style={styles.applyLink}>Not a member? Apply to EliteTee</Text>
+            </Pressable>
           </View>
         )}
       </KeyboardAvoidingView>
@@ -214,6 +227,18 @@ const styles = StyleSheet.create({
     fontFamily: typography.sansMedium,
     fontSize: 14,
     color: colors.forest,
+  },
+  applyWrap: {
+    alignSelf: "center",
+    marginTop: spacing.sm,
+  },
+  applyLink: {
+    fontFamily: typography.sans,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
   error: {
     color: colors.error,
