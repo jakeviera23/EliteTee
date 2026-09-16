@@ -29,6 +29,8 @@ Once your account is active:
 2. Introduce yourself in the Feed
 3. Explore courses and connect with other founding members
 
+You can use EliteTee on the web and the iPhone app during the private beta.
+
 We're building something intentional — thank you for being among the first.
 
 — Jake Viera
