@@ -171,6 +171,7 @@ export async function fetchDiscoverableMembers(): Promise<{
     .from("member_profiles")
     .select(DISCOVER_SELECT)
     .eq("portal_access_enabled", true)
+    .eq("directory_visible", true)
     .order("full_name", { ascending: true });
 
   if (error) {
