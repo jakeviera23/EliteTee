@@ -712,7 +712,11 @@ const PORTAL_APPROVED_MEMBER_SELECT_CORE = `
   updated_at
 `;
 
-function buildPortalApprovedMemberSelect(options: { includeCoverPhoto: boolean; includeCreatedAt: boolean }) {
+function buildPortalApprovedMemberSelect(options: {
+  includeCoverPhoto: boolean;
+  includeCreatedAt: boolean;
+  requireDirectoryVisible?: boolean;
+}) {
   const columns = PORTAL_APPROVED_MEMBER_SELECT_CORE.replace(/\s+/g, " ")
     .split(",")
     .map((column) => column.trim())
@@ -831,7 +835,8 @@ async function fetchApprovedMemberRowsViaTable(userIds: string[]) {
     .from("member_profiles")
     .select(PORTAL_APPROVED_MEMBER_SELECT)
     .in("user_id", normalizedIds)
-    .eq("portal_access_enabled", true);
+    .eq("portal_access_enabled", true)
+    .eq("directory_visible", true);
 
   if (error) {
     return { data: [] as ApprovedMemberDirectoryProfile[], error };
@@ -931,26 +936,37 @@ function isMissingCreatedAtColumnError(error: unknown) {
   return isMissingColumnError(error) && message.includes("created_at");
 }
 
+function isMissingDirectoryVisibleColumnError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return isMissingColumnError(error) && message.includes("directory_visible");
+}
+
 async function fetchPortalApprovedMemberRows() {
   if (!supabase) {
     return { data: [] as Record<string, unknown>[], error: new Error("Supabase is not configured.") };
   }
 
   const selectAttempts = [
-    { includeCoverPhoto: true, includeCreatedAt: true },
-    { includeCoverPhoto: false, includeCreatedAt: true },
-    { includeCoverPhoto: false, includeCreatedAt: false },
+    { includeCoverPhoto: true, includeCreatedAt: true, requireDirectoryVisible: true },
+    { includeCoverPhoto: false, includeCreatedAt: true, requireDirectoryVisible: true },
+    { includeCoverPhoto: false, includeCreatedAt: false, requireDirectoryVisible: true },
+    { includeCoverPhoto: true, includeCreatedAt: true, requireDirectoryVisible: false },
   ];
 
   let lastError: unknown = null;
 
   for (const attempt of selectAttempts) {
     const select = buildPortalApprovedMemberSelect(attempt);
-    const result = await supabase
+    let query = supabase
       .from("member_profiles")
       .select(select)
-      .eq("portal_access_enabled", true)
-      .order("full_name", { ascending: true });
+      .eq("portal_access_enabled", true);
+
+    if (attempt.requireDirectoryVisible) {
+      query = query.eq("directory_visible", true);
+    }
+
+    const result = await query.order("full_name", { ascending: true });
 
     if (!result.error) {
       if (import.meta.env.DEV && attempt !== selectAttempts[0]) {
@@ -963,8 +979,9 @@ async function fetchPortalApprovedMemberRows() {
 
     const missingCoverPhoto = isMissingCoverPhotoColumnError(result.error);
     const missingCreatedAt = isMissingCreatedAtColumnError(result.error);
+    const missingDirectoryVisible = isMissingDirectoryVisibleColumnError(result.error);
 
-    if (!missingCoverPhoto && !missingCreatedAt) {
+    if (!missingCoverPhoto && !missingCreatedAt && !missingDirectoryVisible) {
       return result;
     }
   }

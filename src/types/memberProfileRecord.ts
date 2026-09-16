@@ -21,6 +21,8 @@ export type MemberProfileInsert = {
   is_verified: boolean;
   founding_member_number?: string | null;
   portal_access_enabled?: boolean;
+  /** When false, excluded from Discover/directory while remaining portal-enabled. */
+  directory_visible?: boolean;
 };
 
 export type MemberProfileRecord = Omit<
@@ -31,6 +33,7 @@ export type MemberProfileRecord = Omit<
   user_id: string | null;
   founding_member_number: string | null;
   portal_access_enabled: boolean;
+  directory_visible?: boolean;
   created_at: string;
   updated_at: string;
   handicap: string;
