@@ -286,10 +286,21 @@ export async function resolveFeedPostsMedia(posts: MobileFeedPost[]) {
 
 export { stripFeedPostSignedMedia } from "../feedSignedMedia";
 
+export type FetchMemberFeedPostsOptions = {
+  limit?: number;
+  /** Zero-based offset for View All pagination. */
+  offset?: number;
+};
+
 export async function fetchMemberFeedPostsForUser(
   userId: string,
-  limit = 3,
-): Promise<{ data: MobileFeedPost[]; error: Error | null }> {
+  limitOrOptions: number | FetchMemberFeedPostsOptions = 3,
+): Promise<{ data: MobileFeedPost[]; error: Error | null; hasMore: boolean }> {
+  const options: FetchMemberFeedPostsOptions =
+    typeof limitOrOptions === "number" ? { limit: limitOrOptions } : limitOrOptions;
+  const limit = Math.max(1, options.limit ?? 3);
+  const offset = Math.max(0, options.offset ?? 0);
+
   const client = requireSupabase();
   const { data, error } = await client
     .from("member_feed_posts")
@@ -299,10 +310,10 @@ export async function fetchMemberFeedPostsForUser(
     )
     .eq("user_id", userId.trim())
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
   if (error) {
-    return { data: [], error };
+    return { data: [], error, hasMore: false };
   }
 
   const posts = (data ?? []).map((row) => {
@@ -323,6 +334,7 @@ export async function fetchMemberFeedPostsForUser(
   return {
     data: await hydrateFeedPosts(posts),
     error: null,
+    hasMore: posts.length === limit,
   };
 }
 

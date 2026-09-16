@@ -99,9 +99,29 @@ async function fetchIntroductionConnectionCount(userId: string) {
   return { count: (data ?? []).length, error: null };
 }
 
-async function fetchMemberCourseRoundsForUser(userId: string) {
+export type FetchMemberCourseRoundsOptions = {
+  /** Page size. Omit to load the full ordered history. */
+  limit?: number;
+  /** Zero-based offset for pagination. */
+  offset?: number;
+  /** When false, skip photo/feed hydration (faster for course lists). Default true. */
+  hydrate?: boolean;
+};
+
+/**
+ * Load course rounds for a member (portal-visible via existing RLS).
+ * Supports optional limit/offset for View All pagination.
+ */
+export async function fetchMemberCourseRoundsForUser(
+  userId: string,
+  options: FetchMemberCourseRoundsOptions = {},
+) {
   const client = requireSupabase();
-  const { data, error } = await client
+  const hydrate = options.hydrate !== false;
+  const limit = options.limit;
+  const offset = Math.max(0, options.offset ?? 0);
+
+  let query = client
     .from("member_course_rounds")
     .select(
       "id, member_user_id, golf_course_id, course_name, location, played_on, note, would_play_again, course_rating, cover_photo_id, created_at",
@@ -109,8 +129,14 @@ async function fetchMemberCourseRoundsForUser(userId: string) {
     .eq("member_user_id", userId)
     .order("played_on", { ascending: false });
 
+  if (typeof limit === "number" && Number.isFinite(limit) && limit > 0) {
+    query = query.range(offset, offset + limit - 1);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
-    return { data: [] as MobileCourseRoundRecord[], error };
+    return { data: [] as MobileCourseRoundRecord[], error, hasMore: false };
   }
 
   const rounds = (data ?? []).map((row) => ({
@@ -147,13 +173,22 @@ async function fetchMemberCourseRoundsForUser(userId: string) {
     course_slug: round.golf_course_id ? slugByCourseId.get(round.golf_course_id) : undefined,
   }));
 
+  const hasMore =
+    typeof limit === "number" && Number.isFinite(limit) && limit > 0
+      ? withSlugs.length === limit
+      : false;
+
+  if (!hydrate) {
+    return { data: withSlugs, error: null, hasMore };
+  }
+
   try {
     const withFeedPosts = await attachFeedPostIds(withSlugs);
     const withPhotos = await attachPhotosToRounds(withFeedPosts);
-    return { data: withPhotos, error: null };
+    return { data: withPhotos, error: null, hasMore };
   } catch (hydrateError) {
     console.warn("[memberProfile] round hydration failed", hydrateError);
-    return { data: withSlugs, error: null };
+    return { data: withSlugs, error: null, hasMore };
   }
 }
 

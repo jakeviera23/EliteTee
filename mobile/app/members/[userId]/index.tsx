@@ -121,6 +121,7 @@ export default function MemberProfileScreen() {
   const [loadingSecondary, setLoadingSecondary] = useState(() => !secondary);
   const [loadingFeedPosts, setLoadingFeedPosts] = useState(() => recentFeedPosts.length === 0);
   const [error, setError] = useState<string | null>(null);
+  const [lookingForExpanded, setLookingForExpanded] = useState(false);
 
   const isOwnProfile = Boolean(user?.id && userId && user.id === userId);
 
@@ -211,7 +212,8 @@ export default function MemberProfileScreen() {
       perfStart("profile-secondary");
       const [secondaryResult, feedResult] = await Promise.all([
         fetchMemberProfileSecondary(userId, safeIdentity.member, own),
-        fetchMemberProfileFeedPosts(userId, 5),
+        // Fetch a few extra so we can prefer non-experience posts in the summary.
+        fetchMemberProfileFeedPosts(userId, 8),
       ]);
       perfEnd("profile-secondary", { cached: Boolean(cachedSecondary) });
 
@@ -268,13 +270,43 @@ export default function MemberProfileScreen() {
     [secondary],
   );
 
-  const coursesPlayed = useMemo(
-    () => (secondary ? buildUniqueCoursesPlayed(secondary.courseRounds).slice(0, 8) : []),
+  const allCoursesPlayed = useMemo(
+    () => (secondary ? buildUniqueCoursesPlayed(secondary.courseRounds) : []),
     [secondary],
   );
+  const coursesPlayed = allCoursesPlayed.slice(0, 6);
 
   const recentRounds = secondary?.courseRounds.slice(0, 3) ?? [];
+  const previewFeedPosts = useMemo(() => {
+    const withoutExperiences = recentFeedPosts.filter((post) => !post.memberCourseRoundId);
+    const preferred = withoutExperiences.length > 0 ? withoutExperiences : recentFeedPosts;
+    return preferred.slice(0, 3);
+  }, [recentFeedPosts]);
   const showConnections = isOwnProfile && (stats?.connections ?? 0) > 0;
+  const lookingForText = display?.bio?.trim() || "";
+  const lookingForNeedsClamp = lookingForText.length > 140;
+
+  function openHistory(segment: "experiences" | "courses" | "posts") {
+    if (!userId) return;
+    if (segment === "experiences") {
+      router.push({
+        pathname: "/members/[userId]/experiences",
+        params: { userId, memberName },
+      });
+      return;
+    }
+    if (segment === "courses") {
+      router.push({
+        pathname: "/members/[userId]/courses",
+        params: { userId, memberName },
+      });
+      return;
+    }
+    router.push({
+      pathname: "/members/[userId]/posts",
+      params: { userId, memberName },
+    });
+  }
   const regions = identity?.member.regions.filter(isMeaningfulDisplayValue) ?? [];
   const hasGolfSection =
     Boolean(display?.homeCourse) ||
@@ -348,9 +380,9 @@ export default function MemberProfileScreen() {
           {display.title ? <Text style={styles.title}>{display.title}</Text> : null}
           {display.homeCourse ? <Text style={styles.meta}>Home club · {display.homeCourse}</Text> : null}
           {display.location ? <Text style={styles.meta}>{display.location}</Text> : null}
-          {display.bio ? (
-            <Text style={styles.requestPreview} numberOfLines={3}>
-              Looking for · {display.bio}
+          {lookingForText ? (
+            <Text style={styles.requestPreview} numberOfLines={2}>
+              Looking for · {lookingForText}
             </Text>
           ) : null}
         </View>
@@ -398,22 +430,46 @@ export default function MemberProfileScreen() {
         {stats ? (
           <Card>
             <View style={styles.statsRow}>
-              <View style={styles.stat}>
+              <Pressable
+                style={styles.stat}
+                onPress={() =>
+                  stats.roundsShared > 0 ? openHistory("experiences") : undefined
+                }
+                disabled={stats.roundsShared <= 0}
+              >
                 <Text style={styles.statValue}>{stats.roundsShared}</Text>
-                <Text style={styles.statLabel}>Rounds</Text>
-              </View>
-              <View style={styles.stat}>
+                <Text style={styles.statLabel} numberOfLines={1}>
+                  Rounds
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.stat}
+                onPress={() =>
+                  stats.coursesPlayed > 0 ? openHistory("courses") : undefined
+                }
+                disabled={stats.coursesPlayed <= 0}
+              >
                 <Text style={styles.statValue}>{stats.coursesPlayed}</Text>
-                <Text style={styles.statLabel}>Courses</Text>
-              </View>
-              <View style={styles.stat}>
+                <Text style={styles.statLabel} numberOfLines={1}>
+                  Courses
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.stat}
+                onPress={() => (stats.feedPosts > 0 ? openHistory("posts") : undefined)}
+                disabled={stats.feedPosts <= 0}
+              >
                 <Text style={styles.statValue}>{stats.feedPosts}</Text>
-                <Text style={styles.statLabel}>Posts</Text>
-              </View>
+                <Text style={styles.statLabel} numberOfLines={1}>
+                  Posts
+                </Text>
+              </Pressable>
               {showConnections ? (
                 <View style={styles.stat}>
                   <Text style={styles.statValue}>{stats.connections}</Text>
-                  <Text style={styles.statLabel}>Connections</Text>
+                  <Text style={styles.statLabel} numberOfLines={1}>
+                    Connected
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -437,9 +493,16 @@ export default function MemberProfileScreen() {
           </ProfileSection>
         ) : null}
 
-        {display.bio ? (
+        {lookingForText ? (
           <ProfileSection title="Looking for">
-            <Text style={styles.body}>{display.bio}</Text>
+            <Text style={styles.body} numberOfLines={lookingForExpanded ? undefined : 4}>
+              {lookingForText}
+            </Text>
+            {lookingForNeedsClamp ? (
+              <Pressable onPress={() => setLookingForExpanded((value) => !value)} hitSlop={8}>
+                <Text style={styles.moreLink}>{lookingForExpanded ? "Show less" : "More"}</Text>
+              </Pressable>
+            ) : null}
           </ProfileSection>
         ) : null}
 
@@ -475,6 +538,29 @@ export default function MemberProfileScreen() {
           </ProfileSection>
         ) : null}
 
+        {recentRounds.length > 0 ? (
+          <ProfileSection title="Recent experiences">
+            {recentRounds.map((round) => (
+              <RoundReviewCard
+                key={round.id}
+                variant="compact"
+                round={{
+                  ...round,
+                  member_name: memberName || "Member",
+                  member_user_id: round.member_user_id || targetUserId,
+                }}
+              />
+            ))}
+            {(stats?.roundsShared ?? 0) > recentRounds.length ? (
+              <Pressable onPress={() => openHistory("experiences")} hitSlop={8}>
+                <Text style={styles.moreLink}>
+                  View all experiences ({stats?.roundsShared})
+                </Text>
+              </Pressable>
+            ) : null}
+          </ProfileSection>
+        ) : null}
+
         {coursesPlayed.length > 0 ? (
           <ProfileSection title="Courses played">
             {coursesPlayed.map((course) => (
@@ -490,6 +576,13 @@ export default function MemberProfileScreen() {
                 <Text style={styles.courseMeta}>{formatProfileCoursePlayedMeta(course)}</Text>
               </Pressable>
             ))}
+            {allCoursesPlayed.length > coursesPlayed.length ? (
+              <Pressable onPress={() => openHistory("courses")} hitSlop={8}>
+                <Text style={styles.moreLink}>
+                  View all courses ({allCoursesPlayed.length})
+                </Text>
+              </Pressable>
+            ) : null}
           </ProfileSection>
         ) : null}
 
@@ -508,33 +601,22 @@ export default function MemberProfileScreen() {
           </ProfileSection>
         ) : null}
 
-        {recentRounds.length > 0 ? (
-          <ProfileSection title="Recent experiences">
-            {recentRounds.map((round) => (
-              <RoundReviewCard
-                key={round.id}
-                variant="compact"
-                round={{
-                  ...round,
-                  member_name: memberName || "Member",
-                  member_user_id: round.member_user_id || targetUserId,
-                }}
-              />
-            ))}
-          </ProfileSection>
-        ) : null}
-
         {loadingFeedPosts && recentFeedPosts.length === 0 ? (
           <Card>
             <Text style={styles.body}>Loading recent activity…</Text>
           </Card>
         ) : null}
 
-        {recentFeedPosts.length > 0 ? (
+        {previewFeedPosts.length > 0 ? (
           <ProfileSection title="Posts">
-            {recentFeedPosts.map((post) => (
+            {previewFeedPosts.map((post) => (
               <FeedPostCard key={post.id} post={post} />
             ))}
+            {(stats?.feedPosts ?? 0) > previewFeedPosts.length ? (
+              <Pressable onPress={() => openHistory("posts")} hitSlop={8}>
+                <Text style={styles.moreLink}>View all posts ({stats?.feedPosts})</Text>
+              </Pressable>
+            ) : null}
           </ProfileSection>
         ) : null}
       </ScrollView>
@@ -644,24 +726,33 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   stat: {
     flex: 1,
     alignItems: "center",
     gap: 2,
+    minWidth: 0,
+    paddingHorizontal: 2,
   },
   statValue: {
     fontFamily: typography.serifSemibold,
-    fontSize: 24,
+    fontSize: 22,
     color: colors.forest,
   },
   statLabel: {
     fontFamily: typography.sans,
-    fontSize: typography.caption,
+    fontSize: 10,
     color: colors.textTertiary,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.4,
+    textAlign: "center",
+  },
+  moreLink: {
+    marginTop: spacing.sm,
+    fontFamily: typography.sansMedium,
+    fontSize: typography.bodySm,
+    color: colors.forest,
   },
   sectionBody: {
     marginTop: spacing.md,
