@@ -24,6 +24,7 @@
       "extends": "base",
       "environment": "preview",
       "distribution": "store",
+      "autoIncrement": true,
       "ios": {
         "simulator": false
       },
