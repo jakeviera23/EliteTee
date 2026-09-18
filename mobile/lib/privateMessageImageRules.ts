@@ -1,5 +1,9 @@
 export const PRIVATE_MESSAGE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const PRIVATE_MESSAGE_IMAGE_MAX_COUNT = 3;
+export const PRIVATE_MESSAGE_IMAGE_MAX_EDGE_PX = 1800;
+export const PRIVATE_MESSAGE_IMAGE_COMPRESS_QUALITIES = [0.8, 0.65, 0.5] as const;
+export const PRIVATE_MESSAGE_IMAGE_TOO_LARGE_AFTER_COMPRESS =
+  "This photo is still too large after compression. Please choose a smaller image.";
 export const PRIVATE_MESSAGE_IMAGE_MIME_TYPES = [
   "image/jpeg",
   "image/png",
@@ -16,13 +20,28 @@ export type MobilePrivateMessageImageDraft = {
   fileName?: string | null;
 };
 
+export type PrivateMessageImageResizeTarget = {
+  width: number;
+  height: number;
+};
+
 export function extensionForPrivateMessageImageMime(mime: string): string {
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
   return "jpg";
 }
 
-/** Normalize picker MIME (incl. HEIC → jpeg after Expo quality compression). */
+export function isHeicLikePrivateMessageImage(
+  mimeType?: string | null,
+  fileName?: string | null,
+): boolean {
+  const raw = (mimeType ?? "").toLowerCase().trim();
+  if (raw.includes("heic") || raw.includes("heif")) return true;
+  const name = (fileName ?? "").toLowerCase();
+  return name.endsWith(".heic") || name.endsWith(".heif");
+}
+
+/** Normalize picker MIME (incl. HEIC → jpeg). */
 export function normalizePrivateMessageImageMime(
   mimeType?: string | null,
   fileName?: string | null,
@@ -54,14 +73,113 @@ export function isAllowedPrivateMessageImageMime(
   return (PRIVATE_MESSAGE_IMAGE_MIME_TYPES as readonly string[]).includes(mime);
 }
 
+export function longestPrivateMessageImageEdge(
+  width?: number | null,
+  height?: number | null,
+): number | null {
+  if (
+    typeof width !== "number" ||
+    typeof height !== "number" ||
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return null;
+  }
+  return Math.max(width, height);
+}
+
+/**
+ * Scale so the longest edge is at most maxEdge. Null means no resize needed
+ * (or dimensions are unknown — caller may still compress).
+ */
+export function computePrivateMessageImageResize(
+  width?: number | null,
+  height?: number | null,
+  maxEdge: number = PRIVATE_MESSAGE_IMAGE_MAX_EDGE_PX,
+): PrivateMessageImageResizeTarget | null {
+  const longest = longestPrivateMessageImageEdge(width, height);
+  if (longest == null || longest <= maxEdge) {
+    return null;
+  }
+
+  const scale = maxEdge / longest;
+  return {
+    width: Math.max(1, Math.round((width as number) * scale)),
+    height: Math.max(1, Math.round((height as number) * scale)),
+  };
+}
+
+export function acceptsPrivateMessageImageByteSize(
+  byteSize: number,
+  maxBytes: number = PRIVATE_MESSAGE_IMAGE_MAX_BYTES,
+): boolean {
+  return Number.isFinite(byteSize) && byteSize > 0 && byteSize <= maxBytes;
+}
+
+/**
+ * Skip re-encoding when the original is already an allowed, under-limit image
+ * that does not need HEIC conversion or downscaling.
+ */
+export function shouldPreprocessPrivateMessageImage({
+  byteSize,
+  mimeType,
+  fileName,
+  width,
+  height,
+}: {
+  byteSize: number;
+  mimeType?: string | null;
+  fileName?: string | null;
+  width?: number | null;
+  height?: number | null;
+}): boolean {
+  if (isHeicLikePrivateMessageImage(mimeType, fileName)) {
+    return true;
+  }
+
+  if (!acceptsPrivateMessageImageByteSize(byteSize)) {
+    return true;
+  }
+
+  const longest = longestPrivateMessageImageEdge(width, height);
+  if (longest != null && longest > PRIVATE_MESSAGE_IMAGE_MAX_EDGE_PX) {
+    return true;
+  }
+
+  return false;
+}
+
+export function privateMessageImageCompressQualityAt(attemptIndex: number): number | null {
+  return PRIVATE_MESSAGE_IMAGE_COMPRESS_QUALITIES[attemptIndex] ?? null;
+}
+
+export function buildPrivateMessageImageManipulatorActions({
+  width,
+  height,
+}: {
+  width?: number | null;
+  height?: number | null;
+}): Array<{ resize: { width: number; height: number } }> {
+  const resize = computePrivateMessageImageResize(width, height);
+  if (!resize) {
+    return [];
+  }
+  return [{ resize: { width: resize.width, height: resize.height } }];
+}
+
 export function validatePrivateMessageImageDraft(
   draft: MobilePrivateMessageImageDraft,
   byteSize?: number,
 ): string | null {
-  const mime = normalizePrivateMessageImageMime(draft.mimeType, draft.fileName);
-  if (!isAllowedPrivateMessageImageMime(mime)) {
-    return "Only JPEG, PNG, and WebP images are allowed.";
+  if (!isHeicLikePrivateMessageImage(draft.mimeType, draft.fileName)) {
+    const mime = normalizePrivateMessageImageMime(draft.mimeType, draft.fileName);
+    if (!isAllowedPrivateMessageImageMime(mime)) {
+      return "Only JPEG, PNG, and WebP images are allowed.";
+    }
   }
+
   if (typeof byteSize === "number") {
     if (byteSize <= 0) {
       return "This image file is empty.";

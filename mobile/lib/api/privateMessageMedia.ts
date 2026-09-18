@@ -1,10 +1,11 @@
 import { getCurrentUserId } from "./members";
+import { preparePrivateMessageImageForUpload } from "./preparePrivateMessageImage";
 import { requireSupabase } from "../supabase";
 import {
   extensionForPrivateMessageImageMime,
   isAllowedPrivateMessageImageMime,
-  normalizePrivateMessageImageMime,
-  validatePrivateMessageImageDraft,
+  PRIVATE_MESSAGE_IMAGE_MAX_BYTES,
+  PRIVATE_MESSAGE_IMAGE_TOO_LARGE_AFTER_COMPRESS,
   validatePrivateMessageImageDrafts,
   type MobilePrivateMessageImageDraft,
 } from "../privateMessageImageRules";
@@ -66,21 +67,22 @@ export async function uploadPrivateMessageImages({
   try {
     for (let index = 0; index < drafts.length; index += 1) {
       const draft = drafts[index]!;
-      const mime = normalizePrivateMessageImageMime(draft.mimeType, draft.fileName);
-      const response = await fetch(draft.uri);
-      const blob = await response.blob();
-      const sizeError = validatePrivateMessageImageDraft(draft, blob.size);
-      if (sizeError) {
-        throw new Error(sizeError);
-      }
+      const prepared = await preparePrivateMessageImageForUpload(draft);
 
-      const contentType = isAllowedPrivateMessageImageMime(blob.type)
-        ? blob.type
-        : mime;
-      if (!isAllowedPrivateMessageImageMime(contentType)) {
+      if (!isAllowedPrivateMessageImageMime(prepared.mimeType)) {
         throw new Error("Only JPEG, PNG, and WebP images are allowed.");
       }
+      if (!prepared.byteSize || prepared.byteSize > PRIVATE_MESSAGE_IMAGE_MAX_BYTES) {
+        throw new Error(PRIVATE_MESSAGE_IMAGE_TOO_LARGE_AFTER_COMPRESS);
+      }
 
+      const response = await fetch(prepared.uri);
+      const blob = await response.blob();
+      if (blob.size <= 0 || blob.size > PRIVATE_MESSAGE_IMAGE_MAX_BYTES) {
+        throw new Error(PRIVATE_MESSAGE_IMAGE_TOO_LARGE_AFTER_COMPRESS);
+      }
+
+      const contentType = prepared.mimeType;
       const ext = extensionForPrivateMessageImageMime(contentType);
       const storagePath = `${userId}/${messageId}/${randomUuid()}.${ext}`;
 
@@ -103,8 +105,8 @@ export async function uploadPrivateMessageImages({
           storage_path: storagePath,
           content_type: contentType,
           byte_size: blob.size,
-          width: draft.width ?? null,
-          height: draft.height ?? null,
+          width: prepared.width,
+          height: prepared.height,
           sort_order: index,
         })
         .select(ATTACHMENT_SELECT)
