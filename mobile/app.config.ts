@@ -75,7 +75,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       CFBundleDisplayName: "EliteTee",
       ITSAppUsesNonExemptEncryption: false,
       NSPhotoLibraryUsageDescription:
-        "EliteTee uses your photo library so you can attach round photos to member posts.",
+        "EliteTee uses your photo library so you can attach photos in messages and round posts.",
     },
   },
   android: {
@@ -99,7 +99,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-image-picker",
       {
         photosPermission:
-          "EliteTee uses your photo library so you can attach round photos to member posts.",
+          "EliteTee uses your photo library so you can attach photos in messages and round posts.",
       },
     ],
   ],

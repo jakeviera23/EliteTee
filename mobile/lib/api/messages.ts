@@ -1,4 +1,9 @@
 import { getCurrentUserId } from "./members";
+import {
+  uploadPrivateMessageImages,
+  validatePrivateMessageImageDrafts,
+  type MobilePrivateMessageImageDraft,
+} from "./privateMessageMedia";
 import { getMemberDisplayName } from "../memberInitials";
 import { formatMobileMessagePreviewBody } from "../messagePreview";
 import {
@@ -11,6 +16,8 @@ import type {
   MobilePrivateMessage,
   MobilePrivateMessageAttachment,
 } from "@/types/messages";
+
+export type { MobilePrivateMessageImageDraft };
 
 const DIRECT_MESSAGE_SELECT =
   "id, introduction_request_id, sender_id, receiver_id, body, created_at, read_at, edited_at";
@@ -242,10 +249,10 @@ export async function fetchConversationThread(otherUserId: string): Promise<{
 
 export const PRIVATE_MESSAGE_MAX_LENGTH = 2000;
 
-function validateMessageBody(body: string) {
+function validateMessageBody(body: string, { allowEmpty = false }: { allowEmpty?: boolean } = {}) {
   const trimmedBody = body.trim();
 
-  if (!trimmedBody) {
+  if (!trimmedBody && !allowEmpty) {
     return { trimmedBody: "", error: new Error("Message cannot be empty.") };
   }
 
@@ -262,13 +269,27 @@ function validateMessageBody(body: string) {
 export async function sendDirectPrivateMessage({
   receiverUserId,
   body,
+  imageDrafts = [],
 }: {
   receiverUserId: string;
   body: string;
+  imageDrafts?: MobilePrivateMessageImageDraft[];
 }): Promise<{ data: { id: string } | null; error: Error | null }> {
-  const { trimmedBody, error: validationError } = validateMessageBody(body);
+  const drafts = imageDrafts.slice(0, 3);
+  const imageValidationError = validatePrivateMessageImageDrafts(drafts);
+  if (imageValidationError) {
+    return { data: null, error: new Error(imageValidationError) };
+  }
+
+  const { trimmedBody, error: validationError } = validateMessageBody(body, {
+    allowEmpty: drafts.length > 0,
+  });
   if (validationError) {
     return { data: null, error: validationError };
+  }
+
+  if (!trimmedBody && drafts.length === 0) {
+    return { data: null, error: new Error("Message cannot be empty.") };
   }
 
   const { userId, error: sessionError } = await getCurrentUserId();
@@ -300,7 +321,25 @@ export async function sendDirectPrivateMessage({
     return { data: null, error: new Error("Message could not be sent.") };
   }
 
-  return { data: { id: String(data.id) }, error: null };
+  const messageId = String(data.id);
+
+  if (drafts.length > 0) {
+    const uploadResult = await uploadPrivateMessageImages({
+      messageId,
+      drafts,
+    });
+
+    if (uploadResult.error || uploadResult.data.length === 0) {
+      // Avoid orphan/broken messages when the intended send included images.
+      await client.from("private_messages").delete().eq("id", messageId).eq("sender_id", userId);
+      return {
+        data: null,
+        error: uploadResult.error ?? new Error("Image could not be attached."),
+      };
+    }
+  }
+
+  return { data: { id: messageId }, error: null };
 }
 
 export async function markDirectMessagesAsRead(otherUserId: string): Promise<{ error: Error | null }> {

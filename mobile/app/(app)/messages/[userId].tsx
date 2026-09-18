@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
@@ -26,7 +27,9 @@ import {
   markDirectMessagesAsRead,
   PRIVATE_MESSAGE_MAX_LENGTH,
   sendDirectPrivateMessage,
+  type MobilePrivateMessageImageDraft,
 } from "@/lib/api/messages";
+import { normalizePrivateMessageImageMime } from "@/lib/privateMessageImageRules";
 import { fetchMemberByUserId } from "@/lib/api/members";
 import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
@@ -61,9 +64,12 @@ export default function ConversationDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState(prefill);
+  const [pendingImage, setPendingImage] = useState<MobilePrivateMessageImageDraft | null>(null);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [failedDraft, setFailedDraft] = useState<string | null>(null);
+  const [failedPendingImage, setFailedPendingImage] =
+    useState<MobilePrivateMessageImageDraft | null>(null);
   const [title, setTitle] = useState(memberName || "");
   const [subtitle, setSubtitle] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -164,11 +170,48 @@ export default function ConversationDetailScreen() {
     });
   }
 
-  async function handleSend(bodyOverride?: string) {
-    if (!userId) return;
+  async function handlePickImage() {
+    if (sending) return;
 
-    const trimmed = (bodyOverride ?? draft).trim();
-    if (!trimmed || sending) return;
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setSendError("Photo library access is required to attach an image.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: false,
+      quality: 0.85,
+      exif: false,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    setSendError(null);
+    setFailedDraft(null);
+    setFailedPendingImage(null);
+    setPendingImage({
+      uri: asset.uri,
+      mimeType: normalizePrivateMessageImageMime(asset.mimeType, asset.fileName),
+      width: asset.width ?? null,
+      height: asset.height ?? null,
+      fileName: asset.fileName ?? null,
+    });
+  }
+
+  async function handleSend(options?: {
+    bodyOverride?: string;
+    imageOverride?: MobilePrivateMessageImageDraft | null;
+  }) {
+    if (!userId || sending) return;
+
+    const trimmed = (options?.bodyOverride ?? draft).trim();
+    const imageDraft =
+      options && "imageOverride" in options ? options.imageOverride ?? null : pendingImage;
+
+    if (!trimmed && !imageDraft) return;
 
     if (trimmed.length > PRIVATE_MESSAGE_MAX_LENGTH) {
       setSendError(`Message cannot exceed ${PRIVATE_MESSAGE_MAX_LENGTH} characters.`);
@@ -178,35 +221,54 @@ export default function ConversationDetailScreen() {
     setSending(true);
     setSendError(null);
     setFailedDraft(null);
+    setFailedPendingImage(null);
 
     const sentAt = new Date().toISOString();
+    const optimisticId = `optimistic-${Date.now()}`;
     const optimisticMessage: MobilePrivateMessage = {
-      id: `optimistic-${Date.now()}`,
+      id: optimisticId,
       introduction_request_id: null,
       sender_id: user?.id ?? "",
       receiver_id: userId,
       body: trimmed,
       created_at: sentAt,
       read_at: null,
-      attachments: [],
+      attachments: imageDraft
+        ? [
+            {
+              id: `${optimisticId}-att`,
+              message_id: optimisticId,
+              storage_path: "",
+              content_type: imageDraft.mimeType ?? "image/jpeg",
+              byte_size: 0,
+              width: imageDraft.width ?? null,
+              height: imageDraft.height ?? null,
+              sort_order: 0,
+              created_at: sentAt,
+              signedUrl: imageDraft.uri,
+            },
+          ]
+        : [],
     };
 
     setMessages((current) => [...current, optimisticMessage]);
     setDraft("");
-    // Optimistic inbox preview so Back shows the new message immediately.
-    syncInboxPreview(trimmed, sentAt);
+    setPendingImage(null);
+    syncInboxPreview(trimmed, sentAt, imageDraft ? 1 : 0);
 
     const { data, error: sendFailure } = await sendDirectPrivateMessage({
       receiverUserId: userId,
       body: trimmed,
+      imageDrafts: imageDraft ? [imageDraft] : [],
     });
 
     if (sendFailure || !data) {
       setMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
       setDraft(trimmed);
-      setFailedDraft(trimmed);
+      setPendingImage(imageDraft);
+      setFailedDraft(trimmed || null);
+      setFailedPendingImage(imageDraft);
       setSendError(formatMobileError(sendFailure?.message ?? "Message could not be sent."));
-      // Reconcile inbox from server so a failed send does not leave a fake preview.
       void fetchConversations().then(({ data: conversations }) => {
         if (conversations) {
           setSessionCache(SESSION_CACHE_KEYS.conversations, conversations);
@@ -231,7 +293,7 @@ export default function ConversationDetailScreen() {
             : message,
         ),
       );
-      syncInboxPreview(trimmed, sentAt);
+      syncInboxPreview(trimmed, sentAt, imageDraft ? 1 : 0);
     }
 
     setSending(false);
@@ -360,14 +422,46 @@ export default function ConversationDetailScreen() {
             {sendError ? (
               <View style={styles.sendErrorRow}>
                 <Text style={styles.sendError}>{sendError}</Text>
-                {failedDraft ? (
-                  <Pressable onPress={() => void handleSend(failedDraft)}>
+                {failedDraft || failedPendingImage ? (
+                  <Pressable
+                    onPress={() =>
+                      void handleSend({
+                        bodyOverride: failedDraft ?? "",
+                        imageOverride: failedPendingImage,
+                      })
+                    }
+                  >
                     <Text style={styles.retry}>Retry</Text>
                   </Pressable>
                 ) : null}
               </View>
             ) : null}
+            {pendingImage ? (
+              <View style={styles.pendingRow}>
+                <Image source={{ uri: pendingImage.uri }} style={styles.pendingThumb} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove selected image"
+                  disabled={sending}
+                  onPress={() => setPendingImage(null)}
+                  hitSlop={8}
+                  style={styles.pendingRemove}
+                >
+                  <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+            ) : null}
             <View style={styles.composerRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Attach photo"
+                disabled={sending}
+                onPress={() => void handlePickImage()}
+                hitSlop={8}
+                style={[styles.attachButton, sending ? styles.attachButtonDisabled : null]}
+              >
+                <Ionicons name="image-outline" size={22} color={colors.forest} />
+              </Pressable>
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
@@ -376,12 +470,13 @@ export default function ConversationDetailScreen() {
                 multiline
                 style={styles.composerInput}
                 maxLength={PRIVATE_MESSAGE_MAX_LENGTH}
+                editable={!sending}
               />
               <Button
-                label={sending ? "…" : "Send"}
+                label={sending ? "Sending…" : "Send"}
                 onPress={() => void handleSend()}
                 loading={sending}
-                disabled={!draft.trim() || sending}
+                disabled={(!draft.trim() && !pendingImage) || sending}
               />
             </View>
           </View>
@@ -511,6 +606,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     gap: spacing.sm,
+  },
+  attachButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.bgBase,
+    borderWidth: 1,
+    borderColor: colors.borderHairline,
+  },
+  attachButtonDisabled: {
+    opacity: 0.5,
+  },
+  pendingRow: {
+    alignSelf: "flex-start",
+    position: "relative",
+  },
+  pendingThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bgInset,
+  },
+  pendingRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.full,
   },
   composerInput: {
     flex: 1,
