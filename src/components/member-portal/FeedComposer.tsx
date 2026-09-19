@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { FeedPost, PortalGolfer, PostType, ComposerPostType } from "../../data/portalSocial";
 import {
   composerPostTypeLabels,
@@ -7,11 +7,20 @@ import {
   composerPostTypeOrder,
   earlyStageCopy,
 } from "../../data/portalSocial";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { COURSE_RATING_MAX, validateCourseRating } from "../../lib/courseRating";
 import { getFeedComposerValidation } from "../../lib/feedComposerValidation";
+import {
+  FEED_ROUND_REVIEW_LOCATION_REQUIRED_MESSAGE,
+  isUsableRoundReviewLocation,
+  locationFromSelectedGolfCourse,
+  resolveFeedRoundReviewLocation,
+} from "../../lib/feedRoundReviewLocation";
+import { searchGolfCourses } from "../../lib/golfCourses";
 import { createMemberFeedPost, createCourseRoundFeedPost } from "../../lib/memberFeedPosts";
 import { submitMemberCourseRound } from "../../lib/memberCourseRounds";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
+import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import { CourseRatingPicker } from "./CourseRatingPicker";
 import { FeedAvatar } from "./FeedAvatar";
 
@@ -38,6 +47,12 @@ type ComposerTypeConfig = {
   fields: ComposerField[];
 };
 
+type SelectedComposerCourse = {
+  id: string;
+  name: string;
+  location: string;
+};
+
 const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
   "round-review": {
     internalPostType: "course-review",
@@ -45,6 +60,12 @@ const composerConfig: Record<ComposerPostType, ComposerTypeConfig> = {
     hasPhoto: true,
     fields: [
       { key: "course", label: "Course", type: "text", placeholder: "Course name" },
+      {
+        key: "location",
+        label: "Location",
+        type: "text",
+        placeholder: "City, region (required if course has no location)",
+      },
       { key: "rating", label: "Rating", type: "rating" },
       { key: "playedWith", label: "Played With", type: "text", placeholder: "Optional", optional: true },
     ],
@@ -118,23 +139,65 @@ function parseComposerRating(value: string | undefined): number | null {
   return result.ok ? result.value : null;
 }
 
+function memberFacingRoundReviewError(message: string): string {
+  const normalized = message.trim().toLowerCase();
+  if (
+    normalized.includes("location must be between") ||
+    normalized.includes("location_check") ||
+    normalized.includes("location is required")
+  ) {
+    return FEED_ROUND_REVIEW_LOCATION_REQUIRED_MESSAGE;
+  }
+  return memberFacingPortalError(message, "feed");
+}
+
 export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
   const [expanded, setExpanded] = useState(false);
   const [postType, setPostType] = useState<ComposerPostType>("introduction");
   const [values, setValues] = useState<Record<string, string>>(() =>
     defaultValuesFor("introduction"),
   );
+  const [selectedCourse, setSelectedCourse] = useState<SelectedComposerCourse | null>(null);
+  const [courseSuggestions, setCourseSuggestions] = useState<GolfCourseSearchResult[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputId = id ? `${id}-photo` : "feed-composer-photo";
+  const debouncedCourseQuery = useDebouncedValue(values.course ?? "", 250);
 
   const config = composerConfig[postType];
+  const isRoundReview = postType === "round-review";
+
+  useEffect(() => {
+    if (!isRoundReview || selectedCourse || debouncedCourseQuery.trim().length < 2) {
+      setCourseSuggestions([]);
+      return;
+    }
+
+    let active = true;
+
+    async function loadSuggestions() {
+      const { data } = await searchGolfCourses({
+        query: debouncedCourseQuery,
+        limit: 8,
+        offset: 0,
+      });
+      if (!active) return;
+      setCourseSuggestions(data ?? []);
+    }
+
+    void loadSuggestions();
+    return () => {
+      active = false;
+    };
+  }, [debouncedCourseQuery, isRoundReview, selectedCourse]);
 
   function reset() {
     setPostType("introduction");
     setValues(defaultValuesFor("introduction"));
+    setSelectedCourse(null);
+    setCourseSuggestions([]);
     setPhotoPreview(null);
     setExpanded(false);
     setSubmitError(null);
@@ -144,11 +207,34 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
   function selectType(next: ComposerPostType) {
     setPostType(next);
     setValues(defaultValuesFor(next));
+    setSelectedCourse(null);
+    setCourseSuggestions([]);
     if (!composerConfig[next].hasPhoto) setPhotoPreview(null);
   }
 
   function updateValue(key: string, value: string) {
     setValues((current) => ({ ...current, [key]: value }));
+    if (key === "course") {
+      setSelectedCourse(null);
+    }
+  }
+
+  function selectCourseSuggestion(course: GolfCourseSearchResult) {
+    const courseLocation = locationFromSelectedGolfCourse(course);
+    setSelectedCourse({
+      id: course.id,
+      name: course.name,
+      location: courseLocation,
+    });
+    setValues((current) => ({
+      ...current,
+      course: course.name,
+      location: isUsableRoundReviewLocation(courseLocation)
+        ? courseLocation
+        : current.location ?? "",
+    }));
+    setCourseSuggestions([]);
+    setSubmitError(null);
   }
 
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -160,35 +246,56 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
     ? config.fields.find((field) => field.key === config.primaryKey)
     : undefined;
 
+  const resolvedRoundLocation = isRoundReview
+    ? resolveFeedRoundReviewLocation({
+        selectedCourseLocation: selectedCourse?.location,
+        manualLocation: values.location,
+      })
+    : null;
+
   const validation = getFeedComposerValidation({
     message: values.message ?? "",
     primaryFieldValue: config.primaryKey ? values[config.primaryKey] : undefined,
     primaryFieldLabel: primaryField?.label,
     requiresPrimaryField: Boolean(config.primaryKey),
     ratingValue: values.rating,
-    requiresRating: postType === "round-review",
+    requiresRating: isRoundReview,
+    requiresLocation: isRoundReview,
+    locationValue: resolvedRoundLocation?.ok ? resolvedRoundLocation.location : values.location,
+    locationMissingMessage: FEED_ROUND_REVIEW_LOCATION_REQUIRED_MESSAGE,
   });
 
   const canSubmit = validation.canSubmit && !isSubmitting;
   const composerMessageMetaId = id ? `${id}-message-meta` : "feed-composer-message-meta";
   const composerBlockerId = id ? `${id}-blocker` : "feed-composer-blocker";
   const composerCounterId = id ? `${id}-counter` : "feed-composer-counter";
+  const showLocationField =
+    isRoundReview &&
+    (!selectedCourse || !isUsableRoundReviewLocation(selectedCourse.location));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
 
     const message = values.message.trim();
-    const isReview = postType === "round-review";
     let normalizedRating: number | undefined;
 
-    if (isReview) {
+    if (isRoundReview) {
       const ratingResult = validateCourseRating(values.rating ?? "");
       if (!ratingResult.ok) {
         setSubmitError(ratingResult.message);
         return;
       }
       normalizedRating = ratingResult.value;
+
+      const locationResult = resolveFeedRoundReviewLocation({
+        selectedCourseLocation: selectedCourse?.location,
+        manualLocation: values.location,
+      });
+      if (!locationResult.ok) {
+        setSubmitError(locationResult.message);
+        return;
+      }
     }
 
     const details = config.fields
@@ -204,24 +311,34 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
     setIsSubmitting(true);
     setSubmitError(null);
 
-    if (isReview) {
+    if (isRoundReview) {
       const courseName = primaryValue || "Experience";
+      const locationResult = resolveFeedRoundReviewLocation({
+        selectedCourseLocation: selectedCourse?.location,
+        manualLocation: values.location,
+      });
+      if (!locationResult.ok) {
+        setIsSubmitting(false);
+        setSubmitError(locationResult.message);
+        return;
+      }
+      const location = locationResult.location;
+
       const { data: roundData, error: roundError } = await submitMemberCourseRound({
         course_name: courseName,
-        location: values.location?.trim() || "",
+        location,
         played_on: new Date().toISOString().slice(0, 10),
         note: message,
         would_play_again: true,
         course_rating: normalizedRating ?? 10,
-        golf_course_id: null,
+        golf_course_id: selectedCourse?.id ?? null,
       });
 
       if (roundError || !roundData?.id) {
         setIsSubmitting(false);
         setSubmitError(
-          memberFacingPortalError(
+          memberFacingRoundReviewError(
             roundError?.message ?? "Your experience could not be saved.",
-            "feed",
           ),
         );
         return;
@@ -230,7 +347,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       const { data, error } = await createCourseRoundFeedPost({
         roundId: roundData.id,
         courseName,
-        location: values.location?.trim() || "",
+        location,
         note: message,
         wouldPlayAgain: true,
         playedOn: new Date().toISOString().slice(0, 10),
@@ -241,7 +358,7 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
       if (error) {
         console.error("[FeedComposer] round-review post failed", error.message);
-        setSubmitError(memberFacingPortalError(error.message, "feed"));
+        setSubmitError(memberFacingRoundReviewError(error.message));
         return;
       }
 
@@ -261,7 +378,6 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
       details: details.length ? details : undefined,
       internalPostType: config.internalPostType,
       rating: normalizedRating,
-      playedWith: isReview ? values.playedWith?.trim() || undefined : undefined,
     });
 
     setIsSubmitting(false);
@@ -327,19 +443,76 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
 
           {config.fields.length > 0 ? (
             <div className="feed-composer-grid">
-              {config.fields.map((field) =>
-                field.type === "rating" ? (
-                  <div
-                    key={field.key}
-                    className="feed-composer-field feed-composer-field--wide feed-composer-field--rating"
-                  >
-                    <CourseRatingPicker
-                      value={parseComposerRating(values[field.key])}
-                      onChange={(next) => updateValue(field.key, String(next))}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                ) : (
+              {config.fields.map((field) => {
+                if (field.key === "location" && isRoundReview && !showLocationField) {
+                  return null;
+                }
+
+                if (field.type === "rating") {
+                  return (
+                    <div
+                      key={field.key}
+                      className="feed-composer-field feed-composer-field--wide feed-composer-field--rating"
+                    >
+                      <CourseRatingPicker
+                        value={parseComposerRating(values[field.key])}
+                        onChange={(next) => updateValue(field.key, String(next))}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  );
+                }
+
+                if (field.key === "course" && isRoundReview) {
+                  return (
+                    <label key={field.key} className="feed-composer-field feed-composer-field--wide">
+                      <span>{field.label}</span>
+                      <input
+                        type="text"
+                        value={values[field.key] ?? ""}
+                        onChange={(event) => updateValue(field.key, event.target.value)}
+                        placeholder={field.placeholder}
+                        required
+                        autoComplete="off"
+                        aria-autocomplete="list"
+                      />
+                      {courseSuggestions.length > 0 ? (
+                        <ul className="feed-composer-suggestions" role="listbox">
+                          {courseSuggestions.map((course) => {
+                            const suggestionLocation = locationFromSelectedGolfCourse(course);
+                            return (
+                              <li key={course.id}>
+                                <button
+                                  type="button"
+                                  className="feed-composer-suggestion"
+                                  onClick={() => selectCourseSuggestion(course)}
+                                >
+                                  <span className="feed-composer-suggestion-name">{course.name}</span>
+                                  {suggestionLocation ? (
+                                    <span className="feed-composer-suggestion-meta">
+                                      {suggestionLocation}
+                                    </span>
+                                  ) : (
+                                    <span className="feed-composer-suggestion-meta">
+                                      Location needed
+                                    </span>
+                                  )}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : null}
+                      {selectedCourse && isUsableRoundReviewLocation(selectedCourse.location) ? (
+                        <p className="feed-composer-helper">
+                          Location from directory: {selectedCourse.location}
+                        </p>
+                      ) : null}
+                    </label>
+                  );
+                }
+
+                return (
                   <label key={field.key} className="feed-composer-field">
                     <span>
                       {field.label}
@@ -353,8 +526,8 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
                       required={!field.optional}
                     />
                   </label>
-                ),
-              )}
+                );
+              })}
             </div>
           ) : null}
 

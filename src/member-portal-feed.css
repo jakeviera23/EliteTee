@@ -337,6 +337,45 @@
   border-radius: var(--et-radius-md);
 }
 
+.et-feed .feed-composer-suggestions {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-md);
+  overflow: hidden;
+  background: var(--et-bg-inset);
+}
+
+.et-feed .feed-composer-suggestion {
+  display: grid;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  color: var(--feed-text-primary);
+}
+
+.et-feed .feed-composer-suggestion:hover,
+.et-feed .feed-composer-suggestion:focus-visible {
+  background: var(--feed-forest-soft);
+}
+
+.et-feed .feed-composer-suggestion-name {
+  font-size: var(--et-text-body-sm);
+}
+
+.et-feed .feed-composer-suggestion-meta {
+  font-size: var(--et-text-caption);
+  color: var(--feed-stone);
+}
+
 .et-feed .feed-composer-footer-note,
 .et-feed .feed-composer-photo-note {
   font-size: var(--et-text-caption);

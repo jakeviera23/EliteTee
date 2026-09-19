@@ -1,4 +1,8 @@
 import { validateCourseRating } from "./courseRating";
+import {
+  FEED_ROUND_REVIEW_LOCATION_REQUIRED_MESSAGE,
+  isUsableRoundReviewLocation,
+} from "./feedRoundReviewLocation";
 
 export const FEED_COMPOSER_MIN_MESSAGE_LENGTH = 20;
 
@@ -9,6 +13,10 @@ export type FeedComposerValidationInput = {
   requiresPrimaryField: boolean;
   ratingValue?: string;
   requiresRating: boolean;
+  /** When true, locationValue must be a usable round location. */
+  requiresLocation?: boolean;
+  locationValue?: string;
+  locationMissingMessage?: string;
 };
 
 export type FeedComposerValidationResult = {
@@ -32,8 +40,11 @@ export function getFeedComposerValidation(
     input.requiresPrimaryField && !input.primaryFieldValue?.trim();
   const ratingInvalid =
     input.requiresRating && !validateCourseRating(input.ratingValue ?? "").ok;
+  const locationMissing =
+    Boolean(input.requiresLocation) && !isUsableRoundReviewLocation(input.locationValue);
 
-  const canSubmit = !messageTooShort && !primaryMissing && !ratingInvalid;
+  const canSubmit =
+    !messageTooShort && !primaryMissing && !ratingInvalid && !locationMissing;
 
   let blockerMessage: string | null = null;
   if (messageTooShort) {
@@ -42,6 +53,9 @@ export function getFeedComposerValidation(
     blockerMessage = `Add ${input.primaryFieldLabel.toLowerCase()} to post.`;
   } else if (ratingInvalid) {
     blockerMessage = "Select a course rating to post.";
+  } else if (locationMissing) {
+    blockerMessage =
+      input.locationMissingMessage ?? FEED_ROUND_REVIEW_LOCATION_REQUIRED_MESSAGE;
   }
 
   return {

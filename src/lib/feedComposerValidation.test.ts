@@ -64,4 +64,36 @@ describe("getFeedComposerValidation", () => {
     expect(result.canSubmit).toBe(false);
     expect(result.blockerMessage).toBe("Select a course rating to post.");
   });
+
+  it("blocks round reviews missing a usable location", () => {
+    const result = getFeedComposerValidation({
+      message: "Great round today with perfect conditions.",
+      primaryFieldValue: "Pine Valley",
+      primaryFieldLabel: "Course",
+      requiresPrimaryField: true,
+      ratingValue: "9.0",
+      requiresRating: true,
+      requiresLocation: true,
+      locationValue: "",
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.blockerMessage).toContain("location");
+  });
+
+  it("allows round reviews when course location is present", () => {
+    const result = getFeedComposerValidation({
+      message: "Great round today with perfect conditions.",
+      primaryFieldValue: "Pine Valley",
+      primaryFieldLabel: "Course",
+      requiresPrimaryField: true,
+      ratingValue: "9.0",
+      requiresRating: true,
+      requiresLocation: true,
+      locationValue: "Pine Valley, New Jersey, United States",
+    });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.blockerMessage).toBeNull();
+  });
 });
