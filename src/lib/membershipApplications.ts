@@ -5,12 +5,17 @@ import type {
 } from "../types/membershipApplication";
 import { getDetailedInviteStatus } from "./adminOnboarding";
 import { buildInvitationEmailDraft } from "./invitationEmail";
+import {
+  MEMBERSHIP_CHARGING_ENABLED,
+  resolveApprovalBillingFields,
+} from "./membershipChargingPolicy";
 import { buildInviteLink, generateInviteToken } from "./membershipInvites";
 import { readStoredReferralCode, clearStoredReferralCode } from "./memberReferrals";
 import { createMemberProfileFromApproval } from "./memberProfiles";
 import { supabase } from "./supabase";
 
 function normalizeApplication(row: Record<string, unknown>): MembershipApplicationRecord {
+  const pricingTier = row.pricing_tier;
   return {
     id: String(row.id ?? ""),
     full_name: String(row.full_name ?? ""),
@@ -45,6 +50,12 @@ function normalizeApplication(row: Record<string, unknown>): MembershipApplicati
       : null,
     referral_code_used: row.referral_code_used ? String(row.referral_code_used) : null,
     referral_captured_at: row.referral_captured_at ? String(row.referral_captured_at) : null,
+    billing_required:
+      row.billing_required === true || row.billing_required === false
+        ? Boolean(row.billing_required)
+        : undefined,
+    pricing_tier:
+      pricingTier === "founding" || pricingTier === "standard" ? pricingTier : null,
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
   };
@@ -332,6 +343,8 @@ export async function approveMembershipApplication(applicationId: string) {
     invitationLink,
   });
 
+  const approvalBilling = resolveApprovalBillingFields(MEMBERSHIP_CHARGING_ENABLED);
+
   const { data: updatedRow, error: updateError } = await supabase
     .from("membership_applications")
     .update({
@@ -345,6 +358,8 @@ export async function approveMembershipApplication(applicationId: string) {
       invitation_link: invitationLink,
       invite_token: inviteToken,
       invite_token_created_at: inviteTokenCreatedAt,
+      billing_required: approvalBilling.billing_required,
+      pricing_tier: approvalBilling.pricing_tier,
       updated_at: new Date().toISOString(),
     })
     .eq("id", applicationId)
@@ -354,6 +369,10 @@ export async function approveMembershipApplication(applicationId: string) {
   if (updateError) {
     return { data: null, error: updateError };
   }
+
+  // While MEMBERSHIP_CHARGING_ENABLED is false, do not initialize membership_billing
+  // (including unpaid "standard" rows). Paid launch should flip the policy flag and
+  // wire ensureStandardBillingOnApproval separately.
 
   return {
     data: {

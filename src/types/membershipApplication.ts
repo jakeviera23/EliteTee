@@ -31,6 +31,9 @@ export type MembershipApplicationRecord = MembershipApplicationInsert & {
   referrer_member_user_id: string | null;
   referral_code_used: string | null;
   referral_captured_at: string | null;
+  /** When true, invite activation requires entitlement unless waived. */
+  billing_required?: boolean;
+  pricing_tier?: "founding" | "standard" | null;
   created_at: string;
   updated_at: string;
 };
