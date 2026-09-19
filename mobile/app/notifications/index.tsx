@@ -60,7 +60,7 @@ export default function NotificationsScreen() {
     }
 
     if (item.introductionTarget) {
-      router.push("/introductions");
+      router.push("/(app)/messages");
       return;
     }
 
@@ -81,7 +81,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <Screen title="Notifications" subtitle="Messages, introductions, and network activity." branded compactHeader>
+    <Screen title="Notifications" subtitle="Messages and network activity." branded compactHeader>
       <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
         <Ionicons name="chevron-back" size={22} color={colors.forest} />
       </Pressable>

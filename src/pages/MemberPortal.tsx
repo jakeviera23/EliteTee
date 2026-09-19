@@ -6,16 +6,12 @@ import { PortalCompose } from "../components/member-portal/PortalCompose";
 import { PortalCourses } from "../components/member-portal/PortalCourses";
 import { PortalDiscover } from "../components/member-portal/PortalDiscover";
 import { PortalFeed } from "../components/member-portal/PortalFeed";
-import { PortalIntroductionRequests } from "../components/member-portal/PortalIntroductionRequests";
 import { PortalMessages } from "../components/member-portal/PortalMessages";
 import { PortalNotificationsPanel } from "../components/member-portal/PortalNotificationsPanel";
-import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
 import { ComingSoonProvider } from "../components/member-portal/ComingSoonProvider";
-import { PortalToastProvider, usePortalToast } from "../components/member-portal/PortalToastProvider";
+import { PortalToastProvider } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
-import { introductionsCopy } from "../data/portalSocial";
 import { getCurrentAuthUserId } from "../lib/authUserLinking";
-import type { IntroductionTab } from "../lib/introductionBoard";
 import { fetchUnreadMessageCount } from "../lib/privateMessages";
 import {
   acknowledgePortalNotificationPanel,
@@ -46,7 +42,6 @@ import {
 import { supabase } from "../lib/supabase";
 import type { IntroductionRequestRecord } from "../types/introductionRequest";
 import type { ProfileReturnContext } from "../types/memberProfileNavigation";
-import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import {
   fetchMemberRelationshipContext,
   type MemberRelationshipContext,
@@ -60,7 +55,6 @@ import "../member-portal-courses.css";
 import "../member-portal-discover.css";
 import "../member-portal-profile.css";
 import "../member-portal-messages.css";
-import "../member-portal-introductions.css";
 import "../member-portal-notifications.css";
 import "../member-portal-mobile.css";
 import "../member-portal-buttons.css";
@@ -146,7 +140,6 @@ function PortalTopBarEnvelopeIcon() {
 function MemberPortalContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { showToast } = usePortalToast();
   const isCoursesRoute = location.pathname === "/courses";
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -175,20 +168,14 @@ function MemberPortalContent() {
     window.matchMedia(MOBILE_LAYOUT_QUERY).matches,
   );
   const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
-  const [pendingIntroductionTab, setPendingIntroductionTab] = useState<IntroductionTab | null>(
-    null,
-  );
-  const [pendingIntroductionRequestId, setPendingIntroductionRequestId] = useState<string | null>(
-    null,
-  );
   const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
     null,
   );
-  const [introRequestMember, setIntroRequestMember] = useState<MemberProfileRecord | null>(null);
   const [pendingAskQuestion, setPendingAskQuestion] = useState<string | null>(null);
   const [pendingFeedPostId, setPendingFeedPostId] = useState<string | null>(null);
   const scrollAfterTransition = useRef<PortalTab | null>(null);
-  const resolvedView: PortalTab = isCoursesRoute ? "courses" : activeView;
+  const resolvedView: PortalTab =
+    isCoursesRoute ? "courses" : activeView === "introductions" ? "messages" : activeView;
 
   const notificationBadgeCount = useMemo(
     () =>
@@ -339,7 +326,6 @@ function MemberPortalContent() {
           openAskWith?: { question: string };
           openFeedPostWith?: { postId: string };
           restorePortalTab?: PortalTab;
-          focusIntroductionRequestId?: string;
         }
       | null
       | undefined;
@@ -369,10 +355,9 @@ function MemberPortalContent() {
     }
 
     if (state?.restorePortalTab) {
-      setActiveView(state.restorePortalTab);
-      if (state.focusIntroductionRequestId) {
-        setPendingIntroductionRequestId(state.focusIntroductionRequestId);
-      }
+      const nextTab =
+        state.restorePortalTab === "introductions" ? "messages" : state.restorePortalTab;
+      setActiveView(nextTab);
       navigate("/member-portal", { replace: true, state: null });
     }
   }, [location.state, navigate]);
@@ -416,8 +401,6 @@ function MemberPortalContent() {
         };
       case "messages":
         return { type: "portal", tab: "messages", label: "Back to Messages" };
-      case "introductions":
-        return { type: "portal", tab: "introductions", label: "Back to Introductions" };
       case "profile":
         return { type: "portal", tab: "profile", label: "Back to Profile" };
       default:
@@ -451,27 +434,10 @@ function MemberPortalContent() {
     transitionTo("messages");
   }
 
-  function handleRequestIntroduction(member: MemberProfileRecord) {
-    setIntroRequestMember(member);
-  }
-
-  function handleRespondToIntroduction(requestId: string) {
-    setPendingIntroductionTab("incoming");
-    setPendingIntroductionRequestId(requestId);
-    transitionTo("introductions");
-  }
-
-  function handleIntroductionSubmitted() {
-    showToast(introductionsCopy.submitSuccess);
-    setIntroRequestMember(null);
-    void refreshRelationshipContext();
-    void refreshNotificationCounts();
-    setPendingIntroductionTab("sent");
-    transitionTo("introductions");
-  }
-
   function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
-    if (view === "courses") {
+    const nextView = view === "introductions" ? "messages" : view;
+
+    if (nextView === "courses") {
       navigate("/courses");
       setActiveView("courses");
       return;
@@ -481,7 +447,7 @@ function MemberPortalContent() {
       navigate("/member-portal");
     }
 
-    if (view === activeView && !options?.scrollToComposer) return;
+    if (nextView === activeView && !options?.scrollToComposer) return;
 
     if (options?.scrollToComposer) {
       scrollAfterTransition.current = "feed";
@@ -489,8 +455,8 @@ function MemberPortalContent() {
 
     setIsTransitioning(true);
     window.setTimeout(() => {
-      setActiveView(view === "compose" && options?.scrollToComposer ? "feed" : view);
-      if (view === "messages" || view === "introductions") {
+      setActiveView(nextView === "compose" && options?.scrollToComposer ? "feed" : nextView);
+      if (nextView === "messages") {
         void refreshNotificationCounts();
       }
       window.setTimeout(() => setIsTransitioning(false), TAB_TRANSITION_MS);
@@ -530,14 +496,10 @@ function MemberPortalContent() {
     setActiveView(tab);
     window.scrollTo({ top: 0, behavior: "auto" });
 
-    if (tab === "messages" || tab === "introductions") {
+    if (tab === "messages") {
       void refreshNotificationCounts();
     }
   }
-
-  const handleIntroductionRequestsChange = useCallback((requests: IntroductionRequestRecord[]) => {
-    setIntroductionRequests(requests);
-  }, []);
 
   function toggleNotificationsPanel() {
     setNotificationsOpen((isOpen) => {
@@ -576,13 +538,6 @@ function MemberPortalContent() {
     if (destination?.view === "messages") {
       setPendingConversation(destination.messageTarget);
       transitionTo("messages");
-      return;
-    }
-
-    if (destination?.view === "introductions") {
-      setPendingIntroductionTab(destination.introductionTarget.tab);
-      setPendingIntroductionRequestId(destination.introductionTarget.requestId);
-      transitionTo("introductions");
       return;
     }
 
@@ -721,8 +676,6 @@ function MemberPortalContent() {
               onNavigate={(tab) => transitionTo(tab)}
               onViewMemberProfile={handleViewMemberProfile}
               onMessageMember={handleMessageMember}
-              onRequestIntroduction={handleRequestIntroduction}
-              onRespondToIntroduction={handleRespondToIntroduction}
               relationshipContext={relationshipContext}
               onRelationshipContextChange={setRelationshipContext}
             />
@@ -739,18 +692,6 @@ function MemberPortalContent() {
             <PortalCompose onPosted={() => transitionTo("feed")} />
           ) : null}
           {resolvedView === "courses" ? <PortalCourses /> : null}
-          {resolvedView === "introductions" ? (
-            <PortalIntroductionRequests
-              isActive={resolvedView === "introductions"}
-              initialTab={pendingIntroductionTab}
-              onInitialTabConsumed={() => setPendingIntroductionTab(null)}
-              focusRequestId={pendingIntroductionRequestId}
-              onFocusRequestConsumed={() => setPendingIntroductionRequestId(null)}
-              onMessageMember={handleMessageMember}
-              onViewMemberProfile={handleViewMemberProfile}
-              onRequestsChange={handleIntroductionRequestsChange}
-            />
-          ) : null}
           {resolvedView === "messages" ? (
             <PortalMessages
               unreadCount={unreadMessageCount}
@@ -765,17 +706,13 @@ function MemberPortalContent() {
               relationshipContext={relationshipContext}
               onViewMemberProfile={handleViewMemberProfile}
               onOpenFeedPost={handleOpenFeedPost}
-              onRequestIntroduction={handleRequestIntroduction}
-              onRespondToIntroduction={handleRespondToIntroduction}
               onMessageMember={handleMessageMember}
             />
           ) : null}
 
-          {resolvedView !== "introductions" ? (
-            <section className="portal-privacy">
-              <p>{privacyCopy}</p>
-            </section>
-          ) : null}
+          <section className="portal-privacy">
+            <p>{privacyCopy}</p>
+          </section>
         </div>
       </main>
 
@@ -795,14 +732,6 @@ function MemberPortalContent() {
           </button>
         ))}
       </nav>
-
-      {introRequestMember ? (
-        <IntroductionRequestModal
-          member={introRequestMember}
-          onClose={() => setIntroRequestMember(null)}
-          onSubmitted={handleIntroductionSubmitted}
-        />
-      ) : null}
     </div>
   );
 }

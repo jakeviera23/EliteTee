@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { experienceCopy, introductionsCopy } from "../data/portalSocial";
+import { experienceCopy } from "../data/portalSocial";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CourseDetailGallery } from "../components/member-portal/course-detail/CourseDetailGallery";
 import { CourseDetailMembersPlayed } from "../components/member-portal/course-detail/CourseDetailMembersPlayed";
@@ -9,7 +9,6 @@ import { EditMemberSubmittedCourseModal } from "../components/member-portal/Edit
 import { BucketListToggleButton } from "../components/member-portal/BucketListToggleButton";
 import { CourseDirectoryCard } from "../components/member-portal/CourseDirectoryCard";
 import { CourseImage } from "../components/member-portal/CourseImage";
-import { IntroductionRequestModal } from "../components/member-portal/IntroductionRequestModal";
 import { usePortalToast } from "../components/member-portal/PortalToastProvider";
 import {
   buildCourseAskPrompts,
@@ -48,7 +47,6 @@ import {
 import type { GolfCourseRecord, GolfCourseSearchResult } from "../types/golfCourse";
 import { isMemberSubmittedCourse } from "../types/golfCourse";
 import type { MemberCourseRoundRecord } from "../types/memberCourseRound";
-import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import type { ViewMemberProfileHandler } from "../types/memberProfileNavigation";
 import "../inside-elitetee.css";
 import "../member-portal.css";
@@ -77,7 +75,6 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditCourseModal, setShowEditCourseModal] = useState(false);
   const [canEditSubmittedCourse, setCanEditSubmittedCourse] = useState(false);
-  const [introMember, setIntroMember] = useState<MemberProfileRecord | null>(null);
   const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
     null,
   );
@@ -500,15 +497,6 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
                     relationshipContext={relationshipContext}
                     currentUserId={currentUserId}
                     onViewMemberProfile={onViewMemberProfile}
-                    onRequestIntroduction={setIntroMember}
-                    onRespondToIntroduction={(requestId) =>
-                      navigate("/member-portal", {
-                        state: {
-                          restorePortalTab: "introductions",
-                          focusIntroductionRequestId: requestId,
-                        },
-                      })
-                    }
                     onMessageMember={(member) => {
                       const memberUserId = member.user_id?.trim();
                       if (!memberUserId) return;
@@ -646,21 +634,6 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
           onSaved={() => {
             showToast("Refreshing course…");
             void loadCourse();
-          }}
-        />
-      ) : null}
-
-      {introMember ? (
-        <IntroductionRequestModal
-          member={introMember}
-          onClose={() => setIntroMember(null)}
-          onSubmitted={() => {
-            showToast(introductionsCopy.submitSuccess);
-            setIntroMember(null);
-            void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
-            navigate("/member-portal", {
-              state: { restorePortalTab: "introductions" },
-            });
           }}
         />
       ) : null}

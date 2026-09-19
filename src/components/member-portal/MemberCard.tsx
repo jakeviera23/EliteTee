@@ -4,7 +4,7 @@ import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 type MemberCardProps = {
   member: MemberProfileRecord;
   onViewProfile: (member: MemberProfileRecord) => void;
-  onRequest: (member: MemberProfileRecord) => void;
+  onMessage: (member: MemberProfileRecord) => void;
 };
 
 function displayValue(value: string | null | undefined) {
@@ -12,7 +12,7 @@ function displayValue(value: string | null | undefined) {
   return text || "—";
 }
 
-export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps) {
+export function MemberCard({ member, onViewProfile, onMessage }: MemberCardProps) {
   const interests =
     member.golf_interests.length > 0
       ? member.golf_interests.join(", ")
@@ -70,9 +70,9 @@ export function MemberCard({ member, onViewProfile, onRequest }: MemberCardProps
         <button
           type="button"
           className="portal-btn portal-btn--gold"
-          onClick={() => onRequest(member)}
+          onClick={() => onMessage(member)}
         >
-          Request Private Introduction
+          Message
         </button>
       </div>
     </article>

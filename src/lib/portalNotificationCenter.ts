@@ -1,5 +1,4 @@
 import type { IntroductionTab } from "./introductionBoard";
-import { getIntroductionCounterpart } from "./introductionBoard";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchIntroductionRequests } from "./introductionRequests";
 import {
@@ -145,67 +144,12 @@ function buildIntroductionNotifications({
   currentUserId: string;
   seenIntroductionRequestIds: Set<string>;
 }): PortalNotificationItem[] {
-  const items: PortalNotificationItem[] = [];
-
-  for (const request of requests) {
-    const status = request.status.toLowerCase();
-    const counterpart = getIntroductionCounterpart(request, currentUserId);
-
-    if (status === "pending" && request.receiver_id === currentUserId) {
-      const isSeen = seenIntroductionRequestIds.has(request.id);
-      items.push({
-        id: `introduction:pending:${request.id}`,
-        kind: "introduction_pending",
-        typeLabel: TYPE_LABELS.introduction_pending,
-        memberName: counterpart.name,
-        description: `${counterpart.name} requested an introduction.`,
-        timestampLabel: formatNotificationTimestamp(request.created_at),
-        sortTimestamp: new Date(request.created_at).getTime() || 0,
-        countsTowardBadge: !isSeen,
-        introductionTarget: { tab: "incoming", requestId: request.id },
-        acknowledgeIntroductionRequestId: request.id,
-      });
-      continue;
-    }
-
-    if (status === "accepted") {
-      const isSeen = seenIntroductionRequestIds.has(request.id);
-      items.push({
-        id: `introduction:accepted:${request.id}`,
-        kind: "introduction_accepted",
-        typeLabel: TYPE_LABELS.introduction_accepted,
-        memberName: counterpart.name,
-        description:
-          request.receiver_id === currentUserId
-            ? `You accepted an introduction with ${counterpart.name}.`
-            : `${counterpart.name} accepted your introduction request.`,
-        timestampLabel: formatNotificationTimestamp(request.accepted_at ?? request.created_at),
-        sortTimestamp: new Date(request.accepted_at ?? request.created_at).getTime() || 0,
-        countsTowardBadge: !isSeen,
-        introductionTarget: { tab: "accepted", requestId: request.id },
-        acknowledgeIntroductionRequestId: request.id,
-      });
-      continue;
-    }
-
-    if (status === "declined" && request.sender_id === currentUserId) {
-      const isSeen = seenIntroductionRequestIds.has(request.id);
-      items.push({
-        id: `introduction:declined:${request.id}`,
-        kind: "introduction_declined",
-        typeLabel: TYPE_LABELS.introduction_declined,
-        memberName: counterpart.name,
-        description: `${counterpart.name} declined your introduction request.`,
-        timestampLabel: formatNotificationTimestamp(request.created_at),
-        sortTimestamp: new Date(request.created_at).getTime() || 0,
-        countsTowardBadge: !isSeen,
-        introductionTarget: { tab: "declined", requestId: request.id },
-        acknowledgeIntroductionRequestId: request.id,
-      });
-    }
-  }
-
-  return items;
+  // Member-facing introductions retired. Keep the function signature for shared helpers/tests,
+  // but do not emit inbox items.
+  void requests;
+  void currentUserId;
+  void seenIntroductionRequestIds;
+  return [];
 }
 
 export function buildFeedLikeNotifications({
@@ -257,22 +201,24 @@ export function buildPortalNotifications({
 }): PortalNotificationItem[] {
   if (!currentUserId) return [];
 
-  const messageItems = buildUnreadMessageNotifications(
-    conversations,
-    seenMessageNotificationKeys,
-  );
-  const introductionItems = buildIntroductionNotifications({
+  // Keep calling the retired builder so signature/params stay live for callers/tests.
+  void buildIntroductionNotifications({
     requests: introductionRequests,
     currentUserId,
     seenIntroductionRequestIds,
   });
+
+  const messageItems = buildUnreadMessageNotifications(
+    conversations,
+    seenMessageNotificationKeys,
+  );
   const feedLikeItems = buildFeedLikeNotifications({
     likes: feedLikes,
     likerProfilesByUserId,
     seenFeedLikeKeys,
   });
 
-  return sortNotifications([...messageItems, ...feedLikeItems, ...introductionItems]);
+  return sortNotifications([...messageItems, ...feedLikeItems]);
 }
 
 export function resolvePortalNotificationDestination(notification: PortalNotificationItem) {
@@ -284,9 +230,10 @@ export function resolvePortalNotificationDestination(notification: PortalNotific
   }
 
   if (notification.introductionTarget) {
+    // Introductions UI retired — route legacy notification taps to Messages.
     return {
-      view: "introductions" as const,
-      introductionTarget: notification.introductionTarget,
+      view: "messages" as const,
+      messageTarget: null,
     };
   }
 
@@ -436,37 +383,13 @@ export function computePortalNotificationBadgeCountFromSources({
 
   if (!currentUserId) return unreadMessageCount;
 
-  let count = unreadMessageCount;
+  // Introductions no longer contribute to the badge; keep the parameter for API stability.
+  void introductionRequests;
+  void seenIntroductionRequestIds;
 
-  for (const request of introductionRequests) {
-    const status = request.status.toLowerCase();
-
-    if (
-      status === "pending" &&
-      request.receiver_id === currentUserId &&
-      !seenIntroductionRequestIds.has(request.id)
-    ) {
-      count += 1;
-      continue;
-    }
-
-    if (status === "accepted" && !seenIntroductionRequestIds.has(request.id)) {
-      count += 1;
-      continue;
-    }
-
-    if (
-      status === "declined" &&
-      request.sender_id === currentUserId &&
-      !seenIntroductionRequestIds.has(request.id)
-    ) {
-      count += 1;
-    }
-  }
-
-  count += countUnseenFeedLikeNotifications({ feedLikes, seenFeedLikeKeys });
-
-  return count;
+  return (
+    unreadMessageCount + countUnseenFeedLikeNotifications({ feedLikes, seenFeedLikeKeys })
+  );
 }
 
 export const PORTAL_NOTIFICATIONS_EMPTY_MESSAGE = "You're all caught up.";

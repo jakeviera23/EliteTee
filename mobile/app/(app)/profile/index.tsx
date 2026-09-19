@@ -92,12 +92,8 @@ export default function ProfileScreen() {
           <Text style={styles.linkLabel}>Edit profile</Text>
           <Text style={styles.linkChevron}>›</Text>
         </Pressable>
-        <Pressable onPress={() => router.push("/courses")} style={styles.linkRow}>
+        <Pressable onPress={() => router.push("/courses")} style={[styles.linkRow, styles.linkRowLast]}>
           <Text style={styles.linkLabel}>Courses</Text>
-          <Text style={styles.linkChevron}>›</Text>
-        </Pressable>
-        <Pressable onPress={() => router.push("/introductions")} style={[styles.linkRow, styles.linkRowLast]}>
-          <Text style={styles.linkLabel}>Introductions</Text>
           <Text style={styles.linkChevron}>›</Text>
         </Pressable>
       </View>

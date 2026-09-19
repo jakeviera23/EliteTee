@@ -38,13 +38,6 @@ export const CREATE_OPTIONS: CreateOption[] = [
     route: "/(app)/create/golf-travel",
   },
   {
-    id: "request-intro",
-    title: "Request an Introduction",
-    description: "Ask for a warm introduction to another member.",
-    status: "live",
-    route: "/introductions",
-  },
-  {
     id: "ask-community",
     title: "Ask the Community",
     description: "Pose a question to EliteTee members.",

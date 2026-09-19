@@ -10,7 +10,7 @@ import { MemberIdentity } from "./MemberClubAvatar";
 
 type MemberProfileModalContentProps = {
   member: MemberProfileRecord;
-  onRequest: (member: MemberProfileRecord) => void;
+  onMessage: (member: MemberProfileRecord) => void;
 };
 
 const EMPTY_FIELD_LABEL = "Not specified";
@@ -43,7 +43,7 @@ function ListBlock({ label, items }: { label: string; items: unknown }) {
   );
 }
 
-function MemberProfileModalBody({ member, onRequest }: MemberProfileModalContentProps) {
+function MemberProfileModalBody({ member, onMessage }: MemberProfileModalContentProps) {
   const safeMember = normalizeMemberProfileRecord(member as unknown as Record<string, unknown>);
   const membershipLine =
     safeMember.membership_status === "Founding Member"
@@ -76,8 +76,8 @@ function MemberProfileModalBody({ member, onRequest }: MemberProfileModalContent
         <ListBlock label="Off-Course Interests" items={safeMember.business_interests} />
         <TextBlock label="Bio" value={displayProfileText(safeMember.current_request)} />
       </div>
-      <button type="button" className="portal-btn portal-btn--gold" onClick={() => onRequest(safeMember)}>
-        Request Private Introduction
+      <button type="button" className="portal-btn portal-btn--gold" onClick={() => onMessage(safeMember)}>
+        Message
       </button>
     </div>
   );

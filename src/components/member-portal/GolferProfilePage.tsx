@@ -94,8 +94,6 @@ type GolferProfilePageProps = {
   onBack?: () => void;
   backLabel?: string;
   onMessageMember?: (userId: string, memberName: string) => void;
-  onRequestIntroduction?: (member: MemberProfileRecord) => void;
-  onRespondToIntroduction?: (requestId: string) => void;
   relationshipContext?: MemberRelationshipContext | null;
   onViewMemberProfile?: (userId: string, memberName: string) => void;
   onOpenFeedPost?: (postId: string) => void;
@@ -107,8 +105,6 @@ export function GolferProfilePage({
   onBack,
   backLabel = "Back",
   onMessageMember,
-  onRequestIntroduction,
-  onRespondToIntroduction,
   relationshipContext = null,
   onViewMemberProfile: _onViewMemberProfile,
   onOpenFeedPost,
@@ -283,9 +279,7 @@ export function GolferProfilePage({
   const joinedLabel = formatJoinedDate(memberProfile?.created_at || memberProfile?.updated_at);
   const profileUserId = memberProfile?.user_id?.trim() ?? "";
   const showRelationshipActions =
-    isViewingOther &&
-    Boolean(profileUserId) &&
-    Boolean(onRequestIntroduction || onRespondToIntroduction || onMessageMember);
+    isViewingOther && Boolean(profileUserId) && Boolean(onMessageMember);
   const businessInterests = (memberProfile?.business_interests ?? []).filter(isMeaningfulProfileText);
   const headlineLabel = isMeaningfulProfileText(display.title) ? display.title.trim() : "";
   const homeClubLabel = isMeaningfulProfileText(display.homeCourse) ? display.homeCourse.trim() : "";
@@ -409,10 +403,6 @@ export function GolferProfilePage({
                       otherUserId={profileUserId}
                       context={relationshipContext}
                       layout="hero"
-                      onRequestIntroduction={() =>
-                        memberProfile && onRequestIntroduction?.(memberProfile)
-                      }
-                      onRespondToRequest={onRespondToIntroduction}
                       onMessage={() =>
                         onMessageMember?.(profileUserId, memberProfile?.full_name ?? "Member")
                       }

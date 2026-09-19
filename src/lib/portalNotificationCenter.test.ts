@@ -93,7 +93,7 @@ describe("buildPortalNotifications", () => {
     expect(notifications[0]?.introductionTarget).toBeUndefined();
   });
 
-  it("routes introduction notifications to the correct tab", () => {
+  it("does not emit introduction inbox items after retirement", () => {
     const notifications = buildPortalNotifications({
       currentUserId: "member-1",
       seenIntroductionRequestIds: new Set(),
@@ -124,13 +124,7 @@ describe("buildPortalNotifications", () => {
       ],
     });
 
-    const targets = Object.fromEntries(
-      notifications.map((item) => [item.introductionTarget?.requestId, item.introductionTarget]),
-    );
-
-    expect(targets["intro-pending"]).toEqual({ tab: "incoming", requestId: "intro-pending" });
-    expect(targets["intro-accepted"]).toEqual({ tab: "accepted", requestId: "intro-accepted" });
-    expect(targets["intro-declined"]).toEqual({ tab: "declined", requestId: "intro-declined" });
+    expect(notifications).toEqual([]);
   });
 });
 
@@ -258,6 +252,25 @@ describe("resolvePortalNotificationDestination", () => {
       postId: POST_ID,
     });
   });
+
+  it("remaps legacy introduction targets to messages", () => {
+    expect(
+      resolvePortalNotificationDestination({
+        id: "introduction:pending:intro-1",
+        kind: "introduction_pending",
+        typeLabel: "Introduction request",
+        memberName: "Alex Kim",
+        description: "Alex Kim requested an introduction.",
+        timestampLabel: null,
+        sortTimestamp: 0,
+        countsTowardBadge: true,
+        introductionTarget: { tab: "incoming", requestId: "intro-1" },
+      }),
+    ).toEqual({
+      view: "messages",
+      messageTarget: null,
+    });
+  });
 });
 
 describe("feed like seen keys", () => {
@@ -331,7 +344,7 @@ describe("acknowledgePortalNotificationPanel", () => {
 
     const seenState = acknowledgePortalNotificationPanel("member-1", notifications);
 
-    expect(seenState.seenIntroductionRequestIds.has("intro-pending")).toBe(true);
+    expect(seenState.seenIntroductionRequestIds.has("intro-pending")).toBe(false);
     expect(
       seenState.seenFeedLikeKeys.has(buildFeedLikeSeenKey(POST_ID, "member-4")),
     ).toBe(true);
@@ -431,7 +444,7 @@ describe("countUnseenMessageNotifications", () => {
 });
 
 describe("computePortalNotificationBadgeCount", () => {
-  it("combines unread messages with actionable introduction items", () => {
+  it("counts unread messages without retired introduction items", () => {
     const notifications = buildPortalNotifications({
       currentUserId: "member-1",
       seenIntroductionRequestIds: new Set(["intro-accepted"]),
@@ -461,10 +474,10 @@ describe("computePortalNotificationBadgeCount", () => {
       ],
     });
 
-    expect(computePortalNotificationBadgeCount(notifications)).toBe(6);
+    expect(computePortalNotificationBadgeCount(notifications)).toBe(4);
   });
 
-  it("derives the same combined count from lightweight sources", () => {
+  it("derives the same message-only count from lightweight sources", () => {
     const count = computePortalNotificationBadgeCountFromSources({
       unreadMessageCount: 4,
       currentUserId: "member-1",
@@ -491,7 +504,7 @@ describe("computePortalNotificationBadgeCount", () => {
       ],
     });
 
-    expect(count).toBe(6);
+    expect(count).toBe(4);
   });
 });
 
@@ -505,7 +518,7 @@ describe("getNotificationBadgeDisplay", () => {
 });
 
 describe("groupPortalNotifications", () => {
-  it("groups mixed notifications into sections when both types exist", () => {
+  it("groups mixed notifications into messages and feed sections", () => {
     const notifications = buildPortalNotifications({
       currentUserId: "member-1",
       seenIntroductionRequestIds: new Set(),
@@ -534,8 +547,8 @@ describe("groupPortalNotifications", () => {
 
     const sections = groupPortalNotifications(notifications);
 
-    expect(sections).toHaveLength(3);
-    expect(sections.map((section) => section.id)).toEqual(["messages", "feed", "introductions"]);
+    expect(sections).toHaveLength(2);
+    expect(sections.map((section) => section.id)).toEqual(["messages", "feed"]);
     expect(sections.every((section) => section.showHeader)).toBe(true);
   });
 });

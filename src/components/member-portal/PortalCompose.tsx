@@ -34,7 +34,7 @@ export function PortalCompose({ onPosted }: PortalComposeProps) {
         <h2 id="compose-heading" className="et-feed-title">
           Create post
         </h2>
-        <p className="et-feed-lead">Share where you played, request introductions, and connect with members.</p>
+        <p className="et-feed-lead">Share where you played and connect with members.</p>
       </header>
       <FeedComposer author={composerAuthor} onPosted={handlePosted} />
     </section>

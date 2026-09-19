@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { askCopy, introductionsCopy } from "../../data/portalSocial";
+import { askCopy } from "../../data/portalSocial";
 import {
   ASK_ELITETEE_EXAMPLE_PROMPTS,
   askEliteTee,
@@ -25,7 +25,6 @@ import type { GolfCourseSearchResult } from "../../types/golfCourse";
 import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigation";
 import { CourseDirectoryCard } from "./CourseDirectoryCard";
 import { DiscoverDirectoryCard } from "./discover/DiscoverDirectoryCard";
-import { IntroductionRequestModal } from "./IntroductionRequestModal";
 import { usePortalToast } from "./PortalToastProvider";
 
 type AskEliteTeeProps = {
@@ -94,7 +93,6 @@ export function AskEliteTee({
   const [response, setResponse] = useState<AskEliteTeeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [introMember, setIntroMember] = useState<MemberProfileRecord | null>(null);
   const [relationshipContext, setRelationshipContext] = useState<MemberRelationshipContext | null>(
     null,
   );
@@ -182,15 +180,6 @@ export function AskEliteTee({
     navigate("/member-portal", {
       state: {
         openMessagesWith: { userId: memberUserId, memberName: member.full_name },
-      },
-    });
-  }
-
-  function handleRespondToIntroduction(requestId: string) {
-    navigate("/member-portal", {
-      state: {
-        restorePortalTab: "introductions",
-        focusIntroductionRequestId: requestId,
       },
     });
   }
@@ -399,8 +388,6 @@ export function AskEliteTee({
                       relationshipContext={relationshipContext}
                       matchReasonsOverride={memberMap.get(member.user_id) ?? []}
                       onViewProfile={handleViewProfile}
-                      onRequestIntroduction={setIntroMember}
-                      onRespondToIntroduction={handleRespondToIntroduction}
                       onMessageMember={handleMessageMember}
                     />
                   );
@@ -499,20 +486,6 @@ export function AskEliteTee({
         </div>
       ) : null}
 
-      {introMember ? (
-        <IntroductionRequestModal
-          member={introMember}
-          onClose={() => setIntroMember(null)}
-          onSubmitted={() => {
-            showToast(introductionsCopy.submitSuccess);
-            setIntroMember(null);
-            void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
-            navigate("/member-portal", {
-              state: { restorePortalTab: "introductions" },
-            });
-          }}
-        />
-      ) : null}
     </section>
   );
 }

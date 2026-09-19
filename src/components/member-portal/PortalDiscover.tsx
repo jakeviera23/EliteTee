@@ -34,11 +34,9 @@ import { InviteGolfer } from "./InviteGolfer";
 
 type PortalDiscoverProps = {
   onViewCourse?: (courseId: string) => void;
-  onNavigate?: (tab: "profile" | "messages" | "introductions") => void;
+  onNavigate?: (tab: "profile" | "messages") => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onMessageMember?: (userId: string, memberName: string) => void;
-  onRequestIntroduction?: (member: MemberProfileRecord) => void;
-  onRespondToIntroduction?: (requestId: string) => void;
   relationshipContext?: MemberRelationshipContext | null;
   onRelationshipContextChange?: (context: MemberRelationshipContext | null) => void;
 };
@@ -48,8 +46,6 @@ export function PortalDiscover({
   onNavigate: _onNavigate,
   onViewMemberProfile,
   onMessageMember,
-  onRequestIntroduction,
-  onRespondToIntroduction,
   relationshipContext = null,
   onRelationshipContextChange,
 }: PortalDiscoverProps) {
@@ -206,8 +202,6 @@ export function PortalDiscover({
                 viewer={viewer}
                 relationshipContext={relationshipContext}
                 onViewProfile={handleViewProfile}
-                onRequestIntroduction={onRequestIntroduction}
-                onRespondToIntroduction={onRespondToIntroduction}
                 onMessageMember={onMessageMember ? handleMessageMember : undefined}
                 onViewAllMembers={handleViewAllMembers}
               />
@@ -248,8 +242,6 @@ export function PortalDiscover({
                       viewer={viewer}
                       relationshipContext={relationshipContext}
                       onViewProfile={handleViewProfile}
-                      onRequestIntroduction={onRequestIntroduction}
-                      onRespondToIntroduction={onRespondToIntroduction}
                       onMessageMember={onMessageMember ? handleMessageMember : undefined}
                     />
                   </li>

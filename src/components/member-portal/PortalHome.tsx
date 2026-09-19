@@ -93,7 +93,7 @@ export function PortalHome({
                     className="portal-btn portal-btn--outline portal-home-opportunity-btn"
                     onClick={onViewOpportunity}
                   >
-                    View Introductions
+                    View Messages
                   </button>
                 </article>
               </li>

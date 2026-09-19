@@ -7,7 +7,6 @@ import { fetchConversations } from "@/lib/api/messages";
 import { fetchIntroductionRequests } from "@/lib/api/introductions";
 import { getCurrentUserId } from "@/lib/api/members";
 import { requireSupabase } from "@/lib/supabase";
-import { INTRODUCTION_WITHDRAWN_RESPONSE } from "./introductionStatus";
 import {
   getLastSeenNetworkActivityAt,
   getSeenIntroductionRequestIds,
@@ -105,73 +104,11 @@ function buildIntroductionNotifications({
   currentUserId: string;
   seenIntroductionRequestIds: Set<string>;
 }): PortalNotificationItem[] {
-  const items: PortalNotificationItem[] = [];
-
-  for (const request of requests) {
-    const status = request.status.toLowerCase();
-    const counterpartName = getIntroductionCounterpartName(request, currentUserId);
-    const counterpartUserId = getIntroductionCounterpartUserId(request, currentUserId);
-
-    if (status === "pending" && request.receiver_id === currentUserId) {
-      items.push({
-        id: `introduction:pending:${request.id}`,
-        kind: "introduction_pending",
-        typeLabel: TYPE_LABELS.introduction_pending,
-        memberName: counterpartName,
-        description: "Requested an introduction with you.",
-        timestampLabel: formatNotificationTimestamp(request.created_at),
-        sortTimestamp: new Date(request.created_at).getTime() || 0,
-        countsTowardBadge: true,
-        actorUserId: counterpartUserId,
-        introductionTarget: { tab: "incoming", requestId: request.id },
-      });
-      continue;
-    }
-
-    if (status === "accepted") {
-      const isSeen = seenIntroductionRequestIds.has(request.id);
-      items.push({
-        id: `introduction:accepted:${request.id}`,
-        kind: "introduction_accepted",
-        typeLabel: TYPE_LABELS.introduction_accepted,
-        memberName: counterpartName,
-        description:
-          request.receiver_id === currentUserId
-            ? "You accepted this introduction."
-            : "Accepted your introduction request.",
-        timestampLabel: formatNotificationTimestamp(request.accepted_at ?? request.created_at),
-        sortTimestamp: new Date(request.accepted_at ?? request.created_at).getTime() || 0,
-        countsTowardBadge: !isSeen,
-        actorUserId: counterpartUserId,
-        introductionTarget: { tab: "accepted", requestId: request.id },
-        acknowledgeIntroductionRequestId: request.id,
-      });
-      continue;
-    }
-
-    if (status === "declined" && request.sender_id === currentUserId) {
-      // Sender withdrawals should not look like the receiver declined.
-      if ((request.response_message ?? "").trim() === INTRODUCTION_WITHDRAWN_RESPONSE) {
-        continue;
-      }
-      const isSeen = seenIntroductionRequestIds.has(request.id);
-      items.push({
-        id: `introduction:declined:${request.id}`,
-        kind: "introduction_declined",
-        typeLabel: TYPE_LABELS.introduction_declined,
-        memberName: counterpartName,
-        description: "Declined your introduction request.",
-        timestampLabel: formatNotificationTimestamp(request.created_at),
-        sortTimestamp: new Date(request.created_at).getTime() || 0,
-        countsTowardBadge: !isSeen,
-        actorUserId: counterpartUserId,
-        introductionTarget: { tab: "declined", requestId: request.id },
-        acknowledgeIntroductionRequestId: request.id,
-      });
-    }
-  }
-
-  return items;
+  // Member-facing introductions retired — do not emit inbox items.
+  void requests;
+  void currentUserId;
+  void seenIntroductionRequestIds;
+  return [];
 }
 
 async function fetchNetworkNotifications(userId: string, lastSeenAt: string | null) {

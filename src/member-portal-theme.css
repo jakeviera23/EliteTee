@@ -103,7 +103,7 @@
   .portal-page.et-theme-portal .portal-bottom-nav {
     background: rgba(28, 43, 36, 0.98);
     border-top-color: var(--et-chrome-border);
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .portal-page.et-theme-portal .portal-bottom-nav-btn {

@@ -14,8 +14,6 @@ type DiscoverDirectoryCardProps = {
   /** Optional match reasons for Ask EliteTee / special contexts. Discover omits these. */
   matchReasonsOverride?: string[];
   onViewProfile: (member: MemberProfileRecord) => void;
-  onRequestIntroduction?: (member: MemberProfileRecord) => void;
-  onRespondToIntroduction?: (requestId: string) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
 };
 
@@ -25,8 +23,6 @@ export function DiscoverDirectoryCard({
   relationshipContext = null,
   matchReasonsOverride,
   onViewProfile,
-  onRequestIntroduction,
-  onRespondToIntroduction,
   onMessageMember,
 }: DiscoverDirectoryCardProps) {
   const interestChips = selectInterestChips(member, 2);
@@ -40,9 +36,7 @@ export function DiscoverDirectoryCard({
     Boolean(memberUserId) &&
     Boolean(viewer?.user_id) &&
     memberUserId !== viewer?.user_id &&
-    Boolean(
-      onRequestIntroduction || onRespondToIntroduction || onMessageMember,
-    );
+    Boolean(onMessageMember);
   const matchReasons = (matchReasonsOverride ?? []).slice(0, 2);
 
   return (
@@ -126,8 +120,6 @@ export function DiscoverDirectoryCard({
           <MemberRelationshipActions
             otherUserId={memberUserId}
             context={relationshipContext}
-            onRequestIntroduction={() => onRequestIntroduction?.(member)}
-            onRespondToRequest={onRespondToIntroduction}
             onMessage={() => onMessageMember?.(member)}
           />
         ) : null}

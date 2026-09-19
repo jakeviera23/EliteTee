@@ -99,85 +99,41 @@ export function hasExistingDirectMessageThread(
 export function canDirectMessageMember(
   currentUserId: string,
   otherUserId: string,
-  requests: IntroductionRequestRecord[],
-  directThreadUserIds: Set<string>,
+  _requests: IntroductionRequestRecord[] = [],
+  _directThreadUserIds: Set<string> = new Set(),
 ): boolean {
   if (!currentUserId || !otherUserId || currentUserId === otherUserId) {
     return false;
   }
 
-  if (membersAreConnected(currentUserId, otherUserId, requests)) {
-    return true;
-  }
-
-  return hasExistingDirectMessageThread(otherUserId, directThreadUserIds);
+  // Membership approval + portal access (enforced by RLS) is the trust gate.
+  return true;
 }
 
 export function resolveMemberRelationshipCtaForPair(
   currentUserId: string,
   otherUserId: string,
-  context: Pick<MemberRelationshipContext, "introductionRequests" | "directThreadUserIds">,
+  _context: Pick<MemberRelationshipContext, "introductionRequests" | "directThreadUserIds">,
   options?: { compact?: boolean },
 ): MemberRelationshipCta {
-  const state = resolveMemberRelationshipState(
-    currentUserId,
-    otherUserId,
-    context.introductionRequests,
-  );
-
-  if (state === "connected") {
-    return resolveMemberRelationshipCta("connected", options);
+  if (!currentUserId || !otherUserId || currentUserId === otherUserId) {
+    return resolveMemberRelationshipCta("none", options);
   }
 
-  if (hasExistingDirectMessageThread(otherUserId, context.directThreadUserIds)) {
-    return resolveMemberRelationshipCta("connected", options);
-  }
-
-  if (state === "pending_sent") {
-    return resolveMemberRelationshipCta("pending_sent", options);
-  }
-
-  if (state === "pending_received") {
-    return resolveMemberRelationshipCta("pending_received", options);
-  }
-
-  return resolveMemberRelationshipCta("none", options);
+  return resolveMemberRelationshipCta("connected", options);
 }
 
 export function resolveMemberRelationshipCta(
   state: MemberRelationshipState,
   options?: { compact?: boolean },
 ): MemberRelationshipCta {
-  const compact = options?.compact ?? false;
-
-  switch (state) {
-    case "pending_sent":
-      return {
-        action: "pending_sent",
-        label: "Request Pending",
-        primary: false,
-        disabled: true,
-      };
-    case "pending_received":
-      return {
-        action: "respond_to_request",
-        label: compact ? "Respond" : "Respond to Request",
-        primary: true,
-      };
-    case "connected":
-      return {
-        action: "message",
-        label: "Message",
-        primary: true,
-      };
-    case "none":
-    default:
-      return {
-        action: "request_introduction",
-        label: "Request Introduction",
-        primary: true,
-      };
-  }
+  void state;
+  void options;
+  return {
+    action: "message",
+    label: "Message",
+    primary: true,
+  };
 }
 
 export function countMemberConnections(
@@ -271,29 +227,15 @@ export async function assertCanSendDirectMessage(
   senderId: string,
   receiverId: string,
 ): Promise<Error | null> {
-  const { context, error } = await fetchMemberRelationshipContext();
-
-  if (error) {
-    return error;
-  }
-
-  if (!context) {
+  if (!senderId) {
     return new Error("You must be signed in to send messages.");
   }
 
-  if (
-    !canDirectMessageMember(
-      senderId,
-      receiverId,
-      context.introductionRequests,
-      context.directThreadUserIds,
-    )
-  ) {
-    return new Error(
-      "Request and accept an introduction before messaging this member for the first time.",
-    );
+  if (!receiverId || senderId === receiverId) {
+    return new Error("You cannot message yourself.");
   }
 
+  // Portal access for both members is enforced by RLS (074).
   return null;
 }
 

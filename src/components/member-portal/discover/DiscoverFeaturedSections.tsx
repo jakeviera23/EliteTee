@@ -8,8 +8,6 @@ type DiscoverFeaturedSectionsProps = {
   viewer: MemberProfileRecord | null;
   relationshipContext?: MemberRelationshipContext | null;
   onViewProfile: (member: MemberProfileRecord) => void;
-  onRequestIntroduction?: (member: MemberProfileRecord) => void;
-  onRespondToIntroduction?: (requestId: string) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
   onViewAllMembers?: () => void;
 };
@@ -19,8 +17,6 @@ export function DiscoverFeaturedSections({
   viewer,
   relationshipContext = null,
   onViewProfile,
-  onRequestIntroduction,
-  onRespondToIntroduction,
   onMessageMember,
   onViewAllMembers,
 }: DiscoverFeaturedSectionsProps) {
@@ -61,8 +57,6 @@ export function DiscoverFeaturedSections({
                   viewer={viewer}
                   relationshipContext={relationshipContext}
                   onViewProfile={onViewProfile}
-                  onRequestIntroduction={onRequestIntroduction}
-                  onRespondToIntroduction={onRespondToIntroduction}
                   onMessageMember={onMessageMember}
                 />
               </li>

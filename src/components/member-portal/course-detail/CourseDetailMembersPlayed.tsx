@@ -19,13 +19,11 @@ type CourseDetailMembersPlayedProps = {
   relationshipContext?: MemberRelationshipContext | null;
   currentUserId?: string | null;
   onViewMemberProfile?: ViewMemberProfileHandler;
-  onRequestIntroduction?: (member: MemberProfileRecord) => void;
-  onRespondToIntroduction?: (requestId: string) => void;
   onMessageMember?: (member: MemberProfileRecord) => void;
   onAddPlayed?: () => void;
 };
 
-function toIntroMember(profile: ApprovedMemberDirectoryProfile): MemberProfileRecord {
+function toMemberRecord(profile: ApprovedMemberDirectoryProfile): MemberProfileRecord {
   return {
     ...profile,
     email: "",
@@ -49,8 +47,6 @@ export function CourseDetailMembersPlayed({
   relationshipContext = null,
   currentUserId = null,
   onViewMemberProfile,
-  onRequestIntroduction,
-  onRespondToIntroduction,
   onMessageMember,
   onAddPlayed,
 }: CourseDetailMembersPlayedProps) {
@@ -74,7 +70,7 @@ export function CourseDetailMembersPlayed({
       {summaries.map((summary) => {
         const profile = profilesByUserId[summary.memberUserId];
         const memberForDisplay: MemberProfileRecord = profile
-          ? toIntroMember(profile)
+          ? toMemberRecord(profile)
           : {
               id: summary.memberUserId,
               user_id: summary.memberUserId,
@@ -108,7 +104,7 @@ export function CourseDetailMembersPlayed({
           Boolean(profile) &&
           Boolean(currentUserId) &&
           summary.memberUserId !== currentUserId &&
-          Boolean(onRequestIntroduction || onRespondToIntroduction || onMessageMember);
+          Boolean(onMessageMember);
 
         return (
           <li key={summary.memberUserId}>
@@ -174,9 +170,7 @@ export function CourseDetailMembersPlayed({
                     otherUserId={summary.memberUserId}
                     context={relationshipContext}
                     compactLabels
-                    onRequestIntroduction={() => onRequestIntroduction?.(toIntroMember(profile!))}
-                    onRespondToRequest={onRespondToIntroduction}
-                    onMessage={() => onMessageMember?.(toIntroMember(profile!))}
+                    onMessage={() => onMessageMember?.(toMemberRecord(profile!))}
                   />
                 ) : null}
               </div>
