@@ -2169,6 +2169,22 @@ button {
   color: var(--ink);
 }
 
+.footer-legal {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.footer-legal a {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  transition: color 0.35s var(--ease);
+}
+
+.footer-legal a:hover {
+  color: var(--ink);
+}
+
 /* Reveal (optional, kept minimal) */
 .reveal {
   opacity: 1;
@@ -2656,6 +2672,54 @@ button {
 .about-return {
   align-self: flex-start;
   margin-top: 0.25rem;
+}
+
+/* Public legal pages (Privacy Policy) */
+.legal-page .legal-layout {
+  max-width: 44rem;
+}
+
+.legal-eyebrow {
+  margin: 0 0 0.65rem;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.legal-meta {
+  margin: 0.85rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--ink-muted);
+}
+
+.legal-prose h3 {
+  margin: 1.35rem 0 0.45rem;
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.legal-prose ul {
+  margin: 0.75rem 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.legal-prose li {
+  margin: 0.35rem 0;
+}
+
+.legal-prose a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.legal-back {
+  margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
 }
 
 .priorities-sublead {

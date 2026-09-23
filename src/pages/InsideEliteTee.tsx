@@ -480,7 +480,7 @@ export function InsideEliteTee() {
             </section>
 
             <footer className="inside-gate-legal">
-              <Link to="/" className="inside-gate-legal-link">
+              <Link to="/privacy" className="inside-gate-legal-link">
                 Privacy
               </Link>
               <span aria-hidden="true">·</span>

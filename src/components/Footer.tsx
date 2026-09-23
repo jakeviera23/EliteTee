@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export function Footer() {
   return (
     <footer className="footer">
@@ -11,6 +13,9 @@ export function Footer() {
           <p className="footer-contact">
             Questions? Contact us at{" "}
             <a href="mailto:membership@elitetee.club">membership@elitetee.club</a>
+          </p>
+          <p className="footer-legal">
+            <Link to="/privacy">Privacy Policy</Link>
           </p>
         </div>
       </div>
