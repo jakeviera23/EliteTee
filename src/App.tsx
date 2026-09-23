@@ -4,6 +4,7 @@ import { AuthEntryHandler } from "./components/AuthEntryHandler";
 import { PortalToastProvider } from "./components/member-portal/PortalToastProvider";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
+import { Privacy } from "./pages/Privacy";
 import { InsideEliteTee } from "./pages/InsideEliteTee";
 import { MemberDirectory } from "./pages/MemberDirectory";
 import { MemberPortal } from "./pages/MemberPortal";
@@ -54,6 +55,7 @@ export default function App() {
         <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/founder" element={<Navigate to="/about" replace />} />
       <Route path="/login" element={<InsideEliteTee />} />
       <Route path="/inside" element={<InsideEliteTee />} />
