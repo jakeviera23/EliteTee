@@ -3,6 +3,7 @@ import {
   acceptsPrivateMessageImageByteSize,
   buildPrivateMessageImageManipulatorActions,
   computePrivateMessageImageResize,
+  draftFromPrivateMessageImagePickerAsset,
   isHeicLikePrivateMessageImage,
   normalizePrivateMessageImageMime,
   PRIVATE_MESSAGE_IMAGE_COMPRESS_QUALITIES,
@@ -23,6 +24,49 @@ describe("normalizePrivateMessageImageMime", () => {
   it("keeps png and webp", () => {
     expect(normalizePrivateMessageImageMime("image/png")).toBe("image/png");
     expect(normalizePrivateMessageImageMime("image/webp")).toBe("image/webp");
+  });
+});
+
+describe("draftFromPrivateMessageImagePickerAsset", () => {
+  it("preserves HEIC mime/fileName so preprocess can detect conversion need", () => {
+    const result = draftFromPrivateMessageImagePickerAsset({
+      uri: "file:///tmp/IMG_001.HEIC",
+      mimeType: "image/heic",
+      fileName: "IMG_001.HEIC",
+      width: 1200,
+      height: 900,
+      type: "image",
+    });
+    expect(result).toEqual({
+      draft: {
+        uri: "file:///tmp/IMG_001.HEIC",
+        mimeType: "image/heic",
+        fileName: "IMG_001.HEIC",
+        width: 1200,
+        height: 900,
+      },
+    });
+  });
+
+  it("rejects video assets even if the picker returns one", () => {
+    const result = draftFromPrivateMessageImagePickerAsset({
+      uri: "file:///tmp/clip.mov",
+      mimeType: "video/quicktime",
+      fileName: "clip.mov",
+      type: "video",
+    });
+    expect(result).toEqual({ error: "Only photos can be attached right now." });
+  });
+
+  it("rejects empty uris", () => {
+    const result = draftFromPrivateMessageImagePickerAsset({
+      uri: "  ",
+      mimeType: "image/jpeg",
+      type: "image",
+    });
+    expect(result).toEqual({
+      error: "Could not read the selected photo. Please try another image.",
+    });
   });
 });
 

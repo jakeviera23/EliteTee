@@ -15,7 +15,8 @@ import type { MobileFeedPost } from "@/types/feed";
 
 type FeedPostCardProps = {
   post: MobileFeedPost;
-  onPostChange?: (post: MobileFeedPost) => void;
+  /** Parent must merge this patch onto the latest list entry (functional setState). */
+  onPostChange?: (postId: string, patch: Partial<MobileFeedPost>) => void;
   onToast?: (message: string) => void;
   showActions?: boolean;
 };
@@ -54,9 +55,8 @@ export function FeedPostCard({
     );
 
   function updatePost(patch: Partial<MobileFeedPost>) {
-    const next = { ...post, ...patch };
-    cacheFeedPostSnapshot(next);
-    onPostChange?.(next);
+    cacheFeedPostSnapshot({ ...post, ...patch });
+    onPostChange?.(post.id, patch);
   }
 
   function openDetail() {

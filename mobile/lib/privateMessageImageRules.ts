@@ -194,6 +194,47 @@ export function validatePrivateMessageImageDraft(
   return null;
 }
 
+/**
+ * Normalize an expo-image-picker asset into a private-message image draft.
+ * Keeps the picker MIME/fileName intact so HEIC detection still works in preprocess.
+ * Video is rejected — DM attachments only support images today.
+ */
+export function draftFromPrivateMessageImagePickerAsset(asset: {
+  uri?: string | null;
+  mimeType?: string | null;
+  fileName?: string | null;
+  width?: number | null;
+  height?: number | null;
+  type?: string | null;
+}): { draft: MobilePrivateMessageImageDraft } | { error: string } {
+  const assetType = (asset.type ?? "").toLowerCase();
+  if (assetType === "video" || assetType.includes("video")) {
+    return { error: "Only photos can be attached right now." };
+  }
+
+  const uri = (asset.uri ?? "").trim();
+  if (!uri) {
+    return { error: "Could not read the selected photo. Please try another image." };
+  }
+
+  const draft: MobilePrivateMessageImageDraft = {
+    uri,
+    // Preserve raw MIME (incl. HEIC). Do not normalize to jpeg here — that would
+    // hide HEIC when fileName is missing and skip required preprocess.
+    mimeType: asset.mimeType ?? null,
+    width: asset.width ?? null,
+    height: asset.height ?? null,
+    fileName: asset.fileName ?? null,
+  };
+
+  const validationError = validatePrivateMessageImageDraft(draft);
+  if (validationError) {
+    return { error: validationError };
+  }
+
+  return { draft };
+}
+
 export function validatePrivateMessageImageDrafts(
   drafts: MobilePrivateMessageImageDraft[],
 ): string | null {

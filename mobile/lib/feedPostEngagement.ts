@@ -25,6 +25,19 @@ export type FeedEngagementState = {
   isSaved: boolean;
 };
 
+export type MobileFeedPostLiker = {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  likedAt: string;
+  displayTimestamp: string;
+};
+
+type FeedPostLikeUserRow = {
+  user_id: string;
+  created_at: string;
+};
+
 export function isPersistedFeedPostId(postId: string) {
   return UUID_PATTERN.test(postId.trim());
 }
@@ -256,6 +269,50 @@ export async function fetchFeedPostComments(postId: string) {
   });
 
   return { data: comments, error: null };
+}
+
+export async function fetchFeedPostLikers(postId: string) {
+  if (!isPersistedFeedPostId(postId)) {
+    return { data: [] as MobileFeedPostLiker[], error: null };
+  }
+
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("feed_post_likes")
+    .select("user_id, created_at")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { data: [] as MobileFeedPostLiker[], error };
+  }
+
+  const rows = (data ?? []) as FeedPostLikeUserRow[];
+  const authorsByUserId = await loadCommentAuthors([
+    ...new Set(rows.map((row) => row.user_id)),
+  ]);
+  const avatarPaths = rows.map((row) => authorsByUserId.get(row.user_id)?.club_logo_url);
+  const resolvedAvatars = await resolveMemberMediaUrlMap(avatarPaths);
+
+  const likers = rows.map((row) => {
+    const author = authorsByUserId.get(row.user_id);
+    const stored = author?.club_logo_url?.trim() ?? "";
+    const avatarUrl = stored
+      ? /^https?:\/\//i.test(stored)
+        ? stored
+        : resolvedAvatars.get(stored) ?? null
+      : null;
+
+    return {
+      userId: row.user_id,
+      name: author?.full_name?.trim() || "Member",
+      avatarUrl,
+      likedAt: row.created_at,
+      displayTimestamp: formatCommentTimestamp(row.created_at),
+    } satisfies MobileFeedPostLiker;
+  });
+
+  return { data: likers, error: null };
 }
 
 export async function toggleFeedPostLike(postId: string, currentlyLiked: boolean) {

@@ -17,6 +17,11 @@ import { MemberAvatar } from "@/components/ui/MemberAvatar";
 import { colors, layout, radii, spacing, typography } from "@/constants/theme";
 import { fetchFeedPage, resolveFeedPostsMedia, stripFeedPostSignedMedia } from "@/lib/api/feed";
 import { formatMobileError } from "@/lib/errors";
+import {
+  applyFeedPostPatch,
+  mergeIncomingFeedPostsPreservingOptimisticEngagement,
+  mergeResolvedFeedMediaPreservingEngagement,
+} from "@/lib/feedPostMerge";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
   SESSION_CACHE_KEYS,
@@ -101,7 +106,7 @@ export default function HomeScreen() {
     let active = true;
     void resolveFeedPostsMedia(cached.posts).then((resolved) => {
       if (!active) return;
-      setPosts(resolved);
+      setPosts((current) => mergeResolvedFeedMediaPreservingEngagement(current, resolved));
     });
     return () => {
       active = false;
@@ -117,13 +122,15 @@ export default function HomeScreen() {
       if (options?.refresh) {
         setRefreshing(true);
       } else if (hasCache) {
-        setPosts(cached!.posts);
+        setPosts((current) =>
+          mergeIncomingFeedPostsPreservingOptimisticEngagement(current, cached!.posts),
+        );
         setHasMore(cached!.hasMore);
         setNextCursor(cached!.nextCursor);
         setLoading(false);
         void resolveFeedPostsMedia(cached!.posts).then((resolved) => {
           if (currentRequest !== requestId.current) return;
-          setPosts(resolved);
+          setPosts((current) => mergeResolvedFeedMediaPreservingEngagement(current, resolved));
         });
       } else if (!options?.background) {
         setLoading(true);
@@ -149,10 +156,13 @@ export default function HomeScreen() {
         return;
       }
 
-      setPosts(data.posts);
+      setPosts((current) => {
+        const merged = mergeIncomingFeedPostsPreservingOptimisticEngagement(current, data.posts);
+        persistCache(merged, data.hasMore, data.nextCursor);
+        return merged;
+      });
       setHasMore(data.hasMore);
       setNextCursor(data.nextCursor);
-      persistCache(data.posts, data.hasMore, data.nextCursor);
       setError(null);
       setLoading(false);
       setRefreshing(false);
@@ -305,9 +315,9 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <FeedPostCard
             post={item}
-            onPostChange={(updated) =>
+            onPostChange={(postId, patch) =>
               setPosts((current) => {
-                const next = current.map((entry) => (entry.id === updated.id ? updated : entry));
+                const next = applyFeedPostPatch(current, postId, patch);
                 persistCache(next, hasMore, nextCursor);
                 return next;
               })

@@ -29,7 +29,7 @@ import {
   sendDirectPrivateMessage,
   type MobilePrivateMessageImageDraft,
 } from "@/lib/api/messages";
-import { normalizePrivateMessageImageMime } from "@/lib/privateMessageImageRules";
+import { draftFromPrivateMessageImagePickerAsset } from "@/lib/privateMessageImageRules";
 import { fetchMemberByUserId } from "@/lib/api/members";
 import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
@@ -173,32 +173,43 @@ export default function ConversationDetailScreen() {
   async function handlePickImage() {
     if (sending) return;
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setSendError("Photo library access is required to attach an image.");
-      return;
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setSendError("Photo library access is required to attach an image.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        // Images only — video attachments are not supported by the DM media pipeline.
+        mediaTypes: ["images"],
+        allowsMultipleSelection: false,
+        quality: 0.85,
+        exif: false,
+        // Prefer a broadly displayable/uploadable representation (JPEG) on iOS HEIC libraries.
+        preferredAssetRepresentationMode:
+          ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+      });
+
+      if (result.canceled || !result.assets[0]) return;
+
+      const picked = draftFromPrivateMessageImagePickerAsset(result.assets[0]);
+      if ("error" in picked) {
+        setSendError(picked.error);
+        return;
+      }
+
+      setSendError(null);
+      setFailedDraft(null);
+      setFailedPendingImage(null);
+      setPendingImage(picked.draft);
+    } catch (error) {
+      setSendError(
+        formatMobileError(
+          error instanceof Error ? error.message : "Could not open the photo library.",
+        ),
+      );
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: false,
-      quality: 0.85,
-      exif: false,
-    });
-
-    if (result.canceled || !result.assets[0]) return;
-
-    const asset = result.assets[0];
-    setSendError(null);
-    setFailedDraft(null);
-    setFailedPendingImage(null);
-    setPendingImage({
-      uri: asset.uri,
-      mimeType: normalizePrivateMessageImageMime(asset.mimeType, asset.fileName),
-      width: asset.width ?? null,
-      height: asset.height ?? null,
-      fileName: asset.fileName ?? null,
-    });
   }
 
   async function handleSend(options?: {

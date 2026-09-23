@@ -1,13 +1,17 @@
+import { useState } from "react";
 import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { FeedPostLikersModal } from "@/components/feed/FeedPostLikersModal";
 import { colors, spacing, typography } from "@/constants/theme";
 import {
   applyLikeToggle,
   applySaveToggle,
+  fetchFeedPostLikers,
   formatFeedEngagementError,
   isPersistedFeedPostId,
   toggleFeedPostLike,
   toggleFeedPostSave,
+  type MobileFeedPostLiker,
 } from "@/lib/feedPostEngagement";
 import { buildFeedPostDeepLink, buildFeedPostShareText } from "@/lib/feedPostShare";
 import type { MobileFeedPost } from "@/types/feed";
@@ -28,12 +32,17 @@ export function FeedPostActions({
   compact = false,
 }: FeedPostActionsProps) {
   const engagementEnabled = isPersistedFeedPostId(post.id);
+  const [likersOpen, setLikersOpen] = useState(false);
+  const [likersLoading, setLikersLoading] = useState(false);
+  const [likersError, setLikersError] = useState<string | null>(null);
+  const [likers, setLikers] = useState<MobileFeedPostLiker[]>([]);
 
   async function handleLike() {
     if (!engagementEnabled) return;
 
     const previous = { liked: post.isLiked, likeCount: post.likeCount };
     const optimistic = applyLikeToggle({ liked: post.isLiked, likeCount: post.likeCount });
+    // Patch only — parent merges onto latest list state (avoids stale post snapshots).
     onEngagementChange?.({ isLiked: optimistic.liked, likeCount: optimistic.likeCount });
 
     const { liked, error } = await toggleFeedPostLike(post.id, previous.liked);
@@ -42,7 +51,15 @@ export function FeedPostActions({
       onToast?.(formatFeedEngagementError(error));
       return;
     }
-    onEngagementChange?.({ isLiked: liked });
+
+    // Avoid a second engagement write when the server agrees with optimistic UI.
+    // Only correct if the persisted liked flag diverges.
+    if (liked !== optimistic.liked) {
+      onEngagementChange?.({
+        isLiked: liked,
+        likeCount: Math.max(0, previous.likeCount + (liked ? 1 : -1)),
+      });
+    }
   }
 
   async function handleSave() {
@@ -58,7 +75,9 @@ export function FeedPostActions({
       onToast?.(formatFeedEngagementError(error));
       return;
     }
-    onEngagementChange?.({ isSaved: saved });
+    if (saved !== optimisticSaved) {
+      onEngagementChange?.({ isSaved: saved });
+    }
     onToast?.(saved ? "Saved to your posts" : "Removed from saved");
   }
 
@@ -80,15 +99,72 @@ export function FeedPostActions({
     }
   }
 
+  async function loadLikers() {
+    if (!engagementEnabled) return;
+    setLikersLoading(true);
+    setLikersError(null);
+    const { data, error } = await fetchFeedPostLikers(post.id);
+    if (error) {
+      setLikers([]);
+      setLikersError(formatFeedEngagementError(error));
+      setLikersLoading(false);
+      return;
+    }
+    setLikers(data);
+    setLikersLoading(false);
+  }
+
+  function openLikers() {
+    if (!engagementEnabled || post.likeCount <= 0) return;
+    setLikersOpen(true);
+    void loadLikers();
+  }
+
   return (
     <View style={[styles.row, compact ? styles.rowCompact : null]}>
-      <ActionButton
-        icon={post.isLiked ? "heart" : "heart-outline"}
-        label={post.likeCount > 0 ? String(post.likeCount) : "Appreciate"}
-        active={post.isLiked}
-        onPress={() => void handleLike()}
-        disabled={!engagementEnabled}
-      />
+      <View style={[styles.action, post.isLiked ? styles.actionActive : null]}>
+        <Pressable
+          onPress={() => void handleLike()}
+          disabled={!engagementEnabled}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={post.isLiked ? "Remove appreciation" : "Appreciate"}
+          style={({ pressed }) => [
+            styles.actionHit,
+            pressed ? styles.pressed : null,
+            !engagementEnabled ? styles.disabled : null,
+          ]}
+        >
+          <Ionicons
+            name={post.isLiked ? "heart" : "heart-outline"}
+            size={18}
+            color={post.isLiked ? colors.forest : colors.textSecondary}
+          />
+          {post.likeCount <= 0 ? (
+            <Text style={[styles.actionLabel, post.isLiked ? styles.actionLabelActive : null]}>
+              Appreciate
+            </Text>
+          ) : null}
+        </Pressable>
+        {post.likeCount > 0 ? (
+          <Pressable
+            onPress={openLikers}
+            disabled={!engagementEnabled}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={`${post.likeCount} like${post.likeCount === 1 ? "" : "s"}. View who liked this post.`}
+            style={({ pressed }) => [
+              styles.actionHit,
+              pressed ? styles.pressed : null,
+              !engagementEnabled ? styles.disabled : null,
+            ]}
+          >
+            <Text style={[styles.actionLabel, post.isLiked ? styles.actionLabelActive : null]}>
+              {String(post.likeCount)}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
       <ActionButton
         icon="chatbubble-outline"
         label={post.commentCount > 0 ? String(post.commentCount) : "Comment"}
@@ -103,6 +179,15 @@ export function FeedPostActions({
         disabled={!engagementEnabled}
       />
       <ActionButton icon="share-outline" label="Share" onPress={() => void handleShare()} />
+
+      <FeedPostLikersModal
+        visible={likersOpen}
+        loading={likersLoading}
+        errorMessage={likersError}
+        likers={likers}
+        onClose={() => setLikersOpen(false)}
+        onRetry={() => void loadLikers()}
+      />
     </View>
   );
 }
@@ -146,6 +231,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "center",
     gap: spacing.sm,
     paddingTop: spacing.sm,
   },
@@ -161,6 +247,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: 999,
     backgroundColor: colors.bgInset,
+  },
+  actionHit: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    minHeight: 28,
   },
   actionActive: {
     backgroundColor: colors.forestSoft,
