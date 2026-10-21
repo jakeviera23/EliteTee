@@ -5,6 +5,7 @@ import { Navbar } from "../components/Navbar";
 import { usePageMeta } from "../hooks/usePageMeta";
 
 const EFFECTIVE_DATE = "September 23, 2026";
+const LAST_UPDATED = "September 25, 2026";
 const CONTACT_EMAIL = "membership@elitetee.club";
 
 export function Privacy() {
@@ -25,7 +26,7 @@ export function Privacy() {
               <p className="legal-meta">
                 Effective date: {EFFECTIVE_DATE}
                 <span aria-hidden="true"> · </span>
-                Last updated: {EFFECTIVE_DATE}
+                Last updated: {LAST_UPDATED}
               </p>
             </header>
 
@@ -224,13 +225,40 @@ export function Privacy() {
             </PrivacySection>
 
             <PrivacySection id="account-deletion" title="9. Account deletion">
+              <h3>Delete your account in the app</h3>
               <p>
-                To request deletion of your EliteTee account and associated personal information,
-                contact{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We will review the request
-                and delete or de-identify personal information we no longer need to retain,
-                subject to legal and operational requirements (for example, fraud prevention or
-                records of membership decisions).
+                You can permanently delete your EliteTee account at any time from the iOS app: open{" "}
+                <strong>Profile</strong>, tap <strong>Delete account</strong>, and confirm by typing
+                DELETE. Deletion takes effect immediately, signs you out, and cannot be undone.
+              </p>
+              <p>In-app deletion permanently removes:</p>
+              <ul>
+                <li>Your sign-in account and login credentials</li>
+                <li>Your member profile, including profile and cover photos</li>
+                <li>
+                  Posts, round reviews, course rounds and round photos, comments, likes, and saves
+                </li>
+                <li>
+                  Direct messages you sent or received and their photo attachments (these
+                  conversations are also removed for the other member)
+                </li>
+                <li>Introduction requests, your referral code, and Ask EliteTee history and settings</li>
+              </ul>
+              <p>
+                Your original membership application is retained only in de-identified form: your
+                name, email address, contact details, and written answers are removed, and the
+                remaining record is kept so our membership decisions and founding-member numbering
+                stay accurate. Courses you suggested to the shared course directory remain
+                available but are no longer linked to you. Backups and service logs may retain
+                residual copies for a limited period before they expire.
+              </p>
+              <h3>Request deletion by email</h3>
+              <p>
+                You can also request deletion of your account and associated personal information
+                by contacting <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. We will
+                verify the request and delete or de-identify personal information we no longer
+                need to retain, subject to legal and operational requirements (for example, fraud
+                prevention or records of membership decisions).
               </p>
             </PrivacySection>
 
