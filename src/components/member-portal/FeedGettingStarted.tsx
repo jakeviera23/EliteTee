@@ -40,15 +40,34 @@ export function FeedGettingStarted({ onAction }: FeedGettingStartedProps) {
       </header>
 
       <ul className="et-getting-started-list">
-        {FIRST_SESSION_ACTIONS.map((action) => (
+        {FIRST_SESSION_ACTIONS.map((action, index) => (
           <li key={action.id}>
             <button
               type="button"
               className="et-getting-started-action"
               onClick={() => onAction(action.id)}
             >
-              <span className="et-getting-started-action-title">{action.title}</span>
-              <span className="et-getting-started-action-desc">{action.description}</span>
+              <span className="et-getting-started-action-index" aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="et-getting-started-action-text">
+                <span className="et-getting-started-action-title">{action.title}</span>
+                <span className="et-getting-started-action-desc">{action.description}</span>
+              </span>
+              <svg
+                className="et-getting-started-action-arrow"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 8h9m-3.5-3.5L12.5 8 9 11.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
           </li>
         ))}
