@@ -113,6 +113,13 @@ export function IntroductionRequestCard({
         ))}
       </ul>
 
+      {request.response_message?.trim() ? (
+        <blockquote className="et-introductions-response">
+          <span className="et-introductions-response-label">Response</span>
+          {request.response_message.trim()}
+        </blockquote>
+      ) : null}
+
       <p className="et-introductions-date">Requested {formatRequestDate(request.created_at)}</p>
 
       <div className="et-introductions-actions">
@@ -158,15 +165,13 @@ export function IntroductionRequestCard({
           </button>
         ) : null}
 
-        {canMessage ? (
-          <button
-            type="button"
-            className="et-btn et-btn--forest et-btn--sm"
-            onClick={() => onMessageMember(request)}
-          >
-            {introductionsCopy.openConversation}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className={`et-btn et-btn--sm ${canMessage ? "et-btn--forest" : "et-btn--secondary"}`}
+          onClick={() => onMessageMember(request)}
+        >
+          {canMessage ? introductionsCopy.openConversation : introductionsCopy.messageMember}
+        </button>
       </div>
     </article>
   );

@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { introductionsCopy } from "../../data/portalSocial";
-import { createIntroductionRequest } from "../../lib/introductionRequests";
+import {
+  createIntroductionRequest,
+  isMemberFacingIntroductionError,
+} from "../../lib/introductionRequests";
 import { validateIntroductionRequestMessage } from "../../lib/memberRelationships";
 import { memberFacingPortalError } from "../../lib/portalErrorDisplay";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
@@ -49,7 +52,11 @@ export function IntroductionRequestModal({
 
     if (error) {
       console.error("[IntroductionRequestModal]", error);
-      setErrorMessage(memberFacingPortalError(error.message, "introduction"));
+      setErrorMessage(
+        isMemberFacingIntroductionError(error.message)
+          ? error.message
+          : memberFacingPortalError(error.message, "introduction"),
+      );
       return;
     }
 
@@ -57,8 +64,20 @@ export function IntroductionRequestModal({
     onClose();
   }
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isSubmitting) onClose();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSubmitting, onClose]);
+
   return (
-    <div className="portal-modal-backdrop" role="presentation" onClick={onClose}>
+    <div
+      className="portal-modal-backdrop"
+      role="presentation"
+      onClick={isSubmitting ? undefined : onClose}
+    >
       <article
         className="portal-modal et-introductions-modal"
         role="dialog"

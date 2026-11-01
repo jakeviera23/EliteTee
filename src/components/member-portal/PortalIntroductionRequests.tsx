@@ -3,6 +3,7 @@ import { earlyStageCopy, introductionsCopy } from "../../data/portalSocial";
 import {
   cancelIntroductionRequest,
   fetchIntroductionRequests,
+  isMemberFacingIntroductionError,
   updateIntroductionRequestStatus,
 } from "../../lib/introductionRequests";
 import {
@@ -61,6 +62,12 @@ const EMPTY_COPY: Record<IntroductionTab, { title: string; copy: string }> = {
     copy: introductionsCopy.emptyDeclinedCopy,
   },
 };
+
+function introductionActionError(message: string) {
+  return isMemberFacingIntroductionError(message)
+    ? message
+    : memberFacingPortalError(message, "introduction");
+}
 
 export function PortalIntroductionRequests({
   isActive,
@@ -216,7 +223,8 @@ export function PortalIntroductionRequests({
     setUpdatingRequestId(null);
 
     if (error) {
-      setActionError(memberFacingPortalError(error.message, "introduction"));
+      setActionError(introductionActionError(error.message));
+      await loadRequests();
       return;
     }
 
@@ -244,10 +252,12 @@ export function PortalIntroductionRequests({
     setUpdatingRequestId(null);
 
     if (error) {
-      setActionError(memberFacingPortalError(error.message, "introduction"));
+      setActionError(introductionActionError(error.message));
+      await loadRequests();
       return;
     }
 
+    setActionNotice(introductionsCopy.declineSuccess);
     setActiveTab("declined");
     await loadRequests();
   }
@@ -262,7 +272,8 @@ export function PortalIntroductionRequests({
     setUpdatingRequestId(null);
 
     if (error) {
-      setActionError(memberFacingPortalError(error.message, "introduction"));
+      setActionError(introductionActionError(error.message));
+      await loadRequests();
       return;
     }
 

@@ -1,6 +1,5 @@
 import type { DirectConversationSummary, ConversationParticipantIdentity, PrivateMessageRecord } from "../types/privateMessage";
 import { getCurrentAuthUserId } from "./authUserLinking";
-import { assertCanSendDirectMessage } from "./memberRelationships";
 import {
   fetchAttachmentsForMessageIds,
   formatMessagePreviewBody,
@@ -17,8 +16,11 @@ type PrivateMessageInsertPayload = {
   body: string;
 };
 
-const PRIVATE_MESSAGE_RLS_ERROR =
-  "Your message could not be sent. Request and accept an introduction before messaging this member for the first time.";
+export const PRIVATE_MESSAGE_RLS_ERROR =
+  "Your message could not be sent. This member may not have active portal access right now.";
+
+const MESSAGE_EMPTY_ERROR = "Message cannot be empty.";
+const MESSAGE_SELF_ERROR = "You cannot message yourself.";
 
 export const PRIVATE_MESSAGE_MAX_LENGTH = 2000;
 export const PRIVATE_MESSAGE_EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -30,7 +32,7 @@ function validateMessageBody(body: string, { allowEmpty = false }: { allowEmpty?
   const trimmedBody = body.trim();
 
   if (!trimmedBody && !allowEmpty) {
-    return { trimmedBody: "", error: new Error("Message cannot be empty.") };
+    return { trimmedBody: "", error: new Error(MESSAGE_EMPTY_ERROR) };
   }
 
   if (trimmedBody.length > PRIVATE_MESSAGE_MAX_LENGTH) {
@@ -49,27 +51,34 @@ export function isPrivateMessageEditable(message: Pick<PrivateMessageRecord, "cr
   return Date.now() - createdAt <= PRIVATE_MESSAGE_EDIT_WINDOW_MS;
 }
 
-function formatInsertPayloadForDebug(payload: PrivateMessageInsertPayload) {
-  return [
-    `introduction_request_id=${payload.introduction_request_id ?? "null"}`,
-    `sender_id=${payload.sender_id}`,
-    `receiver_id=${payload.receiver_id}`,
-    `body=${JSON.stringify(payload.body)}`,
-  ].join(", ");
+/** Errors produced by this module that are written for members and safe to display verbatim. */
+export function isMemberFacingPrivateMessageError(message: string): boolean {
+  return (
+    message === PRIVATE_MESSAGE_RLS_ERROR ||
+    message === MESSAGE_EMPTY_ERROR ||
+    message === MESSAGE_SELF_ERROR ||
+    message.startsWith("Message cannot exceed")
+  );
+}
+
+function logPrivateMessageInsertFailure(error: unknown, payload: PrivateMessageInsertPayload) {
+  console.error("[privateMessages] insert failed", {
+    code: (error as { code?: string } | null)?.code,
+    message: error instanceof Error ? error.message : String(error),
+    introduction_request_id: payload.introduction_request_id,
+    sender_id: payload.sender_id,
+    receiver_id: payload.receiver_id,
+  });
 }
 
 function buildPrivateMessageError(error: Error, payload: PrivateMessageInsertPayload) {
-  const payloadSummary = formatInsertPayloadForDebug(payload);
+  logPrivateMessageInsertFailure(error, payload);
   const isRlsError =
     error.message.toLowerCase().includes("row-level security") ||
     error.message.toLowerCase().includes("permission denied") ||
     (error as { code?: string }).code === "42501";
 
-  if (isRlsError) {
-    return new Error(`${PRIVATE_MESSAGE_RLS_ERROR} Attempted insert: ${payloadSummary}`);
-  }
-
-  return new Error(`${error.message} Attempted insert: ${payloadSummary}`);
+  return isRlsError ? new Error(PRIVATE_MESSAGE_RLS_ERROR) : error;
 }
 
 async function getSessionUserId() {
@@ -306,21 +315,19 @@ export async function sendDirectPrivateMessage({
   }
 
   if (!trimmedBody && files.length === 0) {
-    return { data: null, error: new Error("Message cannot be empty.") };
+    return { data: null, error: new Error(MESSAGE_EMPTY_ERROR) };
   }
 
   const { userId, error: sessionError } = await getSessionUserId();
   if (sessionError || !userId) {
-    return { data: null, error: sessionError };
+    return {
+      data: null,
+      error: sessionError ?? new Error("You must be signed in to send messages."),
+    };
   }
 
   if (receiverUserId === userId) {
-    return { data: null, error: new Error("You cannot message yourself.") };
-  }
-
-  const permissionError = await assertCanSendDirectMessage(userId, receiverUserId);
-  if (permissionError) {
-    return { data: null, error: permissionError };
+    return { data: null, error: new Error(MESSAGE_SELF_ERROR) };
   }
 
   const insertPayload: PrivateMessageInsertPayload = {
@@ -345,12 +352,8 @@ export async function sendDirectPrivateMessage({
   }
 
   if (!data?.id) {
-    return {
-      data: null,
-      error: new Error(
-        `${PRIVATE_MESSAGE_RLS_ERROR} Attempted insert: ${formatInsertPayloadForDebug(insertPayload)}`,
-      ),
-    };
+    logPrivateMessageInsertFailure(new Error("Insert returned no row"), insertPayload);
+    return { data: null, error: new Error(PRIVATE_MESSAGE_RLS_ERROR) };
   }
 
   const messageId = String(data.id);
@@ -480,12 +483,8 @@ export async function sendPrivateMessage({
   }
 
   if (!data) {
-    return {
-      data: null,
-      error: new Error(
-        `${PRIVATE_MESSAGE_RLS_ERROR} Attempted insert: ${formatInsertPayloadForDebug(insertPayload)}`,
-      ),
-    };
+    logPrivateMessageInsertFailure(new Error("Insert returned no row"), insertPayload);
+    return { data: null, error: new Error(PRIVATE_MESSAGE_RLS_ERROR) };
   }
 
   return { data, error: null };

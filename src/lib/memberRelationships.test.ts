@@ -4,8 +4,8 @@ import {
   INTRODUCTION_MESSAGE_MIN_LENGTH,
   canDirectMessageMember,
   countMemberConnections,
-  resolveMemberRelationshipCta,
-  resolveMemberRelationshipCtaForPair,
+  resolveMemberIntroductionCta,
+  resolveMemberIntroductionCtaForPair,
   resolveMemberRelationshipState,
   validateIntroductionRequestMessage,
   type MemberRelationshipContext,
@@ -70,171 +70,106 @@ describe("resolveMemberRelationshipState", () => {
   });
 });
 
-describe("resolveMemberRelationshipCta", () => {
-  it("maps relationship states to the expected CTA labels", () => {
-    expect(resolveMemberRelationshipCta("none")).toEqual({
+describe("resolveMemberIntroductionCta", () => {
+  it("maps relationship states to optional introduction actions", () => {
+    expect(resolveMemberIntroductionCta("none")).toEqual({
       action: "request_introduction",
       label: "Request Introduction",
-      primary: true,
     });
-    expect(resolveMemberRelationshipCta("pending_sent")).toMatchObject({
+    expect(resolveMemberIntroductionCta("pending_sent")).toEqual({
       action: "pending_sent",
-      label: "Request Pending",
+      label: "Introduction Requested",
       disabled: true,
     });
-    expect(resolveMemberRelationshipCta("pending_received")).toEqual({
+    expect(resolveMemberIntroductionCta("pending_received")).toEqual({
       action: "respond_to_request",
-      label: "Respond to Request",
-      primary: true,
+      label: "Respond to Introduction",
     });
-    expect(resolveMemberRelationshipCta("connected")).toEqual({
-      action: "message",
-      label: "Message",
-      primary: true,
+    expect(resolveMemberIntroductionCta("connected")).toEqual({
+      action: "introduced",
+      label: "Introduced",
+      disabled: true,
     });
   });
 
-  it("maps compact pending_received labels to Respond", () => {
-    expect(resolveMemberRelationshipCta("pending_received", { compact: true }).label).toBe(
+  it("uses compact labels for tight layouts", () => {
+    expect(resolveMemberIntroductionCta("none", { compact: true }).label).toBe("Introduce");
+    expect(resolveMemberIntroductionCta("pending_sent", { compact: true }).label).toBe("Requested");
+    expect(resolveMemberIntroductionCta("pending_received", { compact: true }).label).toBe(
       "Respond",
     );
   });
 });
 
-describe("resolveMemberRelationshipCtaForPair", () => {
+describe("resolveMemberIntroductionCtaForPair", () => {
   function context(
-    overrides: Partial<MemberRelationshipContext> = {},
-  ): Pick<MemberRelationshipContext, "introductionRequests" | "directThreadUserIds"> {
-    return {
-      introductionRequests: overrides.introductionRequests ?? [],
-      directThreadUserIds: overrides.directThreadUserIds ?? new Set(),
-    };
+    introductionRequests: IntroductionRequestRecord[] = [],
+  ): Pick<MemberRelationshipContext, "introductionRequests"> {
+    return { introductionRequests };
   }
 
-  it("shows Request Introduction when there is no intro and no direct thread", () => {
+  it("offers Request Introduction when the pair has no history", () => {
     expect(
-      resolveMemberRelationshipCtaForPair(CURRENT_USER_ID, OTHER_USER_ID, context()),
-    ).toEqual({
-      action: "request_introduction",
-      label: "Request Introduction",
-      primary: true,
-    });
+      resolveMemberIntroductionCtaForPair(CURRENT_USER_ID, OTHER_USER_ID, context()).action,
+    ).toBe("request_introduction");
   });
 
-  it("shows Message when a grandfathered direct thread exists without an accepted intro", () => {
+  it("shows the outgoing pending state", () => {
     expect(
-      resolveMemberRelationshipCtaForPair(
+      resolveMemberIntroductionCtaForPair(
         CURRENT_USER_ID,
         OTHER_USER_ID,
-        context({ directThreadUserIds: new Set([OTHER_USER_ID]) }),
-      ),
-    ).toEqual({
-      action: "message",
-      label: "Message",
-      primary: true,
-    });
+        context([
+          request({ status: "pending", sender_id: CURRENT_USER_ID, receiver_id: OTHER_USER_ID }),
+        ]),
+      ).action,
+    ).toBe("pending_sent");
   });
 
-  it("shows Message when members are connected via an accepted introduction", () => {
+  it("asks the receiver to respond to an incoming request", () => {
     expect(
-      resolveMemberRelationshipCtaForPair(
+      resolveMemberIntroductionCtaForPair(
         CURRENT_USER_ID,
         OTHER_USER_ID,
-        context({
-          introductionRequests: [request({ status: "accepted" })],
-        }),
-      ),
-    ).toEqual({
-      action: "message",
-      label: "Message",
-      primary: true,
-    });
+        context([
+          request({ status: "pending", sender_id: OTHER_USER_ID, receiver_id: CURRENT_USER_ID }),
+        ]),
+      ).action,
+    ).toBe("respond_to_request");
   });
 
-  it("shows Request Pending for an outgoing pending request without a direct thread", () => {
+  it("shows Introduced after acceptance in either direction", () => {
     expect(
-      resolveMemberRelationshipCtaForPair(
+      resolveMemberIntroductionCtaForPair(
         CURRENT_USER_ID,
         OTHER_USER_ID,
-        context({
-          introductionRequests: [
-            request({ status: "pending", sender_id: CURRENT_USER_ID, receiver_id: OTHER_USER_ID }),
-          ],
-        }),
-      ),
-    ).toMatchObject({
-      action: "pending_sent",
-      label: "Request Pending",
-      disabled: true,
-    });
+        context([
+          request({ status: "accepted", sender_id: OTHER_USER_ID, receiver_id: CURRENT_USER_ID }),
+        ]),
+      ).action,
+    ).toBe("introduced");
   });
 
-  it("shows Respond to Request for an incoming pending request without a direct thread", () => {
+  it("ignores introductions between other members", () => {
     expect(
-      resolveMemberRelationshipCtaForPair(
+      resolveMemberIntroductionCtaForPair(
         CURRENT_USER_ID,
         OTHER_USER_ID,
-        context({
-          introductionRequests: [
-            request({ status: "pending", sender_id: OTHER_USER_ID, receiver_id: CURRENT_USER_ID }),
-          ],
-        }),
-      ),
-    ).toEqual({
-      action: "respond_to_request",
-      label: "Respond to Request",
-      primary: true,
-    });
-  });
-
-  it("prefers Message over pending states when a grandfathered direct thread exists", () => {
-    expect(
-      resolveMemberRelationshipCtaForPair(
-        CURRENT_USER_ID,
-        OTHER_USER_ID,
-        context({
-          introductionRequests: [
-            request({ status: "pending", sender_id: CURRENT_USER_ID, receiver_id: OTHER_USER_ID }),
-          ],
-          directThreadUserIds: new Set([OTHER_USER_ID]),
-        }),
-      ),
-    ).toEqual({
-      action: "message",
-      label: "Message",
-      primary: true,
-    });
+        context([request({ status: "accepted", sender_id: "x", receiver_id: "y" })]),
+      ).action,
+    ).toBe("request_introduction");
   });
 });
 
 describe("canDirectMessageMember", () => {
-  it("allows messaging when members are connected", () => {
-    expect(
-      canDirectMessageMember(
-        CURRENT_USER_ID,
-        OTHER_USER_ID,
-        [request({ status: "accepted" })],
-        new Set(),
-      ),
-    ).toBe(true);
+  it("allows first-contact messaging between members without an introduction", () => {
+    expect(canDirectMessageMember(CURRENT_USER_ID, OTHER_USER_ID)).toBe(true);
   });
 
-  it("allows messaging when a pre-existing direct thread exists", () => {
-    expect(canDirectMessageMember(CURRENT_USER_ID, OTHER_USER_ID, [], new Set([OTHER_USER_ID]))).toBe(
-      true,
-    );
-  });
-
-  it("blocks first-contact messaging when there is no connection or existing thread", () => {
-    expect(canDirectMessageMember(CURRENT_USER_ID, OTHER_USER_ID, [], new Set())).toBe(false);
-    expect(
-      canDirectMessageMember(
-        CURRENT_USER_ID,
-        OTHER_USER_ID,
-        [request({ status: "pending" })],
-        new Set(),
-      ),
-    ).toBe(false);
+  it("never offers messaging yourself or an unlinked member", () => {
+    expect(canDirectMessageMember(CURRENT_USER_ID, CURRENT_USER_ID)).toBe(false);
+    expect(canDirectMessageMember(CURRENT_USER_ID, "")).toBe(false);
+    expect(canDirectMessageMember("", OTHER_USER_ID)).toBe(false);
   });
 });
 

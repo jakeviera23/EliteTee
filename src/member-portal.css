@@ -3876,6 +3876,11 @@
   border: 1px solid var(--inside-border-gold);
 }
 
+/* `.portal-modal` doubles as a full-screen overlay (PrivateMessageModal); cards inside a backdrop must not inherit its centering. */
+.portal-modal-backdrop > .portal-modal {
+  place-items: stretch;
+}
+
 .portal-modal-head {
   display: flex;
   align-items: flex-start;

@@ -473,8 +473,6 @@ function MemberPortalContent() {
     setIntroRequestMember(null);
     void refreshRelationshipContext();
     void refreshNotificationCounts();
-    setPendingIntroductionTab("sent");
-    transitionTo("introductions");
   }
 
   function transitionTo(view: PortalTab, options?: { scrollToComposer?: boolean }) {
@@ -802,6 +800,7 @@ function MemberPortalContent() {
               onInitialConversationOpened={() => setPendingConversation(null)}
               onViewMemberProfile={handleViewMemberProfile}
               onDiscoverMembers={() => transitionTo("discover")}
+              onInboxChanged={refreshNotificationCounts}
             />
           ) : null}
           {resolvedView === "profile" ? (

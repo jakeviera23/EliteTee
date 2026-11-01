@@ -40,11 +40,10 @@ export const earlyStageCopy = {
   discoverFoundingNote: "Search by location, home club, travel plans, and interests.",
   discoverNoMatch: "No members match that search. Try broadening your filters or search terms.",
   messagesEmptyTitle: "No conversations yet",
-  messagesEmptyBody:
-    "After you accept an introduction, your conversations will appear here. Existing conversations remain available.",
-  messagesEmptyNote: "Use New Conversation to message a connected member.",
-  messagesNewEmpty:
-    "No connected members to message yet. Request an introduction from Discover or a member profile.",
+  messagesEmptyBody: "You can message any approved member directly. Your conversations will appear here.",
+  messagesEmptyNote: "Use New Conversation to start one, or find members in Discover.",
+  messagesNewLead: "Choose a member to start a private conversation.",
+  messagesNewEmpty: "No other members are available to message yet.",
   courseDiscoveryPreview: "Course discovery",
   courseMemberPhotosNote: "Member photos appear as experiences are shared.",
   profileStatsNote: "These numbers grow as you share rounds, save courses, and connect with members.",
@@ -109,7 +108,7 @@ export const messagesCopy = {
 export const introductionsCopy = {
   eyebrow: "Member Introductions",
   title: "Introductions",
-  lead: "Request thoughtful introductions to members you may want to know.",
+  lead: "Optional, formal introductions to members you would like to know. You can always message members directly.",
   incoming: "Incoming",
   sent: "Sent",
   accepted: "Accepted",
@@ -133,16 +132,18 @@ export const introductionsCopy = {
   messageMember: "Message Member",
   viewProfile: "View Profile",
   acceptSuccessTitle: "Introduction accepted",
-  acceptSuccessCopy: (memberName: string) => `You can now message ${memberName} directly.`,
-  openConversation: "OPEN CONVERSATION",
-  acceptSuccess: "Introduction accepted. You can now message this member directly.",
+  acceptSuccessCopy: (memberName: string) =>
+    `You and ${memberName} are now introduced. Start the conversation whenever you are ready.`,
+  openConversation: "Open Conversation",
+  acceptSuccess: "Introduction accepted.",
+  declineSuccess: "Introduction declined. The member will see that you passed on this request.",
   cancelSuccess: "Introduction request withdrawn.",
   emptyIncomingTitle: "No incoming requests",
   emptyIncomingCopy: "When a member requests an introduction to you, it will appear here.",
   emptySentTitle: "No sent requests",
   emptySentCopy: "Requests you send from Discover or member profiles will appear here.",
   emptyAcceptedTitle: "No accepted introductions yet",
-  emptyAcceptedCopy: "Accepted introductions become direct Messages threads you can continue anytime.",
+  emptyAcceptedCopy: "Members you have been formally introduced to will appear here.",
   emptyDeclinedTitle: "No declined or archived requests",
   emptyDeclinedCopy: "Declined and withdrawn requests remain here for your records.",
   emptyAllTitle: "No introduction requests yet",
@@ -150,7 +151,7 @@ export const introductionsCopy = {
   modalEyebrow: "Private Introduction",
   modalTitle: "Request Introduction",
   modalLead:
-    "Introductions give members a professional, discreet way to connect before messaging. Explain why you would like to connect.",
+    "A formal introduction is an optional, discreet way to share why you would like to connect. You can also message members directly at any time.",
   submitSuccess: "Introduction request submitted. View it anytime in Introductions.",
 } as const;
 

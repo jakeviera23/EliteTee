@@ -116,9 +116,6 @@ function MemberPublicProfileContent() {
             showToast(introductionsCopy.submitSuccess);
             setIntroRequestMember(null);
             void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
-            navigate("/member-portal", {
-              state: { restorePortalTab: "introductions" },
-            });
           }}
         />
       ) : null}

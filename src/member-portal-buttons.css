@@ -176,6 +176,64 @@
   cursor: not-allowed;
 }
 
+/* Optional introduction actions sit beside Message and never compete with it. */
+.portal-page.et-theme-portal .portal-main .et-relationship-intro-btn--respond_to_request {
+  color: var(--et-accent);
+  border-color: var(--et-border-accent);
+  background: var(--et-accent-softer);
+}
+
+.portal-page.et-theme-portal
+  .portal-main
+  .et-relationship-intro-btn--respond_to_request:hover:not(:disabled),
+.portal-page.et-theme-portal
+  .portal-main
+  .et-relationship-intro-btn--respond_to_request:focus-visible:not(:disabled) {
+  color: var(--et-accent);
+  border-color: var(--et-accent-muted);
+  background: var(--et-accent-soft);
+}
+
+.et-relationship-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--et-border-hairline);
+  border-radius: var(--et-radius-full);
+  background: var(--et-bg-inset);
+  color: var(--et-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.et-relationship-status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--et-radius-full);
+  background: var(--et-accent);
+  flex: none;
+}
+
+.et-relationship-status--introduced {
+  color: var(--et-forest);
+  border-color: var(--et-forest-border);
+  background: var(--et-forest-soft);
+}
+
+.et-relationship-status--introduced .et-relationship-status-dot {
+  background: var(--et-forest);
+}
+
+.et-relationship-status--hero {
+  background: color-mix(in srgb, var(--et-bg-surface) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
 .portal-page.et-theme-portal :is(.portal-main, .portal-modal, .portal-modal-card, .feed-edit-modal)
   .et-btn--ghost {
   color: var(--et-text-secondary);

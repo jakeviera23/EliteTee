@@ -270,6 +270,27 @@
   white-space: pre-wrap;
 }
 
+.et-introductions-response {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 2px solid var(--et-border-accent);
+  border-radius: 0 var(--et-radius-md) var(--et-radius-md) 0;
+  background: var(--et-accent-softer);
+  color: var(--et-text-secondary);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.et-introductions-response-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--et-text-tertiary);
+  font-size: var(--et-text-caption);
+  font-weight: 600;
+  letter-spacing: var(--et-tracking-wider);
+  text-transform: uppercase;
+}
+
 .et-introductions-timeline {
   display: flex;
   flex-wrap: wrap;

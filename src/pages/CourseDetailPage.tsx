@@ -658,9 +658,6 @@ export function CourseDetailPage({ onViewMemberProfile }: CourseDetailPageProps)
             showToast(introductionsCopy.submitSuccess);
             setIntroMember(null);
             void fetchMemberRelationshipContext().then(({ context }) => setRelationshipContext(context));
-            navigate("/member-portal", {
-              state: { restorePortalTab: "introductions" },
-            });
           }}
         />
       ) : null}

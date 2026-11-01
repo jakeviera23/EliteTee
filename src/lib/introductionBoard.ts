@@ -10,6 +10,22 @@ export type IntroductionCounterpart = {
   isIncoming: boolean;
 };
 
+export function isIntroductionParticipant(
+  request: Pick<IntroductionRequestRecord, "sender_id" | "receiver_id">,
+  userId: string | null | undefined,
+): boolean {
+  if (!userId) return false;
+  return request.sender_id === userId || request.receiver_id === userId;
+}
+
+/** Never trust the server to scope rows; only the member's own requests may be shown. */
+export function filterOwnIntroductionRequests<
+  T extends Pick<IntroductionRequestRecord, "sender_id" | "receiver_id">,
+>(requests: T[], userId: string | null | undefined): T[] {
+  if (!userId) return [];
+  return requests.filter((request) => isIntroductionParticipant(request, userId));
+}
+
 export function categorizeIntroductionRequests(
   requests: IntroductionRequestRecord[],
   currentUserId: string | null,
@@ -23,7 +39,7 @@ export function categorizeIntroductionRequests(
 
   if (!currentUserId) return empty;
 
-  for (const request of requests) {
+  for (const request of filterOwnIntroductionRequests(requests, currentUserId)) {
     const status = request.status.toLowerCase();
 
     if (status === "pending" && request.receiver_id === currentUserId) {
@@ -123,7 +139,7 @@ export function buildIntroductionTimeline(request: IntroductionRequestRecord): s
 
   if (status === "accepted") {
     steps.push("Accepted");
-    steps.push("Conversation available");
+    steps.push("Introduced");
   } else if (status === "declined") {
     steps.push("Declined");
   } else {

@@ -4,7 +4,9 @@ import {
   buildIntroductionTimeline,
   categorizeIntroductionRequests,
   countIntroductionTabs,
+  filterOwnIntroductionRequests,
   getIntroductionCounterpart,
+  isIntroductionParticipant,
   pickDefaultIntroductionTab,
   resolveDirectMessageTarget,
 } from "./introductionBoard";
@@ -29,8 +31,8 @@ describe("categorizeIntroductionRequests", () => {
       [
         request({ id: "1", sender_id: "other", receiver_id: "me" }),
         request({ id: "2", sender_id: "me", receiver_id: "other" }),
-        request({ id: "3", status: "accepted" }),
-        request({ id: "4", status: "declined" }),
+        request({ id: "3", status: "accepted", sender_id: "me", receiver_id: "other" }),
+        request({ id: "4", status: "declined", sender_id: "other", receiver_id: "me" }),
       ],
       "me",
     );
@@ -48,6 +50,38 @@ describe("categorizeIntroductionRequests", () => {
     ].map((item) => item.id);
 
     expect(new Set(allIds).size).toBe(allIds.length);
+  });
+
+  it("never shows introductions between other members", () => {
+    const categorized = categorizeIntroductionRequests(
+      [
+        request({ id: "1", status: "accepted", sender_id: "a", receiver_id: "b" }),
+        request({ id: "2", status: "declined", sender_id: "b", receiver_id: "c" }),
+        request({ id: "3", status: "pending", sender_id: "c", receiver_id: "a" }),
+      ],
+      "me",
+    );
+
+    expect(countIntroductionTabs(categorized)).toEqual({
+      incoming: 0,
+      sent: 0,
+      accepted: 0,
+      declined: 0,
+    });
+  });
+});
+
+describe("filterOwnIntroductionRequests", () => {
+  it("keeps only requests the member sent or received", () => {
+    const rows = [
+      request({ id: "1", sender_id: "me", receiver_id: "x" }),
+      request({ id: "2", sender_id: "x", receiver_id: "me" }),
+      request({ id: "3", sender_id: "x", receiver_id: "y" }),
+    ];
+
+    expect(filterOwnIntroductionRequests(rows, "me").map((row) => row.id)).toEqual(["1", "2"]);
+    expect(filterOwnIntroductionRequests(rows, null)).toEqual([]);
+    expect(isIntroductionParticipant(rows[2], "me")).toBe(false);
   });
 });
 
@@ -94,11 +128,11 @@ describe("pickDefaultIntroductionTab", () => {
 });
 
 describe("buildIntroductionTimeline", () => {
-  it("shows conversation availability for accepted requests", () => {
+  it("marks accepted requests as introduced", () => {
     expect(buildIntroductionTimeline(request({ id: "1", status: "accepted" }))).toEqual([
       "Requested",
       "Accepted",
-      "Conversation available",
+      "Introduced",
     ]);
   });
 });

@@ -1,6 +1,7 @@
 import {
+  canDirectMessageMember,
   findPendingIntroductionRequestForPair,
-  resolveMemberRelationshipCtaForPair,
+  resolveMemberIntroductionCtaForPair,
   type MemberRelationshipContext,
 } from "../../lib/memberRelationships";
 
@@ -27,7 +28,7 @@ export function MemberRelationshipActions({
     return null;
   }
 
-  const cta = resolveMemberRelationshipCtaForPair(
+  const introduction = resolveMemberIntroductionCtaForPair(
     context.currentUserId,
     otherUserId,
     context,
@@ -38,39 +39,45 @@ export function MemberRelationshipActions({
     otherUserId,
     context.introductionRequests,
   );
+  const showMessage = Boolean(onMessage) && canDirectMessageMember(context.currentUserId, otherUserId);
+  const introductionInteractive =
+    (introduction.action === "request_introduction" && Boolean(onRequestIntroduction)) ||
+    (introduction.action === "respond_to_request" && Boolean(onRespondToRequest && pendingRequest));
 
-  const buttonClass =
-    layout === "hero"
-      ? `et-btn${cta.primary ? " et-btn--forest" : " et-btn--secondary"}`
-      : `et-btn${cta.primary ? " et-btn--forest" : cta.disabled ? " et-btn--ghost" : " et-btn--secondary"}`;
-
-  function handleClick() {
-    switch (cta.action) {
-      case "request_introduction":
-        onRequestIntroduction?.();
-        break;
-      case "respond_to_request":
-        if (pendingRequest) {
-          onRespondToRequest?.(pendingRequest.id);
-        }
-        break;
-      case "message":
-        onMessage?.();
-        break;
-      default:
-        break;
+  function handleIntroductionClick() {
+    if (introduction.action === "request_introduction") {
+      onRequestIntroduction?.();
+    } else if (introduction.action === "respond_to_request" && pendingRequest) {
+      onRespondToRequest?.(pendingRequest.id);
     }
   }
 
   return (
-    <button
-      type="button"
-      className={buttonClass}
-      disabled={cta.disabled}
-      aria-disabled={cta.disabled || undefined}
-      onClick={handleClick}
-    >
-      {cta.label}
-    </button>
+    <>
+      {showMessage ? (
+        <button type="button" className="et-btn et-btn--forest" onClick={onMessage}>
+          Message
+        </button>
+      ) : null}
+      {introductionInteractive ? (
+        <button
+          type="button"
+          className={`et-btn et-btn--secondary et-relationship-intro-btn et-relationship-intro-btn--${introduction.action}`}
+          onClick={handleIntroductionClick}
+        >
+          {introduction.label}
+        </button>
+      ) : introduction.disabled ? (
+        <span
+          className={`et-relationship-status et-relationship-status--${introduction.action}${
+            layout === "hero" ? " et-relationship-status--hero" : ""
+          }`}
+          role="status"
+        >
+          <span className="et-relationship-status-dot" aria-hidden="true" />
+          {introduction.label}
+        </span>
+      ) : null}
+    </>
   );
 }

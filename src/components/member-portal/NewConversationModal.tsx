@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { earlyStageCopy, messagesCopy } from "../../data/portalSocial";
-import {
-  canDirectMessageMember,
-  fetchMemberRelationshipContext,
-} from "../../lib/memberRelationships";
+import { getCurrentAuthUserId } from "../../lib/authUserLinking";
+import { canDirectMessageMember } from "../../lib/memberRelationships";
 import { fetchMessageablePortalMembers } from "../../lib/memberProfiles";
 import type { MemberProfileRecord } from "../../types/memberProfileRecord";
 import { MemberClubAvatar } from "./MemberClubAvatar";
@@ -36,9 +34,9 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
     setIsLoading(true);
     setLoadError(null);
 
-    const [{ data, error }, { context }] = await Promise.all([
+    const [{ data, error }, { userId }] = await Promise.all([
       fetchMessageablePortalMembers(),
-      fetchMemberRelationshipContext(),
+      getCurrentAuthUserId(),
     ]);
 
     if (error) {
@@ -49,16 +47,12 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
       setLoadError("Member profiles could not be loaded right now.");
       setMembers([]);
     } else {
-      const nextMembers = (data ?? []).filter((member) => {
-        const memberUserId = member.user_id?.trim();
-        if (!memberUserId || !context) return false;
-        return canDirectMessageMember(
-          context.currentUserId,
-          memberUserId,
-          context.introductionRequests,
-          context.directThreadUserIds,
-        );
-      });
+      const nextMembers = (data ?? [])
+        .filter((member) => {
+          const memberUserId = member.user_id?.trim();
+          return Boolean(userId && memberUserId && canDirectMessageMember(userId, memberUserId));
+        })
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
       setMembers(nextMembers);
     }
 
@@ -97,7 +91,7 @@ export function NewConversationModal({ onClose, onStart }: NewConversationModalP
           </button>
         </header>
 
-        <p className="et-messages-modal-lead">{earlyStageCopy.messagesNewEmpty}</p>
+        <p className="et-messages-modal-lead">{earlyStageCopy.messagesNewLead}</p>
 
         <label className="et-messages-modal-search">
           <span className="visually-hidden">Search members</span>
