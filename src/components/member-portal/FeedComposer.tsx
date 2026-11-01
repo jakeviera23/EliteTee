@@ -309,6 +309,15 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
             className="feed-composer-new"
             onClick={() => setExpanded(true)}
           >
+            <svg className="feed-composer-new-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M8 3.25v9.5M3.25 8h9.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
             New Post
           </button>
         ) : null}
@@ -426,7 +435,27 @@ export function FeedComposer({ author, onPosted, id }: FeedComposerProps) {
           ) : null}
 
           <div className="feed-composer-footer">
-            <span className="feed-composer-footer-note">Shared with approved members only</span>
+            <span className="feed-composer-footer-note">
+              <svg className="feed-composer-footer-icon" viewBox="0 0 16 16" aria-hidden="true">
+                <rect
+                  x="3.5"
+                  y="7"
+                  width="9"
+                  height="6.5"
+                  rx="1.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                />
+                <path
+                  d="M5.5 7V5.25a2.5 2.5 0 0 1 5 0V7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                />
+              </svg>
+              Shared with approved members only
+            </span>
             <div className="feed-composer-footer-actions">
               <button type="button" className="feed-composer-cancel" onClick={reset}>
                 Cancel

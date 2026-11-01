@@ -472,6 +472,7 @@ export function FeedCard({
           onViewAuthor={handleViewAuthor}
           showEditedLabel={showEditedLabel}
         />
+        {isFounder ? <span className="feed-card-pinned">Pinned</span> : null}
         {canEdit || canDelete ? (
           <FeedPostMenu
             onEdit={canEdit ? () => setEditing(true) : undefined}

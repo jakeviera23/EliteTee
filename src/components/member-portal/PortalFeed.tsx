@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { photos } from "../../assets/photos";
 import type { FeedPost } from "../../data/portalSocial";
 import { earlyStageCopy } from "../../data/portalSocial";
 import { getFounderWelcomePost } from "../../data/feedMockData";
@@ -185,10 +186,28 @@ export function PortalFeed({
 
   return (
     <section className="et-feed et-feed-card-scope" aria-labelledby="feed-heading">
-      <header className="et-feed-hero et-feed-hero--compact et-animate-fade-up">
-        <h2 id="feed-heading" className="et-h2 et-feed-title">
-          Feed
-        </h2>
+      <header className="et-feed-masthead et-animate-fade-up">
+        <div className="et-feed-masthead-copy">
+          <p className="et-feed-masthead-eyebrow">
+            <span className="et-feed-masthead-rule" aria-hidden="true" />
+            The Clubhouse
+          </p>
+          <h2 id="feed-heading" className="et-feed-title et-feed-masthead-title">
+            Feed
+          </h2>
+          <p className="et-feed-masthead-lead">
+            Rounds, course notes, and conversation shared among approved members.
+          </p>
+        </div>
+        <div className="et-feed-masthead-media" aria-hidden="true">
+          <img
+            src={photos.coastAerial}
+            alt=""
+            width={1024}
+            height={682}
+            decoding="async"
+          />
+        </div>
       </header>
 
       {onFirstSessionAction ? (
@@ -204,6 +223,9 @@ export function PortalFeed({
       ) : null}
 
       <section className="et-feed-stream" aria-label="Member posts">
+        <p className="et-feed-stream-divider" aria-hidden="true">
+          <span>From the members</span>
+        </p>
         <div className="et-feed-list et-feed-list--founder">
           <FeedCard
             post={founderWelcome}
