@@ -9,6 +9,7 @@ import {
   extractDirectMessageParticipantUserIds,
   fetchDirectMessageThread,
   fetchDirectPrivateMessages,
+  isMemberFacingPrivateMessageError,
   markDirectMessagesAsRead,
   sendDirectPrivateMessage,
 } from "../../lib/privateMessages";
@@ -39,7 +40,17 @@ type PortalMessagesProps = {
   onInitialConversationOpened?: () => void;
   onViewMemberProfile?: ViewMemberProfileHandler;
   onDiscoverMembers?: () => void;
+  /** Called after messages are marked read so shell badges can refresh. */
+  onInboxChanged?: () => void;
 };
+
+const MESSAGE_POLL_INTERVAL_MS = 15_000;
+
+function buildThreadSignature(messages: PrivateMessageRecord[]) {
+  return messages
+    .map((message) => `${message.id}:${message.edited_at ?? ""}:${message.read_at ?? ""}`)
+    .join("|");
+}
 
 type ActiveConversation = {
   otherUserId: string;
@@ -78,6 +89,7 @@ export function PortalMessages({
   onInitialConversationOpened,
   onViewMemberProfile,
   onDiscoverMembers,
+  onInboxChanged,
 }: PortalMessagesProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -97,6 +109,21 @@ export function PortalMessages({
   const threadScrollRef = useRef<HTMLDivElement>(null);
   /** When true, thread updates should keep the newest messages in view. */
   const shouldStickToBottomRef = useRef(true);
+  const onInboxChangedRef = useRef(onInboxChanged);
+  const activeOtherUserIdRef = useRef<string | null>(null);
+  const threadMessagesRef = useRef<PrivateMessageRecord[]>([]);
+
+  useEffect(() => {
+    onInboxChangedRef.current = onInboxChanged;
+  }, [onInboxChanged]);
+
+  useEffect(() => {
+    activeOtherUserIdRef.current = activeConversation?.otherUserId ?? null;
+  }, [activeConversation]);
+
+  useEffect(() => {
+    threadMessagesRef.current = threadMessages;
+  }, [threadMessages]);
 
   const canSend = Boolean(composeText.trim() || pendingImages.length > 0);
 
@@ -108,9 +135,12 @@ export function PortalMessages({
     };
   }, [pendingImages]);
 
-  const loadInbox = useCallback(async () => {
-    setIsLoadingInbox(true);
-    setInboxError(null);
+  const loadInbox = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setIsLoadingInbox(true);
+      setInboxError(null);
+    }
 
     const { userId } = await getCurrentAuthUserId();
     setCurrentUserId(userId ?? null);
@@ -125,11 +155,15 @@ export function PortalMessages({
 
     if (error) {
       console.error("[PortalMessages] failed to load inbox", error.message);
-      setInboxError("Messages could not be loaded right now.");
-      setConversations([]);
-      setIsLoadingInbox(false);
+      if (!silent) {
+        setInboxError("Messages could not be loaded right now.");
+        setConversations([]);
+        setIsLoadingInbox(false);
+      }
       return;
     }
+
+    if (silent) setInboxError(null);
 
     const messages = data ?? [];
     const participantIds = extractDirectMessageParticipantUserIds(messages, userId);
@@ -157,24 +191,32 @@ export function PortalMessages({
   }, []);
 
   const loadThread = useCallback(
-    async (otherUserId: string) => {
-      setIsLoadingThread(true);
-      setThreadError(null);
+    async (otherUserId: string, options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      if (!silent) {
+        setIsLoadingThread(true);
+        setThreadError(null);
+      }
 
       const { data, error } = await fetchDirectMessageThread(otherUserId);
 
+      if (activeOtherUserIdRef.current !== otherUserId) return;
+
       if (error) {
         console.error("[PortalMessages] failed to load thread", error.message);
-        setThreadError("This conversation could not be loaded right now.");
-        setThreadMessages([]);
-        setIsLoadingThread(false);
+        if (!silent) {
+          setThreadError("This conversation could not be loaded right now.");
+          setThreadMessages([]);
+          setIsLoadingThread(false);
+        }
         return;
       }
 
       setThreadMessages(data);
       await markDirectMessagesAsRead(otherUserId);
       setIsLoadingThread(false);
-      void loadInbox();
+      await loadInbox({ silent: true });
+      onInboxChangedRef.current?.();
     },
     [loadInbox],
   );
@@ -182,6 +224,28 @@ export function PortalMessages({
   useEffect(() => {
     void loadInbox();
   }, [loadInbox]);
+
+  const refreshActiveThreadSilently = useCallback(async (otherUserId: string) => {
+    const { data, error } = await fetchDirectMessageThread(otherUserId);
+    if (error || activeOtherUserIdRef.current !== otherUserId) return;
+    if (buildThreadSignature(data) === buildThreadSignature(threadMessagesRef.current)) return;
+
+    setThreadMessages(data);
+    await markDirectMessagesAsRead(otherUserId);
+    onInboxChangedRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (activeConversation && !isLoadingThread && !isSending) {
+        void refreshActiveThreadSilently(activeConversation.otherUserId);
+      }
+      void loadInbox({ silent: true });
+    }, MESSAGE_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeConversation, isLoadingThread, isSending, loadInbox, refreshActiveThreadSilently]);
 
   useEffect(() => {
     if (!initialConversation) return;
@@ -323,7 +387,11 @@ export function PortalMessages({
 
     if (error) {
       console.error("[PortalMessages] failed to send message", error.message);
-      setSendError(memberFacingPortalError(error.message, "message"));
+      setSendError(
+        isMemberFacingPrivateMessageError(error.message)
+          ? error.message
+          : memberFacingPortalError(error.message, "message"),
+      );
       return;
     }
 
@@ -334,7 +402,7 @@ export function PortalMessages({
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
     shouldStickToBottomRef.current = true;
-    await loadThread(activeConversation.otherUserId);
+    await loadThread(activeConversation.otherUserId, { silent: true });
   }
 
   function handleComposeKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {

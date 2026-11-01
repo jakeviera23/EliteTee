@@ -12,16 +12,16 @@ export type MemberRelationshipState =
   | "pending_received"
   | "connected";
 
-export type MemberRelationshipAction =
+export type MemberIntroductionAction =
   | "request_introduction"
   | "pending_sent"
   | "respond_to_request"
-  | "message";
+  | "introduced";
 
-export type MemberRelationshipCta = {
-  action: MemberRelationshipAction;
+export type MemberIntroductionCta = {
+  action: MemberIntroductionAction;
   label: string;
-  primary: boolean;
+  /** Status-only states render as a non-interactive badge. */
   disabled?: boolean;
 };
 
@@ -96,86 +96,56 @@ export function hasExistingDirectMessageThread(
   return directThreadUserIds.has(otherUserId);
 }
 
-export function canDirectMessageMember(
-  currentUserId: string,
-  otherUserId: string,
-  requests: IntroductionRequestRecord[],
-  directThreadUserIds: Set<string>,
-): boolean {
-  if (!currentUserId || !otherUserId || currentUserId === otherUserId) {
-    return false;
-  }
-
-  if (membersAreConnected(currentUserId, otherUserId, requests)) {
-    return true;
-  }
-
-  return hasExistingDirectMessageThread(otherUserId, directThreadUserIds);
+/**
+ * Approved portal members may message each other directly (migration 074).
+ * Introductions are an optional, formal layer and never gate messaging;
+ * the database still enforces portal access for both members.
+ */
+export function canDirectMessageMember(currentUserId: string, otherUserId: string): boolean {
+  return Boolean(currentUserId && otherUserId && currentUserId !== otherUserId);
 }
 
-export function resolveMemberRelationshipCtaForPair(
+export function resolveMemberIntroductionCtaForPair(
   currentUserId: string,
   otherUserId: string,
-  context: Pick<MemberRelationshipContext, "introductionRequests" | "directThreadUserIds">,
+  context: Pick<MemberRelationshipContext, "introductionRequests">,
   options?: { compact?: boolean },
-): MemberRelationshipCta {
-  const state = resolveMemberRelationshipState(
-    currentUserId,
-    otherUserId,
-    context.introductionRequests,
+): MemberIntroductionCta {
+  return resolveMemberIntroductionCta(
+    resolveMemberRelationshipState(currentUserId, otherUserId, context.introductionRequests),
+    options,
   );
-
-  if (state === "connected") {
-    return resolveMemberRelationshipCta("connected", options);
-  }
-
-  if (hasExistingDirectMessageThread(otherUserId, context.directThreadUserIds)) {
-    return resolveMemberRelationshipCta("connected", options);
-  }
-
-  if (state === "pending_sent") {
-    return resolveMemberRelationshipCta("pending_sent", options);
-  }
-
-  if (state === "pending_received") {
-    return resolveMemberRelationshipCta("pending_received", options);
-  }
-
-  return resolveMemberRelationshipCta("none", options);
 }
 
-export function resolveMemberRelationshipCta(
+export function resolveMemberIntroductionCta(
   state: MemberRelationshipState,
   options?: { compact?: boolean },
-): MemberRelationshipCta {
+): MemberIntroductionCta {
   const compact = options?.compact ?? false;
 
   switch (state) {
     case "pending_sent":
       return {
         action: "pending_sent",
-        label: "Request Pending",
-        primary: false,
+        label: compact ? "Requested" : "Introduction Requested",
         disabled: true,
       };
     case "pending_received":
       return {
         action: "respond_to_request",
-        label: compact ? "Respond" : "Respond to Request",
-        primary: true,
+        label: compact ? "Respond" : "Respond to Introduction",
       };
     case "connected":
       return {
-        action: "message",
-        label: "Message",
-        primary: true,
+        action: "introduced",
+        label: "Introduced",
+        disabled: true,
       };
     case "none":
     default:
       return {
         action: "request_introduction",
-        label: "Request Introduction",
-        primary: true,
+        label: compact ? "Introduce" : "Request Introduction",
       };
   }
 }
@@ -251,50 +221,6 @@ export async function resolveProfileConnectionCount(
   }
 
   return 0;
-}
-
-export function filterMessageableMemberUserIds(
-  memberUserIds: string[],
-  context: MemberRelationshipContext,
-): string[] {
-  return memberUserIds.filter((memberUserId) =>
-    canDirectMessageMember(
-      context.currentUserId,
-      memberUserId,
-      context.introductionRequests,
-      context.directThreadUserIds,
-    ),
-  );
-}
-
-export async function assertCanSendDirectMessage(
-  senderId: string,
-  receiverId: string,
-): Promise<Error | null> {
-  const { context, error } = await fetchMemberRelationshipContext();
-
-  if (error) {
-    return error;
-  }
-
-  if (!context) {
-    return new Error("You must be signed in to send messages.");
-  }
-
-  if (
-    !canDirectMessageMember(
-      senderId,
-      receiverId,
-      context.introductionRequests,
-      context.directThreadUserIds,
-    )
-  ) {
-    return new Error(
-      "Request and accept an introduction before messaging this member for the first time.",
-    );
-  }
-
-  return null;
 }
 
 export async function fetchMemberRelationshipContext(): Promise<{

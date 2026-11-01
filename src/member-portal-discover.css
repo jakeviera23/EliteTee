@@ -246,9 +246,9 @@
 .et-discover-card {
   container-type: inline-size;
   container-name: discover-card;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--et-space-2);
-  align-content: start;
   height: 100%;
   width: 100%;
   max-width: 100%;
@@ -479,6 +479,14 @@
   padding-top: 0.25rem;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
+}
+
+.et-discover-card-actions > :last-child:nth-child(odd):not(:first-child) {
+  grid-column: 1 / -1;
+}
+
+.et-discover-card-actions .et-relationship-status {
   width: 100%;
 }
 

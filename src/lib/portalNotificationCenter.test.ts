@@ -132,6 +132,40 @@ describe("buildPortalNotifications", () => {
     expect(targets["intro-accepted"]).toEqual({ tab: "accepted", requestId: "intro-accepted" });
     expect(targets["intro-declined"]).toEqual({ tab: "declined", requestId: "intro-declined" });
   });
+
+  it("only notifies members about their own introductions", () => {
+    const requests = [
+      introductionRequest({
+        id: "others-accepted",
+        sender_id: "member-7",
+        receiver_id: "member-8",
+        status: "accepted",
+      }),
+      introductionRequest({
+        id: "i-accepted-theirs",
+        sender_id: "member-9",
+        receiver_id: "member-1",
+        status: "accepted",
+      }),
+    ];
+
+    expect(
+      buildPortalNotifications({
+        currentUserId: "member-1",
+        seenIntroductionRequestIds: new Set(),
+        conversations: [],
+        introductionRequests: requests,
+      }),
+    ).toEqual([]);
+    expect(
+      computePortalNotificationBadgeCountFromSources({
+        unreadMessageCount: 0,
+        currentUserId: "member-1",
+        seenIntroductionRequestIds: new Set(),
+        introductionRequests: requests,
+      }),
+    ).toBe(0);
+  });
 });
 
 const POST_ID = "11111111-1111-4111-8111-111111111111";

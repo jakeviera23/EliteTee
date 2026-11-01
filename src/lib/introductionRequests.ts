@@ -1,6 +1,7 @@
 import type { IntroductionRequestType, IntroductionRequestRecord } from "../types/introductionRequest";
 import type { MemberProfileRecord } from "../types/memberProfileRecord";
 import { getCurrentAuthUserId } from "./authUserLinking";
+import { filterOwnIntroductionRequests } from "./introductionBoard";
 import {
   membersAreConnected,
   validateIntroductionRequestMessage,
@@ -54,7 +55,7 @@ export async function createIntroductionRequest({
   }
 
   if (senderId === receiverId) {
-    return { data: null, error: new Error("You cannot request an introduction to yourself.") };
+    return { data: null, error: new Error(SELF_INTRODUCTION_ERROR) };
   }
 
   const messageValidationError = validateIntroductionRequestMessage(message);
@@ -73,37 +74,13 @@ export async function createIntroductionRequest({
     return { data: null, error: pairError };
   }
 
-  const pairRecords = (existingRequests ?? []) as Pick<
-    IntroductionRequestRecord,
-    "id" | "sender_id" | "receiver_id" | "status"
-  >[];
-
-  if (membersAreConnected(senderId, receiverId, pairRecords as IntroductionRequestRecord[])) {
-    return {
-      data: null,
-      error: new Error("You are already connected with this member. Open Messages to continue the conversation."),
-    };
-  }
-
-  const { data: existingPending, error: existingError } = await supabase
-    .from("introduction_requests")
-    .select("id")
-    .eq("sender_id", senderId)
-    .eq("receiver_id", receiverId)
-    .eq("status", "pending")
-    .maybeSingle();
-
-  if (existingError) {
-    return { data: null, error: existingError };
-  }
-
-  if (existingPending) {
-    return {
-      data: null,
-      error: new Error(
-        "You already have a pending introduction request with this member. Check Introduction Requests for status.",
-      ),
-    };
+  const conflictError = resolveIntroductionRequestConflict(
+    senderId,
+    receiverId,
+    (existingRequests ?? []) as IntroductionPairRecord[],
+  );
+  if (conflictError) {
+    return { data: null, error: new Error(conflictError) };
   }
 
   const { data, error } = await supabase
@@ -118,7 +95,71 @@ export async function createIntroductionRequest({
     .select("id")
     .single();
 
+  if (error && (error as { code?: string }).code === "23505") {
+    return { data: null, error: new Error(INTRODUCTION_ALREADY_PENDING_ERROR) };
+  }
+
   return { data, error };
+}
+
+type IntroductionPairRecord = Pick<
+  IntroductionRequestRecord,
+  "id" | "sender_id" | "receiver_id" | "status"
+>;
+
+export const INTRODUCTION_ALREADY_INTRODUCED_ERROR =
+  "You have already been introduced to this member. You can message them anytime.";
+
+export const INTRODUCTION_ALREADY_PENDING_ERROR =
+  "You already have a pending introduction request with this member. Track it in Introductions.";
+
+export const INTRODUCTION_AWAITING_YOUR_RESPONSE_ERROR =
+  "This member has already requested an introduction to you. Respond to it in Introductions.";
+
+const SELF_INTRODUCTION_ERROR = "You cannot request an introduction to yourself.";
+
+/** Errors produced by this module that are written for members and safe to display verbatim. */
+export function isMemberFacingIntroductionError(message: string): boolean {
+  const memberFacingMessages = [
+    INTRODUCTION_ALREADY_INTRODUCED_ERROR,
+    INTRODUCTION_ALREADY_PENDING_ERROR,
+    INTRODUCTION_AWAITING_YOUR_RESPONSE_ERROR,
+    INTRODUCTION_REQUEST_UPDATE_DENIED_ERROR,
+    INTRODUCTION_REQUEST_CANCEL_DENIED_ERROR,
+    UNLINKED_MEMBER_ERROR,
+    SELF_INTRODUCTION_ERROR,
+    validateIntroductionRequestMessage(""),
+    validateIntroductionRequestMessage("x"),
+  ];
+  return memberFacingMessages.includes(message);
+}
+
+export function resolveIntroductionRequestConflict(
+  senderId: string,
+  receiverId: string,
+  pairRecords: IntroductionPairRecord[],
+): string | null {
+  const relevant = pairRecords.filter(
+    (record) =>
+      (record.sender_id === senderId && record.receiver_id === receiverId) ||
+      (record.sender_id === receiverId && record.receiver_id === senderId),
+  );
+
+  if (membersAreConnected(senderId, receiverId, relevant as IntroductionRequestRecord[])) {
+    return INTRODUCTION_ALREADY_INTRODUCED_ERROR;
+  }
+
+  const pending = relevant.filter((record) => record.status.trim().toLowerCase() === "pending");
+
+  if (pending.some((record) => record.sender_id === senderId)) {
+    return INTRODUCTION_ALREADY_PENDING_ERROR;
+  }
+
+  if (pending.some((record) => record.sender_id === receiverId)) {
+    return INTRODUCTION_AWAITING_YOUR_RESPONSE_ERROR;
+  }
+
+  return null;
 }
 
 async function attachProfileNames(
@@ -159,24 +200,37 @@ export async function fetchIntroductionRequests() {
     return { data: null, error: new Error("Supabase is not configured.") };
   }
 
+  const { userId, error: sessionError } = await getCurrentAuthUserId();
+
+  if (sessionError) {
+    return { data: null, error: sessionError };
+  }
+
+  if (!userId) {
+    return { data: [] as IntroductionRequestRecord[], error: null };
+  }
+
   const { data, error } = await supabase
     .from("introduction_requests")
     .select(
       "id, sender_id, receiver_id, status, request_type, message, created_at, accepted_at, response_message",
     )
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .order("created_at", { ascending: false });
 
   if (error) {
     return { data: null, error };
   }
 
+  const ownRows = filterOwnIntroductionRequests((data ?? []) as IntroductionRequestRow[], userId);
+
   let withNames: IntroductionRequestRecord[];
 
   try {
-    withNames = await attachProfileNames((data ?? []) as IntroductionRequestRow[]);
+    withNames = await attachProfileNames(ownRows);
   } catch (profileError) {
     console.error("[introductionRequests] failed to attach profile names", profileError);
-    withNames = ((data ?? []) as IntroductionRequestRow[]).map((request) => ({
+    withNames = ownRows.map((request) => ({
       ...request,
       sender_name: undefined,
       receiver_name: undefined,

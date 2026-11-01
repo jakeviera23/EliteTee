@@ -1,5 +1,5 @@
 import type { IntroductionTab } from "./introductionBoard";
-import { getIntroductionCounterpart } from "./introductionBoard";
+import { filterOwnIntroductionRequests, getIntroductionCounterpart } from "./introductionBoard";
 import { getCurrentAuthUserId } from "./authUserLinking";
 import { fetchIntroductionRequests } from "./introductionRequests";
 import {
@@ -147,7 +147,7 @@ function buildIntroductionNotifications({
 }): PortalNotificationItem[] {
   const items: PortalNotificationItem[] = [];
 
-  for (const request of requests) {
+  for (const request of filterOwnIntroductionRequests(requests, currentUserId)) {
     const status = request.status.toLowerCase();
     const counterpart = getIntroductionCounterpart(request, currentUserId);
 
@@ -168,17 +168,14 @@ function buildIntroductionNotifications({
       continue;
     }
 
-    if (status === "accepted") {
+    if (status === "accepted" && request.sender_id === currentUserId) {
       const isSeen = seenIntroductionRequestIds.has(request.id);
       items.push({
         id: `introduction:accepted:${request.id}`,
         kind: "introduction_accepted",
         typeLabel: TYPE_LABELS.introduction_accepted,
         memberName: counterpart.name,
-        description:
-          request.receiver_id === currentUserId
-            ? `You accepted an introduction with ${counterpart.name}.`
-            : `${counterpart.name} accepted your introduction request.`,
+        description: `${counterpart.name} accepted your introduction request.`,
         timestampLabel: formatNotificationTimestamp(request.accepted_at ?? request.created_at),
         sortTimestamp: new Date(request.accepted_at ?? request.created_at).getTime() || 0,
         countsTowardBadge: !isSeen,
@@ -438,7 +435,7 @@ export function computePortalNotificationBadgeCountFromSources({
 
   let count = unreadMessageCount;
 
-  for (const request of introductionRequests) {
+  for (const request of filterOwnIntroductionRequests(introductionRequests, currentUserId)) {
     const status = request.status.toLowerCase();
 
     if (
@@ -450,7 +447,11 @@ export function computePortalNotificationBadgeCountFromSources({
       continue;
     }
 
-    if (status === "accepted" && !seenIntroductionRequestIds.has(request.id)) {
+    if (
+      status === "accepted" &&
+      request.sender_id === currentUserId &&
+      !seenIntroductionRequestIds.has(request.id)
+    ) {
       count += 1;
       continue;
     }
