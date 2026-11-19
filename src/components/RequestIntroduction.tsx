@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { publicEarlyStageCopy } from "../data/content";
 import { submitMembershipApplication } from "../lib/membershipApplications";
+import { TERMS_ACCEPTANCE_REQUIRED_MESSAGE } from "../lib/termsOfUse";
+import { TermsAcceptanceCheckbox } from "./TermsAcceptanceCheckbox";
 
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
 
@@ -15,10 +17,18 @@ export function RequestIntroduction() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsError, setShowTermsError] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (!agreedToTerms) {
+      setShowTermsError(true);
+      setError(TERMS_ACCEPTANCE_REQUIRED_MESSAGE);
+      return;
+    }
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -142,8 +152,22 @@ export function RequestIntroduction() {
                 <textarea name="whyJoin" rows={4} required />
               </label>
 
+              <TermsAcceptanceCheckbox
+                id="membership-apply-terms"
+                checked={agreedToTerms}
+                disabled={submitting}
+                showError={showTermsError && !agreedToTerms}
+                onChange={(next) => {
+                  setAgreedToTerms(next);
+                  if (next) {
+                    setShowTermsError(false);
+                    if (error === TERMS_ACCEPTANCE_REQUIRED_MESSAGE) setError(null);
+                  }
+                }}
+              />
+
               <div className="request-form-actions">
-                <button type="submit" className="btn" disabled={submitting}>
+                <button type="submit" className="btn" disabled={submitting || !agreedToTerms}>
                   {submitting ? "Submitting…" : "Request Membership"}
                 </button>
                 {error ? (

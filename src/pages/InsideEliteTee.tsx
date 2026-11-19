@@ -13,6 +13,9 @@ import {
   shouldAutoRedirectAuthenticatedSessionToPortal,
 } from "../lib/passwordRecoveryIntent";
 import { getEmailRedirectTo } from "../lib/siteUrl";
+import { acceptCurrentTerms } from "../lib/termsAcceptance";
+import { TERMS_ACCEPTANCE_REQUIRED_MESSAGE } from "../lib/termsOfUse";
+import { TermsAcceptanceCheckbox } from "../components/TermsAcceptanceCheckbox";
 import "../inside-elitetee.css";
 
 type LoginLocationState = {
@@ -68,6 +71,8 @@ export function InsideEliteTee() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(loginState?.authError ?? null);
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsError, setShowTermsError] = useState(false);
   const [accessMode, setAccessMode] = useState<
     "sign-in" | "request-reset" | "validating-recovery" | "set-password"
   >(
@@ -185,6 +190,12 @@ export function InsideEliteTee() {
 
     setLoginError(null);
 
+    if (!agreedToTerms) {
+      setShowTermsError(true);
+      setLoginError(TERMS_ACCEPTANCE_REQUIRED_MESSAGE);
+      return;
+    }
+
     if (!isSupabaseConfigured || !supabase) {
       setLoginError("Member login is temporarily unavailable. You can still request membership below.");
       return;
@@ -210,6 +221,14 @@ export function InsideEliteTee() {
 
       if (!response.data.session) {
         setLoginError("Sign in could not be completed. Please try again.");
+        return;
+      }
+
+      const termsResult = await acceptCurrentTerms("web");
+      if (!termsResult.ok) {
+        setLoginError(
+          "Sign in succeeded, but we could not save your Terms agreement. Please try again in a moment.",
+        );
         return;
       }
 
@@ -444,10 +463,28 @@ export function InsideEliteTee() {
                     </label>
                   ) : null}
 
+                  {accessMode === "sign-in" ? (
+                    <TermsAcceptanceCheckbox
+                      id="inside-gate-terms"
+                      checked={agreedToTerms}
+                      disabled={isSigningIn}
+                      showError={showTermsError && !agreedToTerms}
+                      onChange={(next) => {
+                        setAgreedToTerms(next);
+                        if (next) {
+                          setShowTermsError(false);
+                          if (loginError === TERMS_ACCEPTANCE_REQUIRED_MESSAGE) {
+                            setLoginError(null);
+                          }
+                        }
+                      }}
+                    />
+                  ) : null}
+
                   <button
                     type="submit"
                     className="inside-gate-submit"
-                    disabled={isSigningIn}
+                    disabled={isSigningIn || (accessMode === "sign-in" && !agreedToTerms)}
                     aria-live="polite"
                   >
                     {submitLabel(accessMode, isSigningIn)}
@@ -511,12 +548,12 @@ export function InsideEliteTee() {
             </section>
 
             <footer className="inside-gate-legal">
-              <Link to="/privacy" className="inside-gate-legal-link">
-                Privacy
+              <Link to="/terms" className="inside-gate-legal-link">
+                Terms
               </Link>
               <span aria-hidden="true">·</span>
-              <Link to="/" className="inside-gate-legal-link">
-                Terms
+              <Link to="/privacy" className="inside-gate-legal-link">
+                Privacy
               </Link>
               <span aria-hidden="true">·</span>
               <span className="inside-gate-legal-copy">© EliteTee</span>

@@ -3,8 +3,10 @@ import { Link, Navigate } from "react-router-dom";
 import { isAdminEmail } from "../lib/admin";
 import { INVITE_ACTIVATION_RECOVERY_MESSAGE } from "../lib/inviteCompletion";
 import { fetchMemberPortalAccess } from "../lib/memberProfiles";
+import { hasAcceptedCurrentTerms } from "../lib/termsAcceptance";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { RouteLoading } from "./RouteLoading";
+import { TermsAcceptanceGate } from "./TermsAcceptanceGate";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -12,6 +14,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const [portalChecked, setPortalChecked] = useState(false);
   const [hasPortalAccess, setHasPortalAccess] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -20,6 +24,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
       setHasSession(false);
       setSessionChecked(true);
       setPortalChecked(true);
+      setTermsChecked(true);
       return;
     }
 
@@ -34,12 +39,18 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
         if (!signedIn) {
           setPortalChecked(true);
+          setTermsChecked(true);
           return;
         }
 
         const email = session?.user?.email;
         const admin = isAdminEmail(email);
         setIsAdmin(admin);
+
+        const terms = await hasAcceptedCurrentTerms();
+        if (!active) return;
+        setHasAcceptedTerms(terms.accepted);
+        setTermsChecked(true);
 
         if (admin) {
           setHasPortalAccess(true);
@@ -58,6 +69,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
         setHasSession(false);
         setSessionChecked(true);
         setPortalChecked(true);
+        setTermsChecked(true);
       });
 
     return () => {
@@ -65,12 +77,27 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  if (!sessionChecked || !portalChecked) {
+  if (!sessionChecked || !portalChecked || !termsChecked) {
     return <RouteLoading label="Checking member session" />;
   }
 
   if (!hasSession) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!hasAcceptedTerms) {
+    return (
+      <TermsAcceptanceGate
+        onAccepted={() => {
+          setHasAcceptedTerms(true);
+        }}
+        onSignOut={async () => {
+          if (supabase) await supabase.auth.signOut();
+          setHasSession(false);
+          setHasAcceptedTerms(false);
+        }}
+      />
+    );
   }
 
   if (!hasPortalAccess && !isAdmin) {

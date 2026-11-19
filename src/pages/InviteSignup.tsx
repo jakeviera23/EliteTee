@@ -29,6 +29,9 @@ import {
   clearLegacySharedProfileExtras,
 } from "../lib/portalProfileExtras";
 import { fetchOwnMemberProfile, memberProfileToSelfUpdate, updateOwnMemberProfile } from "../lib/memberProfiles";
+import { acceptCurrentTerms } from "../lib/termsAcceptance";
+import { TERMS_ACCEPTANCE_REQUIRED_MESSAGE } from "../lib/termsOfUse";
+import { TermsAcceptanceCheckbox } from "../components/TermsAcceptanceCheckbox";
 import "../inside-elitetee.css";
 
 export function InviteSignup() {
@@ -47,6 +50,8 @@ export function InviteSignup() {
   const [isResending, setIsResending] = useState(false);
   const [activeSessionEmail, setActiveSessionEmail] = useState<string | null>(null);
   const [isSigningOutSession, setIsSigningOutSession] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsError, setShowTermsError] = useState(false);
 
   const sessionConflict =
     invite && activeSessionEmail
@@ -229,6 +234,14 @@ export function InviteSignup() {
   }
 
   async function completeInviteAfterSession(normalizedEmail: string) {
+    const termsResult = await acceptCurrentTerms("web");
+    if (!termsResult.ok) {
+      setSubmitError(
+        "Your account session started, but we could not save your Terms agreement. Please try again.",
+      );
+      return false;
+    }
+
     const activation = await finishInviteActivationAfterAuth({ inviteToken: token });
     if (!activation.ok) {
       setUiState({
@@ -270,6 +283,12 @@ export function InviteSignup() {
     event.preventDefault();
     setSubmitError(null);
     setSubmitInfo(null);
+
+    if (!agreedToTerms) {
+      setShowTermsError(true);
+      setSubmitError(TERMS_ACCEPTANCE_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (!invite || !isSupabaseConfigured || !supabase) {
       setSubmitError("Account setup is temporarily unavailable. Please try again later.");
@@ -320,6 +339,12 @@ export function InviteSignup() {
     setSubmitInfo(null);
 
     if (!invite || uiState.kind !== "form") return;
+
+    if (!agreedToTerms) {
+      setShowTermsError(true);
+      setSubmitError(TERMS_ACCEPTANCE_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (sessionConflict) {
       setSubmitError(
@@ -504,6 +529,17 @@ export function InviteSignup() {
                       />
                     </label>
 
+                    <TermsAcceptanceCheckbox
+                      id="invite-signin-terms"
+                      checked={agreedToTerms}
+                      disabled={isSubmitting}
+                      showError={showTermsError && !agreedToTerms}
+                      onChange={(next) => {
+                        setAgreedToTerms(next);
+                        if (next) setShowTermsError(false);
+                      }}
+                    />
+
                     {submitError ? (
                       <p className="invite-error" role="alert">
                         {submitError}
@@ -513,7 +549,7 @@ export function InviteSignup() {
                     <button
                       type="submit"
                       className="portal-btn portal-btn--gold invite-submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !agreedToTerms}
                     >
                       {isSubmitting ? "Finishing setup..." : INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE}
                     </button>
@@ -605,6 +641,17 @@ export function InviteSignup() {
                     />
                   </label>
 
+                  <TermsAcceptanceCheckbox
+                    id="invite-create-terms"
+                    checked={agreedToTerms}
+                    disabled={isSubmitting}
+                    showError={showTermsError && !agreedToTerms}
+                    onChange={(next) => {
+                      setAgreedToTerms(next);
+                      if (next) setShowTermsError(false);
+                    }}
+                  />
+
                   {submitError ? (
                     <p className="invite-error" role="alert">
                       {submitError}
@@ -620,7 +667,7 @@ export function InviteSignup() {
                   <button
                     type="submit"
                     className="portal-btn portal-btn--gold invite-submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !agreedToTerms}
                   >
                     {isSubmitting ? "Creating account..." : "Create account"}
                   </button>

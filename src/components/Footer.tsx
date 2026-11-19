@@ -15,6 +15,8 @@ export function Footer() {
             <a href="mailto:membership@elitetee.club">membership@elitetee.club</a>
           </p>
           <p className="footer-legal">
+            <Link to="/terms">Terms of Use</Link>
+            <span aria-hidden="true"> · </span>
             <Link to="/privacy">Privacy Policy</Link>
           </p>
         </div>

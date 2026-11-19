@@ -5,6 +5,7 @@ import { PortalToastProvider } from "./components/member-portal/PortalToastProvi
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Privacy } from "./pages/Privacy";
+import { Terms } from "./pages/Terms";
 import { InsideEliteTee } from "./pages/InsideEliteTee";
 import { MemberDirectory } from "./pages/MemberDirectory";
 import { MemberPortal } from "./pages/MemberPortal";
@@ -56,6 +57,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/founder" element={<Navigate to="/about" replace />} />
       <Route path="/login" element={<InsideEliteTee />} />
       <Route path="/inside" element={<InsideEliteTee />} />

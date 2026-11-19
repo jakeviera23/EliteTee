@@ -2718,6 +2718,116 @@ button {
   text-underline-offset: 0.15em;
 }
 
+.legal-draft-notice {
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(143, 117, 72, 0.35);
+  border-radius: 0.5rem;
+  background: rgba(165, 138, 85, 0.08);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.legal-placeholder {
+  display: inline;
+  padding: 0.05rem 0.2rem;
+  border-radius: 0.25rem;
+  background: rgba(36, 74, 58, 0.08);
+  color: #244a3a;
+  font-style: italic;
+}
+
+.terms-acceptance {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.terms-acceptance-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: inherit;
+  cursor: pointer;
+}
+
+.terms-acceptance-input {
+  margin-top: 0.2rem;
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.terms-acceptance-error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #8a2f2f;
+}
+
+.terms-acceptance--error .terms-acceptance-label {
+  color: #8a2f2f;
+}
+
+.terms-gate {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background: #f4f1ea;
+}
+
+.terms-gate-card {
+  width: min(100%, 32rem);
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.75rem 1.5rem;
+  border: 1px solid rgba(40, 46, 40, 0.1);
+  border-radius: 1rem;
+  background: #fbfaf7;
+  box-shadow: 0 10px 30px -20px rgba(28, 33, 29, 0.35);
+}
+
+.terms-gate-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8f7548;
+}
+
+.terms-gate-card h1 {
+  margin: 0;
+  font-family: var(--serif, Georgia, serif);
+  font-size: clamp(1.5rem, 3vw, 1.85rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #1c211d;
+}
+
+.terms-gate-lead,
+.terms-gate-links {
+  margin: 0;
+  font-size: 0.975rem;
+  line-height: 1.55;
+  color: #5c5954;
+}
+
+.terms-gate-error {
+  margin: 0;
+  color: #8a2f2f;
+  font-size: 0.9rem;
+}
+
+.terms-gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
 .legal-back {
   margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
 }
