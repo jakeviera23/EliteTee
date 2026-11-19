@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { InviteGolfer } from "@/components/referrals/InviteGolfer";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { MemberCard } from "@/components/discover/MemberCard";
@@ -38,6 +38,7 @@ import {
   type MobileDiscoverFilters,
 } from "@/lib/discoverDirectory";
 import { formatMobileError } from "@/lib/errors";
+import { fetchBlockedUserIdSet } from "@/lib/memberBlocks";
 import { perfEnd, perfStart } from "@/lib/perfTiming";
 import {
   SESSION_CACHE_KEYS,
@@ -125,6 +126,7 @@ export default function DiscoverScreen() {
   const [hasMoreCourses, setHasMoreCourses] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(() => new Set());
   const courseRequestId = useRef(0);
   const popularLoaded = useRef(false);
 
@@ -238,6 +240,19 @@ export default function DiscoverScreen() {
     void loadMembers({ background: Boolean(cached?.length) });
   }, [loadMembers]);
 
+  // Refresh blocked ids whenever Discover regains focus (e.g. after unblocking in Profile).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void fetchBlockedUserIdSet().then((ids) => {
+        if (active) setBlockedUserIds(ids);
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+
   useEffect(() => {
     if (activeTab !== "courses") return;
 
@@ -259,9 +274,15 @@ export default function DiscoverScreen() {
     [memberFilters, memberQuery],
   );
 
+  // Client-side hide of blocked members; server RLS is the source of truth.
+  const visibleMembers = useMemo(
+    () => members.filter((member) => !member.user_id || !blockedUserIds.has(member.user_id)),
+    [blockedUserIds, members],
+  );
+
   const filterOptions = useMemo(
-    () => extractMobileDiscoverFilterOptions(members),
-    [members],
+    () => extractMobileDiscoverFilterOptions(visibleMembers),
+    [visibleMembers],
   );
 
   const activeFilterCount = countActiveMobileDiscoverFilters(effectiveMemberFilters);
@@ -269,17 +290,16 @@ export default function DiscoverScreen() {
     !effectiveMemberFilters.query.trim() && activeFilterCount === 0;
 
   const directoryMembers = useMemo(() => {
-    const others = members.filter(
-      (member) =>
-        hasUsableDiscoverUserId(member) && member.user_id !== user?.id,
+    const others = visibleMembers.filter(
+      (member) => hasUsableDiscoverUserId(member) && member.user_id !== user?.id,
     );
     return filterDiscoverMembers(others, effectiveMemberFilters);
-  }, [effectiveMemberFilters, members, user?.id]);
+  }, [effectiveMemberFilters, visibleMembers, user?.id]);
 
   const featuredSections = useMemo(() => {
     if (!isMemberBrowsing) return [] as MobileDiscoverFeaturedSection[];
-    return buildFeaturedDiscoverSections(members, profile);
-  }, [isMemberBrowsing, members, profile]);
+    return buildFeaturedDiscoverSections(visibleMembers, profile);
+  }, [isMemberBrowsing, visibleMembers, profile]);
 
   const memberSections = useMemo((): MemberListSection[] => {
     if (!isMemberBrowsing) {
@@ -303,7 +323,7 @@ export default function DiscoverScreen() {
       key: "all",
       title: "All members",
       data: sortDiscoverMembersAlphabetical(
-        members.filter(
+        visibleMembers.filter(
           (member) =>
             hasUsableDiscoverUserId(member) && member.user_id !== user?.id,
         ),
@@ -311,7 +331,7 @@ export default function DiscoverScreen() {
     });
 
     return sections.filter((section) => section.data.length > 0);
-  }, [directoryMembers, featuredSections, isMemberBrowsing, members, user?.id]);
+  }, [directoryMembers, featuredSections, isMemberBrowsing, visibleMembers, user?.id]);
 
   const searchPlaceholder =
     activeTab === "members"

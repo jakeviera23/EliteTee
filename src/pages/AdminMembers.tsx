@@ -7,10 +7,12 @@ import { AdminInvitesPanel } from "../components/admin/AdminInvitesPanel";
 import { AdminMemberDirectory } from "../components/admin/AdminMemberDirectory";
 import { AdminMetricGrid } from "../components/admin/AdminMetricGrid";
 import { AdminNav } from "../components/admin/AdminNav";
+import { AdminModerationPanel } from "../components/admin/AdminModerationPanel";
 import { ApplicationViewModal } from "../components/admin/ApplicationViewModal";
 import { AiOperationsPanel } from "../components/admin/AiOperationsPanel";
 import { InvitationDraftModal } from "../components/admin/InvitationDraftModal";
 import { adminCopy, type AdminTabId } from "../data/adminCopy";
+import { fetchAdminContentReports } from "../lib/adminModeration";
 import {
   buildOverviewMetrics,
   computeInviteMetrics,
@@ -142,6 +144,7 @@ export function AdminMembers() {
   const [aiDashboard, setAiDashboard] = useState<AiAdminDashboard | null>(null);
   const [aiLoadError, setAiLoadError] = useState<string | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(true);
+  const [moderationCount, setModerationCount] = useState(0);
 
   const refreshAiDashboard = useCallback(async () => {
     setIsLoadingAi(true);
@@ -199,6 +202,15 @@ export function AdminMembers() {
 
     setPendingCount(pendingTotal);
     setPortalActiveMembers(portalActive);
+
+    try {
+      const openReports = await fetchAdminContentReports("open");
+      const reviewingReports = await fetchAdminContentReports("reviewing");
+      setModerationCount(openReports.length + reviewingReports.length);
+    } catch (moderationError) {
+      logAdminQueryError("refreshAdminData.moderationReports", moderationError);
+      setModerationCount(0);
+    }
 
     if (members.error) {
       logAdminQueryError("refreshAdminData.memberProfiles", members.error);
@@ -522,6 +534,7 @@ export function AdminMembers() {
           onTabChange={setActiveTab}
           pendingCount={pendingCount}
           needsAttentionCount={needsAttentionCount}
+          moderationCount={moderationCount}
         />
 
         {loadError ? (
@@ -860,6 +873,8 @@ export function AdminMembers() {
             </section>
           </div>
         ) : null}
+
+        {activeTab === "moderation" ? <AdminModerationPanel /> : null}
 
         {activeTab === "ai" ? (
           <AiOperationsPanel

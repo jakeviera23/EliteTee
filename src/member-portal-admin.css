@@ -887,3 +887,179 @@
     transition: none;
   }
 }
+
+/* Safety dialogs + blocked members + moderation inbox */
+.et-safety-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(12, 18, 14, 0.55);
+}
+
+.et-safety-dialog {
+  width: min(32rem, 100%);
+  max-height: min(90vh, 40rem);
+  overflow: auto;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #f7f4ee;
+  color: #1c241d;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.et-safety-dialog h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.et-safety-dialog p {
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.et-safety-fieldset {
+  border: 0;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.et-safety-radio {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0.4rem 0;
+}
+
+.et-safety-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.et-safety-textarea {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(28, 36, 29, 0.2);
+  border-radius: 0.65rem;
+  background: #fff;
+  resize: vertical;
+}
+
+.et-safety-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+
+.et-safety-error {
+  color: #8a1f1f;
+  margin: 0 0 0.85rem;
+}
+
+.et-btn--danger {
+  background: #8a1f1f;
+  color: #fff;
+  border-color: #8a1f1f;
+}
+
+.et-blocked-members {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(28, 36, 29, 0.12);
+}
+
+.et-blocked-members-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.et-blocked-members-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.et-blocked-members-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(28, 36, 29, 0.08);
+}
+
+.et-blocked-members-item span {
+  display: block;
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+.et-blocked-members-empty {
+  opacity: 0.8;
+}
+
+.feed-card-comment-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+.feed-card-comment-report,
+.et-messages-report-btn {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.et-admin-moderation-metrics,
+.et-admin-moderation-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+}
+
+.et-admin-report-list {
+  list-style: none;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.et-admin-report-item {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(28, 36, 29, 0.12);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.et-admin-report-item.is-urgent {
+  border-color: #b45309;
+  box-shadow: inset 3px 0 0 #b45309;
+}
+
+.et-admin-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.et-admin-success {
+  color: #1f5b37;
+  margin: 0 0 1rem;
+}

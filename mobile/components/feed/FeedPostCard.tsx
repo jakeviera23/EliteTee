@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { FeedCourseLink } from "@/components/feed/FeedCourseLink";
@@ -7,10 +8,12 @@ import {
   buildMemberIdentitySubtitle,
   MemberIdentityLink,
 } from "@/components/member/MemberIdentityLink";
+import { SafetyOverflowMenu } from "@/components/safety/SafetyOverflowMenu";
 import { Card } from "@/components/ui/Card";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { buildFeedMetaChips, type FeedMetaChip } from "@/lib/feedCardMeta";
 import { cacheFeedPostSnapshot } from "@/lib/feedPostCache";
+import { useAuth } from "@/hooks/AuthProvider";
 import type { MobileFeedPost } from "@/types/feed";
 
 type FeedPostCardProps = {
@@ -19,6 +22,11 @@ type FeedPostCardProps = {
   onPostChange?: (postId: string, patch: Partial<MobileFeedPost>) => void;
   onToast?: (message: string) => void;
   showActions?: boolean;
+  /**
+   * Called after the viewer blocks this post's author. Parents should drop that author's
+   * posts from their local list. When omitted, the card hides itself.
+   */
+  onAuthorBlocked?: (authorUserId: string) => void;
 };
 
 function chipToneStyle(tone: FeedMetaChip["tone"]) {
@@ -43,8 +51,12 @@ export function FeedPostCard({
   onPostChange,
   onToast,
   showActions = true,
+  onAuthorBlocked,
 }: FeedPostCardProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const [hiddenAfterBlock, setHiddenAfterBlock] = useState(false);
+  const canModerate = Boolean(post.authorUserId && post.authorUserId !== user?.id);
   const chips = buildFeedMetaChips(post);
   const identitySubtitle = buildMemberIdentitySubtitle(post.authorClub, post.authorLocation);
   const showHeadline = post.headline && post.headline !== post.badge;
@@ -64,6 +76,8 @@ export function FeedPostCard({
     router.push(`/feed/${post.id}`);
   }
 
+  if (hiddenAfterBlock) return null;
+
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
@@ -75,7 +89,23 @@ export function FeedPostCard({
           size={44}
           style={styles.identity}
         />
-        <Text style={styles.timestamp}>{post.timestamp}</Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.timestamp}>{post.timestamp}</Text>
+          {canModerate ? (
+            <SafetyOverflowMenu
+              reportTargetType="feed_post"
+              reportTargetId={post.id}
+              reportNoun="post"
+              blockUserId={post.authorUserId}
+              blockName={post.authorName}
+              accessibilityLabel="Post options"
+              onBlocked={() => {
+                setHiddenAfterBlock(true);
+                onAuthorBlocked?.(post.authorUserId);
+              }}
+            />
+          ) : null}
+        </View>
       </View>
 
       <Pressable
@@ -154,6 +184,12 @@ const styles = StyleSheet.create({
   identity: {
     flex: 1,
     minWidth: 0,
+  },
+  headerRight: {
+    flexShrink: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
   },
   timestamp: {
     flexShrink: 0,

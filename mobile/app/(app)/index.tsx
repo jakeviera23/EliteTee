@@ -322,6 +322,13 @@ export default function HomeScreen() {
                 return next;
               })
             }
+            onAuthorBlocked={(authorUserId) =>
+              setPosts((current) => {
+                const next = current.filter((entry) => entry.authorUserId !== authorUserId);
+                persistCache(next, hasMore, nextCursor);
+                return next;
+              })
+            }
           />
         )}
         ListHeaderComponent={listHeader}

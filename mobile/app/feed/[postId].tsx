@@ -19,6 +19,7 @@ import {
   buildMemberIdentitySubtitle,
   MemberIdentityLink,
 } from "@/components/member/MemberIdentityLink";
+import { SafetyOverflowMenu } from "@/components/safety/SafetyOverflowMenu";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { colors, layout, radii, spacing, typography } from "@/constants/theme";
 import { fetchFeedPostById, resolveFeedPostsMedia } from "@/lib/api/feed";
@@ -132,6 +133,19 @@ export default function FeedPostDetailScreen() {
     setCommentDraft("");
   }
 
+  function handleAuthorBlocked() {
+    // Cached snapshots may still hold this author's post; blocking already purged them.
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(app)");
+    }
+  }
+
+  function handleCommentAuthorBlocked(commentUserId: string) {
+    setComments((current) => current.filter((entry) => entry.userId !== commentUserId));
+  }
+
   if (loading && !post) {
     return (
       <SafeAreaView style={styles.safe}>
@@ -174,7 +188,20 @@ export default function FeedPostDetailScreen() {
             <Ionicons name="chevron-back" size={22} color={colors.forest} />
           </Pressable>
           <Text style={styles.toolbarTitle}>Post</Text>
-          <View style={styles.toolbarSpacer} />
+          {post.authorUserId && post.authorUserId !== user?.id ? (
+            <SafetyOverflowMenu
+              reportTargetType="feed_post"
+              reportTargetId={post.id}
+              reportNoun="post"
+              blockUserId={post.authorUserId}
+              blockName={post.authorName}
+              accessibilityLabel="Post options"
+              onBlocked={handleAuthorBlocked}
+              style={styles.toolbarMenu}
+            />
+          ) : (
+            <View style={styles.toolbarSpacer} />
+          )}
         </View>
 
         {refreshing ? <Text style={styles.refreshHint}>Updating…</Text> : null}
@@ -290,6 +317,19 @@ export default function FeedPostDetailScreen() {
                     {comment.displayTimestamp ? (
                       <Text style={styles.commentTime}>{comment.displayTimestamp}</Text>
                     ) : null}
+                    {comment.userId && comment.userId !== user?.id ? (
+                      <SafetyOverflowMenu
+                        reportTargetType="feed_comment"
+                        reportTargetId={comment.id}
+                        reportNoun="comment"
+                        blockUserId={comment.userId}
+                        blockName={comment.authorName}
+                        size={16}
+                        accessibilityLabel="Comment options"
+                        style={styles.commentMenu}
+                        onBlocked={() => handleCommentAuthorBlocked(comment.userId)}
+                      />
+                    ) : null}
                   </View>
                   <Text style={styles.commentText}>{comment.body}</Text>
                 </View>
@@ -362,6 +402,15 @@ const styles = StyleSheet.create({
   },
   toolbarSpacer: {
     width: 36,
+  },
+  toolbarMenu: {
+    width: 36,
+    height: 36,
+  },
+  commentMenu: {
+    marginLeft: "auto",
+    width: 24,
+    height: 24,
   },
   refreshHint: {
     paddingHorizontal: layout.pagePadding,

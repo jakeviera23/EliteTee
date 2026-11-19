@@ -40,6 +40,8 @@ import { FeedPostEditModal } from "./FeedPostEditModal";
 import { FeedPostLikersModal } from "./FeedPostLikersModal";
 import { FeedPostMenu } from "./FeedPostMenu";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { BlockMemberDialog } from "../safety/BlockMemberDialog";
+import { ReportContentDialog } from "../safety/ReportContentDialog";
 
 type FeedCardProps = {
   post: FeedPost;
@@ -51,6 +53,7 @@ type FeedCardProps = {
   onViewAuthor?: (userId: string, memberName: string) => void;
   onPostUpdated?: (post: FeedPost) => void;
   onPostDeleted?: (postId: string) => void;
+  onAuthorBlocked?: (userId: string) => void;
 };
 
 function HeartIcon({ filled }: { filled?: boolean }) {
@@ -213,10 +216,17 @@ export function FeedCard({
   onViewAuthor,
   onPostUpdated,
   onPostDeleted,
+  onAuthorBlocked,
 }: FeedCardProps) {
   const isFounder = variant === "founder";
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reportTarget, setReportTarget] = useState<
+    | { type: "feed_post"; id: string; label: string }
+    | { type: "feed_comment"; id: string; label: string }
+    | null
+  >(null);
+  const [blockAuthorOpen, setBlockAuthorOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const engagementEnabled = !isFounder && isPersistedFeedPostId(post.id);
@@ -275,6 +285,11 @@ export function FeedCard({
   const canDelete =
     !isFounder &&
     Boolean(currentUserId && post.authorUserId && post.authorUserId === currentUserId);
+  const canReportPost =
+    !isFounder &&
+    engagementEnabled &&
+    Boolean(currentUserId && post.authorUserId && post.authorUserId !== currentUserId);
+  const canBlockAuthor = canReportPost;
   const showEditedLabel = isFeedPostEdited(post.createdAt, post.updatedAt);
   const roundLabel = resolveFeedCardBadgeLabel(post) || postTypeLabels[post.postType];
   const hasMedia =
@@ -473,21 +488,30 @@ export function FeedCard({
           showEditedLabel={showEditedLabel}
         />
         {isFounder ? <span className="feed-card-pinned">Pinned</span> : null}
-        {canEdit || canDelete ? (
-          <FeedPostMenu
-            onEdit={canEdit ? () => setEditing(true) : undefined}
-            onDelete={
-              canDelete
-                ? () => {
-                    setDeleteError(null);
-                    setConfirmingDelete(true);
-                  }
-                : undefined
-            }
-            editLabel={isCourseRound ? "Edit experience" : "Edit post"}
-            deleteLabel={isCourseRound ? "Delete experience" : "Delete post"}
-          />
-        ) : null}
+        <FeedPostMenu
+          onEdit={canEdit ? () => setEditing(true) : undefined}
+          onDelete={
+            canDelete
+              ? () => {
+                  setDeleteError(null);
+                  setConfirmingDelete(true);
+                }
+              : undefined
+          }
+          onReport={
+            canReportPost
+              ? () =>
+                  setReportTarget({
+                    type: "feed_post",
+                    id: post.id,
+                    label: "this post",
+                  })
+              : undefined
+          }
+          onBlockAuthor={canBlockAuthor ? () => setBlockAuthorOpen(true) : undefined}
+          editLabel={isCourseRound ? "Edit experience" : "Edit post"}
+          deleteLabel={isCourseRound ? "Delete experience" : "Delete post"}
+        />
       </header>
 
       {hasMedia ? (
@@ -655,16 +679,36 @@ export function FeedCard({
                       </p>
                       <p className="feed-card-comment-text">{comment.body}</p>
                     </div>
-                    {canDeleteFeedPostComment(comment.userId, currentUserId) ? (
-                      <button
-                        type="button"
-                        className="feed-card-comment-delete"
-                        onClick={() => void handleDeleteComment(comment.id)}
-                        disabled={deletingCommentId === comment.id}
-                      >
-                        {deletingCommentId === comment.id ? "Deleting…" : "Delete"}
-                      </button>
-                    ) : null}
+                    <div className="feed-card-comment-actions">
+                      {canDeleteFeedPostComment(comment.userId, currentUserId) ? (
+                        <button
+                          type="button"
+                          className="feed-card-comment-delete"
+                          onClick={() => void handleDeleteComment(comment.id)}
+                          disabled={deletingCommentId === comment.id}
+                        >
+                          {deletingCommentId === comment.id ? "Deleting…" : "Delete"}
+                        </button>
+                      ) : null}
+                      {currentUserId &&
+                      comment.userId &&
+                      comment.userId !== currentUserId &&
+                      engagementEnabled ? (
+                        <button
+                          type="button"
+                          className="feed-card-comment-report"
+                          onClick={() =>
+                            setReportTarget({
+                              type: "feed_comment",
+                              id: comment.id,
+                              label: "this comment",
+                            })
+                          }
+                        >
+                          Report
+                        </button>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -795,6 +839,30 @@ export function FeedCard({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {reportTarget ? (
+        <ReportContentDialog
+          open
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          targetLabel={reportTarget.label}
+          onClose={() => setReportTarget(null)}
+          onSubmitted={() => onToast?.("Report submitted")}
+        />
+      ) : null}
+
+      {blockAuthorOpen && post.authorUserId ? (
+        <BlockMemberDialog
+          open
+          memberUserId={post.authorUserId}
+          memberName={post.author.name}
+          onClose={() => setBlockAuthorOpen(false)}
+          onBlocked={() => {
+            onAuthorBlocked?.(post.authorUserId!);
+            onToast?.(`${post.author.name} has been blocked`);
+          }}
+        />
       ) : null}
     </article>
   );

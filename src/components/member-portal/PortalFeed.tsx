@@ -273,6 +273,11 @@ export function PortalFeed({
                 onViewAuthor={onViewMemberProfile}
                 onPostUpdated={handlePostUpdated}
                 onPostDeleted={handlePostDeleted}
+                onAuthorBlocked={(userId) => {
+                  setMemberPosts((current) =>
+                    current.filter((post) => post.authorUserId !== userId),
+                  );
+                }}
               />
             ))}
           </div>

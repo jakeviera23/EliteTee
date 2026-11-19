@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -15,6 +16,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ReportContentModal } from "@/components/safety/ReportContentModal";
+import { SafetyOverflowMenu } from "@/components/safety/SafetyOverflowMenu";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -35,6 +38,8 @@ import { formatMemberContextLine, formatPrimaryClubLine } from "@/lib/display";
 import { formatMobileError } from "@/lib/errors";
 import { formatMessageBubbleTimestamp } from "@/lib/messageTimestamps";
 import { getMemberDisplayName } from "@/lib/memberInitials";
+import { isReportableTargetId } from "@/lib/contentReports";
+import { membersAreBlocked } from "@/lib/memberBlocks";
 import { SESSION_CACHE_KEYS, setSessionCache } from "@/lib/sessionCache";
 import {
   markConversationReadInCache,
@@ -76,6 +81,8 @@ export default function ConversationDetailScreen() {
   const [memberClub, setMemberClub] = useState("");
   const [memberBasedIn, setMemberBasedIn] = useState("");
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [reportMessageId, setReportMessageId] = useState<string | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
   const listRef = useRef<FlatList<MobilePrivateMessage>>(null);
   const prefillApplied = useRef(false);
 
@@ -148,6 +155,31 @@ export default function ConversationDetailScreen() {
       active = false;
     };
   }, [userId, memberName, loadThread]);
+
+  useEffect(() => {
+    if (!userId || !user?.id) return;
+    let active = true;
+    void membersAreBlocked(user.id, userId)
+      .then((blocked) => {
+        if (active) setIsBlocked(blocked);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [userId, user?.id]);
+
+  function leaveConversationAfterBlock() {
+    router.replace("/(app)/messages");
+  }
+
+  function promptReportMessage(message: MobilePrivateMessage) {
+    if (message.sender_id === user?.id || !isReportableTargetId(message.id)) return;
+    Alert.alert("Report this message?", undefined, [
+      { text: "Report message", onPress: () => setReportMessageId(message.id) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -344,6 +376,17 @@ export default function ConversationDetailScreen() {
               ) : null}
             </View>
           )}
+          {userId && userId !== user?.id ? (
+            <SafetyOverflowMenu
+              reportTargetType="member_profile"
+              reportTargetId={userId}
+              reportNoun="member"
+              blockUserId={userId}
+              blockName={title || "this member"}
+              accessibilityLabel="Conversation options"
+              onBlocked={leaveConversationAfterBlock}
+            />
+          ) : null}
         </View>
 
         {loading && messages.length === 0 ? (
@@ -377,7 +420,12 @@ export default function ConversationDetailScreen() {
               const attachments = item.attachments ?? [];
               const hasBody = Boolean(item.body.trim());
               return (
-                <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
+                <Pressable
+                  onLongPress={isOwn ? undefined : () => promptReportMessage(item)}
+                  delayLongPress={350}
+                  accessibilityHint={isOwn ? undefined : "Long press to report this message"}
+                  style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
+                >
                   {attachments.length > 0 ? (
                     <View style={styles.attachments}>
                       {attachments.map((attachment) =>
@@ -409,9 +457,19 @@ export default function ConversationDetailScreen() {
                   <Text style={[styles.meta, isOwn ? styles.metaOwn : null]}>
                     {formatMessageBubbleTimestamp(item.created_at)}
                   </Text>
-                </View>
+                </Pressable>
               );
             }}
+          />
+        ) : null}
+
+        {reportMessageId ? (
+          <ReportContentModal
+            visible
+            targetType="private_message"
+            targetId={reportMessageId}
+            targetLabel="this message"
+            onClose={() => setReportMessageId(null)}
           />
         ) : null}
 
@@ -428,7 +486,14 @@ export default function ConversationDetailScreen() {
           </Pressable>
         </Modal>
 
-        {!error || messages.length > 0 ? (
+        {isBlocked ? (
+          <View style={styles.composer}>
+            <Text style={styles.blockedNotice}>
+              Messaging is unavailable because one of you has blocked the other. You can manage
+              blocked members from Profile.
+            </Text>
+          </View>
+        ) : !error || messages.length > 0 ? (
           <View style={styles.composer}>
             {sendError ? (
               <View style={styles.sendErrorRow}>
@@ -661,6 +726,12 @@ const styles = StyleSheet.create({
     fontFamily: typography.sans,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  blockedNotice: {
+    fontFamily: typography.sans,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.textSecondary,
   },
   sendErrorRow: {
     flexDirection: "row",

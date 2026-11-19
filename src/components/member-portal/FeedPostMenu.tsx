@@ -3,19 +3,28 @@ import { useEffect, useId, useRef, useState } from "react";
 type FeedPostMenuProps = {
   onEdit?: () => void;
   onDelete?: () => void;
+  onReport?: () => void;
+  onBlockAuthor?: () => void;
   editLabel?: string;
   deleteLabel?: string;
+  reportLabel?: string;
+  blockLabel?: string;
 };
 
 export function FeedPostMenu({
   onEdit,
   onDelete,
+  onReport,
+  onBlockAuthor,
   editLabel = "Edit post",
   deleteLabel = "Delete post",
+  reportLabel = "Report post",
+  blockLabel = "Block member",
 }: FeedPostMenuProps) {
   const menuId = useId();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const hasItems = Boolean(onEdit || onDelete || onReport || onBlockAuthor);
 
   useEffect(() => {
     if (!open) return;
@@ -39,6 +48,8 @@ export function FeedPostMenu({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
+
+  if (!hasItems) return null;
 
   return (
     <div className="feed-card-menu" ref={rootRef}>
@@ -67,6 +78,32 @@ export function FeedPostMenu({
               }}
             >
               {editLabel}
+            </button>
+          ) : null}
+          {onReport ? (
+            <button
+              type="button"
+              className="feed-card-menu-item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onReport();
+              }}
+            >
+              {reportLabel}
+            </button>
+          ) : null}
+          {onBlockAuthor ? (
+            <button
+              type="button"
+              className="feed-card-menu-item feed-card-menu-item--danger"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onBlockAuthor();
+              }}
+            >
+              {blockLabel}
             </button>
           ) : null}
           {onDelete ? (

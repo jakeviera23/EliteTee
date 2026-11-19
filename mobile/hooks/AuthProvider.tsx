@@ -253,7 +253,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         logAuthError("getSession failed", error);
-        clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
+        clearLocalAuthState(
+          setSession,
+          setProfile,
+          setHasPortalAccess,
+          setPortalAccessCheckFailed,
+          setHasAcceptedTerms,
+        );
         setBooting(false);
         return;
       }
@@ -272,7 +278,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Recovery completion lives on web; do not treat this as a portal session.
         void (async () => {
           await client.auth.signOut();
-          clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
+          clearLocalAuthState(
+            setSession,
+            setProfile,
+            setHasPortalAccess,
+            setPortalAccessCheckFailed,
+            setHasAcceptedTerms,
+          );
           try {
             await openEliteTeeInAppBrowser(getAuthCallbackUrl());
           } catch (error) {
@@ -284,7 +296,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_OUT") {
         bootstrapGeneration.current += 1;
-        clearLocalAuthState(setSession, setProfile, setHasPortalAccess, setPortalAccessCheckFailed);
+        clearLocalAuthState(
+          setSession,
+          setProfile,
+          setHasPortalAccess,
+          setPortalAccessCheckFailed,
+          setHasAcceptedTerms,
+        );
         return;
       }
 

@@ -17,7 +17,7 @@ type PrivateMessageInsertPayload = {
 };
 
 export const PRIVATE_MESSAGE_RLS_ERROR =
-  "Your message could not be sent. This member may not have active portal access right now.";
+  "Your message could not be sent. This member may be blocked or may not have active portal access right now.";
 
 const MESSAGE_EMPTY_ERROR = "Message cannot be empty.";
 const MESSAGE_SELF_ERROR = "You cannot message yourself.";

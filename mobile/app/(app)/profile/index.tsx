@@ -92,8 +92,15 @@ export default function ProfileScreen() {
           <Text style={styles.linkLabel}>Edit profile</Text>
           <Text style={styles.linkChevron}>›</Text>
         </Pressable>
-        <Pressable onPress={() => router.push("/courses")} style={[styles.linkRow, styles.linkRowLast]}>
+        <Pressable onPress={() => router.push("/courses")} style={styles.linkRow}>
           <Text style={styles.linkLabel}>Courses</Text>
+          <Text style={styles.linkChevron}>›</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/(app)/profile/blocked-members")}
+          style={[styles.linkRow, styles.linkRowLast]}
+        >
+          <Text style={styles.linkLabel}>Blocked members</Text>
           <Text style={styles.linkChevron}>›</Text>
         </Pressable>
       </View>

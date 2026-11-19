@@ -29,6 +29,8 @@ import type { ViewMemberProfileHandler } from "../../types/memberProfileNavigati
 import { EditablePrivateMessage } from "./EditablePrivateMessage";
 import { MemberClubAvatar } from "./MemberClubAvatar";
 import { NewConversationModal } from "./NewConversationModal";
+import { BlockMemberDialog } from "../safety/BlockMemberDialog";
+import { ReportContentDialog } from "../safety/ReportContentDialog";
 import "../../member-portal-messages.css";
 
 type PortalMessagesProps = {
@@ -96,6 +98,12 @@ export function PortalMessages({
   const [conversations, setConversations] = useState<DirectConversationSummary[]>([]);
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(null);
   const [threadMessages, setThreadMessages] = useState<PrivateMessageRecord[]>([]);
+  const [reportTarget, setReportTarget] = useState<{
+    type: "private_message" | "member_profile";
+    id: string;
+    label: string;
+  } | null>(null);
+  const [blockOpen, setBlockOpen] = useState(false);
   const [composeText, setComposeText] = useState("");
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [isLoadingInbox, setIsLoadingInbox] = useState(true);
@@ -639,8 +647,8 @@ export function PortalMessages({
                     </div>
                   </div>
                 )}
-                {onViewMemberProfile ? (
-                  <div className="et-messages-thread-actions">
+                <div className="et-messages-thread-actions">
+                  {onViewMemberProfile ? (
                     <button
                       type="button"
                       className="et-btn et-btn--secondary et-btn--sm"
@@ -648,8 +656,28 @@ export function PortalMessages({
                     >
                       {messagesCopy.viewProfile}
                     </button>
-                  </div>
-                ) : null}
+                  ) : null}
+                  <button
+                    type="button"
+                    className="et-btn et-btn--secondary et-btn--sm"
+                    onClick={() =>
+                      setReportTarget({
+                        type: "member_profile",
+                        id: activeConversation.otherUserId,
+                        label: activeConversation.otherUserName,
+                      })
+                    }
+                  >
+                    Report
+                  </button>
+                  <button
+                    type="button"
+                    className="et-btn et-btn--secondary et-btn--sm"
+                    onClick={() => setBlockOpen(true)}
+                  >
+                    Block
+                  </button>
+                </div>
               </header>
 
               <div
@@ -702,6 +730,21 @@ export function PortalMessages({
                           bubbleClassName="et-messages-bubble-inner"
                           onEdited={handleMessageEdited}
                         />
+                        {!isOwn ? (
+                          <button
+                            type="button"
+                            className="et-messages-report-btn"
+                            onClick={() =>
+                              setReportTarget({
+                                type: "private_message",
+                                id: message.id,
+                                label: "this message",
+                              })
+                            }
+                          >
+                            Report
+                          </button>
+                        ) : null}
                       </li>
                     );
                   })}
@@ -789,6 +832,33 @@ export function PortalMessages({
         <NewConversationModal
           onClose={() => setShowNewModal(false)}
           onStart={handleStartConversation}
+        />
+      ) : null}
+
+      {reportTarget ? (
+        <ReportContentDialog
+          open
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          targetLabel={reportTarget.label}
+          onClose={() => setReportTarget(null)}
+        />
+      ) : null}
+
+      {blockOpen && activeConversation ? (
+        <BlockMemberDialog
+          open
+          memberUserId={activeConversation.otherUserId}
+          memberName={activeConversation.otherUserName}
+          onClose={() => setBlockOpen(false)}
+          onBlocked={() => {
+            const blockedId = activeConversation.otherUserId;
+            setConversations((current) =>
+              current.filter((conversation) => conversation.otherUserId !== blockedId),
+            );
+            setActiveConversation(null);
+            setThreadMessages([]);
+          }}
         />
       ) : null}
     </section>

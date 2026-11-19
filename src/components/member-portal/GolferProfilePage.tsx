@@ -48,6 +48,9 @@ import { ProfileTagOrTextList } from "./profile/ProfileTagOrTextList";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { InviteGolfer } from "./InviteGolfer";
 import { MemberRelationshipActions } from "./MemberRelationshipActions";
+import { BlockMemberDialog } from "../safety/BlockMemberDialog";
+import { BlockedMembersPanel } from "../safety/BlockedMembersPanel";
+import { ReportContentDialog } from "../safety/ReportContentDialog";
 
 function ProfileEmptyState({ title, hint }: { title: string; hint: string }) {
   return (
@@ -102,6 +105,7 @@ type GolferProfilePageProps = {
   onOpenFeedPost?: (postId: string) => void;
   startInEditMode?: boolean;
   onStartInEditModeConsumed?: () => void;
+  onMemberBlocked?: (userId: string) => void;
 };
 
 export function GolferProfilePage({
@@ -117,6 +121,7 @@ export function GolferProfilePage({
   onOpenFeedPost,
   startInEditMode = false,
   onStartInEditModeConsumed,
+  onMemberBlocked,
 }: GolferProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
@@ -129,6 +134,8 @@ export function GolferProfilePage({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [connectionCount, setConnectionCount] = useState(0);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
 
   const resolvedViewUserId = viewUserId?.trim() || null;
   const isViewingOther = Boolean(resolvedViewUserId && resolvedViewUserId !== currentUserId);
@@ -419,18 +426,34 @@ export function GolferProfilePage({
                       Edit Profile
                     </button>
                   ) : showRelationshipActions ? (
-                    <MemberRelationshipActions
-                      otherUserId={profileUserId}
-                      context={relationshipContext}
-                      layout="hero"
-                      onRequestIntroduction={() =>
-                        memberProfile && onRequestIntroduction?.(memberProfile)
-                      }
-                      onRespondToRequest={onRespondToIntroduction}
-                      onMessage={() =>
-                        onMessageMember?.(profileUserId, memberProfile?.full_name ?? "Member")
-                      }
-                    />
+                    <>
+                      <MemberRelationshipActions
+                        otherUserId={profileUserId}
+                        context={relationshipContext}
+                        layout="hero"
+                        onRequestIntroduction={() =>
+                          memberProfile && onRequestIntroduction?.(memberProfile)
+                        }
+                        onRespondToRequest={onRespondToIntroduction}
+                        onMessage={() =>
+                          onMessageMember?.(profileUserId, memberProfile?.full_name ?? "Member")
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="et-btn et-btn--secondary"
+                        onClick={() => setReportOpen(true)}
+                      >
+                        Report
+                      </button>
+                      <button
+                        type="button"
+                        className="et-btn et-btn--secondary"
+                        onClick={() => setBlockOpen(true)}
+                      >
+                        Block
+                      </button>
+                    </>
                   ) : null}
                 </div>
               </ProfileCover>
@@ -682,9 +705,34 @@ export function GolferProfilePage({
                   <ProfileBucketList courses={bucketListCourses} isLoading={isBucketListLoading} />
                 </ProfileSection>
               ) : null}
+
+              {!isViewingOther ? <BlockedMembersPanel /> : null}
             </aside>
           </div>
         </>
+      ) : null}
+
+      {reportOpen && profileUserId ? (
+        <ReportContentDialog
+          open
+          targetType="member_profile"
+          targetId={profileUserId}
+          targetLabel={memberProfile?.full_name?.trim() || "this member"}
+          onClose={() => setReportOpen(false)}
+        />
+      ) : null}
+
+      {blockOpen && profileUserId ? (
+        <BlockMemberDialog
+          open
+          memberUserId={profileUserId}
+          memberName={memberProfile?.full_name?.trim() || "this member"}
+          onClose={() => setBlockOpen(false)}
+          onBlocked={() => {
+            onMemberBlocked?.(profileUserId);
+            onBack?.();
+          }}
+        />
       ) : null}
     </article>
   );

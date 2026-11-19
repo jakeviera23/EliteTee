@@ -13,6 +13,7 @@ export const adminCopy = {
     applications: "Applications",
     members: "Members",
     invites: "Invites",
+    moderation: "Moderation",
     ai: "AI Operations",
     activity: "Activity",
   } as const,

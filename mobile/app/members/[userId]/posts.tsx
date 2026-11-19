@@ -92,7 +92,14 @@ export default function MemberPostsScreen() {
             <Text style={styles.empty}>No posts yet.</Text>
           )
         }
-        renderItem={({ item }) => <FeedPostCard post={item} />}
+        renderItem={({ item }) => (
+          <FeedPostCard
+            post={item}
+            onAuthorBlocked={(authorUserId) =>
+              setPosts((current) => current.filter((entry) => entry.authorUserId !== authorUserId))
+            }
+          />
+        )}
         onEndReached={() => {
           if (!hasMore || loadingMore || loading) return;
           void loadPage(posts.length, true);

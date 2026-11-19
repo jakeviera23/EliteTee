@@ -7,6 +7,8 @@ import { RoundReviewCard } from "@/components/courses/RoundReviewCard";
 import { FeedPostCard } from "@/components/feed/FeedPostCard";
 import { EliteTeeMark } from "@/components/brand/EliteTeeMark";
 import { ProfileCoverFallback } from "@/components/profile/ProfileCoverFallback";
+import { BlockMemberModal } from "@/components/safety/BlockMemberModal";
+import { ReportContentModal } from "@/components/safety/ReportContentModal";
 import { Button } from "@/components/ui/Button";
 import { Card, SectionTitle } from "@/components/ui/Card";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -122,6 +124,8 @@ export default function MemberProfileScreen() {
   const [loadingFeedPosts, setLoadingFeedPosts] = useState(() => recentFeedPosts.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [lookingForExpanded, setLookingForExpanded] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
 
   const isOwnProfile = Boolean(user?.id && userId && user.id === userId);
 
@@ -404,7 +408,49 @@ export default function MemberProfileScreen() {
                 })
               }
             />
+            <View style={styles.safetyRow}>
+              <Button
+                label="Report"
+                variant="secondary"
+                compact
+                style={styles.safetyButton}
+                onPress={() => setReportOpen(true)}
+              />
+              <Button
+                label="Block"
+                variant="secondary"
+                compact
+                style={styles.safetyButton}
+                onPress={() => setBlockOpen(true)}
+              />
+            </View>
           </View>
+        ) : null}
+
+        {!isOwnProfile && targetUserId && reportOpen ? (
+          <ReportContentModal
+            visible
+            targetType="member_profile"
+            targetId={targetUserId}
+            targetLabel={memberName || "this member"}
+            onClose={() => setReportOpen(false)}
+          />
+        ) : null}
+
+        {!isOwnProfile && targetUserId && blockOpen ? (
+          <BlockMemberModal
+            visible
+            memberUserId={targetUserId}
+            memberName={memberName || "this member"}
+            onClose={() => setBlockOpen(false)}
+            onBlocked={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(app)");
+              }
+            }}
+          />
         ) : null}
 
         {loadingSecondary && !secondary ? (
@@ -596,7 +642,14 @@ export default function MemberProfileScreen() {
         {previewFeedPosts.length > 0 ? (
           <ProfileSection title="Posts">
             {previewFeedPosts.map((post) => (
-              <FeedPostCard key={post.id} post={post} />
+              <FeedPostCard
+                key={post.id}
+                post={post}
+                onAuthorBlocked={() => {
+                  if (router.canGoBack()) router.back();
+                  else router.replace("/(app)");
+                }}
+              />
             ))}
             {(stats?.feedPosts ?? 0) > previewFeedPosts.length ? (
               <Pressable onPress={() => openHistory("posts")} hitSlop={8}>
@@ -708,6 +761,13 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.sm,
+  },
+  safetyRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  safetyButton: {
+    flex: 1,
   },
   statsRow: {
     flexDirection: "row",

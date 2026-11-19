@@ -12,6 +12,7 @@ const TAB_ORDER: AdminTabId[] = [
   "applications",
   "members",
   "invites",
+  "moderation",
   "ai",
   "activity",
 ];
@@ -21,7 +22,8 @@ export function AdminNav({
   onTabChange,
   pendingCount,
   needsAttentionCount = 0,
-}: AdminNavProps) {
+  moderationCount = 0,
+}: AdminNavProps & { moderationCount?: number }) {
   return (
     <nav className="et-admin-nav" aria-label="Admin sections">
       <ul className="et-admin-nav-list">
@@ -29,6 +31,7 @@ export function AdminNav({
           const label = adminCopy.tabs[tabId];
           const showPendingBadge = tabId === "applications" && pendingCount > 0;
           const showAttentionBadge = tabId === "applications" && needsAttentionCount > 0;
+          const showModerationBadge = tabId === "moderation" && moderationCount > 0;
 
           return (
             <li key={tabId}>
@@ -50,6 +53,14 @@ export function AdminNav({
                     aria-label={`${needsAttentionCount} need attention`}
                   >
                     {needsAttentionCount}
+                  </span>
+                ) : null}
+                {showModerationBadge ? (
+                  <span
+                    className="et-admin-nav-badge et-admin-nav-badge--attention"
+                    aria-label={`${moderationCount} open reports`}
+                  >
+                    {moderationCount}
                   </span>
                 ) : null}
               </button>
