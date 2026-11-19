@@ -18,8 +18,8 @@ const CONTACT_EMAIL = ELITETEE_MEMBERSHIP_CONTACT_EMAIL;
 
 /**
  * Member-facing Terms of Use for EliteTee LLC.
- * Proposed operating terms for product/App Store compliance.
- * Not attorney-approved; remaining owner/legal confirmation items are marked below.
+ * Operating Terms of Use for product and App Store compliance.
+ * Outstanding counsel/owner review items: docs/legal-terms-review-checklist.md
  */
 export function Terms() {
   usePageMeta({
@@ -47,13 +47,6 @@ export function Terms() {
             </header>
 
             <div className="about-prose prose legal-prose">
-              <p className="legal-draft-notice" role="note">
-                <strong>Proposed terms — owner/legal confirmation required.</strong> This document
-                is an operating Terms of Use for EliteTee product and App Store compliance. It is{" "}
-                <strong>not</strong> legal advice and has <strong>not</strong> been approved by an
-                attorney. Items marked <code>[OWNER/LEGAL APPROVAL]</code> must be confirmed by
-                EliteTee LLC before treating this as a final contract.
-              </p>
               <p>
                 These Terms of Use (&quot;Terms&quot;) govern access to and use of the EliteTee
                 website at {ELITETEE_PUBLIC_WEBSITE}, the member portal, and related mobile
@@ -76,12 +69,6 @@ export function Terms() {
                 Access to member features may require an approved application, invitation, or other
                 authorization. You will keep your account credentials confidential and are
                 responsible for activity under your account.
-              </p>
-              <p>
-                <span className="legal-placeholder">
-                  [OWNER/LEGAL APPROVAL: Confirm any geographic restrictions and membership fee /
-                  refund language if or when paid plans launch.]
-                </span>
               </p>
             </TermsSection>
 
@@ -109,12 +96,6 @@ export function Terms() {
                 described in the Privacy Policy. This license ends when your Member Content is
                 deleted from our systems, except for reasonable residual copies in backups, logs, or
                 archives retained for security, legal, or operational purposes.
-              </p>
-              <p>
-                <span className="legal-placeholder">
-                  [OWNER/LEGAL APPROVAL: Confirm whether any broader marketing or promotional use of
-                  Member Content is intended beyond operating the Services.]
-                </span>
               </p>
             </TermsSection>
 
@@ -201,13 +182,6 @@ export function Terms() {
                 We will consider good-faith appeals, but are not obligated to restore content or
                 access.
               </p>
-              <p>
-                <span className="legal-placeholder">
-                  [OWNER/LEGAL APPROVAL: Confirm refund or credit language if paid memberships
-                  launch; none apply while membership is invitation/application based without a
-                  published paid plan.]
-                </span>
-              </p>
             </TermsSection>
 
             <TermsSection id="third-parties" title="7. Third-party services">
@@ -244,12 +218,6 @@ export function Terms() {
                 Some jurisdictions do not allow certain limitations; in those jurisdictions, our
                 liability is limited to the fullest extent permitted by law.
               </p>
-              <p>
-                <span className="legal-placeholder">
-                  [OWNER/LEGAL APPROVAL: Attorney review of disclaimer and liability caps for
-                  Florida consumer / LLC context.]
-                </span>
-              </p>
             </TermsSection>
 
             <TermsSection id="governing-law" title="9. Governing law and disputes">
@@ -264,12 +232,6 @@ export function Terms() {
                 located in {ELITETEE_GOVERNING_LAW_STATE} will have exclusive jurisdiction over
                 disputes arising out of or relating to these Terms or the Services, and you consent
                 to personal jurisdiction there.
-              </p>
-              <p>
-                <span className="legal-placeholder">
-                  [OWNER/LEGAL APPROVAL: Confirm preferred venue county/city in Florida, and whether
-                  arbitration or a class-action waiver should be added.]
-                </span>
               </p>
             </TermsSection>
 
@@ -294,13 +256,6 @@ export function Terms() {
                 </a>
                 <br />
                 Email: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-              </p>
-              <p>
-                <span className="legal-placeholder">
-                  [OWNER/LEGAL APPROVAL: Insert the official Florida business mailing address from
-                  company registration / registered agent records. Do not publish a personal
-                  residential address without explicit approval.]
-                </span>
               </p>
               <p>
                 Privacy questions are also addressed in our{" "}
