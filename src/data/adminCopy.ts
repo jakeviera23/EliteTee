@@ -2,7 +2,7 @@
 export const adminCopy = {
   eyebrow: "Founder Operations",
   title: "EliteTee Admin",
-  lead: "Onboard members, manage invitations, and monitor concierge activity.",
+  lead: "Onboard members, review Guideline 1.2 moderation reports, manage invitations, and monitor concierge activity.",
   signOut: "Sign Out",
   signingOut: "Signing out…",
   loading: "Loading admin data…",

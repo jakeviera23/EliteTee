@@ -37,10 +37,11 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function adminNotifyEmails(): string[] {
-  const raw =
+  const raw = (
     Deno.env.get("ADMIN_NOTIFY_EMAILS") ||
     Deno.env.get("ADMIN_EMAILS") ||
-    "";
+    ""
+  ).replace(/\r/g, "");
   return raw
     .split(",")
     .map((email) => email.trim().toLowerCase())
@@ -59,11 +60,17 @@ async function sendResendEmail(input: {
   subject: string;
   text: string;
 }) {
-  const apiKey = Deno.env.get("RESEND_API_KEY");
-  const from =
+  // Sanitize secrets — paste dialogs can introduce newlines/zero-width chars that break Deno fetch headers.
+  const apiKey = (Deno.env.get("RESEND_API_KEY") || "")
+    .replace(/[^\x21-\x7E]/g, "")
+    .trim();
+  const from = (
     Deno.env.get("ADMIN_NOTIFY_FROM_EMAIL") ||
     Deno.env.get("RESEND_FROM_EMAIL") ||
-    "";
+    ""
+  )
+    .replace(/[^\x20-\x7E]/g, "")
+    .trim();
 
   if (!apiKey || !from || input.to.length === 0) {
     return {
@@ -77,10 +84,16 @@ async function sendResendEmail(input: {
     };
   }
 
+  const authHeader = `Bearer ${apiKey}`;
+  // Never log the key — only shape diagnostics if Request construction fails.
+  if (![...authHeader].every((ch) => ch.charCodeAt(0) <= 0x7e)) {
+    throw new Error("RESEND_API_KEY contains non-ASCII after sanitize");
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: authHeader,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

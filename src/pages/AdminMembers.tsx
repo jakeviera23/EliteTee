@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AdminActivityPanel } from "../components/admin/AdminActivityPanel";
 import { AdminCoursesLocationPanel } from "../components/admin/AdminCoursesLocationPanel";
 import { AdminApplicationsPanel } from "../components/admin/AdminApplicationsPanel";
@@ -99,9 +99,27 @@ const initialFormState: FormState = {
   is_verified: true,
 };
 
+const ADMIN_TAB_IDS: AdminTabId[] = [
+  "overview",
+  "applications",
+  "members",
+  "invites",
+  "moderation",
+  "ai",
+  "activity",
+];
+
+function isAdminTabId(value: string | null): value is AdminTabId {
+  return Boolean(value && (ADMIN_TAB_IDS as string[]).includes(value));
+}
+
 export function AdminMembers() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<AdminTabId>("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<AdminTabId>(
+    isAdminTabId(initialTab) ? initialTab : "overview",
+  );
   const [form, setForm] = useState<FormState>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -238,6 +256,22 @@ export function AdminMembers() {
   useEffect(() => {
     void refreshAdminData();
   }, [refreshAdminData]);
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (isAdminTabId(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+      return;
+    }
+    if (!tabFromUrl) {
+      setActiveTab("overview");
+    }
+  }, [searchParams]);
+
+  function handleTabChange(tab: AdminTabId) {
+    setActiveTab(tab);
+    setSearchParams(tab === "overview" ? {} : { tab }, { replace: true });
+  }
 
   const inviteMetrics = useMemo(
     () => computeInviteMetrics(approvedApplications),
@@ -531,7 +565,7 @@ export function AdminMembers() {
 
         <AdminNav
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           pendingCount={pendingCount}
           needsAttentionCount={needsAttentionCount}
           moderationCount={moderationCount}

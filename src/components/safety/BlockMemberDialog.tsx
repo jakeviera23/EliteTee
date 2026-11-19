@@ -1,5 +1,7 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { blockMember, formatMemberBlockError } from "../../lib/memberBlocks";
+import { createSubmissionLock } from "../../lib/reportSubmissionLock";
 
 type BlockMemberDialogProps = {
   open: boolean;
@@ -9,6 +11,7 @@ type BlockMemberDialogProps = {
   onBlocked?: () => void;
 };
 
+/** Portaled to document.body so feed-card transforms cannot destabilize the overlay. */
 export function BlockMemberDialog({
   open,
   memberUserId,
@@ -19,25 +22,79 @@ export function BlockMemberDialog({
   const titleId = useId();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitLockRef = useRef(createSubmissionLock());
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  if (!open) return null;
-
-  async function handleBlock() {
-    setSubmitting(true);
+  useEffect(() => {
+    if (!open) return;
     setError(null);
-    try {
-      await blockMember(memberUserId);
-      onBlocked?.();
-      onClose();
-    } catch (err) {
-      setError(formatMemberBlockError(err));
-    } finally {
-      setSubmitting(false);
+    setSubmitting(false);
+    submitLockRef.current = createSubmissionLock();
+  }, [open, memberUserId]);
+
+  useEffect(() => {
+    if (!open) return;
+    document.body.classList.add("et-safety-dialog-open");
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !submitLockRef.current.isInFlight) {
+        onCloseRef.current();
+      }
     }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.classList.remove("et-safety-dialog-open");
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  if (!open || typeof document === "undefined") {
+    return null;
   }
 
-  return (
-    <div className="et-safety-dialog-backdrop" role="presentation" onClick={onClose}>
+  async function handleBlock() {
+    if (!memberUserId) return;
+
+    const outcome = await submitLockRef.current.run(async () => {
+      setSubmitting(true);
+      setError(null);
+      try {
+        await blockMember(memberUserId);
+        return { ok: true as const };
+      } catch (err) {
+        return { ok: false as const, err };
+      } finally {
+        setSubmitting(false);
+      }
+    });
+
+    if (outcome.status === "ignored") return;
+
+    if (outcome.result.ok) {
+      onBlocked?.();
+      onClose();
+      return;
+    }
+
+    setError(formatMemberBlockError(outcome.result.err));
+  }
+
+  function handleBackdropClick() {
+    if (submitting || submitLockRef.current.isInFlight) return;
+    onClose();
+  }
+
+  const dialog = (
+    <div
+      className="et-safety-dialog-backdrop"
+      role="presentation"
+      onClick={handleBackdropClick}
+    >
       <div
         className="et-safety-dialog"
         role="dialog"
@@ -56,7 +113,12 @@ export function BlockMemberDialog({
           </p>
         ) : null}
         <div className="et-safety-dialog-actions">
-          <button type="button" className="et-btn et-btn--secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="et-btn et-btn--secondary"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </button>
           <button
@@ -71,4 +133,6 @@ export function BlockMemberDialog({
       </div>
     </div>
   );
+
+  return createPortal(dialog, document.body);
 }

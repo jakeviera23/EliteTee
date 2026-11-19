@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { blockMember, formatMemberBlockError } from "@/lib/memberBlocks";
+import { createSubmissionLock } from "@/lib/reportSubmissionLock";
 
 type BlockMemberModalProps = {
   visible: boolean;
@@ -21,35 +22,54 @@ export function BlockMemberModal({
 }: BlockMemberModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitLockRef = useRef(createSubmissionLock());
 
   useEffect(() => {
-    if (visible) {
-      setSubmitting(false);
-      setError(null);
-    }
+    if (!visible) return;
+    setSubmitting(false);
+    setError(null);
+    submitLockRef.current = createSubmissionLock();
   }, [visible, memberUserId]);
 
   async function handleBlock() {
-    if (submitting || !memberUserId) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      await blockMember(memberUserId);
+    if (!memberUserId) return;
+
+    const outcome = await submitLockRef.current.run(async () => {
+      setSubmitting(true);
+      setError(null);
+      try {
+        await blockMember(memberUserId);
+        return { ok: true as const };
+      } catch (err) {
+        return { ok: false as const, err };
+      } finally {
+        setSubmitting(false);
+      }
+    });
+
+    if (outcome.status === "ignored") return;
+
+    if (outcome.result.ok) {
       onClose();
       onBlocked?.();
-    } catch (err) {
-      setError(formatMemberBlockError(err));
-    } finally {
-      setSubmitting(false);
+      return;
     }
+
+    setError(formatMemberBlockError(outcome.result.err));
+  }
+
+  function handleRequestClose() {
+    if (submitting || submitLockRef.current.isInFlight) return;
+    onClose();
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleRequestClose}>
       <View style={styles.backdrop}>
         <Pressable
           style={StyleSheet.absoluteFill}
-          onPress={onClose}
+          onPress={handleRequestClose}
+          disabled={submitting}
           accessibilityLabel="Dismiss"
         />
         <View style={styles.dialog} accessibilityViewIsModal>
@@ -66,7 +86,7 @@ export function BlockMemberModal({
               variant="destructive"
               onPress={() => void handleBlock()}
               loading={submitting}
-              disabled={!memberUserId}
+              disabled={!memberUserId || submitting}
             />
           </View>
         </View>

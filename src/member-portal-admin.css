@@ -889,6 +889,12 @@
 }
 
 /* Safety dialogs + blocked members + moderation inbox */
+/* While a portaled safety dialog is open, freeze feed-card hover transforms so
+   any non-portaled overlays cannot jump if introduced later. */
+body.et-safety-dialog-open .feed-card:hover {
+  transform: none;
+}
+
 .et-safety-dialog-backdrop {
   position: fixed;
   inset: 0;

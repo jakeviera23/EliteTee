@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -19,6 +19,7 @@ import {
   type ContentReportReason,
   type ContentReportTargetType,
 } from "@/lib/contentReports";
+import { createSubmissionLock } from "@/lib/reportSubmissionLock";
 
 type ReportContentModalProps = {
   visible: boolean;
@@ -42,42 +43,66 @@ export function ReportContentModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const submitLockRef = useRef(createSubmissionLock());
 
   useEffect(() => {
-    if (visible) {
-      setReason("harassment");
-      setDetails("");
-      setError(null);
-      setSuccess(false);
-      setSubmitting(false);
-    }
-  }, [visible, targetId]);
+    if (!visible) return;
+    setReason("harassment");
+    setDetails("");
+    setError(null);
+    setSuccess(false);
+    setSubmitting(false);
+    submitLockRef.current = createSubmissionLock();
+  }, [visible, targetId, targetType]);
 
   async function handleSubmit() {
-    if (submitting || !targetId) return;
-    setSubmitting(true);
+    if (!targetId) return;
+
     setError(null);
 
-    try {
-      await submitContentReport({ targetType, targetId, reason, details });
+    const outcome = await submitLockRef.current.run(async () => {
+      setSubmitting(true);
+      try {
+        await submitContentReport({ targetType, targetId, reason, details });
+        return { ok: true as const };
+      } catch (err) {
+        return { ok: false as const, err };
+      } finally {
+        setSubmitting(false);
+      }
+    });
+
+    if (outcome.status === "ignored") return;
+
+    if (outcome.result.ok) {
       setSuccess(true);
       onSubmitted?.();
-    } catch (err) {
-      setError(formatContentReportError(err));
-    } finally {
-      setSubmitting(false);
+      return;
     }
+
+    setError(formatContentReportError(outcome.result.err));
+  }
+
+  function handleRequestClose() {
+    if (submitting || submitLockRef.current.isInFlight) return;
+    onClose();
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={handleRequestClose}
+    >
       <KeyboardAvoidingView
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable
           style={StyleSheet.absoluteFill}
-          onPress={onClose}
+          onPress={handleRequestClose}
+          disabled={submitting}
           accessibilityLabel="Dismiss"
         />
         <View style={styles.dialog} accessibilityViewIsModal>
@@ -112,8 +137,9 @@ export function ReportContentModal({
                     <Pressable
                       key={option.value}
                       onPress={() => setReason(option.value)}
+                      disabled={submitting}
                       accessibilityRole="radio"
-                      accessibilityState={{ selected }}
+                      accessibilityState={{ selected, disabled: submitting }}
                       style={styles.reasonRow}
                     >
                       <View style={[styles.radio, selected ? styles.radioSelected : null]}>
@@ -131,6 +157,7 @@ export function ReportContentModal({
                 onChangeText={setDetails}
                 multiline
                 maxLength={2000}
+                editable={!submitting}
                 placeholder="Add context for moderators"
                 placeholderTextColor={colors.textTertiary}
                 style={styles.input}
@@ -140,12 +167,17 @@ export function ReportContentModal({
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
               <View style={styles.actions}>
-                <Button label="Cancel" variant="secondary" onPress={onClose} disabled={submitting} />
+                <Button
+                  label="Cancel"
+                  variant="secondary"
+                  onPress={onClose}
+                  disabled={submitting}
+                />
                 <Button
                   label={submitting ? "Submitting…" : "Submit report"}
                   onPress={() => void handleSubmit()}
                   loading={submitting}
-                  disabled={!targetId}
+                  disabled={!targetId || submitting}
                 />
               </View>
             </ScrollView>

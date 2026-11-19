@@ -1,4 +1,5 @@
-import { FormEvent, useId, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   CONTENT_REPORT_REASONS,
   formatContentReportError,
@@ -6,6 +7,7 @@ import {
   type ContentReportReason,
   type ContentReportTargetType,
 } from "../../lib/contentReports";
+import { createSubmissionLock } from "../../lib/reportSubmissionLock";
 
 type ReportContentDialogProps = {
   open: boolean;
@@ -16,6 +18,11 @@ type ReportContentDialogProps = {
   onSubmitted?: () => void;
 };
 
+/**
+ * Must portal to document.body. Rendering inside feed cards (or any transformed
+ * ancestor) breaks `position: fixed` and causes the dialog to jump/flash when
+ * the parent hover transform toggles.
+ */
 export function ReportContentDialog({
   open,
   targetType,
@@ -30,37 +37,99 @@ export function ReportContentDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const submitLockRef = useRef(createSubmissionLock());
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  if (!open) return null;
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setSubmitting(true);
+  useEffect(() => {
+    if (!open) return;
+    setReason("harassment");
+    setDetails("");
     setError(null);
+    setSuccess(false);
+    setSubmitting(false);
+    submitLockRef.current = createSubmissionLock();
+  }, [open, targetId, targetType]);
 
-    try {
-      await submitContentReport({
-        targetType,
-        targetId,
-        reason,
-        details,
-      });
-      setSuccess(true);
-      onSubmitted?.();
-    } catch (err) {
-      setError(formatContentReportError(err));
-    } finally {
-      setSubmitting(false);
+  useEffect(() => {
+    if (!open) return;
+    document.body.classList.add("et-safety-dialog-open");
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !submitLockRef.current.isInFlight) {
+        onCloseRef.current();
+      }
     }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.classList.remove("et-safety-dialog-open");
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  if (!open || typeof document === "undefined") {
+    return null;
   }
 
-  return (
-    <div className="et-safety-dialog-backdrop" role="presentation" onClick={onClose}>
+  async function handleSubmitSafe(event: FormEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!targetId) return;
+
+    setError(null);
+
+    const outcome = await submitLockRef.current.run(async () => {
+      setSubmitting(true);
+      try {
+        await submitContentReport({
+          targetType,
+          targetId,
+          reason,
+          details,
+        });
+        return { ok: true as const };
+      } catch (err) {
+        return { ok: false as const, err };
+      } finally {
+        setSubmitting(false);
+      }
+    });
+
+    if (outcome.status === "ignored") {
+      return;
+    }
+
+    if (outcome.result.ok) {
+      setSuccess(true);
+      onSubmitted?.();
+      return;
+    }
+
+    setError(formatContentReportError(outcome.result.err));
+  }
+
+  function handleBackdropClick() {
+    if (submitting || submitLockRef.current.isInFlight) return;
+    onClose();
+  }
+
+  const dialog = (
+    <div
+      className="et-safety-dialog-backdrop"
+      role="presentation"
+      data-testid="report-content-dialog-backdrop"
+      onClick={handleBackdropClick}
+    >
       <div
         className="et-safety-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        data-testid="report-content-dialog"
         onClick={(event) => event.stopPropagation()}
       >
         {success ? (
@@ -77,14 +146,14 @@ export function ReportContentDialog({
             </div>
           </>
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(event) => void handleSubmitSafe(event)}>
             <h2 id={titleId}>Report {targetLabel}</h2>
             <p>
               Reports help keep EliteTee safe. Choose a reason and optionally add context for
               moderators.
             </p>
 
-            <fieldset className="et-safety-fieldset">
+            <fieldset className="et-safety-fieldset" disabled={submitting}>
               <legend>Reason</legend>
               {CONTENT_REPORT_REASONS.map((option) => (
                 <label key={option.value} className="et-safety-radio">
@@ -109,6 +178,7 @@ export function ReportContentDialog({
               value={details}
               maxLength={2000}
               rows={4}
+              disabled={submitting}
               onChange={(event) => setDetails(event.target.value)}
             />
 
@@ -119,7 +189,12 @@ export function ReportContentDialog({
             ) : null}
 
             <div className="et-safety-dialog-actions">
-              <button type="button" className="et-btn et-btn--secondary" onClick={onClose}>
+              <button
+                type="button"
+                className="et-btn et-btn--secondary"
+                onClick={onClose}
+                disabled={submitting}
+              >
                 Cancel
               </button>
               <button
@@ -135,4 +210,6 @@ export function ReportContentDialog({
       </div>
     </div>
   );
+
+  return createPortal(dialog, document.body);
 }

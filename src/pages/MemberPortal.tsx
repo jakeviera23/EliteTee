@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { GolferProfilePage } from "../components/member-portal/GolferProfilePage";
 import { AskEliteTee } from "../components/member-portal/AskEliteTee";
 import { PortalCompose } from "../components/member-portal/PortalCompose";
@@ -13,6 +13,7 @@ import { IntroductionRequestModal } from "../components/member-portal/Introducti
 import { PortalToastProvider, usePortalToast } from "../components/member-portal/PortalToastProvider";
 import { privacyCopy } from "../data/memberPortalDirectory";
 import { introductionsCopy } from "../data/portalSocial";
+import { isAdminEmail } from "../lib/admin";
 import { getCurrentAuthUserId } from "../lib/authUserLinking";
 import {
   isProfileClearlyIncomplete,
@@ -159,6 +160,7 @@ function MemberPortalContent() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeView, setActiveView] = useState<PortalTab>("feed");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [viewerIsAdmin, setViewerIsAdmin] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [introductionRequests, setIntroductionRequests] = useState<IntroductionRequestRecord[]>([]);
   const [seenIntroductionRequestIds, setSeenIntroductionRequestIds] = useState<Set<string>>(
@@ -314,7 +316,16 @@ function MemberPortalContent() {
   }, [introductionRequests]);
 
   useEffect(() => {
-    void getCurrentAuthUserId().then(({ userId }) => setCurrentUserId(userId ?? null));
+    void (async () => {
+      const { userId } = await getCurrentAuthUserId();
+      setCurrentUserId(userId ?? null);
+      if (!supabase) {
+        setViewerIsAdmin(false);
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
+      setViewerIsAdmin(isAdminEmail(data.session?.user?.email));
+    })();
   }, []);
 
   useEffect(() => {
@@ -706,6 +717,14 @@ function MemberPortalContent() {
                   <span className="portal-icon-badge">{formatNotificationCount(unreadMessageCount)}</span>
                 ) : null}
               </button>
+              {viewerIsAdmin ? (
+                <Link
+                  to="/admin-members?tab=moderation"
+                  className="portal-btn portal-btn--outline portal-admin-link"
+                >
+                  Admin moderation
+                </Link>
+              ) : null}
               <button
                 type="button"
                 className="portal-btn portal-btn--gold portal-signout"

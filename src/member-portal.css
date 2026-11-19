@@ -2683,6 +2683,10 @@
 
 /* —— Social portal enhancements —— */
 
+.portal-admin-link {
+  white-space: nowrap;
+}
+
 .portal-top-actions {
   display: flex;
   align-items: center;
