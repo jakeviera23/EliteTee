@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
+import { AgeAttestationCheckbox } from "@/components/auth/AgeAttestationCheckbox";
 import { TermsAcceptanceCheckbox } from "@/components/auth/TermsAcceptanceCheckbox";
 import { EliteTeeMark } from "@/components/brand/EliteTeeMark";
 import { Button } from "@/components/ui/Button";
@@ -20,7 +21,10 @@ import {
   type MembershipApplicationForm,
   validateMembershipApplication,
 } from "@/lib/membershipApplication";
-import { TERMS_ACCEPTANCE_REQUIRED_MESSAGE } from "@/lib/termsOfUse";
+import {
+  AGE_ATTESTATION_REQUIRED_MESSAGE,
+  TERMS_ACCEPTANCE_REQUIRED_MESSAGE,
+} from "@/lib/termsOfUse";
 
 export default function ApplyScreen() {
   const router = useRouter();
@@ -31,7 +35,9 @@ export default function ApplyScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
   const [showTermsError, setShowTermsError] = useState(false);
+  const [showAgeError, setShowAgeError] = useState(false);
 
   if (loading || status === "booting") {
     return <LoadingState label="Loading…" fullScreen />;
@@ -67,6 +73,12 @@ export default function ApplyScreen() {
   async function handleSubmit() {
     if (submitting) return;
     setSubmitError(null);
+
+    if (!confirmedAge) {
+      setShowAgeError(true);
+      setSubmitError(AGE_ATTESTATION_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (!agreedToTerms) {
       setShowTermsError(true);
@@ -239,6 +251,19 @@ export default function ApplyScreen() {
           </View>
         </View>
 
+        <AgeAttestationCheckbox
+          checked={confirmedAge}
+          disabled={submitting}
+          showError={showAgeError && !confirmedAge}
+          onChange={(next) => {
+            setConfirmedAge(next);
+            if (next) {
+              setShowAgeError(false);
+              if (submitError === AGE_ATTESTATION_REQUIRED_MESSAGE) setSubmitError(null);
+            }
+          }}
+        />
+
         <TermsAcceptanceCheckbox
           checked={agreedToTerms}
           disabled={submitting}
@@ -262,7 +287,7 @@ export default function ApplyScreen() {
           label="Request membership"
           onPress={() => void handleSubmit()}
           loading={submitting}
-          disabled={!isConfigured || !agreedToTerms}
+          disabled={!isConfigured || !agreedToTerms || !confirmedAge}
         />
 
         <Text style={styles.footnote}>

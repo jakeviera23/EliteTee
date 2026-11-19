@@ -30,7 +30,11 @@ import {
 } from "../lib/portalProfileExtras";
 import { fetchOwnMemberProfile, memberProfileToSelfUpdate, updateOwnMemberProfile } from "../lib/memberProfiles";
 import { acceptCurrentTerms } from "../lib/termsAcceptance";
-import { TERMS_ACCEPTANCE_REQUIRED_MESSAGE } from "../lib/termsOfUse";
+import {
+  AGE_ATTESTATION_REQUIRED_MESSAGE,
+  TERMS_ACCEPTANCE_REQUIRED_MESSAGE,
+} from "../lib/termsOfUse";
+import { AgeAttestationCheckbox } from "../components/AgeAttestationCheckbox";
 import { TermsAcceptanceCheckbox } from "../components/TermsAcceptanceCheckbox";
 import "../inside-elitetee.css";
 
@@ -51,7 +55,9 @@ export function InviteSignup() {
   const [activeSessionEmail, setActiveSessionEmail] = useState<string | null>(null);
   const [isSigningOutSession, setIsSigningOutSession] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
   const [showTermsError, setShowTermsError] = useState(false);
+  const [showAgeError, setShowAgeError] = useState(false);
 
   const sessionConflict =
     invite && activeSessionEmail
@@ -284,6 +290,12 @@ export function InviteSignup() {
     setSubmitError(null);
     setSubmitInfo(null);
 
+    if (!confirmedAge) {
+      setShowAgeError(true);
+      setSubmitError(AGE_ATTESTATION_REQUIRED_MESSAGE);
+      return;
+    }
+
     if (!agreedToTerms) {
       setShowTermsError(true);
       setSubmitError(TERMS_ACCEPTANCE_REQUIRED_MESSAGE);
@@ -339,6 +351,12 @@ export function InviteSignup() {
     setSubmitInfo(null);
 
     if (!invite || uiState.kind !== "form") return;
+
+    if (!confirmedAge) {
+      setShowAgeError(true);
+      setSubmitError(AGE_ATTESTATION_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (!agreedToTerms) {
       setShowTermsError(true);
@@ -529,6 +547,17 @@ export function InviteSignup() {
                       />
                     </label>
 
+                    <AgeAttestationCheckbox
+                      id="invite-signin-age"
+                      checked={confirmedAge}
+                      disabled={isSubmitting}
+                      showError={showAgeError && !confirmedAge}
+                      onChange={(next) => {
+                        setConfirmedAge(next);
+                        if (next) setShowAgeError(false);
+                      }}
+                    />
+
                     <TermsAcceptanceCheckbox
                       id="invite-signin-terms"
                       checked={agreedToTerms}
@@ -549,7 +578,7 @@ export function InviteSignup() {
                     <button
                       type="submit"
                       className="portal-btn portal-btn--gold invite-submit"
-                      disabled={isSubmitting || !agreedToTerms}
+                      disabled={isSubmitting || !agreedToTerms || !confirmedAge}
                     >
                       {isSubmitting ? "Finishing setup..." : INVITE_SIGNUP_SIGN_IN_TO_FINISH_TITLE}
                     </button>
@@ -641,6 +670,17 @@ export function InviteSignup() {
                     />
                   </label>
 
+                  <AgeAttestationCheckbox
+                    id="invite-create-age"
+                    checked={confirmedAge}
+                    disabled={isSubmitting}
+                    showError={showAgeError && !confirmedAge}
+                    onChange={(next) => {
+                      setConfirmedAge(next);
+                      if (next) setShowAgeError(false);
+                    }}
+                  />
+
                   <TermsAcceptanceCheckbox
                     id="invite-create-terms"
                     checked={agreedToTerms}
@@ -667,7 +707,7 @@ export function InviteSignup() {
                   <button
                     type="submit"
                     className="portal-btn portal-btn--gold invite-submit"
-                    disabled={isSubmitting || !agreedToTerms}
+                    disabled={isSubmitting || !agreedToTerms || !confirmedAge}
                   >
                     {isSubmitting ? "Creating account..." : "Create account"}
                   </button>

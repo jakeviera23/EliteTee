@@ -1,6 +1,20 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+/**
+ * Sends optional email for queued admin_safety_alerts rows.
+ * Persistent alerts are always created in-DB by report/block RPCs.
+ *
+ * Required for email delivery (Resend):
+ * - RESEND_API_KEY
+ * - ADMIN_NOTIFY_FROM_EMAIL or RESEND_FROM_EMAIL (verified sender)
+ * - ADMIN_NOTIFY_EMAILS (comma-separated) — keep in sync with admin_email_allowlist
+ *   and VITE_ADMIN_EMAILS
+ *
+ * Platform secrets (never ship to clients):
+ * - SUPABASE_SERVICE_ROLE_KEY (used only inside this function)
+ */
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -25,13 +39,19 @@ function jsonResponse(body: unknown, status = 200) {
 function adminNotifyEmails(): string[] {
   const raw =
     Deno.env.get("ADMIN_NOTIFY_EMAILS") ||
-    Deno.env.get("VITE_ADMIN_EMAILS") ||
     Deno.env.get("ADMIN_EMAILS") ||
     "";
   return raw
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function logNotify(level: "info" | "warn" | "error", message: string, detail?: unknown) {
+  const payload = detail === undefined ? message : `${message} ${JSON.stringify(detail)}`;
+  if (level === "error") console.error(`[notify-admin-safety] ${payload}`);
+  else if (level === "warn") console.warn(`[notify-admin-safety] ${payload}`);
+  else console.log(`[notify-admin-safety] ${payload}`);
 }
 
 async function sendResendEmail(input: {
@@ -46,7 +66,15 @@ async function sendResendEmail(input: {
     "";
 
   if (!apiKey || !from || input.to.length === 0) {
-    return { sent: false as const, reason: "email_not_configured" };
+    return {
+      sent: false as const,
+      reason: "email_not_configured" as const,
+      missing: {
+        resendApiKey: !apiKey,
+        from: !from,
+        recipients: input.to.length === 0,
+      },
+    };
   }
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -85,6 +113,7 @@ Deno.serve(async (req) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
   if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+    logNotify("error", "server configuration incomplete");
     return jsonResponse({ error: "Server configuration incomplete" }, 500);
   }
 
@@ -102,6 +131,7 @@ Deno.serve(async (req) => {
   } = await userClient.auth.getUser();
 
   if (userError || !user) {
+    logNotify("warn", "unauthorized invoke", { message: userError?.message });
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -112,6 +142,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
+  // Service role stays inside the function only — never returned to clients.
   const admin = createClient(supabaseUrl, serviceRoleKey);
   let alertId = body.alertId?.trim() || "";
 
@@ -126,9 +157,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (alertError) {
+      logNotify("error", "alert lookup failed", { message: alertError.message });
       return jsonResponse({ error: alertError.message }, 500);
     }
     if (!alert) {
+      logNotify("warn", "alert not found for type/id", {
+        type: body.type,
+        id: body.id,
+      });
       return jsonResponse({ ok: true, emailed: false, reason: "alert_not_found" });
     }
     alertId = alert.id;
@@ -145,9 +181,11 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (error) {
+    logNotify("error", "alert fetch failed", { message: error.message });
     return jsonResponse({ error: error.message }, 500);
   }
   if (!alert) {
+    logNotify("warn", "alert not found by id", { alertId });
     return jsonResponse({ ok: true, emailed: false, reason: "alert_not_found" });
   }
 
@@ -165,8 +203,8 @@ Deno.serve(async (req) => {
     `Reference: ${alert.reference_id}`,
     `Created: ${alert.created_at}`,
     "",
-    "Open /admin-members → Moderation to review.",
-    "Do not treat this email as a guaranteed 24-hour SLA; it is an operational alert.",
+    "Open /admin-members → Moderation to review within your 24-hour moderation workflow.",
+    "This email is an operational alert, not a contractual SLA guarantee.",
   ].join("\n");
 
   try {
@@ -177,11 +215,25 @@ Deno.serve(async (req) => {
     });
 
     if (emailResult.sent) {
-      await admin.rpc("mark_admin_safety_alert_emailed", {
+      const { error: markError } = await admin.rpc("mark_admin_safety_alert_emailed", {
         p_alert_id: alert.id,
       });
+      if (markError) {
+        logNotify("error", "failed to mark alert emailed", { message: markError.message });
+      } else {
+        logNotify("info", "email sent", {
+          alertId: alert.id,
+          recipients: recipients.length,
+        });
+      }
       return jsonResponse({ ok: true, emailed: true, recipients: recipients.length });
     }
+
+    logNotify("warn", "email not sent; alert remains in admin_safety_alerts", {
+      alertId: alert.id,
+      reason: emailResult.reason,
+      missing: "missing" in emailResult ? emailResult.missing : undefined,
+    });
 
     return jsonResponse({
       ok: true,
@@ -190,11 +242,14 @@ Deno.serve(async (req) => {
       note: "Alert remains queued in admin_safety_alerts for in-app review.",
     });
   } catch (err) {
+    logNotify("error", "notify failed", {
+      message: err instanceof Error ? err.message : String(err),
+    });
     return jsonResponse(
       {
         ok: false,
         emailed: false,
-        error: err instanceof Error ? err.message : String(err),
+        error: "Notification delivery failed. Alert remains available in-app.",
       },
       500,
     );

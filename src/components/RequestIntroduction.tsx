@@ -1,7 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { publicEarlyStageCopy } from "../data/content";
 import { submitMembershipApplication } from "../lib/membershipApplications";
-import { TERMS_ACCEPTANCE_REQUIRED_MESSAGE } from "../lib/termsOfUse";
+import {
+  AGE_ATTESTATION_REQUIRED_MESSAGE,
+  TERMS_ACCEPTANCE_REQUIRED_MESSAGE,
+} from "../lib/termsOfUse";
+import { AgeAttestationCheckbox } from "./AgeAttestationCheckbox";
 import { TermsAcceptanceCheckbox } from "./TermsAcceptanceCheckbox";
 
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xvzyndnb";
@@ -18,11 +22,19 @@ export function RequestIntroduction() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
   const [showTermsError, setShowTermsError] = useState(false);
+  const [showAgeError, setShowAgeError] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (!confirmedAge) {
+      setShowAgeError(true);
+      setError(AGE_ATTESTATION_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (!agreedToTerms) {
       setShowTermsError(true);
@@ -152,6 +164,20 @@ export function RequestIntroduction() {
                 <textarea name="whyJoin" rows={4} required />
               </label>
 
+              <AgeAttestationCheckbox
+                id="membership-apply-age"
+                checked={confirmedAge}
+                disabled={submitting}
+                showError={showAgeError && !confirmedAge}
+                onChange={(next) => {
+                  setConfirmedAge(next);
+                  if (next) {
+                    setShowAgeError(false);
+                    if (error === AGE_ATTESTATION_REQUIRED_MESSAGE) setError(null);
+                  }
+                }}
+              />
+
               <TermsAcceptanceCheckbox
                 id="membership-apply-terms"
                 checked={agreedToTerms}
@@ -167,7 +193,11 @@ export function RequestIntroduction() {
               />
 
               <div className="request-form-actions">
-                <button type="submit" className="btn" disabled={submitting || !agreedToTerms}>
+                <button
+                  type="submit"
+                  className="btn"
+                  disabled={submitting || !agreedToTerms || !confirmedAge}
+                >
                   {submitting ? "Submitting…" : "Request Membership"}
                 </button>
                 {error ? (

@@ -1,3 +1,9 @@
+/**
+ * Client-side admin UI gate (AdminRoute).
+ * Must stay aligned with:
+ * - public.admin_email_allowlist / current_user_is_admin() (RLS + moderation RPCs)
+ * - ADMIN_NOTIFY_EMAILS on the notify-admin-safety Edge Function
+ */
 export function getAdminEmails(): string[] {
   const raw = import.meta.env.VITE_ADMIN_EMAILS;
   if (!raw?.trim()) return [];
